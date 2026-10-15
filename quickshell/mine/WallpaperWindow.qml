@@ -98,26 +98,34 @@ Variants {
             onStatusChanged: if (!anim.running && win.incoming !== "" && win.shown === win.incoming) win.settle()
         }
 
-        // imagem entrando: carregada aqui (fora da tela, mas visivel) e mostrada pelo MultiEffect abaixo (que tambem aplica as mascaras);
-        // o zoom de cobertura da cortina acontece aqui dentro, para a mascara nao escalar junto
-        Item {
+        // imagem entrando: um Image so, que muda de "pai" conforme a transicao (assim carrega uma vez):
+        //   circulo: dentro de newWrap (vira textura para a mascara redonda do MultiEffect)
+        //   cortina: dentro de um recorte girado (sem texturas extras: barato para a GPU)
+        //   fade / deslizar / zoom: direto na camada nova
+        Image {
+            id: newImg
+            parent: win.trans === "circle" ? newWrap : (win.trans === "wipe" ? wipeInner : plainNew)
+            x: win.trans === "wipe" ? win.ox - wipeClip.x : 0
+            y: win.trans === "wipe" ? win.oy - wipeClip.y : 0
+            width: win.width; height: win.height
+            scale: win.trans === "wipe" ? 1 + 2 * (1 - win.progress) * win.newK * win.kmax * win.zoomW
+                : (win.trans === "circle" ? 1 + (1 - win.progress) * win.sK * 1.25 : 1)
+            source: win.incoming !== "" ? "file://" + win.incoming : ""
+            fillMode: Image.PreserveAspectCrop
+            sourceSize: Qt.size(win.width, win.height)
+            asynchronous: true
+            smooth: true
+            onStatusChanged: if (status === Image.Ready && win.incoming !== "" && !anim.running) anim.restart()
+        }
+        // cortina: a imagem nova tambem anda na direcao da cortina, mais devagar que a borda (deslocamento o)
+        readonly property real ox: trans === "wipe" ? -(1 - progress) * newK * dx : 0
+        readonly property real oy: trans === "wipe" ? -(1 - progress) * newK * dy : 0
+
+        Item {   // fonte do circulo (fora da tela, mas visivel: item invisivel nao atualiza a textura)
             id: newWrap
             x: -win.width - 60
             width: win.width; height: win.height
-            layer.enabled: true
-            Image {
-                id: newImg
-                anchors.centerIn: parent
-                width: win.width; height: win.height
-                scale: win.trans === "wipe" ? 1 + 2 * (1 - win.progress) * win.newK * win.kmax * win.zoomW
-                    : (win.trans === "circle" ? 1 + (1 - win.progress) * win.sK * 1.25 : 1)
-                source: win.incoming !== "" ? "file://" + win.incoming : ""
-                fillMode: Image.PreserveAspectCrop
-                sourceSize: Qt.size(win.width, win.height)
-                asynchronous: true
-                smooth: true
-                onStatusChanged: if (status === Image.Ready && win.incoming !== "" && !anim.running) anim.restart()
-            }
+            layer.enabled: win.trans === "circle" && win.incoming !== ""
         }
 
         Item {
@@ -131,32 +139,31 @@ Variants {
             opacity: win.trans === "fade" || win.trans === "zoom" ? win.progress : 1
             scale: win.trans === "zoom" ? 1.1 - 0.1 * win.progress : 1
 
+            Item { id: plainNew; width: win.width; height: win.height; visible: win.trans !== "circle" && win.trans !== "wipe" }
+
+            // cortina em qualquer angulo: um quadrado enorme girado recorta a tela; a borda da frente e a linha da cortina
+            Item {
+                id: wipeClip
+                visible: win.trans === "wipe"
+                readonly property real len: win.diag * 3
+                width: len; height: len
+                x: win.edgeS * win.dx - win.dx * len / 2 - len / 2
+                y: win.edgeS * win.dy - win.dy * len / 2 - len / 2
+                rotation: Settings.wpWipeAngle
+                clip: true
+                Item {   // desfaz o giro: dentro dele as coordenadas sao as da tela, deslocadas pelo canto do recorte
+                    id: wipeInner
+                    width: wipeClip.len; height: wipeClip.len
+                    rotation: -Settings.wpWipeAngle
+                }
+            }
+
             MultiEffect {
-                // cortina: a imagem nova tambem anda na direcao da cortina, mais devagar que a borda (a mascara acompanha o deslocamento)
-                x: win.trans === "wipe" ? -(1 - win.progress) * win.newK * win.dx : 0
-                y: win.trans === "wipe" ? -(1 - win.progress) * win.newK * win.dy : 0
+                visible: win.trans === "circle"
                 width: win.width; height: win.height
                 source: newWrap
-                maskEnabled: win.trans === "circle" || win.trans === "wipe"
-                maskSource: win.trans === "wipe" ? wipeMask : circleMask
-            }
-        }
-
-        // mascara da cortina: um retangulo girado cuja borda da frente e a linha da cortina (em coordenadas da imagem nova, ja deslocada)
-        Item {
-            id: wipeMask
-            x: -win.width - 50
-            layer.enabled: true
-            width: win.width; height: win.height
-            Rectangle {
-                readonly property real len: win.diag * 3
-                readonly property real qx: win.edgeS * win.dx + (1 - win.progress) * win.newK * win.dx   // ponto da borda no sistema da imagem
-                readonly property real qy: win.edgeS * win.dy + (1 - win.progress) * win.newK * win.dy
-                width: len; height: len
-                x: qx - win.dx * len / 2 - len / 2
-                y: qy - win.dy * len / 2 - len / 2
-                rotation: Settings.wpWipeAngle
-                color: "white"
+                maskEnabled: true
+                maskSource: circleMask
             }
         }
 
@@ -164,7 +171,7 @@ Variants {
         Item {
             id: circleMask
             x: -win.width - 50        // fora da tela, mas visivel: item invisivel nao atualiza a textura da mascara
-            layer.enabled: true
+            layer.enabled: win.trans === "circle" && win.incoming !== ""
             width: win.width; height: win.height
             Rectangle {
                 readonly property real d: win.diag * win.progress
