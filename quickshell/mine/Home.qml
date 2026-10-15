@@ -199,7 +199,7 @@ Scope {
                     x: -holder.x + (win.side === "left" ? -win.lag : (win.side === "right" ? win.lag : 0))
                     y: -holder.y + (win.side === "top" ? -win.lag : (win.side === "bottom" ? win.lag : 0))
                     width: win.width; height: win.height
-                    opacity: win.docked ? Math.max(0, Math.min(1, win.pp * 1.4 - 0.2)) : Math.max(0, Math.min(1, win.pp * 1.6))
+                    opacity: win.docked ? Math.max(0, Math.min(1, win.pp * 4)) : Math.max(0, Math.min(1, win.pp * 1.6))
 
                     Rectangle {
                         id: panel
@@ -239,7 +239,15 @@ Scope {
                                     }
                                 }
                             }
+                            Rectangle {   // energia (abre o menu)
+                                anchors { horizontalCenter: parent.horizontalCenter; bottom: gearBtn.top; bottomMargin: 6 }
+                                width: 42; height: 42; radius: 12
+                                color: pwm.containsMouse ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : "transparent"
+                                UiIcon { anchors.centerIn: parent; name: "power"; size: 20; color: pwm.containsMouse ? Theme.danger : Theme.muted }
+                                MouseArea { id: pwm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Power.menuOpen = true }
+                            }
                             Rectangle {
+                                id: gearBtn
                                 anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 7 }
                                 width: 42; height: 42; radius: 12
                                 color: gm.containsMouse ? Theme.cardHi : "transparent"

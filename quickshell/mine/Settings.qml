@@ -133,9 +133,11 @@ Singleton {
         { id: "workspaces", label: "Workspaces" },
         { id: "launcher", label: "Launcher de aplicativos" },
         { id: "notifications", label: "Notificações" },
-        { id: "home", label: "Painel Início" }
+        { id: "home", label: "Painel Início" },
+        { id: "power", label: "Menu de energia" },
+        { id: "lock", label: "Tela de bloqueio" }
     ]
-    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera" })
+    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera", power: "Desacelera", lock: "Desacelera" })
 
     function allAnims(): var { return builtinAnims.concat(anims) }
     function findAnim(name: string): var { return allAnims().find(a => a.name === name) ?? null }
@@ -214,6 +216,7 @@ Singleton {
         { type: "volume", label: "Volume" },
         { type: "tray", label: "Bandeja" },
         { type: "palette", label: "Cores do tema" },
+        { type: "power", label: "Energia" },
         { type: "text", label: "Texto" }
     ]
 

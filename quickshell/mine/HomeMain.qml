@@ -21,19 +21,11 @@ Item {
             blur: 0.7
             dim: 0.48
         }
-        RoundImage {
+        Avatar {   // clique: trocar a foto de perfil
             id: avatar
-            x: 20; anchors.verticalCenter: parent.verticalCenter
-            width: 68; height: 68; radius: 34
-            source: "file://" + Quickshell.env("HOME") + "/.face"
-            sourceSize: Qt.size(160, 160)
-        }
-        Rectangle {   // anel do avatar (ou a inicial se nao houver ~/.face)
-            anchors.centerIn: avatar
-            width: 74; height: 74; radius: 37
-            color: avatar.ready ? "transparent" : Theme.tint(0.3)
-            border.width: 2; border.color: Theme.accent
-            Text { anchors.centerIn: parent; visible: !avatar.ready; text: (Quickshell.env("USER") || "?").charAt(0).toUpperCase(); color: "white"; font.pixelSize: 30; font.weight: Font.Bold }
+            x: 17; anchors.verticalCenter: parent.verticalCenter
+            size: 68
+            editable: true
         }
         Column {
             anchors { left: avatar.right; leftMargin: 18; verticalCenter: parent.verticalCenter }

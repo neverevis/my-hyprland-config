@@ -144,7 +144,7 @@ Scope {
                     x: -holder.x + (win.side === "left" ? -win.lag : (win.side === "right" ? win.lag : 0))
                     y: -holder.y + (win.side === "top" ? -win.lag : (win.side === "bottom" ? win.lag : 0))
                     width: win.width; height: win.height
-                    opacity: win.docked ? Math.max(0, Math.min(1, win.pp * 1.4 - 0.2)) : 1
+                    opacity: win.docked ? Math.max(0, Math.min(1, win.pp * 4)) : 1
 
                     // ---- painel (conteudo) ----
                     Rectangle {

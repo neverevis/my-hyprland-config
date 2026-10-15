@@ -26,7 +26,7 @@ Item {
         id: loader
         sourceComponent: ({
             clock: clockC, workspaces: workspacesC, window: windowC,
-            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC
+            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC, power: powerC
         })[root.type]
     }
 
@@ -43,6 +43,26 @@ Item {
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
                 onClicked: Settings.homeOpen = !Settings.homeOpen
+            }
+        }
+    }
+
+    Component {
+        id: powerC
+        // botao de energia: abre o menu (bloquear, suspender, sair, reiniciar, desligar)
+        UiIcon {
+            name: "power"
+            size: 17
+            color: pwm.containsMouse ? Settings.accent : Settings.textColor
+            Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
+            scale: pwm.pressed ? 0.88 : (pwm.containsMouse ? 1.1 : 1)
+            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+            MouseArea {
+                id: pwm
+                anchors.fill: parent; anchors.margins: -5
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: Power.menuOpen = true
             }
         }
     }

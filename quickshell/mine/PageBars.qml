@@ -12,7 +12,7 @@ Column {
     readonly property int idx: Math.max(0, Math.min(cur, Settings.bars.length - 1))
     readonly property var bar: Settings.bars[idx] ?? null
     readonly property var sideNames: ({ top: "Cima", bottom: "Baixo", left: "Esquerda", right: "Direita" })
-    readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", text: "pencil" })
+    readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil" })
     function setBar(k, v) { Settings.setBar(idx, k, v) }
 
     // ---- escolha da barra ----

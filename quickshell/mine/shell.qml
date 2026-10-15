@@ -1,3 +1,4 @@
+//@ pragma UseQApplication
 // Seu Quickshell: uma moldura fina na tela com barras que "sobem" (engrossam) onde voce quiser.
 //   - UMA janela de tela cheia desenha tudo num so Shape (sem sobreposicao: o vidro/blur fica uniforme)
 //   - ela e "click-through"; o espaco e reservado por janelinhas transparentes
@@ -24,6 +25,8 @@ ShellRoot {
     Launcher { geo: shell.geo }
     Notifications { geo: shell.geo }
     Home { geo: shell.geo }
+    PowerMenu {}
+    LockScreen {}
 
     PanelWindow {
         id: frame
