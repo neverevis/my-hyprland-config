@@ -103,7 +103,9 @@ Scope {
             readonly property real cw: Math.min(Settings.launcherWidth, width - 100)   // largura do conteudo
             readonly property real ch: root.contentH                                    // altura do conteudo
             // progresso: acoplado = o da moldura (BarState); flutuante = proprio, mesma animacao
-            property real fprog: root.open ? 1 : 0
+            // nasce em 0 e so depois passa a seguir "open": assim o Behavior anima a entrada (senao a janela ja nasce aberta)
+            property real fprog: 0
+            Component.onCompleted: fprog = Qt.binding(() => root.open ? 1 : 0)
             Behavior on fprog {
                 NumberAnimation {
                     duration: Settings.animOf("launcher").duration
