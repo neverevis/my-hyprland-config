@@ -40,7 +40,8 @@ ShellRoot {
             anchors.fill: parent
             preferredRendererType: Shape.GeometryRenderer
             layer.enabled: true      // suaviza as bordas (o GeometryRenderer nao tem antialias proprio)
-            layer.samples: 8
+            layer.smooth: true
+            layer.textureSize: Qt.size(width * 2, height * 2)   // desenha no dobro da resolucao e reduz: bordas lisas
             ShapePath {
                 fillColor: shell.fillColor
                 strokeColor: "transparent"

@@ -7,13 +7,17 @@ import QtQuick
 
 Scope {
     id: root
-    property bool open: false
+    readonly property bool open: Settings.settingsOpen
     property string page: "bars"
 
     IpcHandler {
         target: "settings"
-        function toggle(): void { root.open = !root.open }
+        function toggle(): void { Settings.settingsOpen = !Settings.settingsOpen }
+        function close(): void { Settings.settingsOpen = false }
+        function isopen(): bool { return root.open }
     }
+    // abrir as configuracoes fecha o launcher e o seletor (nao ficam um sobre o outro)
+    onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false }
 
     readonly property var pages: [
         { id: "bars", label: "Barras" },
@@ -42,11 +46,12 @@ Scope {
                 anchors.fill: parent
                 radius: 20
                 color: Theme.gl(Theme.bg, 1)
-                border.width: 1
-                border.color: Theme.border
                 clip: true
                 focus: true
-                Keys.onEscapePressed: root.open = false
+                Keys.onEscapePressed: Settings.settingsOpen = false
+
+                // contorno desenhado por cima de tudo (senao a barra lateral escura cobre a borda)
+                Rectangle { anchors.fill: parent; radius: 20; color: "transparent"; border.width: 1; border.color: Theme.border; z: 100 }
 
                 // ---- barra lateral ----
                 Rectangle {
@@ -96,7 +101,7 @@ Scope {
                         anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 16 }
                         spacing: 8
                         UiButton { width: parent.width; text: "Restaurar padrão"; onClicked: Settings.reset() }
-                        UiButton { width: parent.width; text: "Fechar"; kind: "accent"; onClicked: root.open = false }
+                        UiButton { width: parent.width; text: "Fechar"; kind: "accent"; onClicked: Settings.settingsOpen = false }
                     }
                 }
 

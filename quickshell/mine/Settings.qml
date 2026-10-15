@@ -84,6 +84,7 @@ Singleton {
     property alias launcherSide: adapter.launcherSide           // bottom | top | left | right (acoplado)
     property alias launcherOffset: adapter.launcherOffset
     property alias launcherFillet: adapter.launcherFillet       // curva onde o painel acoplado encontra a moldura
+    property bool settingsOpen: false                           // janela de configuracoes aberta (nao e salvo)
     property bool launcherOpen: false                           // launcher aberto (nao e salvo)
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)

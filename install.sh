@@ -108,6 +108,10 @@ if [ ! -w "$BP" ]; then
     say "Brave (opcional): para o tema ao vivo rode uma vez: sudo mkdir -p /etc/brave/policies/managed && sudo touch $BP && sudo chown \$USER $BP"
 fi
 
+# ---- script do Super+Q (fecha as janelas do Quickshell antes de fechar a janela ativa) ----
+mkdir -p "$HOME/.local/bin"; install -m 755 "$HERE/bin/qs-close-or-kill" "$HOME/.local/bin/qs-close-or-kill"
+say "Opcional: faca o seu atalho de fechar janela chamar ~/.local/bin/qs-close-or-kill"
+
 # ---- wallpapers ----
 WPDIR="$(python3 -c "import json,os;print(os.path.expanduser(json.load(open('$QS_DIR/settings.json')).get('wpDir','~/Imagens/Wallpapers')))" 2>/dev/null || echo "$HOME/Imagens/Wallpapers")"
 mkdir -p "$WPDIR"
