@@ -42,8 +42,11 @@ ShellRoot {
 
         Shape {
             anchors.fill: parent
-            // CurveRenderer: curvas desenhadas direto na GPU com antialias proprio (sem a textura extra em 2x da tela)
-            preferredRendererType: Shape.CurveRenderer
+            // GeometryRenderer + camada em 2x: o CurveRenderer (mais leve) gera artefatos onde as formas se sobrepoem
+            preferredRendererType: Shape.GeometryRenderer
+            layer.enabled: true      // suaviza as bordas (o GeometryRenderer nao tem antialias proprio)
+            layer.smooth: true
+            layer.textureSize: Qt.size(width * 2, height * 2)   // desenha no dobro da resolucao e reduz: bordas lisas
             ShapePath {
                 fillColor: shell.fillColor
                 strokeColor: "transparent"
@@ -60,7 +63,9 @@ ShellRoot {
             layer.enabled: Settings.shellGrain > 0   // sem grao: nao desenha a mascara (antes renderizava sempre)
             Shape {
                 anchors.fill: parent
-                preferredRendererType: Shape.CurveRenderer
+                preferredRendererType: Shape.GeometryRenderer
+                layer.enabled: Settings.shellGrain > 0
+                layer.samples: 8
                 ShapePath {
                     fillColor: "white"
                     strokeColor: "transparent"
