@@ -126,24 +126,32 @@ Scope {
                     opacity: Math.max(0, Math.min(1, win.pp * 1.4 - 0.2))
 
                 // ---- fila de imagens ----
-                ListView {
+                PathView {
                     id: list
                     // a lista mostra exatamente N cartoes (a folga das margens fica fora dela: sem lasca do proximo wallpaper)
                     x: win.box.x + (win.vert ? 0 : Geometry.pickerPad); y: win.box.y + (win.vert ? Geometry.pickerPad : 0)
                     width: win.box.width - (win.vert ? 0 : 2 * Geometry.pickerPad); height: win.box.height - (win.vert ? 2 * Geometry.pickerPad : 0)
-                    orientation: win.vert ? ListView.Vertical : ListView.Horizontal
                     model: Wallpaper.files
                     focus: true
                     clip: true
-                    spacing: 6
-                    highlightRangeMode: ListView.StrictlyEnforceRange
-                    preferredHighlightBegin: ((win.vert ? height : width) - win.cellLen) / 2
-                    preferredHighlightEnd: ((win.vert ? height : width) + win.cellLen) / 2
+                    // carrossel circular: ao passar do ultimo volta ao primeiro (e vice-versa). Os itens correm por uma reta centrada
+                    readonly property real span: (win.vert ? height : width)
+                    pathItemCount: Math.min(Wallpaper.files.length, Math.ceil(span / win.cellLen) + 2)
+                    readonly property real runLen: pathItemCount * win.cellLen
+                    path: Path {
+                        startX: win.vert ? list.width / 2 : list.width / 2 - list.runLen / 2
+                        startY: win.vert ? list.height / 2 - list.runLen / 2 : list.height / 2
+                        PathLine {
+                            x: win.vert ? list.width / 2 : list.width / 2 + list.runLen / 2
+                            y: win.vert ? list.height / 2 + list.runLen / 2 : list.height / 2
+                        }
+                    }
+                    preferredHighlightBegin: 0.5
+                    preferredHighlightEnd: 0.5
+                    highlightRangeMode: PathView.StrictlyEnforceRange
                     highlightMoveDuration: 280
-                    highlightMoveVelocity: -1
                     interactive: false          // so a roda do mouse / setas movem
-                    cacheBuffer: 1400
-                    function onOpen() { currentIndex = Wallpaper.indexOfCurrent(); positionViewAtIndex(currentIndex, ListView.Center); forceActiveFocus(); syncFocus() }
+                    function onOpen() { currentIndex = Wallpaper.indexOfCurrent(); positionViewAtIndex(currentIndex, PathView.Center); forceActiveFocus(); syncFocus() }
                     function syncFocus() { Wallpaper.pickerFocus = currentIndex >= 0 && currentIndex < Wallpaper.files.length ? Wallpaper.files[currentIndex].path : "" }
                     Connections {
                         target: root
@@ -173,7 +181,7 @@ Scope {
                         id: card
                         required property int index
                         required property var modelData
-                        readonly property bool cur: ListView.isCurrentItem
+                        readonly property bool cur: PathView.isCurrentItem
                         readonly property bool applied: modelData.path === Wallpaper.current
                         width: win.vert ? list.width : win.cellLen
                         height: win.vert ? win.cellLen : list.height
