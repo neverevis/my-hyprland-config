@@ -58,7 +58,15 @@ Scope {
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: win.away || !root.open ? WlrKeyboardFocus.None : WlrKeyboardFocus.OnDemand
             WlrLayershell.namespace: "mine-settings"
-            mask: Region { item: win.away || !root.open ? null : body }
+            // area que pega o mouse: um item proprio, sem transformacoes e sempre o mesmo (o Region nao acompanha
+            // deslocamentos por transform nem troca de item direito; quando ficava desatualizado os cliques atravessavam a janela)
+            mask: Region { item: hit }
+            Item {
+                id: hit
+                readonly property bool on: !win.away && root.open
+                x: on ? body.x : 0; y: on ? body.y : 0
+                width: on ? body.width : 0; height: on ? body.height : 0
+            }
 
             // ---- entrada/saida: a mesma animacao de camadas do Hyprland (hyprland/animations.lua), feita aqui ----
             // layersIn: slide 500 ms emphasizedDecel | layersOut: slide 400 ms emphasizedAccel | fadeLayers: 500 ms standard
