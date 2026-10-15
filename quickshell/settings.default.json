@@ -1,0 +1,142 @@
+{
+  "accent": "#bb9af7",
+  "animCfg": {
+    "anims": [
+      {
+        "duration": 370,
+        "name": "Minha curva",
+        "x1": 13,
+        "x2": 35,
+        "y1": 134,
+        "y2": 121
+      }
+    ],
+    "migrated": true,
+    "use": {
+      "bars": "Minha curva",
+      "picker": "Desacelera",
+      "wallpaper": "Linear",
+      "workspaces": "Rápida"
+    }
+  },
+  "animDuration": 370,
+  "animX1": 13,
+  "animX2": 35,
+  "animY1": 134,
+  "animY2": 121,
+  "barColor": "#000000",
+  "bars": [
+    {
+      "autoHide": false,
+      "full": false,
+      "height": 29,
+      "offset": -495,
+      "reserve": "always",
+      "sections": [
+        {
+          "align": "center",
+          "anchor": "center",
+          "modules": [
+            {
+              "format": "HH:mm",
+              "type": "clock"
+            },
+            {
+              "display": "bar",
+              "label": "",
+              "type": "volume"
+            }
+          ],
+          "name": "Centro",
+          "offset": 0,
+          "spacing": 14,
+          "width": 0
+        },
+        {
+          "align": "center",
+          "anchor": "start",
+          "modules": [
+            {
+              "style": "pills",
+              "type": "workspaces"
+            }
+          ],
+          "name": "Início",
+          "offset": 0,
+          "spacing": 14,
+          "width": 0
+        },
+        {
+          "align": "center",
+          "anchor": "end",
+          "modules": [
+            {
+              "type": "tray"
+            }
+          ],
+          "name": "Fim",
+          "offset": 0,
+          "spacing": 14,
+          "width": 0
+        }
+      ],
+      "side": "bottom",
+      "width": 657
+    },
+    {
+      "autoHide": false,
+      "full": false,
+      "height": 34,
+      "offset": 429,
+      "sections": [
+        {
+          "align": "center",
+          "anchor": "center",
+          "modules": [
+            {
+              "format": "ddd dd MMM   HH:mm",
+              "type": "clock"
+            }
+          ],
+          "name": "Centro",
+          "offset": 0,
+          "spacing": 14,
+          "width": 0
+        }
+      ],
+      "side": "bottom",
+      "width": 520
+    }
+  ],
+  "blurBrightness": 103,
+  "blurContrast": 89,
+  "blurEnabled": true,
+  "blurManaged": false,
+  "blurNoise": 76,
+  "blurPasses": 4,
+  "blurSize": 3,
+  "blurVibrancy": 18,
+  "cornerRadius": 13,
+  "edge": 7,
+  "fillet": 13,
+  "glass": true,
+  "glassOpacity": 73,
+  "hideDelay": 155,
+  "outline": true,
+  "shellBlur": true,
+  "shellGrain": 0,
+  "shellIgnoreAlpha": 5,
+  "textColor": "#e6e1e9",
+  "topRadius": 11,
+  "wallpaper": "",
+  "wpDir": "~/Imagens/Wallpapers",
+  "wpDuration": 900,
+  "wpEasing": "smooth",
+  "wpInterval": 0,
+  "wpPickerDocked": true,
+  "wpPickerGap": 14,
+  "wpPickerOffset": 0,
+  "wpPickerSide": "bottom",
+  "wpShuffle": true,
+  "wpTransition": "random"
+}

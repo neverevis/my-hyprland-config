@@ -1,0 +1,312 @@
+// Configuracoes do seu shell, num lugar so (singleton: qualquer arquivo usa "Settings.edge" etc.).
+// Salvas em settings.json (nesta pasta) e recarregadas sozinhas quando o arquivo muda.
+pragma Singleton
+
+import Quickshell
+import Quickshell.Io
+import QtQuick
+
+Singleton {
+    id: root
+
+    // ---- globais ----
+    property alias edge: adapter.edge                   // espessura fina da moldura
+    property alias cornerRadius: adapter.cornerRadius   // cantos internos da tela
+    property alias fillet: adapter.fillet               // curva onde a tira comeca a subir
+    property alias topRadius: adapter.topRadius         // arredondamento do topo de cada barra
+    property alias barColor: adapter.barColor
+    property alias textColor: adapter.textColor
+    property alias accent: adapter.accent               // cor de destaque da janela de configuracoes
+    property alias outline: adapter.outline             // contorno fino em todas as bordas
+    property alias glass: adapter.glass
+    property alias glassOpacity: adapter.glassOpacity
+    // ---- blur (ver HyprSync.qml): parte global do Hyprland e parte so da moldura do Quickshell ----
+    property alias blurManaged: adapter.blurManaged     // o Quickshell controla o blur global do Hyprland
+    property alias blurEnabled: adapter.blurEnabled
+    property alias blurSize: adapter.blurSize
+    property alias blurPasses: adapter.blurPasses
+    property alias blurNoise: adapter.blurNoise         // milesimos (76 = 0.076)
+    property alias blurContrast: adapter.blurContrast   // centesimos
+    property alias blurBrightness: adapter.blurBrightness
+    property alias blurVibrancy: adapter.blurVibrancy
+    property alias shellBlur: adapter.shellBlur         // desfocar o fundo da moldura
+    property alias shellIgnoreAlpha: adapter.shellIgnoreAlpha   // % de opacidade abaixo da qual nao desfoca
+    property alias shellGrain: adapter.shellGrain       // grao proprio da moldura (%)
+    // ---- animacao de mostrar/esconder as barras (curva de bezier cubica: x1,y1,x2,y2 em centesimos) ----
+    property alias animDuration: adapter.animDuration   // ms
+    property alias animX1: adapter.animX1
+    property alias animY1: adapter.animY1
+    property alias animX2: adapter.animX2
+    property alias animY2: adapter.animY2
+    property alias hideDelay: adapter.hideDelay         // ms antes de esconder apos o mouse sair
+    readonly property var animCurve: [animX1 / 100, animY1 / 100, animX2 / 100, animY2 / 100, 1, 1]
+    // ---- wallpaper (ver Wallpaper.qml) ----
+    property alias wpDir: adapter.wpDir                 // pasta de imagens
+    property alias wallpaper: adapter.wallpaper         // arquivo atual
+    property alias wpTransition: adapter.wpTransition   // fade | slide | wipe | circle | zoom | random | none
+    property alias wpDuration: adapter.wpDuration       // ms
+    property alias wpEasing: adapter.wpEasing           // smooth | decel | snappy | linear
+    property alias wpInterval: adapter.wpInterval       // troca automatica, em minutos (0 = desligada)
+    property alias wpShuffle: adapter.wpShuffle         // ordem aleatoria na troca automatica
+    property alias wpPickerSide: adapter.wpPickerSide         // bottom | top | left | right
+    property alias wpPickerDocked: adapter.wpPickerDocked     // acoplado a moldura (sai da borda) ou flutuante
+    property alias wpPickerOffset: adapter.wpPickerOffset     // deslocamento ao longo da borda (px)
+    property alias wpPickerGap: adapter.wpPickerGap           // distancia da borda quando flutuante (px)
+    property bool wpPickerOpen: false                   // seletor aberto (nao e salvo)
+    // ---- animacoes nomeadas: lista propria + qual usar em cada lugar ----
+    // tudo num so objeto salvo de uma vez (evita corrida entre gravar e recarregar o arquivo):
+    //   animCfg = { anims: [{ name, x1, y1, x2, y2, duration }], use: { bars, picker, wallpaper, workspaces } -> nome, migrated }
+    property alias animCfg: adapter.animCfg
+    readonly property var anims: (animCfg && animCfg.anims) ? animCfg.anims : []
+    readonly property var animUse: (animCfg && animCfg.use) ? animCfg.use : animDefaults
+    readonly property bool animMigrated: !!(animCfg && animCfg.migrated)
+    function setAnimCfg(patch: var): void { animCfg = Object.assign({ anims: anims, use: animUse, migrated: animMigrated }, patch) }
+
+    readonly property var builtinAnims: [
+        { name: "Padrão", x1: 5, y1: 70, x2: 10, y2: 100, duration: 260, builtin: true },
+        { name: "Desacelera", x1: 5, y1: 70, x2: 10, y2: 100, duration: 360, builtin: true },
+        { name: "Suave", x1: 40, y1: 0, x2: 20, y2: 100, duration: 400, builtin: true },
+        { name: "Rápida", x1: 20, y1: 80, x2: 40, y2: 100, duration: 160, builtin: true },
+        { name: "Linear", x1: 0, y1: 0, x2: 100, y2: 100, duration: 300, builtin: true },
+        { name: "Elástica", x1: 30, y1: 150, x2: 60, y2: 100, duration: 600, builtin: true },
+        { name: "Wallpaper", x1: 40, y1: 0, x2: 20, y2: 100, duration: 900, builtin: true }
+    ]
+    readonly property var animTargets: [
+        { id: "bars", label: "Barras (mostrar / esconder)" },
+        { id: "picker", label: "Seletor de wallpaper" },
+        { id: "wallpaper", label: "Transição de wallpaper" },
+        { id: "workspaces", label: "Workspaces" }
+    ]
+    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida" })
+
+    function allAnims(): var { return builtinAnims.concat(anims) }
+    function findAnim(name: string): var { return allAnims().find(a => a.name === name) ?? null }
+    // animacao em uso num lugar: { duration (ms), curve (para easing.bezierCurve) }
+    function animOf(target: string): var {
+        const a = findAnim(animUse[target] ?? animDefaults[target]) ?? findAnim(animDefaults[target]) ?? builtinAnims[0]
+        return { duration: a.duration, curve: [a.x1 / 100, a.y1 / 100, a.x2 / 100, a.y2 / 100, 1, 1] }
+    }
+    function setUse(target: string, name: string): void { const u = Object.assign({}, animUse); u[target] = name; setAnimCfg({ use: u }) }
+    function uniqueAnimName(base: string): string {
+        let n = base, i = 2
+        while (findAnim(n)) n = base + " " + i++
+        return n
+    }
+    function addAnim(from: var): string {
+        const a = Object.assign({}, from)
+        delete a.builtin
+        a.name = uniqueAnimName((from.name ?? "Animação") + " (cópia)")
+        setAnimCfg({ anims: anims.concat([a]) })
+        return a.name
+    }
+    function setAnim(name: string, key: string, value: var): void {
+        const list = JSON.parse(JSON.stringify(anims))
+        const a = list.find(x => x.name === name)
+        if (!a) return
+        a[key] = value
+        setAnimCfg({ anims: list })
+    }
+    function setAnimMany(name: string, vals: var): void {
+        const list = JSON.parse(JSON.stringify(anims))
+        const a = list.find(x => x.name === name)
+        if (!a) return
+        Object.assign(a, vals)
+        setAnimCfg({ anims: list })
+    }
+    function renameAnim(oldName: string, newName: string): string {
+        newName = newName.trim()
+        if (newName === "" || newName === oldName || findAnim(newName)) return oldName
+        const list = JSON.parse(JSON.stringify(anims))
+        const a = list.find(x => x.name === oldName)
+        if (!a) return oldName
+        a.name = newName
+        const u = Object.assign({}, animUse)
+        for (const k in u) if (u[k] === oldName) u[k] = newName
+        setAnimCfg({ anims: list, use: u })
+        return newName
+    }
+    function removeAnim(name: string): void {
+        const u = Object.assign({}, animUse)
+        for (const k in u) if (u[k] === name) u[k] = animDefaults[k] ?? "Padrão"
+        setAnimCfg({ anims: anims.filter(a => a.name !== name), use: u })
+    }
+
+    // uma vez: leva a animacao global antiga (curva/duracao unicas) para uma animacao nomeada
+    function migrateAnims(): void {
+        if (animMigrated) return
+        const list = JSON.parse(JSON.stringify(anims))
+        const use = Object.assign({}, animDefaults)
+        const std = builtinAnims[0]
+        if (animX1 !== std.x1 || animY1 !== std.y1 || animX2 !== std.x2 || animY2 !== std.y2 || animDuration !== std.duration) {
+            list.push({ name: "Minha curva", x1: animX1, y1: animY1, x2: animX2, y2: animY2, duration: animDuration })
+            use.bars = "Minha curva"
+        }
+        setAnimCfg({ anims: list, use: use, migrated: true })
+    }
+
+    // ---- barras: lista de {side, width, offset, height, full, modules:[{type, ...}]} ----
+    property alias bars: adapter.bars
+
+    readonly property var moduleTypes: [
+        { type: "clock", label: "Relógio" },
+        { type: "workspaces", label: "Workspaces" },
+        { type: "window", label: "Janela ativa" },
+        { type: "cpu", label: "CPU" },
+        { type: "memory", label: "Memória" },
+        { type: "volume", label: "Volume" },
+        { type: "tray", label: "Bandeja" },
+        { type: "text", label: "Texto" }
+    ]
+
+    function reset(): void {
+        adapter.edge = 6
+        adapter.cornerRadius = 16
+        adapter.fillet = 10
+        adapter.topRadius = 12
+        adapter.barColor = "#1b1b22"
+        adapter.textColor = "#e6e1e9"
+        adapter.accent = "#bb9af7"
+        adapter.outline = true
+        adapter.glass = false
+        adapter.glassOpacity = 60
+        adapter.blurManaged = false
+        adapter.blurEnabled = true
+        adapter.blurSize = 3
+        adapter.blurPasses = 4
+        adapter.blurNoise = 76
+        adapter.blurContrast = 89
+        adapter.blurBrightness = 103
+        adapter.blurVibrancy = 18
+        adapter.shellBlur = true
+        adapter.shellIgnoreAlpha = 5
+        adapter.shellGrain = 0
+        adapter.animDuration = 260
+        adapter.animX1 = 5
+        adapter.animY1 = 70
+        adapter.animX2 = 10
+        adapter.animY2 = 100
+        adapter.hideDelay = 450
+        adapter.wpDir = "~/Imagens/Wallpapers"
+        adapter.wpTransition = "circle"
+        adapter.wpDuration = 900
+        adapter.wpEasing = "smooth"
+        adapter.wpInterval = 0
+        adapter.wpShuffle = true
+        adapter.wpPickerSide = "bottom"
+        adapter.wpPickerDocked = true
+        adapter.wpPickerOffset = 0
+        adapter.wpPickerGap = 14
+        adapter.animCfg = { anims: [], use: animDefaults, migrated: true }
+        adapter.bars = [defaultBar("bottom")]
+    }
+
+    function defaultSection(name: string): var {
+        return { name: name, anchor: "center", align: "center", width: 0, offset: 0, spacing: 14, modules: [] }
+    }
+    function defaultBar(side: string): var {
+        const sec = defaultSection("Centro")
+        sec.modules = [{ type: "clock", format: "ddd dd MMM   HH:mm" }]
+        return { side: side, width: 520, offset: 0, height: 34, full: false, autoHide: false, sections: [sec] }
+    }
+    // barras antigas guardavam "modules" direto na barra: viram uma secao central
+    function sectionsOf(bar: var): var {
+        if (!bar) return []
+        return bar.sections ?? [Object.assign(defaultSection("Centro"), { modules: bar.modules ?? [] })]
+    }
+
+    // ---- edicao das barras (sempre troca a lista inteira, para o QML notar a mudanca) ----
+    function mutate(fn: var): void {
+        const copy = JSON.parse(JSON.stringify(adapter.bars))
+        for (const b of copy) if (!b.sections) { b.sections = sectionsOf(b); delete b.modules }   // migracao
+        fn(copy)
+        adapter.bars = copy
+    }
+    function setBar(i: int, key: string, value: var): void { mutate(b => { if (b[i]) b[i][key] = value }) }
+    function addBar(side: string): void { mutate(b => b.push(defaultBar(side))) }
+    function removeBar(i: int): void { mutate(b => b.splice(i, 1)) }
+
+    function addSection(i: int): void { mutate(b => { const n = b[i].sections.length; b[i].sections.push(Object.assign(defaultSection("Seção " + (n + 1)), { anchor: n % 2 === 0 ? "start" : "end" })) }) }
+    function removeSection(i: int, si: int): void { mutate(b => { if (b[i].sections.length > 1) b[i].sections.splice(si, 1) }) }
+    function setSection(i: int, si: int, key: string, value: var): void { mutate(b => { if (b[i].sections[si]) b[i].sections[si][key] = value }) }
+
+    function addModule(i: int, si: int, type: string): void {
+        mutate(b => {
+            const m = { type: type }
+            if (type === "clock") m.format = "ddd dd MMM   HH:mm"
+            if (type === "text") m.text = "texto"
+            b[i].sections[si].modules.push(m)
+        })
+    }
+    function removeModule(i: int, si: int, j: int): void { mutate(b => b[i].sections[si].modules.splice(j, 1)) }
+    function moveModule(i: int, si: int, j: int, d: int): void {
+        mutate(b => {
+            const m = b[i].sections[si].modules, k = j + d
+            if (k < 0 || k >= m.length) return
+            const t = m[j]; m[j] = m[k]; m[k] = t
+        })
+    }
+    function moveModuleTo(i: int, si: int, j: int, target: int): void {
+        mutate(b => {
+            if (target < 0 || target >= b[i].sections.length || target === si) return
+            const m = b[i].sections[si].modules.splice(j, 1)[0]
+            b[i].sections[target].modules.push(m)
+        })
+    }
+    function setModuleOpt(i: int, si: int, j: int, key: string, value: var): void { mutate(b => { b[i].sections[si].modules[j][key] = value }) }
+
+    FileView {
+        path: Quickshell.env("HOME") + "/.config/quickshell/mine/settings.json"
+        watchChanges: true
+        onFileChanged: reload()
+        onLoaded: root.migrateAnims()
+        onAdapterUpdated: writeAdapter()
+        onLoadFailed: error => {
+            if (error === FileViewError.FileNotFound)
+                writeAdapter()   // primeira vez: cria o arquivo com os padroes
+        }
+
+        JsonAdapter {
+            id: adapter
+            property int edge: 6
+            property int cornerRadius: 16
+            property int fillet: 10
+            property int topRadius: 12
+            property string barColor: "#1b1b22"
+            property string textColor: "#e6e1e9"
+            property string accent: "#bb9af7"
+            property bool outline: true
+            property bool glass: false
+            property int glassOpacity: 60
+            property bool blurManaged: false
+            property bool blurEnabled: true
+            property int blurSize: 3
+            property int blurPasses: 4
+            property int blurNoise: 76
+            property int blurContrast: 89
+            property int blurBrightness: 103
+            property int blurVibrancy: 18
+            property bool shellBlur: true
+            property int shellIgnoreAlpha: 5
+            property int shellGrain: 0
+            property int animDuration: 260
+            property int animX1: 5
+            property int animY1: 70
+            property int animX2: 10
+            property int animY2: 100
+            property int hideDelay: 450
+            property string wpDir: "~/Imagens/Wallpapers"
+            property string wallpaper: ""
+            property string wpTransition: "circle"
+            property int wpDuration: 900
+            property string wpEasing: "smooth"
+            property int wpInterval: 0
+            property bool wpShuffle: true
+            property string wpPickerSide: "bottom"
+            property bool wpPickerDocked: true
+            property int wpPickerOffset: 0
+            property int wpPickerGap: 14
+            property var animCfg: ({ anims: [], use: { bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida" }, migrated: false })
+            property var bars: [{ side: "bottom", width: 520, offset: 0, height: 34, full: false, autoHide: false, modules: [{ type: "clock", format: "ddd dd MMM   HH:mm" }] }]
+        }
+    }
+}
