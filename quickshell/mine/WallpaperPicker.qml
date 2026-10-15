@@ -52,6 +52,22 @@ Scope {
             WlrLayershell.keyboardFocus: root.alive ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
             WlrLayershell.namespace: "mine-wallpaper-picker"   // regra do Hyprland: sem animacao propria (a animacao e daqui)
 
+            // mantem TODAS as miniaturas decodificadas na memoria (o carrossel circular so cria os cartoes proximos do centro,
+            // e o cache de imagens do Qt so vale enquanto alguem usa a imagem): abrir o seletor nao recarrega nada
+            Item {
+                visible: false
+                Repeater {
+                    model: Wallpaper.files
+                    delegate: Image {
+                        required property var modelData
+                        source: "file://" + modelData.path
+                        sourceSize: Qt.size(480, 270)
+                        fillMode: Image.PreserveAspectCrop
+                        asynchronous: true
+                    }
+                }
+            }
+
             // ---- geometria ----
             readonly property string side: Settings.wpPickerSide
             readonly property bool vert: side === "left" || side === "right"
