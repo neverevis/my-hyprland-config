@@ -8,7 +8,9 @@ Singleton {
     property var p: ({})
 
     // progresso do seletor de wallpaper (0..1), animado com a mesma curva/duracao das barras
-    property real pickerProg: Settings.wpPickerOpen ? 1 : 0
+    // dois paineis acoplados (seletor e launcher) nao dividem a moldura: um espera o outro terminar de recolher (sem corte seco)
+    readonly property bool bothDocked: Settings.launcherDocked && Settings.wpPickerDocked
+    property real pickerProg: Settings.wpPickerOpen && !(bothDocked && launcherProg > 0.02) ? 1 : 0
     Behavior on pickerProg {
         NumberAnimation {
             duration: Settings.animOf("picker").duration
@@ -17,7 +19,7 @@ Singleton {
         }
     }
     // progresso do launcher (0..1) e profundidade do conteudo dele (o Launcher.qml atualiza; a moldura acopla)
-    property real launcherProg: Settings.launcherOpen ? 1 : 0
+    property real launcherProg: Settings.launcherOpen && !(bothDocked && pickerProg > 0.02) ? 1 : 0
     Behavior on launcherProg {
         NumberAnimation {
             duration: Settings.animOf("launcher").duration

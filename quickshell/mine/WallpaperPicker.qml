@@ -162,19 +162,25 @@ Scope {
                     Component.onDestruction: Wallpaper.pickerFocus = ""
 
                     Keys.onEscapePressed: Settings.wpPickerOpen = false
-                    Keys.onLeftPressed: decrementCurrentIndex()
-                    Keys.onUpPressed: decrementCurrentIndex()
-                    Keys.onRightPressed: incrementCurrentIndex()
-                    Keys.onDownPressed: incrementCurrentIndex()
+                    // segurar a tecla: movimento curto por passo (senao cada repeticao reinicia a animacao longa e o carrossel arrasta)
+                    function step(d, fast) {
+                        highlightMoveDuration = fast ? 70 : 260
+                        if (d > 0) incrementCurrentIndex(); else decrementCurrentIndex()
+                    }
+                    Keys.onLeftPressed: e => step(-1, e.isAutoRepeat)
+                    Keys.onUpPressed: e => step(-1, e.isAutoRepeat)
+                    Keys.onRightPressed: e => step(1, e.isAutoRepeat)
+                    Keys.onDownPressed: e => step(1, e.isAutoRepeat)
                     Keys.onReturnPressed: apply()
                     Keys.onEnterPressed: apply()
                     function apply() {
                         if (currentIndex >= 0 && currentIndex < Wallpaper.files.length) Wallpaper.set(Wallpaper.files[currentIndex].path)
                     }
 
+                    Timer { id: wheelT; interval: 160 }   // rolagem seguida = passos rapidos
                     WheelHandler {
                         acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                        onWheel: e => { if (e.angleDelta.y < 0 || e.angleDelta.x < 0) list.incrementCurrentIndex(); else list.decrementCurrentIndex() }
+                        onWheel: e => { list.step((e.angleDelta.y < 0 || e.angleDelta.x < 0) ? 1 : -1, wheelT.running); wheelT.restart() }
                     }
 
                     delegate: Item {
