@@ -81,8 +81,11 @@ Scope {
                 x: win.away ? win.cx0 : win.place.x
                 y: win.away ? win.cy0 : win.place.y
                 width: win.bw; height: win.bh
-                Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
-                Behavior on y { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+                // so anima o desvio dos paineis: ao abrir a janela ja nasce no lugar (senao viria do canto, na diagonal)
+                property bool settled: false
+                Timer { interval: 120; running: win.width > 0; onTriggered: body.settled = true }
+                Behavior on x { enabled: body.settled; NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+                Behavior on y { enabled: body.settled; NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
                 radius: 22
                 color: Theme.gl(Theme.bg, 1)
                 clip: true
