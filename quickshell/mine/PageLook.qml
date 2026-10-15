@@ -11,6 +11,13 @@ Column {
         UiSlider { label: "Opacidade"; from: 10; to: 100; value: Settings.glassOpacity; suffix: " %"; onMoved: v => Settings.glassOpacity = v }
     }
     Card {
+        title: "Brilho (glow)"
+        subtitle: "Um brilho suave na cor de destaque ao redor da moldura, do launcher e do seletor (como o brilho das janelas)."
+        UiSwitch { label: "Ativar brilho"; checked: Settings.glowOn; onToggled: on => Settings.glowOn = on }
+        UiSlider { label: "Alcance"; from: 4; to: 36; value: Settings.glowSize; suffix: " px"; onMoved: v => Settings.glowSize = Math.round(v) }
+        UiSlider { label: "Intensidade"; from: 5; to: 100; value: Settings.glowOpacity; suffix: " %"; onMoved: v => Settings.glowOpacity = Math.round(v) }
+    }
+    Card {
         title: "Tema do wallpaper"
         subtitle: "Gera as cores a partir da imagem de fundo (moldura, barras, texto, destaque e janelas)."
         UiSwitch { label: "Usar cores do wallpaper"; checked: Settings.themeOn; onToggled: on => Settings.themeOn = on }

@@ -119,6 +119,14 @@ Scope {
                 radius: 24
                 color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.94)
                 border.width: 1; border.color: Theme.border
+                layer.enabled: !win.docked && Settings.glowOn
+                layer.effect: MultiEffect {
+                    shadowEnabled: true
+                    shadowColor: Settings.accent
+                    shadowOpacity: Settings.glowOpacity / 100
+                    shadowBlur: Math.min(1, Settings.glowSize / 36)
+                    shadowScale: 1.0
+                }
                 MouseArea { anchors.fill: parent }
             }
 

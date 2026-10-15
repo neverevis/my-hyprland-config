@@ -50,6 +50,56 @@ ShellRoot {
             }
         }
 
+        // ---- brilho (glow): um contorno desfocado que vaza da moldura para dentro da tela (so fora do preenchimento) ----
+        readonly property string holePath: frame.geo.path.replace(/^M0 0 L0 [^Z]*Z /, "")   // so o contorno do "buraco" (sem o retangulo da tela)
+        Item {   // fonte: o contorno em linha grossa (fora da tela visivel, mas desenhado)
+            id: glowSrc
+            x: -frame.width - 80; y: 0
+            width: frame.width; height: frame.height
+            layer.enabled: Settings.glowOn
+            Shape {
+                anchors.fill: parent
+                preferredRendererType: Shape.GeometryRenderer
+                ShapePath {
+                    fillColor: "transparent"
+                    strokeColor: Settings.accent
+                    strokeWidth: Math.max(2, Settings.glowSize * 0.9)
+                    joinStyle: ShapePath.RoundJoin
+                    PathSvg { path: frame.holePath }
+                }
+            }
+        }
+        Item {   // mascara: o preenchimento da moldura (o brilho so aparece fora dele)
+            id: glowMask
+            x: -2 * frame.width - 160; y: 0
+            width: frame.width; height: frame.height
+            layer.enabled: Settings.glowOn
+            Shape {
+                anchors.fill: parent
+                preferredRendererType: Shape.GeometryRenderer
+                ShapePath {
+                    fillColor: "white"
+                    strokeColor: "transparent"
+                    fillRule: ShapePath.WindingFill
+                    PathSvg { path: frame.geo.path }
+                }
+            }
+        }
+        MultiEffect {
+            anchors.fill: parent
+            visible: Settings.glowOn
+            source: glowSrc
+            blurEnabled: true
+            blurMax: 64
+            blur: Math.min(1, Settings.glowSize / 36)
+            maskEnabled: true
+            maskSource: glowMask
+            maskInverted: true
+            maskThresholdMin: 0.5
+            opacity: Settings.glowOpacity / 100
+            z: 7
+        }
+
         // grao proprio da moldura: textura de ruido recortada pelo formato da moldura (so aparece se shellGrain > 0)
         Item {   // mascara: o mesmo desenho, em branco
             id: grainMask
