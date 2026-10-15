@@ -56,6 +56,12 @@ Singleton {
     property alias animX2: adapter.animX2
     property alias animY2: adapter.animY2
     property alias hideDelay: adapter.hideDelay         // ms antes de esconder apos o mouse sair
+    // ---- sessao: tela de bloqueio e menu de energia ----
+    property alias lockBlur: adapter.lockBlur             // 0..100: desfoque do wallpaper na tela de bloqueio
+    property alias lockDim: adapter.lockDim               // 0..80: escurecimento
+    property alias lockMedia: adapter.lockMedia           // mostra a musica tocando
+    property alias lockSeconds: adapter.lockSeconds       // relogio com segundos
+    property alias powerConfirm: adapter.powerConfirm     // segundos de contagem antes de sair/reiniciar/desligar (0 = na hora)
     property alias showDelay: adapter.showDelay         // ms com o mouse na borda antes de mostrar (evita abrir sem querer)
     property alias barsPanelMode: adapter.barsPanelMode // push | out | sink: o que as barras fazem quando um painel acoplado abre
     readonly property var animCurve: [animX1 / 100, animY1 / 100, animX2 / 100, animY2 / 100, 1, 1]
@@ -249,6 +255,11 @@ Singleton {
         adapter.animY2 = 100
         adapter.hideDelay = 450
         adapter.showDelay = 0
+        adapter.lockBlur = 100
+        adapter.lockDim = 32
+        adapter.lockMedia = true
+        adapter.lockSeconds = false
+        adapter.powerConfirm = 3
         adapter.barsPanelMode = "push"
         adapter.wpDir = "~/Imagens/Wallpapers"
         adapter.wpTransition = "circle"
@@ -396,6 +407,11 @@ Singleton {
             property int animY2: 100
             property int hideDelay: 450
             property int showDelay: 0
+            property int lockBlur: 100
+            property int lockDim: 32
+            property bool lockMedia: true
+            property bool lockSeconds: false
+            property int powerConfirm: 3
             property string barsPanelMode: "push"
             property string wpDir: "~/Imagens/Wallpapers"
             property string wallpaper: ""

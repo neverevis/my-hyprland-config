@@ -112,15 +112,15 @@ Scope {
             anchors.fill: parent
             source: wp
             autoPaddingEnabled: false
-            blurEnabled: true
+            blurEnabled: Settings.lockBlur > 0
             blurMax: 64
-            blur: 0.35 + 0.65 * Math.min(1, v.p)
+            blur: Settings.lockBlur / 100 * (0.35 + 0.65 * Math.min(1, v.p))
             saturation: 0
             brightness: -0.06 * Math.min(1, v.p)
             scale: 1.08 - 0.08 * v.p
             opacity: Math.max(0, Math.min(1, v.p * 2))
         }
-        Rectangle { anchors.fill: parent; color: "black"; opacity: 0.32 * Math.min(1, v.p) }
+        Rectangle { anchors.fill: parent; color: "black"; opacity: Settings.lockDim / 100 * Math.min(1, v.p) }
         Rectangle {   // vinheta embaixo (o campo de senha fica legivel em qualquer wallpaper)
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
             height: parent.height * 0.55
@@ -132,14 +132,15 @@ Scope {
         }
 
         // ---- relogio ----
-        SystemClock { id: clk; precision: SystemClock.Seconds }
+        SystemClock { id: clk; precision: Settings.lockSeconds ? SystemClock.Seconds : SystemClock.Minutes }
         Column {
             anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: parent.height * 0.13 - (1 - v.p) * 60 }
             opacity: Math.max(0, Math.min(1, v.p * 1.4))
             spacing: 2
             Text {
                 anchors.horizontalCenter: parent.horizontalCenter
-                text: Qt.formatDateTime(clk.date, "HH:mm")
+                text: Qt.formatDateTime(clk.date, Settings.lockSeconds ? "HH:mm:ss" : "HH:mm")
+                font.features: { "tnum": 1 }   // digitos de largura fixa: o relogio nao "pula" quando os numeros mudam
                 color: "white"; font.pixelSize: 128; font.weight: Font.Bold
                 style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.15)
             }
@@ -231,17 +232,20 @@ Scope {
                         width: input.width
                         clip: true
                         spacing: 7
-                        layoutDirection: dots.count * 17 > input.width ? Qt.RightToLeft : Qt.LeftToRight
+                        layoutDirection: root.pw.length * 17 > input.width ? Qt.RightToLeft : Qt.LeftToRight
+                        // bolinhas fixas (nao recriadas a cada tecla): cada uma so anima quando entra ou sai
                         Repeater {
-                            id: dots
-                            model: root.pw.length
+                            model: 64
                             delegate: Rectangle {
+                                required property int index
+                                readonly property bool on: index < root.pw.length
+                                visible: on || scale > 0.02
                                 width: 10; height: 10; radius: 5
                                 color: "white"
                                 opacity: root.checking ? 0.5 : 1
-                                scale: 0
-                                Component.onCompleted: scale = 1
-                                Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
+                                Behavior on opacity { NumberAnimation { duration: 150 } }
+                                scale: on ? 1 : 0
+                                Behavior on scale { NumberAnimation { duration: 170; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
                             }
                         }
                     }
@@ -283,7 +287,7 @@ Scope {
         // ---- midia tocando (se houver) ----
         readonly property var player: Mpris.players.values.find(p => p.isPlaying) ?? null
         Rectangle {
-            visible: !!v.player
+            visible: !!v.player && Settings.lockMedia
             anchors { left: parent.left; bottom: parent.bottom; margins: 28 }
             width: 300; height: 72; radius: 20
             color: Qt.rgba(1, 1, 1, 0.08)

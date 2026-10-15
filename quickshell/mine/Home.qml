@@ -139,16 +139,22 @@ Scope {
     readonly property var btDevs: bt ? bt.devices.values : []
     readonly property var btConnected: btDevs.filter(d => d.connected)
 
+    // criada uma vez e so mostrada/escondida (criar o painel inteiro na hora travava 1-2 quadros da animacao)
     LazyLoader {
-        active: root.alive
+        active: true
 
         PanelWindow {
             id: win
+            // fica sempre mapeada (esconder com visible recriava a janela inteira a cada abertura); fechada: sem mouse, sem teclado, nada desenhado
+            mask: root.alive ? null : noInput
+            Region { id: noInput }
+            Component.onCompleted: contentItem.visible = Qt.binding(() => root.alive)
+            Connections { target: root; function onAliveChanged() { if (root.alive) panel.forceActiveFocus() } }
             anchors { left: true; right: true; top: true; bottom: true }
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+            WlrLayershell.keyboardFocus: root.alive ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
             WlrLayershell.namespace: "mine-home"
 
             // ---- geometria (mesmo esquema do launcher) ----

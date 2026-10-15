@@ -42,7 +42,8 @@ Scope {
 
         PanelWindow {
             id: win
-            visible: root.alive || root.warm   // 'warm': aparece invisivel por instantes ao iniciar, so para carregar as miniaturas
+            // sempre mapeada (esconder com visible recriava a janela a cada abertura e travava 1-2 quadros); fechada: nada desenhado
+            Component.onCompleted: contentItem.visible = Qt.binding(() => root.alive || root.warm)   // 'warm': carrega as miniaturas ao iniciar
             mask: root.alive ? null : emptyMask   // escondido/aquecendo: nao pega o mouse
             Region { id: emptyMask }
             anchors { left: true; right: true; top: true; bottom: true }

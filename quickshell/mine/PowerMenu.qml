@@ -43,14 +43,14 @@ Scope {
             function act(i) {
                 const a = Power.actions[i]
                 sel = i
-                if (!a.confirm) { pending = ""; Power.run(a.id); return }
+                if (!a.confirm || Settings.powerConfirm <= 0) { pending = ""; Power.run(a.id); return }
                 if (pending === a.id) { pending = ""; Power.run(a.id); return }   // segundo clique: agora
                 pending = a.id
                 countAnim.restart()
             }
             NumberAnimation {
                 id: countAnim
-                target: win; property: "count"; from: 0; to: 1; duration: 3000
+                target: win; property: "count"; from: 0; to: 1; duration: Settings.powerConfirm * 1000
                 onFinished: if (win.pending !== "") { const id = win.pending; win.pending = ""; Power.run(id) }
             }
             onPendingChanged: if (pending === "") { countAnim.stop(); count = 0 }
@@ -190,7 +190,7 @@ Scope {
                                     }
                                     Text {
                                         anchors { horizontalCenter: parent.horizontalCenter; top: ic.bottom; topMargin: 12 }
-                                        text: cell.waiting ? Math.max(1, Math.ceil(3 - win.count * 3)) + " s" : cell.modelData.label
+                                        text: cell.waiting ? Math.max(1, Math.ceil(Settings.powerConfirm * (1 - win.count))) + " s" : cell.modelData.label
                                         color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold
                                     }
                                     Rectangle {   // atalho de teclado

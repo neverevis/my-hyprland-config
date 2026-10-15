@@ -38,7 +38,8 @@ Scope {
             { id: "home", label: "Início", icon: "dashboard", desc: "O painel com mídia, áudio, sistema e conexões (Super)." },
             { id: "launcher", label: "Launcher", icon: "apps", desc: "O menu de aplicativos (Super + Tab)." },
             { id: "wall", label: "Wallpaper", icon: "wallpaper", desc: "Imagem de fundo, transições e o seletor (Super + W)." },
-            { id: "notifications", label: "Notificações", icon: "bell", desc: "Os avisos que saem da moldura." }
+            { id: "notifications", label: "Notificações", icon: "bell", desc: "Os avisos que saem da moldura." },
+            { id: "session", label: "Sessão", icon: "power", desc: "Tela de bloqueio, menu de energia e foto de perfil." }
         ] },
         { label: "Avançado", pages: [
             { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e durações usadas pelas animações do shell." }
@@ -244,7 +245,7 @@ Scope {
                             id: pageLoader
                             x: 28
                             width: pageFlick.width - 56
-                            sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC })[root.page] ?? lookC
+                            sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC })[root.page] ?? lookC
                             onSourceComponentChanged: pageFlick.contentY = 0
                         }
                     }
@@ -266,6 +267,7 @@ Scope {
                     Component { id: blurC; PageBlur {} }
                     Component { id: animC; PageAnim {} }
                     Component { id: wallC; PageWallpaper {} }
+                    Component { id: sessionC; PageSession {} }
                 }
             }
         }

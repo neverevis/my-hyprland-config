@@ -84,16 +84,25 @@ Scope {
         Settings.launcherOpen = false
     }
 
+    // a janela e criada uma vez (ao iniciar) e so mostrada/escondida: criar na hora custava 1-2 quadros no inicio da animacao
+    // (recriada so quando muda entre acoplado e flutuante, porque o nome da camada muda)
+    property bool ready: true
+    Connections { target: Settings; function onLauncherDockedChanged() { root.ready = false; Qt.callLater(() => root.ready = true) } }
     LazyLoader {
-        active: root.alive
+        active: root.ready
 
         PanelWindow {
             id: win
+            // acoplado: fica sempre mapeada (so some o conteudo); flutuante: mapeia ao abrir, para o Hyprland animar a entrada
+            visible: docked || root.alive
+            mask: root.alive ? null : noInput
+            Region { id: noInput }
+            Component.onCompleted: contentItem.visible = Qt.binding(() => root.alive)
             anchors { left: true; right: true; top: true; bottom: true }
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
+            WlrLayershell.keyboardFocus: root.alive ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
             // flutuante: o Hyprland anima a janela; acoplado: sem animacao do Hyprland (quem anima e a moldura)
             WlrLayershell.namespace: docked ? "mine-launcher-docked" : "mine-launcher"
 
@@ -179,7 +188,10 @@ Scope {
                                 selectionColor: Theme.accent; selectedTextColor: Theme.accentText
                                 clip: true
                                 focus: true
-                                Component.onCompleted: forceActiveFocus()
+                                Connections {
+                                    target: root
+                                    function onAliveChanged() { if (root.alive) { input.text = ""; view.currentIndex = 0; view.positionViewAtBeginning(); input.forceActiveFocus() } }
+                                }
                                 onTextChanged: { root.query = text; view.currentIndex = 0 }
                                 Text { visible: input.text === ""; anchors.verticalCenter: parent.verticalCenter; text: "Buscar aplicativos…"; color: Theme.muted; font.pixelSize: 16 }
 

@@ -32,6 +32,8 @@ Singleton {
             + '\nhl.layer_rule({ match = { namespace = "mine-power" }, blur = true, ignore_alpha = 0.0 })'
             + '\nhl.layer_rule({ match = { namespace = "mine-power" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-lock-preview" }, no_anim = true })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-home" }, no_anim = true })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })'
     }
     // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
     readonly property bool themeActive: Settings.themeOn && Settings.themeBorders
