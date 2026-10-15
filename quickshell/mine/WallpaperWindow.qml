@@ -27,6 +27,22 @@ Variants {
         readonly property string target: Wallpaper.current
         readonly property int diag: Math.ceil(Math.hypot(width, height))
 
+        // ---- cortina em qualquer angulo: a borda varre a tela na direcao d; os wallpapers andam junto (paralaxe) ----
+        readonly property real wa: Settings.wpWipeAngle * Math.PI / 180
+        readonly property real dx: Math.cos(wa)
+        readonly property real dy: Math.sin(wa)
+        readonly property real pLo: Math.min(0, width * dx, height * dy, width * dx + height * dy)   // extensao da tela projetada em d
+        readonly property real pHi: Math.max(0, width * dx, height * dy, width * dx + height * dy)
+        readonly property real ext: pHi - pLo
+        readonly property real edgeS: pLo + progress * ext                                            // posicao da borda
+        readonly property real oldK: ext * Settings.wpParallax / 100                                  // deslocamento maximo do antigo
+        // nas diagonais os deslocamentos deixariam cantos descobertos: um zoom minimo (so quando o angulo nao e reto) cobre
+        readonly property real kmax: Math.max(Math.abs(dx) / width, Math.abs(dy) / height)
+        readonly property real zoomW: Math.min(1, 4 * Math.abs(dx * dy))
+        // circulo: mesma ideia, mas em escala (o antigo cresce, o novo assenta de um pouco maior ate o tamanho certo)
+        readonly property real sK: Settings.wpParallax / 100 * 0.5
+        readonly property real newK: oldK * 1.25                                                      // e do novo (um pouco mais, chega ao lugar no fim)
+
         onTargetChanged: go(target)
         Component.onCompleted: go(target)
 
@@ -63,7 +79,12 @@ Variants {
         Image {
             id: baseImg
             width: win.width; height: win.height
-            x: win.incoming !== "" && win.trans === "slide" ? -win.progress * win.width * 0.3 : 0
+            // slide: a atual recua um pouco; cortina: a atual anda na mesma direcao da cortina, mais devagar (paralaxe)
+            x: win.incoming === "" ? 0 : (win.trans === "slide" ? -win.progress * win.width * 0.3
+                : (win.trans === "wipe" ? win.progress * win.oldK * win.dx : 0))
+            y: win.incoming !== "" && win.trans === "wipe" ? win.progress * win.oldK * win.dy : 0
+            scale: win.incoming === "" ? 1 : (win.trans === "wipe" ? 1 + 2 * win.progress * win.oldK * win.kmax * win.zoomW
+                : (win.trans === "circle" ? 1 + win.progress * win.sK : 1))
             source: win.shown !== "" ? "file://" + win.shown : ""
             fillMode: Image.PreserveAspectCrop
             sourceSize: Qt.size(win.width, win.height)
@@ -71,17 +92,26 @@ Variants {
             smooth: true
         }
 
-        // imagem entrando: carregada aqui (oculta) e mostrada pelo MultiEffect abaixo (que tambem aplica a mascara do circulo)
-        Image {
-            id: newImg
-            visible: false
+        // imagem entrando: carregada aqui (fora da tela, mas visivel) e mostrada pelo MultiEffect abaixo (que tambem aplica as mascaras);
+        // o zoom de cobertura da cortina acontece aqui dentro, para a mascara nao escalar junto
+        Item {
+            id: newWrap
+            x: -win.width - 60
             width: win.width; height: win.height
-            source: win.incoming !== "" ? "file://" + win.incoming : ""
-            fillMode: Image.PreserveAspectCrop
-            sourceSize: Qt.size(win.width, win.height)
-            asynchronous: true
-            smooth: true
-            onStatusChanged: if (status === Image.Ready && win.incoming !== "" && !anim.running) anim.restart()
+            layer.enabled: true
+            Image {
+                id: newImg
+                anchors.centerIn: parent
+                width: win.width; height: win.height
+                scale: win.trans === "wipe" ? 1 + 2 * (1 - win.progress) * win.newK * win.kmax * win.zoomW
+                    : (win.trans === "circle" ? 1 + (1 - win.progress) * win.sK * 1.25 : 1)
+                source: win.incoming !== "" ? "file://" + win.incoming : ""
+                fillMode: Image.PreserveAspectCrop
+                sourceSize: Qt.size(win.width, win.height)
+                asynchronous: true
+                smooth: true
+                onStatusChanged: if (status === Image.Ready && win.incoming !== "" && !anim.running) anim.restart()
+            }
         }
 
         Item {
@@ -89,18 +119,38 @@ Variants {
             visible: win.incoming !== ""
             height: win.height
             clip: true
-            // wipe: a "cortina" abre da esquerda para a direita; slide: entra pela direita
-            width: win.trans === "wipe" ? win.progress * win.width : win.width
+            // slide: entra pela direita
+            width: win.width
             x: win.trans === "slide" ? (1 - win.progress) * win.width : 0
             opacity: win.trans === "fade" || win.trans === "zoom" ? win.progress : 1
             scale: win.trans === "zoom" ? 1.1 - 0.1 * win.progress : 1
 
             MultiEffect {
-                x: 0; y: 0
+                // cortina: a imagem nova tambem anda na direcao da cortina, mais devagar que a borda (a mascara acompanha o deslocamento)
+                x: win.trans === "wipe" ? -(1 - win.progress) * win.newK * win.dx : 0
+                y: win.trans === "wipe" ? -(1 - win.progress) * win.newK * win.dy : 0
                 width: win.width; height: win.height
-                source: newImg
-                maskEnabled: win.trans === "circle"
-                maskSource: circleMask
+                source: newWrap
+                maskEnabled: win.trans === "circle" || win.trans === "wipe"
+                maskSource: win.trans === "wipe" ? wipeMask : circleMask
+            }
+        }
+
+        // mascara da cortina: um retangulo girado cuja borda da frente e a linha da cortina (em coordenadas da imagem nova, ja deslocada)
+        Item {
+            id: wipeMask
+            x: -win.width - 50
+            layer.enabled: true
+            width: win.width; height: win.height
+            Rectangle {
+                readonly property real len: win.diag * 3
+                readonly property real qx: win.edgeS * win.dx + (1 - win.progress) * win.newK * win.dx   // ponto da borda no sistema da imagem
+                readonly property real qy: win.edgeS * win.dy + (1 - win.progress) * win.newK * win.dy
+                width: len; height: len
+                x: qx - win.dx * len / 2 - len / 2
+                y: qy - win.dy * len / 2 - len / 2
+                rotation: Settings.wpWipeAngle
+                color: "white"
             }
         }
 

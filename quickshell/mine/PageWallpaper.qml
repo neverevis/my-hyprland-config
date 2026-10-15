@@ -57,6 +57,22 @@ Column {
         }
         Text { text: "Animação da transição"; color: Theme.muted; font.pixelSize: 12; font.weight: Font.DemiBold }
         AnimPicker { target: "wallpaper" }
+        Text { text: "Ângulo da cortina"; color: Theme.muted; font.pixelSize: 12; font.weight: Font.DemiBold }
+        Flow {
+            width: parent.width
+            spacing: 6
+            Repeater {
+                model: [[0, "→"], [45, "↘"], [90, "↓"], [135, "↙"], [180, "←"], [225, "↖"], [270, "↑"], [315, "↗"]]
+                delegate: UiButton {
+                    required property var modelData
+                    text: modelData[1]
+                    checked: Settings.wpWipeAngle === modelData[0]
+                    onClicked: Settings.wpWipeAngle = modelData[0]
+                }
+            }
+        }
+        UiSlider { label: "Ângulo (graus)"; from: 0; to: 359; value: Settings.wpWipeAngle; suffix: "°"; onMoved: v => Settings.wpWipeAngle = Math.round(v) }
+        UiSlider { label: "Movimento dos wallpapers (cortina: posição, círculo: escala)"; from: 0; to: 50; value: Settings.wpParallax; suffix: " %"; onMoved: v => Settings.wpParallax = Math.round(v) }
         Text { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "A curva e a duração vêm das animações nomeadas (página Animação)." }
     }
 

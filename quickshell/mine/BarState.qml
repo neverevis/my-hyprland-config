@@ -26,6 +26,18 @@ Singleton {
         }
     }
     property real launcherDepth: 64
+    // notificacoes: quantidade de cartoes (a moldura cresce ate o bloco), progresso e comprimento do bloco ao longo da borda (animados)
+    property int notifCount: 0
+    property real notifProg: notifCount > 0 ? 1 : 0
+    Behavior on notifProg {
+        NumberAnimation {
+            duration: Settings.animOf("notifications").duration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Settings.animOf("notifications").curve
+        }
+    }
+    property real notifLen: 0
+    property real notifDepth: 0
     function set(i: int, v: real): void {
         const c = Object.assign({}, p)
         c[i] = v

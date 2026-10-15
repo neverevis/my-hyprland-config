@@ -55,6 +55,8 @@ Singleton {
     // ---- wallpaper (ver Wallpaper.qml) ----
     property alias wpDir: adapter.wpDir                 // pasta de imagens
     property alias wallpaper: adapter.wallpaper         // arquivo atual
+    property alias wpWipeAngle: adapter.wpWipeAngle     // direcao da cortina em graus (0 = esquerda->direita, 90 = cima->baixo)
+    property alias wpParallax: adapter.wpParallax       // % da largura que os wallpapers andam junto com a cortina
     property alias wpTransition: adapter.wpTransition   // fade | slide | wipe | circle | zoom | random | none
     property alias wpDuration: adapter.wpDuration       // ms
     property alias wpEasing: adapter.wpEasing           // smooth | decel | snappy | linear
@@ -63,6 +65,16 @@ Singleton {
     property alias wpPickerSide: adapter.wpPickerSide         // bottom | top | left | right
     property alias wpPickerDocked: adapter.wpPickerDocked     // acoplado a moldura (sai da borda) ou flutuante
     property alias wpPickerOffset: adapter.wpPickerOffset     // deslocamento ao longo da borda (px)
+    // ---- notificacoes (ver Notifications.qml) ----
+    property alias notifOn: adapter.notifOn                     // o Quickshell e o servidor de notificacoes
+    property alias notifSide: adapter.notifSide                 // right | left | top | bottom
+    property alias notifAnchor: adapter.notifAnchor             // start | center | end (ao longo da borda)
+    property alias notifWidth: adapter.notifWidth               // largura do cartao (px)
+    property alias notifMax: adapter.notifMax                   // cartoes visiveis ao mesmo tempo
+    property alias notifTimeout: adapter.notifTimeout           // segundos (quando o app nao pede um tempo)
+    property alias notifFillet: adapter.notifFillet
+    property alias notifRadius: adapter.notifRadius
+    property bool notifDnd: false                               // nao perturbe (nao e salvo)
     // ---- launcher de aplicativos (ver Launcher.qml) ----
     property alias launcherWidth: adapter.launcherWidth
     property alias launcherRows: adapter.launcherRows           // linhas de resultado visiveis
@@ -104,9 +116,10 @@ Singleton {
         { id: "picker", label: "Seletor de wallpaper" },
         { id: "wallpaper", label: "Transição de wallpaper" },
         { id: "workspaces", label: "Workspaces" },
-        { id: "launcher", label: "Launcher de aplicativos" }
+        { id: "launcher", label: "Launcher de aplicativos" },
+        { id: "notifications", label: "Notificações" }
     ]
-    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera" })
+    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera" })
 
     function allAnims(): var { return builtinAnims.concat(anims) }
     function findAnim(name: string): var { return allAnims().find(a => a.name === name) ?? null }
@@ -218,6 +231,8 @@ Singleton {
         adapter.hideDelay = 450
         adapter.wpDir = "~/Imagens/Wallpapers"
         adapter.wpTransition = "circle"
+        adapter.wpParallax = 20
+        adapter.wpWipeAngle = 0
         adapter.wpDuration = 900
         adapter.wpEasing = "smooth"
         adapter.wpInterval = 0
@@ -227,6 +242,14 @@ Singleton {
         adapter.wpPickerOffset = 0
         adapter.wpPickerGap = 14
         adapter.wpPickerCount = 5
+        adapter.notifOn = true
+        adapter.notifSide = "right"
+        adapter.notifAnchor = "start"
+        adapter.notifWidth = 360
+        adapter.notifMax = 4
+        adapter.notifTimeout = 6
+        adapter.notifFillet = 12
+        adapter.notifRadius = 14
         adapter.launcherWidth = 640
         adapter.launcherRows = 7
         adapter.launcherIcon = 32
@@ -347,6 +370,8 @@ Singleton {
             property string wpDir: "~/Imagens/Wallpapers"
             property string wallpaper: ""
             property string wpTransition: "circle"
+            property int wpParallax: 20
+            property int wpWipeAngle: 0
             property int wpDuration: 900
             property string wpEasing: "smooth"
             property int wpInterval: 0
@@ -356,6 +381,14 @@ Singleton {
             property int wpPickerOffset: 0
             property int wpPickerGap: 14
             property int wpPickerCount: 5
+            property bool notifOn: true
+            property string notifSide: "right"
+            property string notifAnchor: "start"
+            property int notifWidth: 360
+            property int notifMax: 4
+            property int notifTimeout: 6
+            property int notifFillet: 12
+            property int notifRadius: 14
             property int launcherWidth: 640
             property int launcherRows: 7
             property int launcherIcon: 32

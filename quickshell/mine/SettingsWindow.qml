@@ -22,6 +22,7 @@ Scope {
         { id: "wall", label: "Wallpaper" },
         { id: "blur", label: "Blur" },
         { id: "launcher", label: "Launcher" },
+        { id: "notifications", label: "Notificações" },
         { id: "anim", label: "Animação" }
     ]
 
@@ -133,9 +134,10 @@ Scope {
                             Loader {
                                 id: pageLoader
                                 width: parent.width
-                                sourceComponent: root.page === "launcher" ? launcherC : root.page === "frame" ? frameC : (root.page === "blur" ? blurC : (root.page === "anim" ? animC : (root.page === "wall" ? wallC : lookC)))
+                                sourceComponent: root.page === "notifications" ? notifC : root.page === "launcher" ? launcherC : root.page === "frame" ? frameC : (root.page === "blur" ? blurC : (root.page === "anim" ? animC : (root.page === "wall" ? wallC : lookC)))
                             }
                         }
+                        Component { id: notifC; PageNotifications {} }
                         Component { id: launcherC; PageLauncher {} }
                         Component { id: frameC; PageFrame {} }
                         Component { id: lookC; PageLook {} }

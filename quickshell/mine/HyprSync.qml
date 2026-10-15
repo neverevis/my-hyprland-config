@@ -27,6 +27,7 @@ Singleton {
         const tail = ", blur = " + Settings.shellBlur + ", ignore_alpha = " + (Settings.shellIgnoreAlpha / 100).toFixed(2) + " })"
         return ["mine-frame", "mine-settings", "mine-launcher"].map(n => 'hl.layer_rule({ match = { namespace = "' + n + '" }' + tail).join("\n")
             + '\nhl.layer_rule({ match = { namespace = "mine-launcher" }, no_anim = true })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-notifications" }, no_anim = true })'
     }
     // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
     readonly property bool themeActive: Settings.themeOn && Settings.themeBorders

@@ -29,6 +29,23 @@ Singleton {
 
     function compute(W: real, H: real, prog: var): var {
         const bars = (Settings.bars || []).slice()
+        // notificacoes: um bloco so (todos os cartoes) que cresce da moldura, como uma barra extra
+        const npr = BarState.notifProg
+        let nIdx = -1
+        if (Settings.notifOn && npr > 0.002 && BarState.notifLen > 1) {
+            const ns = Settings.notifSide, nv = ns === "left" || ns === "right"
+            const PLn = nv ? H : W, fN = Settings.notifFillet
+            const avail = PLn - 2 * (Settings.edge + (Settings.outline ? Settings.cornerRadius : 0) + fN)
+            const len = Math.min(BarState.notifLen, avail)
+            const sl = (avail - len) / 2
+            const marg = 18
+            const off = Settings.notifAnchor === "start" ? -sl + marg : (Settings.notifAnchor === "end" ? sl - marg : 0)
+            nIdx = bars.length
+            bars.push({ side: ns, width: len, offset: Math.max(-sl, Math.min(sl, off)), height: Settings.edge + 10 + BarState.notifDepth + 10,
+                        full: false, autoHide: true, reserve: "overlay", notif: true, fillet: fN, topRadius: Settings.notifRadius })
+            prog = Object.assign({}, prog || {})
+            prog[nIdx] = npr
+        }
         // painel acoplado (seletor de wallpaper ou launcher): entra como uma "barra" extra, para a moldura crescer ate ele (mesmo desenho das barras)
         // o launcher tem prioridade quando aberto; os dois nunca ficam abertos juntos (um fecha o outro)
         let panel = null
@@ -189,6 +206,6 @@ Singleton {
             d += r > 0.01 ? "A" + r + " " + r + " 0 0 1 " + q + " " : "L" + q + " "
         }
         d += "Z"
-        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null }
+        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null }
     }
 }
