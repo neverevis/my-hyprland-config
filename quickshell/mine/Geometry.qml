@@ -29,16 +29,29 @@ Singleton {
 
     function compute(W: real, H: real, prog: var): var {
         const bars = (Settings.bars || []).slice()
-        // seletor de wallpaper acoplado: entra como uma "barra" extra, para a moldura crescer ate ele (mesmo desenho das barras)
-        const pp = BarState.pickerProg
-        let pIdx = -1
-        if (pp > 0.002 && Settings.wpPickerDocked) {
+        // painel acoplado (seletor de wallpaper ou launcher): entra como uma "barra" extra, para a moldura crescer ate ele (mesmo desenho das barras)
+        // o launcher tem prioridade quando aberto; os dois nunca ficam abertos juntos (um fecha o outro)
+        let panel = null
+        const lp = BarState.launcherProg, wp = BarState.pickerProg
+        if (Settings.launcherDocked && lp > 0.002) {
+            const ls = Settings.launcherSide
+            const lv = ls === "left" || ls === "right"
+            const cw = Math.min(Settings.launcherWidth, (lv ? W : W) - 100), ch = BarState.launcherDepth
+            panel = { kind: "launcher", prog: lp, bar: { side: ls, width: Math.min(lv ? ch : cw, (lv ? H : W) - 140), offset: Settings.launcherOffset,
+                      height: Settings.edge + 8 + (lv ? cw : ch) + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
+                      fillet: Settings.launcherFillet, topRadius: Settings.launcherRadius } }
+        } else if (wp > 0.002 && Settings.wpPickerDocked) {
             const ps = Settings.wpPickerSide
             const pv = ps === "left" || ps === "right"
+            panel = { kind: "picker", prog: wp, bar: { side: ps, width: pickerLen(pv, W, H), offset: Settings.wpPickerOffset,
+                      height: Settings.edge + 8 + pickerDepth(pv) + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
+                      fillet: Settings.wpPickerFillet, topRadius: Settings.wpPickerRadius } }
+        }
+        const pp = panel ? panel.prog : 0
+        let pIdx = -1
+        if (panel) {
             pIdx = bars.length
-            bars.push({ side: ps, width: pickerLen(pv, W, H), offset: Settings.wpPickerOffset,
-                        height: Settings.edge + 8 + pickerDepth(pv) + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
-                        fillet: Settings.wpPickerFillet, topRadius: Settings.wpPickerRadius })
+            bars.push(panel.bar)
             prog = Object.assign({}, prog || {})
             prog[pIdx] = pp
         }
@@ -176,6 +189,6 @@ Singleton {
             d += r > 0.01 ? "A" + r + " " + r + " 0 0 1 " + q + " " : "L" + q + " "
         }
         d += "Z"
-        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, picker: pIdx >= 0 ? res[pIdx] : null }
+        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null }
     }
 }

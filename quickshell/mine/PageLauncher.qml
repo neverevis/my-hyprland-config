@@ -13,7 +13,25 @@ Column {
 
     Card {
         title: "Aparência"
+        UiSwitch { label: "Acoplado à moldura"; checked: Settings.launcherDocked; onToggled: on => Settings.launcherDocked = on }
         Row {
+            visible: Settings.launcherDocked
+            spacing: 6
+            Text { anchors.verticalCenter: parent.verticalCenter; text: "Lado"; color: Theme.text; font.pixelSize: 13; width: 70 }
+            Repeater {
+                model: [["bottom", "Baixo"], ["top", "Cima"], ["left", "Esquerda"], ["right", "Direita"]]
+                delegate: UiButton {
+                    required property var modelData
+                    text: modelData[1]
+                    checked: Settings.launcherSide === modelData[0]
+                    onClicked: Settings.launcherSide = modelData[0]
+                }
+            }
+        }
+        UiSlider { visible: Settings.launcherDocked; label: "Deslocamento"; from: -1000; to: 1000; value: Settings.launcherOffset; suffix: " px"; onMoved: v => Settings.launcherOffset = Math.round(v) }
+        UiSlider { visible: Settings.launcherDocked; label: "Curva ao encontrar a moldura"; from: 0; to: 40; value: Settings.launcherFillet; suffix: " px"; onMoved: v => Settings.launcherFillet = Math.round(v) }
+        Row {
+            visible: !Settings.launcherDocked
             spacing: 6
             Text { anchors.verticalCenter: parent.verticalCenter; text: "Posição"; color: Theme.text; font.pixelSize: 13; width: 70 }
             Repeater {

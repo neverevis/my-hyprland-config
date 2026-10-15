@@ -21,7 +21,7 @@ ShellRoot {
     WallpaperWindow {}
     WallpaperPicker { geo: shell.geo }
     SettingsWindow {}
-    Launcher {}
+    Launcher { geo: shell.geo }
 
     PanelWindow {
         id: frame

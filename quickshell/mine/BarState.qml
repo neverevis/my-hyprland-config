@@ -16,6 +16,16 @@ Singleton {
             easing.bezierCurve: Settings.animOf("picker").curve
         }
     }
+    // progresso do launcher (0..1) e profundidade do conteudo dele (o Launcher.qml atualiza; a moldura acopla)
+    property real launcherProg: Settings.launcherOpen ? 1 : 0
+    Behavior on launcherProg {
+        NumberAnimation {
+            duration: Settings.animOf("launcher").duration
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Settings.animOf("launcher").curve
+        }
+    }
+    property real launcherDepth: 64
     function set(i: int, v: real): void {
         const c = Object.assign({}, p)
         c[i] = v

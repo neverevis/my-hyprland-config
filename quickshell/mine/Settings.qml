@@ -68,6 +68,11 @@ Singleton {
     property alias launcherRows: adapter.launcherRows           // linhas de resultado visiveis
     property alias launcherIcon: adapter.launcherIcon           // tamanho dos icones (px)
     property alias launcherRadius: adapter.launcherRadius
+    property alias launcherDocked: adapter.launcherDocked       // acoplado a moldura (sai da borda) ou flutuante
+    property alias launcherSide: adapter.launcherSide           // bottom | top | left | right (acoplado)
+    property alias launcherOffset: adapter.launcherOffset
+    property alias launcherFillet: adapter.launcherFillet       // curva onde o painel acoplado encontra a moldura
+    property bool launcherOpen: false                           // launcher aberto (nao e salvo)
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
     property alias wpPickerCount: adapter.wpPickerCount       // quantos wallpapers aparecem no seletor (1, 3 ou 5)
@@ -227,6 +232,10 @@ Singleton {
         adapter.launcherIcon = 32
         adapter.launcherRadius = 22
         adapter.launcherPos = "center"
+        adapter.launcherDocked = true
+        adapter.launcherSide = "bottom"
+        adapter.launcherOffset = 0
+        adapter.launcherFillet = 12
         adapter.wpPickerRadius = 12
         adapter.wpPickerFillet = 10
         adapter.wpCardRadius = 14
@@ -352,6 +361,10 @@ Singleton {
             property int launcherIcon: 32
             property int launcherRadius: 22
             property string launcherPos: "center"
+            property bool launcherDocked: true
+            property string launcherSide: "bottom"
+            property int launcherOffset: 0
+            property int launcherFillet: 13
             property var launcherUsage: ({})
             property int wpPickerRadius: 11
             property int wpPickerFillet: 13
