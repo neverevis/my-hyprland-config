@@ -32,6 +32,8 @@ ShellRoot {
 
         readonly property var geo: Geometry.compute(width, height, BarState.p)
 
+        PaletteExtractor {}   // gera a paleta do tema a partir do wallpaper (so age com o tema ligado)
+
         Shape {
             anchors.fill: parent
             preferredRendererType: Shape.GeometryRenderer

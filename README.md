@@ -8,6 +8,7 @@ Meu shell em **Quickshell** para o **Hyprland**: uma moldura fina na tela com ba
 - **Várias barras**, em qualquer lado, com **seções** posicionáveis e **módulos**: relógio, workspaces (10 estilos), janela ativa, CPU, memória, volume, bandeja do sistema e texto.
 - Barras que **se escondem** e aparecem ao passar o mouse, com animação por curva de Bézier.
 - **Wallpaper em QML** com transições (fade, slide, wipe, circle, zoom) e **seletor** que sai da moldura (qualquer lado, acoplado ou flutuante). As barras saem da frente dele.
+- **Tema pelo wallpaper (Material You)**, igual ao Caelestia: a cor-fonte vem da imagem (quantização + pontuação) e um esquema do Material gera os papéis de cor (variantes tonal spot, vibrante, expressivo, etc., escuro/claro). Aplica na moldura, barras, janelas e nas bordas do Hyprland; há um módulo de barra com as bolinhas das cores.
 - **Biblioteca de animações** nomeadas (editor de curva arrastando os pontos) e página de **Blur**.
 
 ## Requisitos
@@ -15,7 +16,7 @@ Meu shell em **Quickshell** para o **Hyprland**: uma moldura fina na tela com ba
 - Hyprland com configuração em **Lua** (testado na 0.56) e `hyprctl`
 - Quickshell (testado na 0.3.2)
 - PipeWire (módulo de volume)
-- `python3` (usado só pelo instalador)
+- `python3` com `venv` (o instalador cria um venv em `~/.local/share/quickshell-mine` e instala o `materialyoucolor` nele, sem sudo)
 
 ## Instalar
 
@@ -49,6 +50,7 @@ Mude no `hypr/quickshell.lua`. Os wallpapers **não** estão no repositório: po
 
 ```
 quickshell/mine/             o shell (QML)
+quickshell/mine/scripts/material.py   gerador do tema (Material You)
 quickshell/settings.default.json   configurações padrão (visual igual ao meu)
 hypr/quickshell.lua          atalhos, regras de camada e autostart
 install.sh

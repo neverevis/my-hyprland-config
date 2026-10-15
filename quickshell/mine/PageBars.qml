@@ -175,7 +175,7 @@ Item {
                         readonly property bool hasField: mod.type === "clock" || mod.type === "text"
                         readonly property string mtype: mod.type
                         readonly property bool isMeter: mtype === "cpu" || mtype === "memory" || mtype === "volume"
-                        readonly property bool hasOpts: mtype === "workspaces" || isMeter || mtype === "tray"
+                        readonly property bool hasOpts: mtype === "workspaces" || isMeter || mtype === "tray" || mtype === "palette"
                         width: parent.width
                         spacing: 6
 
@@ -213,7 +213,7 @@ Item {
                         // opcoes de medidores (cpu, memoria, volume) e da bandeja
                         Rectangle {
                             id: meterBox
-                            visible: (mrow.isMeter || mrow.mtype === "tray") && page.openMod === mrow.index
+                            visible: (mrow.isMeter || mrow.mtype === "tray" || mrow.mtype === "palette") && page.openMod === mrow.index
                             width: parent.width
                             height: visible ? mCol.implicitHeight + 24 : 0
                             radius: 10
@@ -229,6 +229,24 @@ Item {
                                 // ---- bandeja ----
                                 UiSlider { visible: mrow.mtype === "tray"; label: "Tamanho dos ícones"; from: 12; to: 32; value: mrow.mod.size ?? 18; suffix: " px"; onMoved: v => mCol.set("size", v) }
                                 UiSlider { visible: mrow.mtype === "tray"; label: "Espaçamento"; from: 0; to: 20; value: mrow.mod.spacing ?? 8; suffix: " px"; onMoved: v => mCol.set("spacing", v) }
+
+                                // ---- cores do tema ----
+                                UiSlider { visible: mrow.mtype === "palette"; label: "Tamanho das bolinhas"; from: 8; to: 28; value: mrow.mod.size ?? 14; suffix: " px"; onMoved: v => mCol.set("size", v) }
+                                UiSlider { visible: mrow.mtype === "palette"; label: "Espaçamento"; from: 0; to: 14; value: mrow.mod.spacing ?? 5; suffix: " px"; onMoved: v => mCol.set("spacing", v) }
+                                Flow {
+                                    visible: mrow.mtype === "palette"
+                                    width: parent.width
+                                    spacing: 6
+                                    Repeater {
+                                        model: [["all", "Todas"], ["accents", "Só destaques"], ["surfaces", "Só superfícies"]]
+                                        delegate: UiButton {
+                                            required property var modelData
+                                            text: modelData[1]
+                                            checked: (mrow.mod.set ?? "all") === modelData[0]
+                                            onClicked: mCol.set("set", modelData[0])
+                                        }
+                                    }
+                                }
 
                                 // ---- medidores ----
                                 Text { visible: mrow.isMeter; text: "Exibição"; color: Theme.muted; font.pixelSize: 12; font.weight: Font.DemiBold }

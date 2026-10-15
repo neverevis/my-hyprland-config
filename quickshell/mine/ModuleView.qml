@@ -26,7 +26,7 @@ Item {
         id: loader
         sourceComponent: ({
             clock: clockC, workspaces: workspacesC, window: windowC,
-            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC
+            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC
         })[root.type]
     }
 
@@ -61,6 +61,11 @@ Item {
     Component {
         id: volumeC
         VolumeModule { opts: root.opts; vertical: root.vertical }
+    }
+
+    Component {
+        id: paletteC
+        PaletteModule { vertical: root.vertical; opts: root.opts }
     }
 
     Component {

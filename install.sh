@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Instala o Quickshell "mine" (moldura + barras + seletor de wallpaper) e a integracao com o Hyprland.
-#   ./install.sh                instala tudo (pede para instalar dependencias se faltarem, com pacman)
+#   ./install.sh                instala tudo (instala dependencias com pacman e cria o venv do tema)
 #   ./install.sh --no-deps      nao tenta instalar dependencias
 #   ./install.sh --no-autostart nao inicia o shell no login (so os atalhos)
 #   ./install.sh --reset        sobrescreve o seu settings.json com o padrao deste repositorio
@@ -53,6 +53,17 @@ if [ "$RESET" = 1 ] || [ ! -f "$QS_DIR/settings.json" ]; then
     say "settings.json padrao instalado"
 else
     say "Mantendo o seu settings.json (use --reset para trocar pelo padrao)"
+fi
+
+# ---- tema do wallpaper (Material You): venv do Python com a biblioteca materialyoucolor ----
+VENV="$HOME/.local/share/quickshell-mine/venv"
+if [ ! -x "$VENV/bin/python" ]; then
+    say "Criando o ambiente Python do tema (materialyoucolor) em $VENV"
+    if python3 -m venv "$VENV" && "$VENV/bin/pip" install -q materialyoucolor; then
+        say "Tema Material You pronto"
+    else
+        say "Nao consegui instalar o materialyoucolor: o tema do wallpaper usara o calculo simplificado."
+    fi
 fi
 
 # ---- Hyprland (config Lua) ----

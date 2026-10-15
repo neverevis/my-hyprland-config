@@ -26,11 +26,19 @@ Singleton {
         return 'hl.layer_rule({ match = { namespace = "mine-frame" }, blur = ' + Settings.shellBlur
             + ", ignore_alpha = " + (Settings.shellIgnoreAlpha / 100).toFixed(2) + " })"
     }
+    // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
+    readonly property bool themeActive: Settings.themeOn && Settings.themeBorders
+    function rgb(id: string): string { return "rgb(" + ThemeColors.hexOf(id).replace("#", "") + ")" }
+    function themeLua(): string {
+        return 'hl.config({ general = { col = { active_border = { colors = { "' + rgb("primary") + '", "' + rgb("secondary")
+            + '" }, angle = 45 }, inactive_border = "' + rgb("outline") + '" } } })'
+    }
     function content(): string {
         let t = "-- Gerado pelo Quickshell (pagina Blur da janela de configuracoes). Nao edite a mao.\n"
         if (Settings.blurManaged)
             t += "hl.config({ decoration = { blur = " + blurTable() + " } })\n"
         t += ruleLine() + "\n"
+        if (themeActive) t += themeLua() + "\n"
         return t
     }
 
@@ -40,11 +48,15 @@ Singleton {
     property string lastRule: ""
     property bool ready: false
 
+    readonly property string themeSig: themeActive + "/" + (themeActive ? themeLua() : "")
+    property bool lastTheme: false
+    onThemeSigChanged: if (ready) timer.restart()
     onRuleSigChanged: if (ready) timer.restart()
     onBlurSigChanged: if (ready) timer.restart()
 
     Component.onCompleted: {
         lastRule = ruleSig
+        lastTheme = themeActive
         out.setText(content())
         ready = true
     }
@@ -58,9 +70,14 @@ Singleton {
         interval: 250
         onTriggered: {
             out.setText(root.content())
-            if (root.ruleSig !== root.lastRule) {
+            const themeOff = root.lastTheme && !root.themeActive   // desligou o tema: volta as cores do HyprMod/Hyprland
+            root.lastTheme = root.themeActive
+            if (root.ruleSig !== root.lastRule || themeOff) {
                 root.lastRule = root.ruleSig
                 runner.command = ["hyprctl", "reload"]
+                runner.running = true
+            } else if (root.themeActive) {
+                runner.command = ["hyprctl", "eval", root.themeLua() + (Settings.blurManaged ? "; hl.config({ decoration = { blur = " + root.blurTable() + " } })" : "")]
                 runner.running = true
             } else if (Settings.blurManaged) {
                 runner.command = ["hyprctl", "eval", "hl.config({ decoration = { blur = " + root.blurTable() + " } })"]

@@ -14,9 +14,18 @@ Singleton {
     property alias cornerRadius: adapter.cornerRadius   // cantos internos da tela
     property alias fillet: adapter.fillet               // curva onde a tira comeca a subir
     property alias topRadius: adapter.topRadius         // arredondamento do topo de cada barra
-    property alias barColor: adapter.barColor
-    property alias textColor: adapter.textColor
-    property alias accent: adapter.accent               // cor de destaque da janela de configuracoes
+    // cores manuais (guardadas) e cores efetivas: com o tema do wallpaper ligado, as efetivas vem da Palette
+    property alias userBarColor: adapter.barColor
+    property alias userTextColor: adapter.textColor
+    property alias userAccent: adapter.accent           // destaque da janela de configuracoes
+    readonly property color barColor: themeOn ? ThemeColors.background : userBarColor
+    readonly property color textColor: themeOn ? ThemeColors.text : userTextColor
+    readonly property color accent: themeOn ? ThemeColors.primary : userAccent
+    // ---- tema a partir do wallpaper ----
+    property alias themeOn: adapter.themeOn
+    property alias themeMode: adapter.themeMode          // dark | light
+    property alias themeVariant: adapter.themeVariant    // tonalspot | vibrant | expressive | fidelity | content | neutral | monochrome | rainbow | fruitsalad
+    property alias themeBorders: adapter.themeBorders    // aplica as cores nas bordas das janelas do Hyprland
     property alias outline: adapter.outline             // contorno fino em todas as bordas
     property alias glass: adapter.glass
     property alias glassOpacity: adapter.glassOpacity
@@ -155,6 +164,7 @@ Singleton {
         { type: "memory", label: "Memória" },
         { type: "volume", label: "Volume" },
         { type: "tray", label: "Bandeja" },
+        { type: "palette", label: "Cores do tema" },
         { type: "text", label: "Texto" }
     ]
 
@@ -196,6 +206,10 @@ Singleton {
         adapter.wpPickerDocked = true
         adapter.wpPickerOffset = 0
         adapter.wpPickerGap = 14
+        adapter.themeOn = false
+        adapter.themeMode = "dark"
+        adapter.themeVariant = "tonalspot"
+        adapter.themeBorders = true
         adapter.animCfg = { anims: [], use: animDefaults, migrated: true }
         adapter.bars = [defaultBar("bottom")]
     }
@@ -305,6 +319,10 @@ Singleton {
             property bool wpPickerDocked: true
             property int wpPickerOffset: 0
             property int wpPickerGap: 14
+            property bool themeOn: false
+            property string themeMode: "dark"
+            property string themeVariant: "tonalspot"
+            property bool themeBorders: true
             property var animCfg: ({ anims: [], use: { bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida" }, migrated: false })
             property var bars: [{ side: "bottom", width: 520, offset: 0, height: 34, full: false, autoHide: false, modules: [{ type: "clock", format: "ddd dd MMM   HH:mm" }] }]
         }
