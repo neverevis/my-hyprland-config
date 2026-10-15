@@ -23,7 +23,12 @@ Singleton {
     readonly property color accent: themeOn ? ThemeColors.primary : userAccent
     // ---- tema a partir do wallpaper ----
     property alias themeOn: adapter.themeOn
-    property alias themeMode: adapter.themeMode          // dark | light
+    property alias themeMode: adapter.themeMode          // dark | light | auto (claro de dia, escuro a noite)
+    property alias themeSource: adapter.themeSource      // wallpaper | preset (esquemas prontos da aba Integradas)
+    property alias themePreset: adapter.themePreset      // id do esquema pronto (ver Presets.qml)
+    property int clockHour: new Date().getHours()
+    Timer { interval: 60000; repeat: true; running: true; onTriggered: Settings.clockHour = new Date().getHours() }
+    readonly property string themeModeEff: themeMode === "auto" ? (clockHour >= 7 && clockHour < 18 ? "light" : "dark") : themeMode
     property alias themeVariant: adapter.themeVariant    // tonalspot | vibrant | expressive | fidelity | content | neutral | monochrome | rainbow | fruitsalad
     property alias themeKitty: adapter.themeKitty        // gera o tema do kitty
     property alias themeGtk: adapter.themeGtk            // cores nos apps GTK3/GTK4
@@ -65,6 +70,13 @@ Singleton {
     property alias wpPickerSide: adapter.wpPickerSide         // bottom | top | left | right
     property alias wpPickerDocked: adapter.wpPickerDocked     // acoplado a moldura (sai da borda) ou flutuante
     property alias wpPickerOffset: adapter.wpPickerOffset     // deslocamento ao longo da borda (px)
+    // ---- painel Inicio (ver Home.qml) ----
+    property alias homeDocked: adapter.homeDocked
+    property alias homeSide: adapter.homeSide                   // bottom | top | left | right
+    property alias homeOffset: adapter.homeOffset
+    property alias homeFillet: adapter.homeFillet
+    property alias homeRadius: adapter.homeRadius
+    property bool homeOpen: false                               // painel aberto (nao e salvo)
     // ---- notificacoes (ver Notifications.qml) ----
     property alias notifOn: adapter.notifOn                     // o Quickshell e o servidor de notificacoes
     property alias notifSide: adapter.notifSide                 // right | left | top | bottom
@@ -118,9 +130,10 @@ Singleton {
         { id: "wallpaper", label: "Transição de wallpaper" },
         { id: "workspaces", label: "Workspaces" },
         { id: "launcher", label: "Launcher de aplicativos" },
-        { id: "notifications", label: "Notificações" }
+        { id: "notifications", label: "Notificações" },
+        { id: "home", label: "Painel Início" }
     ]
-    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera" })
+    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera" })
 
     function allAnims(): var { return builtinAnims.concat(anims) }
     function findAnim(name: string): var { return allAnims().find(a => a.name === name) ?? null }
@@ -243,6 +256,11 @@ Singleton {
         adapter.wpPickerOffset = 0
         adapter.wpPickerGap = 14
         adapter.wpPickerCount = 5
+        adapter.homeDocked = true
+        adapter.homeSide = "bottom"
+        adapter.homeOffset = 0
+        adapter.homeFillet = 13
+        adapter.homeRadius = 14
         adapter.notifOn = true
         adapter.notifSide = "right"
         adapter.notifAnchor = "start"
@@ -265,6 +283,8 @@ Singleton {
         adapter.wpCardRadius = 14
         adapter.themeOn = false
         adapter.themeMode = "dark"
+        adapter.themeSource = "wallpaper"
+        adapter.themePreset = "mocha"
         adapter.themeKitty = true
         adapter.themeGtk = true
         adapter.themeBrave = true
@@ -382,6 +402,11 @@ Singleton {
             property int wpPickerOffset: 0
             property int wpPickerGap: 14
             property int wpPickerCount: 5
+            property bool homeDocked: true
+            property string homeSide: "bottom"
+            property int homeOffset: 0
+            property int homeFillet: 13
+            property int homeRadius: 14
             property bool notifOn: true
             property string notifSide: "right"
             property string notifAnchor: "start"
@@ -408,6 +433,8 @@ Singleton {
             property bool themeBrave: true
             property bool themeOn: false
             property string themeMode: "dark"
+            property string themeSource: "wallpaper"
+            property string themePreset: "mocha"
             property string themeVariant: "tonalspot"
             property bool themeBorders: true
             property var animCfg: ({ anims: [], use: { bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida" }, migrated: false })

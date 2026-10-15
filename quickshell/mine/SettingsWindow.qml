@@ -17,7 +17,7 @@ Scope {
         function isopen(): bool { return root.open }
     }
     // abrir as configuracoes fecha o launcher e o seletor (nao ficam um sobre o outro)
-    onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false }
+    onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false }
 
     readonly property var pages: [
         { id: "bars", label: "Barras" },
@@ -27,6 +27,7 @@ Scope {
         { id: "blur", label: "Blur" },
         { id: "launcher", label: "Launcher" },
         { id: "notifications", label: "Notificações" },
+        { id: "home", label: "Painel Início" },
         { id: "anim", label: "Animação" }
     ]
 
@@ -139,9 +140,10 @@ Scope {
                             Loader {
                                 id: pageLoader
                                 width: parent.width
-                                sourceComponent: root.page === "notifications" ? notifC : root.page === "launcher" ? launcherC : root.page === "frame" ? frameC : (root.page === "blur" ? blurC : (root.page === "anim" ? animC : (root.page === "wall" ? wallC : lookC)))
+                                sourceComponent: root.page === "home" ? homeC : root.page === "notifications" ? notifC : root.page === "launcher" ? launcherC : root.page === "frame" ? frameC : (root.page === "blur" ? blurC : (root.page === "anim" ? animC : (root.page === "wall" ? wallC : lookC)))
                             }
                         }
+                        Component { id: homeC; PageHome {} }
                         Component { id: notifC; PageNotifications {} }
                         Component { id: launcherC; PageLauncher {} }
                         Component { id: frameC; PageFrame {} }

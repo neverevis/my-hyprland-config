@@ -44,7 +44,7 @@ Singleton {
         return t
     }
     function braveJson(): string {
-        return JSON.stringify({ BrowserThemeColor: ThemeColors.m._source ?? ThemeColors.m.primary, BrowserColorScheme: Settings.themeMode === "light" ? "light" : "dark" })
+        return JSON.stringify({ BrowserThemeColor: ThemeColors.m._source ?? ThemeColors.m.primary, BrowserColorScheme: Settings.themeModeEff === "light" ? "light" : "dark" })
     }
 
     function kittyConf(): string {
@@ -70,7 +70,7 @@ Singleton {
     }
 
     readonly property string sig: kittyOn + "/" + (kittyOn ? kittyConf() : "")
-    readonly property string gtkSig: gtkOn + "/" + (gtkOn ? gtkCss() : "") + Settings.themeMode
+    readonly property string gtkSig: gtkOn + "/" + (gtkOn ? gtkCss() : "") + Settings.themeModeEff
     readonly property string braveSig: braveOn + "/" + (braveOn ? braveJson() : "")
     onSigChanged: timer.restart()
     onGtkSigChanged: gtkTimer.restart()
@@ -93,7 +93,7 @@ Singleton {
             const css = root.gtkCss()
             gtk3.setText(css); gtk4.setText(css)
             if (root.gtkOn) {
-                scheme.command = ["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", Settings.themeMode === "light" ? "prefer-light" : "prefer-dark"]
+                scheme.command = ["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", Settings.themeModeEff === "light" ? "prefer-light" : "prefer-dark"]
                 scheme.running = false; scheme.running = true
             }
         }

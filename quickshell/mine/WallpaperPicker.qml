@@ -15,7 +15,7 @@ Scope {
 
     IpcHandler {
         target: "wallpaper"
-        function pick(): void { if (!Settings.wpPickerOpen) { Settings.launcherOpen = false; Settings.settingsOpen = false } Settings.wpPickerOpen = !Settings.wpPickerOpen }
+        function pick(): void { if (!Settings.wpPickerOpen) { Settings.launcherOpen = false; Settings.settingsOpen = false; Settings.homeOpen = false } Settings.wpPickerOpen = !Settings.wpPickerOpen }
         function close(): void { Settings.wpPickerOpen = false }
         function next(): void { Wallpaper.step(1) }
         function prev(): void { Wallpaper.step(-1) }

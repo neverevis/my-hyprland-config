@@ -9,20 +9,25 @@ Item {
     id: root
     width: 1; height: 1
     readonly property string src: Wallpaper.current
-    readonly property string mode: Settings.themeMode
+    readonly property string mode: Settings.themeModeEff
     readonly property string variant: Settings.themeVariant
     readonly property string py: Quickshell.env("HOME") + "/.local/share/quickshell-mine/venv/bin/python"
     readonly property string script: Qt.resolvedUrl("scripts/material.py").toString().replace("file://", "")
     property bool pyOk: true   // falhou uma vez: usa so a reserva
     property var cache: ({})   // caminho -> { h1, s1, h2, h3, s2, s3 }
 
-    onSrcChanged: if (Settings.themeOn) load()
+    readonly property string source: Settings.themeSource
+    readonly property string preset: Settings.themePreset
+    onSourceChanged: if (Settings.themeOn) load()
+    onPresetChanged: if (Settings.themeOn && source === "preset") load()
+    onSrcChanged: if (Settings.themeOn && source === "wallpaper") load()
     onModeChanged: if (Settings.themeOn) load()
     onVariantChanged: if (Settings.themeOn) load()
     Connections { target: Settings; function onThemeOnChanged() { if (Settings.themeOn) root.load() } }
     Component.onCompleted: if (Settings.themeOn) load()
 
     function load() {
+        if (source === "preset") { apply(Presets.toMaterial(Presets.find(preset))); return }
         if (!src) return
         if (pyOk) { runner.command = [py, script, src, mode, variant]; runner.running = false; runner.running = true; return }
         fallback()
@@ -136,7 +141,7 @@ Item {
     function build() {
         const a = cache[src]
         if (!a) return
-        const dark = Settings.themeMode !== "light"
+        const dark = Settings.themeModeEff !== "light"
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
         const s1 = clamp(a.s1, 0.5, 0.85), s2 = clamp(a.s2 * 0.9, 0.38, 0.75), s3 = clamp(a.s3 * 0.9, 0.38, 0.75)
         const tone = dark ? 0.76 : 0.40

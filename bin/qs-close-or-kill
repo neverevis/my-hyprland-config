@@ -3,7 +3,7 @@
 # senao fecha a janela ativa normalmente. (As janelas do Quickshell sao "layers", que o comando de fechar janela do Hyprland nao enxerga.)
 layers=$(hyprctl layers 2>/dev/null)
 closed=0
-for pair in "mine-settings:settings" "mine-launcher:launcher" "mine-wallpaper-picker:wallpaper"; do
+for pair in "mine-settings:settings" "mine-launcher:launcher" "mine-wallpaper-picker:wallpaper" "mine-home:home"; do
     ns=${pair%%:*}; target=${pair##*:}
     if grep -q "namespace: $ns" <<<"$layers"; then
         qs -c mine ipc call "$target" close >/dev/null 2>&1 && closed=1

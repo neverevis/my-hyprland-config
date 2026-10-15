@@ -49,8 +49,16 @@ Singleton {
         // painel acoplado (seletor de wallpaper ou launcher): entra como uma "barra" extra, para a moldura crescer ate ele (mesmo desenho das barras)
         // o launcher tem prioridade quando aberto; os dois nunca ficam abertos juntos (um fecha o outro)
         let panel = null
-        const lp = BarState.launcherProg, wp = BarState.pickerProg
-        if (Settings.launcherDocked && lp > 0.002) {
+        const lp = BarState.launcherProg, wp = BarState.pickerProg, hp = BarState.homeProg
+        if (Settings.homeDocked && hp > 0.002) {
+            const hs = Settings.homeSide
+            const hv = hs === "left" || hs === "right"
+            const hlen = Math.min(hv ? BarState.homeH : BarState.homeW, (hv ? H : W) - 140)
+            const hdep = hv ? BarState.homeW : BarState.homeH
+            panel = { kind: "home", prog: hp, bar: { side: hs, width: hlen, offset: Settings.homeOffset,
+                      height: Settings.edge + 8 + hdep + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
+                      fillet: Settings.homeFillet, topRadius: Settings.homeRadius } }
+        } else if (Settings.launcherDocked && lp > 0.002) {
             const ls = Settings.launcherSide
             const lv = ls === "left" || ls === "right"
             const cw = Math.min(Settings.launcherWidth, (lv ? W : W) - 100), ch = BarState.launcherDepth
@@ -206,6 +214,6 @@ Singleton {
             d += r > 0.01 ? "A" + r + " " + r + " 0 0 1 " + q + " " : "L" + q + " "
         }
         d += "Z"
-        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null }
+        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null, home: panel && panel.kind === "home" ? res[pIdx] : null }
     }
 }

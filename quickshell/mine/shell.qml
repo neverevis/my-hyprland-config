@@ -23,6 +23,7 @@ ShellRoot {
     SettingsWindow {}
     Launcher { geo: shell.geo }
     Notifications { geo: shell.geo }
+    Home { geo: shell.geo }
 
     PanelWindow {
         id: frame
