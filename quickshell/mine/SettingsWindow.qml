@@ -24,7 +24,8 @@ Scope {
         function go(p: string): void { root.page = p; Settings.settingsOpen = true }   // abre numa pagina (bars, look, wall...)
     }
     // abrir as configuracoes (pelo atalho ou pelo botao do Inicio) fecha os paineis que estiverem abertos
-    onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false }
+    onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; alive = true }
+    property bool alive: false   // janela existe (fica ate a animacao de saida terminar)
 
     readonly property var groups: [
         { label: "Shell", pages: [
@@ -46,7 +47,7 @@ Scope {
     readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === page) ?? groups[0].pages[0]
 
     LazyLoader {
-        active: root.open
+        active: root.alive
 
         PanelWindow {
             id: win
@@ -55,9 +56,31 @@ Scope {
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: win.away ? WlrKeyboardFocus.None : WlrKeyboardFocus.OnDemand
+            WlrLayershell.keyboardFocus: win.away || !root.open ? WlrKeyboardFocus.None : WlrKeyboardFocus.OnDemand
             WlrLayershell.namespace: "mine-settings"
-            mask: Region { item: win.away ? null : body }
+            mask: Region { item: win.away || !root.open ? null : body }
+
+            // ---- entrada/saida: a mesma animacao de camadas do Hyprland (hyprland/animations.lua), feita aqui ----
+            // layersIn: slide 500 ms emphasizedDecel | layersOut: slide 400 ms emphasizedAccel | fadeLayers: 500 ms standard
+            // (o Hyprland nao anima esta janela: regra no_anim gerada pelo HyprSync)
+            property real sp: 0   // deslize: 0 = uma tela inteira acima, 1 = no lugar
+            property real fp: 0   // opacidade
+            Component.onCompleted: { contentItem.opacity = Qt.binding(() => win.fp); inAnim.start() }
+            Connections {
+                target: root
+                function onOpenChanged() { if (root.open) { outAnim.stop(); inAnim.start() } else { inAnim.stop(); outAnim.start() } }
+            }
+            ParallelAnimation {
+                id: inAnim
+                NumberAnimation { target: win; property: "sp"; to: 1; duration: 500; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1] }
+                NumberAnimation { target: win; property: "fp"; to: 1; duration: 500; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
+            }
+            ParallelAnimation {
+                id: outAnim
+                NumberAnimation { target: win; property: "sp"; to: 0; duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.3, 0, 0.8, 0.15, 1, 1] }
+                NumberAnimation { target: win; property: "fp"; to: 0; duration: 500; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
+                onFinished: root.alive = false
+            }
 
             readonly property real bw: Math.min(1000, width - 40)
             readonly property real bh: Math.min(720, height - 80)
@@ -78,6 +101,7 @@ Scope {
 
             Rectangle {
                 id: body
+                transform: Translate { y: -win.height * (1 - win.sp) }
                 x: win.away ? win.cx0 : win.place.x
                 y: win.away ? win.cy0 : win.place.y
                 width: win.bw; height: win.bh

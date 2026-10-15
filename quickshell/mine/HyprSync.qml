@@ -28,6 +28,7 @@ Singleton {
         return ["mine-frame", "mine-settings", "mine-launcher", "mine-launcher-docked"].map(n => 'hl.layer_rule({ match = { namespace = "' + n + '" }' + tail).join("\n")
             + '\nhl.layer_rule({ match = { namespace = "mine-launcher-docked" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-notifications" }, no_anim = true })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-settings" }, no_anim = true })'
     }
     // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
     readonly property bool themeActive: Settings.themeOn && Settings.themeBorders
