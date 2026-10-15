@@ -1,5 +1,5 @@
 // Foto de perfil e nome do usuario (usados no Inicio, no menu de energia e na tela de bloqueio).
-// change() abre um seletor de arquivo; a imagem escolhida e recortada em quadrado e vira o ~/.face.
+// change() abre um seletor de arquivo e depois o editor (PhotoEditor.qml); o recorte escolhido vira o ~/.face.
 pragma Singleton
 
 import Quickshell
@@ -19,6 +19,23 @@ Singleton {
     readonly property string py: Quickshell.env("HOME") + "/.local/share/quickshell-mine/venv/bin/python"
     readonly property string script: Qt.resolvedUrl("scripts/set_face.py").toString().replace("file://", "")
 
+    property string editing: ""   // imagem aberta no editor de foto ("" = fechado)
+    function save(rot: int, nx: real, ny: real, ns: real): void {
+        const f = editing
+        editing = ""
+        busy = true
+        apply.command = [root.py, root.script, f, String(rot), String(nx), String(ny), String(ns)]
+        apply.running = true
+    }
+    function cancel(): void { editing = ""; busy = false }
+
+    IpcHandler {
+        target: "profile"
+        function change(): void { root.change() }
+        function edit(path: string): void { root.busy = true; root.editing = path }   // abre o editor direto com uma imagem
+        function cancel(): void { root.cancel() }
+    }
+
     function change(): void {
         if (busy) return
         busy = true
@@ -33,8 +50,7 @@ Singleton {
             onStreamFinished: {
                 const f = text.trim()
                 if (f === "") { root.busy = false; return }
-                apply.command = [root.py, root.script, f]
-                apply.running = true
+                root.editing = f   // abre o editor (recortar, zoom, girar); ele chama save()
             }
         }
         onExited: code => { if (code !== 0) root.busy = false }

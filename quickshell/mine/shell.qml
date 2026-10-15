@@ -26,6 +26,7 @@ ShellRoot {
     Notifications { geo: shell.geo }
     Home { geo: shell.geo }
     PowerMenu {}
+    PhotoEditor {}
     LockScreen {}
 
     PanelWindow {
