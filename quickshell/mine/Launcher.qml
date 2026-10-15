@@ -163,14 +163,6 @@ Scope {
                         scale: win.docked ? 1 : 0.94 + 0.06 * Math.min(1, win.pp)
                         transformOrigin: Item.Top
                         clip: true
-                        layer.enabled: !win.docked && Settings.glowOn
-                        layer.effect: MultiEffect {
-                            shadowEnabled: true
-                            shadowColor: Settings.accent
-                            shadowOpacity: Settings.glowOpacity / 100
-                            shadowBlur: Math.min(1, Settings.glowSize / 36)
-                            shadowScale: 1.0
-                        }
                         MouseArea { anchors.fill: parent }
 
                         // ---- campo de busca ----

@@ -52,26 +52,20 @@ ShellRoot {
 
         // ---- brilho (glow): um contorno desfocado que vaza da moldura para dentro da tela (so fora do preenchimento) ----
         readonly property string holePath: frame.geo.path.replace(/^M0 0 L0 [^Z]*Z /, "")   // so o contorno do "buraco" (sem o retangulo da tela)
-        Item {
-            id: glowLayer
-            anchors.fill: parent
-            visible: Settings.glowOn
-            opacity: Settings.glowOpacity / 100
-            z: -1      // por baixo do preenchimento da moldura: o brilho so se mostra para dentro da tela (o vidro cobre a outra metade)
-            // varias linhas largas e quase transparentes, da mais larga para a mais fina: o acumulo forma o degrade do brilho
-            Repeater {
-                model: 10
-                delegate: Shape {
-                    required property int index
-                    anchors.fill: parent
-                    preferredRendererType: Shape.GeometryRenderer
-                    ShapePath {
-                        fillColor: "transparent"
-                        strokeColor: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, 0.13)
-                        strokeWidth: Math.max(1, Settings.glowSize * 2 * Math.pow(1 - index / 10, 1.35))
-                        joinStyle: ShapePath.RoundJoin
-                        PathSvg { path: frame.holePath }
-                    }
+        // ---- brilho interno: faixas semitransparentes DENTRO do vidro, junto a borda da moldura e dos elementos que saem dela ----
+        // (Geometry.compute entrega cada faixa pronta: o "buraco" expandido para dentro da moldura menos o proprio buraco)
+        Repeater {
+            model: Settings.glowOn ? frame.geo.glow : []
+            delegate: Shape {
+                required property string modelData
+                anchors.fill: parent
+                opacity: Settings.glowOpacity / 100
+                preferredRendererType: Shape.GeometryRenderer
+                ShapePath {
+                    fillColor: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, 0.11)
+                    strokeColor: "transparent"
+                    fillRule: ShapePath.OddEvenFill
+                    PathSvg { path: modelData + " " + frame.holePath }
                 }
             }
         }

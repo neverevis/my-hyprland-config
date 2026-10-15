@@ -11,9 +11,9 @@ Column {
         UiSlider { label: "Opacidade"; from: 10; to: 100; value: Settings.glassOpacity; suffix: " %"; onMoved: v => Settings.glassOpacity = v }
     }
     Card {
-        title: "Brilho (glow)"
-        subtitle: "Um brilho suave na cor de destaque ao redor da moldura, do launcher e do seletor (como o brilho das janelas)."
-        UiSwitch { label: "Ativar brilho"; checked: Settings.glowOn; onToggled: on => Settings.glowOn = on }
+        title: "Brilho interno"
+        subtitle: "A borda da moldura e dos elementos que saem dela (barras, launcher, seletor, notificações) acende por dentro do vidro, na cor de destaque."
+        UiSwitch { label: "Ativar brilho interno"; checked: Settings.glowOn; onToggled: on => Settings.glowOn = on }
         UiSlider { label: "Alcance"; from: 4; to: 36; value: Settings.glowSize; suffix: " px"; onMoved: v => Settings.glowSize = Math.round(v) }
         UiSlider { label: "Intensidade"; from: 5; to: 100; value: Settings.glowOpacity; suffix: " %"; onMoved: v => Settings.glowOpacity = Math.round(v) }
     }
