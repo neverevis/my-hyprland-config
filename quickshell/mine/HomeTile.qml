@@ -15,14 +15,14 @@ Rectangle {
     color: on ? Theme.tint(ma.containsMouse ? 0.30 : 0.22) : (ma.containsMouse ? Theme.cardHi : Theme.gl(Theme.card, 1.15))
     border.width: 1
     border.color: on ? Theme.tint(0.55) : Theme.border
-    Behavior on color { ColorAnimation { duration: 140 } }
+    Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
 
     Rectangle {
         id: dot
         anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
         width: 36; height: 36; radius: 18
         color: t.on ? Theme.accent : Theme.track
-        Behavior on color { ColorAnimation { duration: 140 } }
+        Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
         UiIcon { anchors.centerIn: parent; name: t.icon; size: 18; color: t.on ? Theme.accentText : Theme.text }
     }
     Column {

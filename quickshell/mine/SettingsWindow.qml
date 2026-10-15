@@ -142,7 +142,7 @@ Scope {
                                         readonly property bool on: root.page === modelData.id
                                         width: grp.width; height: 38; radius: 11
                                         color: on ? Theme.tint(0.16) : (navMouse.containsMouse ? Theme.card : "transparent")
-                                        Behavior on color { ColorAnimation { duration: 120 } }
+                                        Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
                                         UiIcon {
                                             id: navIc
                                             anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }

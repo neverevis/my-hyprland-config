@@ -9,6 +9,7 @@ Singleton {
     id: root
 
     property var t: ({})   // preenchido pelo PaletteExtractor; vazio = usa as cores padrao
+    property bool fading: false   // true durante a troca de paleta: os componentes desligam as proprias animacoes de cor (senao reiniciam a cada passo)
 
     readonly property var roles: [
         { id: "primary", label: "Destaque" },

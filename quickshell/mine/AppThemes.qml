@@ -102,9 +102,10 @@ Singleton {
     Process { id: brave }   // grava no lugar (o arquivo e seu, mas a pasta e do root: setText cria arquivo temporario e falharia)
     Timer {
         id: braveTimer
-        interval: 600
+        interval: 150
         onTriggered: {
             if (!root.braveOn) return
+            // o Brave (Chromium) so aplica uma politica alterada depois de 5 s sem novas mudancas no arquivo: o atraso e dele
             brave.command = ["sh", "-c", "printf '%s' \"$1\" > \"$2\"", "sh", root.braveJson(), root.bravePolicy]
             brave.running = false; brave.running = true
         }

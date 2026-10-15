@@ -233,7 +233,7 @@ Scope {
                                         readonly property bool on: root.tab === modelData.id
                                         width: 42; height: 42; radius: 12
                                         color: on ? Theme.accent : (rtm.containsMouse ? Theme.cardHi : "transparent")
-                                        Behavior on color { ColorAnimation { duration: 140 } }
+                                        Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
                                         UiIcon { anchors.centerIn: parent; name: rt.modelData.icon; size: 20; color: rt.on ? Theme.accentText : (rtm.containsMouse ? Theme.text : Theme.muted) }
                                         MouseArea { id: rtm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.tab = rt.modelData.id }
                                     }

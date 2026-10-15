@@ -15,6 +15,8 @@ Item {
     readonly property string script: Qt.resolvedUrl("scripts/material.py").toString().replace("file://", "")
     property bool pyOk: true   // falhou uma vez: usa so a reserva
     property var cache: ({})   // caminho -> { h1, s1, h2, h3, s2, s3 }
+    property var memo: ({})    // wallpaper|modo|estilo -> papeis do Material (resultado do script)
+    property string runKey: ""
 
     readonly property string source: Settings.themeSource
     readonly property string preset: Settings.themePreset
@@ -29,7 +31,13 @@ Item {
     function load() {
         if (source === "preset") { apply(Presets.toMaterial(Presets.find(preset))); return }
         if (!src) return
-        if (pyOk) { runner.command = [py, script, src, mode, variant]; runner.running = false; runner.running = true; return }
+        if (pyOk) {
+            const key = src + "|" + mode + "|" + variant
+            if (memo[key]) { apply(memo[key]); return }   // ja calculado nesta sessao: sem rodar o Python de novo
+            runKey = key
+            runner.command = [py, script, src, mode, variant]; runner.running = false; runner.running = true
+            return
+        }
         fallback()
     }
     function fallback() {
@@ -50,16 +58,30 @@ Item {
     }
 
     // ---- fade entre paletas: interpola de cor em cor (sem Behavior no singleton, que derrubava o shell) ----
+    // passos a ~30 por segundo (e nao a cada quadro): cada passo recalcula todas as cores do shell e das janelas abertas
     property var fromT: ({})
     property var toT: ({})
     property real mix: 1
+    readonly property int fadeMs: 600
+    property real fadeStart: 0
     function setTarget(t) {
         const cur = ThemeColors.t
         if (!cur || cur.primary === undefined) { ThemeColors.t = t; toT = t; return }   // primeira paleta: sem fade
+        if (Object.keys(t).every(k => String(cur[k]) === String(t[k]))) return       // mesma paleta: nada a fazer
         fromT = cur; toT = t
-        fade.restart()
+        fadeStart = Date.now()
+        ThemeColors.fading = true
+        step.restart()
     }
-    NumberAnimation { id: fade; target: root; property: "mix"; from: 0; to: 1; duration: 700; easing.type: Easing.OutCubic }
+    Timer {
+        id: step
+        interval: 33; repeat: true; triggeredOnStart: true
+        onTriggered: {
+            const x = Math.min(1, (Date.now() - root.fadeStart) / root.fadeMs)
+            root.mix = 1 - Math.pow(1 - x, 3)   // OutCubic
+            if (x >= 1) { stop(); ThemeColors.fading = false }
+        }
+    }
     onMixChanged: {
         if (!toT.primary) return
         if (mix >= 1) { ThemeColors.t = toT; return }
@@ -74,10 +96,14 @@ Item {
         id: runner
         stdout: StdioCollector {
             onStreamFinished: {
-                try { root.apply(JSON.parse(text)) } catch (e) { root.pyOk = false; root.fallback() }
+                // saida vazia = execucao interrompida por uma mais nova (troca rapida de wallpaper/modo): so ignora
+                if (text.trim() === "") return
+                try { const m = JSON.parse(text); root.memo[root.runKey] = m; root.apply(m) }
+                catch (e) { console.warn("paleta: saida invalida do material.py, usando a reserva: " + e); root.pyOk = false; root.fallback() }
             }
         }
-        onExited: code => { if (code !== 0) { root.pyOk = false; root.fallback() } }
+        // 9/15 = morto de proposito ao reiniciar (nao e falha)
+        onExited: code => { if (code !== 0 && code !== 9 && code !== 15) { console.warn("paleta: material.py saiu com " + code + ", usando a reserva"); root.pyOk = false; root.fallback() } }
     }
 
     // ---- cor ----

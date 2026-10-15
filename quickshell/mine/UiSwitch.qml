@@ -26,7 +26,7 @@ Item {
         width: 44; height: 24; radius: 12
         color: r.checked ? Theme.accent : Theme.cardHi
         border.width: 1; border.color: r.checked ? Theme.accent : Theme.border
-        Behavior on color { ColorAnimation { duration: 140 } }
+        Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
         Rectangle {
             width: 18; height: 18; radius: 9
             y: 3; x: r.checked ? parent.width - width - 3 : 3

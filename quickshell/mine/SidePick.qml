@@ -21,7 +21,7 @@ Row {
             color: on ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.14) : (m.containsMouse ? Theme.cardHi : Theme.track)
             border.width: 1
             border.color: on ? Theme.accent : Theme.border
-            Behavior on color { ColorAnimation { duration: 140 } }
+            Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
 
             Rectangle {
                 id: scr

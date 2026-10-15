@@ -123,7 +123,7 @@ Grid {
                 border.width: cell.active ? 0 : (cell.occupied && !outlined ? 0 : 1)
                 border.color: root.base
                 opacity: cell.active ? 1 : (cell.occupied ? 0.85 : 0.4)
-                Behavior on color { ColorAnimation { duration: root.animMs } }
+                Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: root.animMs } }
                 Behavior on opacity { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
             }
 
