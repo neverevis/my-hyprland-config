@@ -10,6 +10,7 @@ Item {
     property real dim: 0           // 0..1: camada preta por cima
     property size sourceSize: Qt.size(256, 256)
     readonly property bool ready: img.status === Image.Ready
+    readonly property int status: img.status
 
     Image {
         id: img

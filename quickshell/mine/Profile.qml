@@ -1,5 +1,5 @@
 // Foto de perfil e nome do usuario (usados no Inicio, no menu de energia e na tela de bloqueio).
-// change() abre um seletor de arquivo e depois o editor (PhotoEditor.qml); o recorte escolhido vira o ~/.face.
+// change() abre o navegador de imagens e depois o editor (PhotoEditor.qml); o recorte escolhido vira o ~/.face.
 pragma Singleton
 
 import Quickshell
@@ -20,6 +20,8 @@ Singleton {
     readonly property string script: Qt.resolvedUrl("scripts/set_face.py").toString().replace("file://", "")
 
     property string editing: ""   // imagem aberta no editor de foto ("" = fechado)
+    property bool picking: false  // navegador de imagens aberto (antes do editor)
+    function pickFile(f: string): void { picking = false; editing = f }
     function save(rot: int, nx: real, ny: real, ns: real): void {
         const f = editing
         editing = ""
@@ -27,7 +29,7 @@ Singleton {
         apply.command = [root.py, root.script, f, String(rot), String(nx), String(ny), String(ns)]
         apply.running = true
     }
-    function cancel(): void { editing = ""; busy = false }
+    function cancel(): void { picking = false; editing = ""; busy = false }
 
     IpcHandler {
         target: "profile"
@@ -39,22 +41,9 @@ Singleton {
     function change(): void {
         if (busy) return
         busy = true
-        pick.running = true
+        picking = true   // abre o navegador de imagens do proprio shell (PhotoEditor.qml)
     }
 
-    Process {
-        id: pick
-        command: ["zenity", "--file-selection", "--title=Escolha sua foto de perfil",
-                  "--file-filter=Imagens | *.png *.jpg *.jpeg *.webp *.bmp *.gif *.PNG *.JPG *.JPEG *.WEBP"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const f = text.trim()
-                if (f === "") { root.busy = false; return }
-                root.editing = f   // abre o editor (recortar, zoom, girar); ele chama save()
-            }
-        }
-        onExited: code => { if (code !== 0) root.busy = false }
-    }
     Process {
         id: apply
         stderr: StdioCollector { onStreamFinished: if (text.trim() !== "") console.warn("perfil: " + text.trim()) }

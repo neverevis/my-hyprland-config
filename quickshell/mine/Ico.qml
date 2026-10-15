@@ -27,7 +27,8 @@ Singleton {
         brush: 0xF00E3, eye: 0xF0208, history: 0xF02DA, swap_horizontal: 0xF04E1, swap_vertical: 0xF04E2, view_column: 0xF056D, view_grid: 0xF0570, web: 0xF059F,
         mouse: 0xF037D, keyboard: 0xF030C, cellphone: 0xF011C, gamepad: 0xF0297,
         lightning: 0xF140B, sleep: 0xF0904, logout: 0xF0343, restart: 0xF0709, desktop: 0xF0AAB, router: 0xF0469, devices: 0xF0FB0,
-        camera: 0xF0100, eyeOff: 0xF0209, arrowRight: 0xF0054, caps: 0xF030E, unlock: 0xF0FC6, accountEdit: 0xF06BC
+        folderPlain: 0xF024B, folderImage: 0xF024F, folderHome: 0xF10B5, download: 0xF01DA, arrowLeft: 0xF004D, search: 0xF0349,
+        sortName: 0xF05BD, sortTime: 0xF154B, folderOpen: 0xF0770, camera: 0xF0100, eyeOff: 0xF0209, arrowRight: 0xF0054, caps: 0xF030E, unlock: 0xF0FC6, accountEdit: 0xF06BC
     })
     function g(name: string): string { const c = map[name]; return c ? String.fromCodePoint(c) : "" }
 }

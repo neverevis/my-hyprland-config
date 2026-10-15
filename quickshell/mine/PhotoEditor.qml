@@ -7,7 +7,8 @@ import QtQuick.Effects
 
 Scope {
     id: root
-    readonly property bool open: Profile.editing !== ""
+    readonly property bool open: Profile.editing !== "" || Profile.picking
+    readonly property bool picking: Profile.picking
     property bool alive: false
     onOpenChanged: { if (open) { closeTimer.stop(); alive = true } else closeTimer.restart() }
     Timer { id: closeTimer; interval: 260; onTriggered: root.alive = false }
@@ -43,7 +44,10 @@ Scope {
                 anchors.verticalCenterOffset: (1 - win.p) * 30
                 opacity: win.p
                 scale: 0.96 + 0.04 * win.p
-                width: 640; height: 520; radius: 24
+                width: root.picking ? 900 : 640; height: root.picking ? 600 : 520; radius: 24
+                Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+                Behavior on height { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+                clip: true
                 color: Theme.bg
                 border.width: 1; border.color: Theme.border
                 MouseArea { anchors.fill: parent }   // clique no cartao nao fecha
@@ -64,6 +68,42 @@ Scope {
                     e.accepted = true
                 }
 
+                // ---- passo 1: escolher a imagem ----
+                Item {
+                    anchors.fill: parent
+                    visible: opacity > 0
+                    opacity: root.picking ? 1 : 0
+                    Behavior on opacity { NumberAnimation { duration: 160 } }
+                    Row {
+                        x: 24; y: 20
+                        spacing: 12
+                        Rectangle {
+                            width: 36; height: 36; radius: 11; color: Theme.tint(0.18)
+                            UiIcon { anchors.centerIn: parent; name: "images"; size: 20; color: Theme.accent }
+                        }
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            Text { text: "Escolha uma imagem"; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
+                            Text { text: "Clique numa imagem para ajustar o recorte"; color: Theme.muted; font.pixelSize: 12 }
+                        }
+                    }
+                    UiButton { anchors { right: parent.right; rightMargin: 16; top: parent.top; topMargin: 18 } icon: "close"; kind: "ghost"; onClicked: Profile.cancel() }
+                    ImageBrowser {
+                        id: browser
+                        anchors { fill: parent; leftMargin: 16; rightMargin: 20; topMargin: 76; bottomMargin: 16 }
+                        onChosen: path => { Profile.pickFile(path); card.forceActiveFocus() }
+                        onCanceled: Profile.cancel()
+                    }
+                    Connections { target: Profile; function onPickingChanged() { if (Profile.picking) browser.focusGrid() } }
+                }
+
+                // ---- passo 2: ajustar ----
+                Item {
+                    id: editPane
+                    anchors.fill: parent
+                    visible: opacity > 0
+                    opacity: root.picking ? 0 : 1
+                    Behavior on opacity { NumberAnimation { duration: 160 } }
                 // ---- cabecalho ----
                 Row {
                     x: 24; y: 20
@@ -217,6 +257,7 @@ Scope {
                 Row {
                     anchors { right: parent.right; rightMargin: 24; bottom: parent.bottom; bottomMargin: 20 }
                     spacing: 10
+                    UiButton { icon: "arrowLeft"; text: "Outra imagem"; kind: "ghost"; onClicked: { Profile.picking = true; Profile.editing = "" } }
                     UiButton { text: "Cancelar"; kind: "ghost"; onClicked: Profile.cancel() }
                     UiButton { icon: "check"; text: "Salvar foto"; kind: "accent"; onClicked: ed.save() }
                 }
@@ -224,6 +265,7 @@ Scope {
                     anchors { left: parent.left; leftMargin: 24; bottom: parent.bottom; bottomMargin: 28 }
                     text: "Duplo clique recomeça · R gira · Enter salva"
                     color: Theme.muted; font.pixelSize: 11
+                }
                 }
             }
         }
