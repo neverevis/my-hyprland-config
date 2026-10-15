@@ -98,14 +98,14 @@ Scope {
 
             // docked: parte visivel do painel (cresce da borda) -> recorta o conteudo; ele tambem sobe junto
             readonly property real fullDepth: docked && pk ? pk.t : 0
-            readonly property real vis: docked ? Math.max(0, Math.min(fullDepth, e + (fullDepth - e) * pp)) : 0
+            readonly property real vis: docked ? Math.max(0, e + (fullDepth - e) * pp) : 0
             readonly property rect clipR: !docked || !pk ? Qt.rect(0, 0, 0, 0)
                 : side === "top" ? Qt.rect(pk.rect.x, 0, pk.rect.w, vis)
                 : side === "bottom" ? Qt.rect(pk.rect.x, height - vis, pk.rect.w, vis)
                 : side === "left" ? Qt.rect(0, pk.rect.y, vis, pk.rect.h)
                 : Qt.rect(width - vis, pk.rect.y, vis, pk.rect.h)
             // quanto o conteudo ainda esta deslocado em direcao a borda
-            readonly property real lag: docked ? fullDepth - vis : (1 - Math.min(1, pp)) * (e + Settings.wpPickerGap + contentDepth + 40)
+            readonly property real lag: docked ? fullDepth - vis : (1 - pp) * (e + Settings.wpPickerGap + contentDepth + 40)
 
             // clique fora fecha
             MouseArea { anchors.fill: parent; onClicked: Settings.wpPickerOpen = false }

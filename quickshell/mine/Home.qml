@@ -172,10 +172,10 @@ Scope {
                 : side === "bottom" ? Qt.rect(pk.rect.x + (pk.rect.w - cw) / 2, pk.rect.y + 12, cw, ch)
                 : side === "left" ? Qt.rect(pk.rect.x + e + 8, pk.rect.y + (pk.rect.h - ch) / 2, cw, ch)
                 : Qt.rect(pk.rect.x + 12, pk.rect.y + (pk.rect.h - ch) / 2, cw, ch))
-            readonly property rect fbox: Qt.rect((width - cw) / 2, (height - ch) / 2 + (1 - Math.min(1, pp)) * 18, cw, ch)
+            readonly property rect fbox: Qt.rect((width - cw) / 2, (height - ch) / 2 + (1 - pp) * 18, cw, ch)
             readonly property rect box: docked ? dbox : fbox
             readonly property real fullDepth: docked && pk ? pk.t : 0
-            readonly property real vis: docked ? Math.max(0, Math.min(fullDepth, e + (fullDepth - e) * pp)) : 0
+            readonly property real vis: docked ? Math.max(0, e + (fullDepth - e) * pp) : 0
             readonly property rect clipR: !docked || !pk ? Qt.rect(0, 0, 0, 0)
                 : side === "top" ? Qt.rect(pk.rect.x, 0, pk.rect.w, vis)
                 : side === "bottom" ? Qt.rect(pk.rect.x, height - vis, pk.rect.w, vis)
@@ -208,7 +208,7 @@ Scope {
                         radius: win.docked ? 0 : Settings.homeRadius + 6
                         color: win.docked ? "transparent" : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.glass ? Math.min(1, Settings.glassOpacity / 100 + 0.08) : 1)
                         border.width: win.docked ? 0 : 1; border.color: Theme.border
-                        scale: win.docked ? 1 : 0.94 + 0.06 * Math.min(1, win.pp)
+                        scale: win.docked ? 1 : 0.94 + 0.06 * win.pp
                         transformOrigin: Item.Top
                         focus: true
                         Keys.onEscapePressed: Settings.homeOpen = false

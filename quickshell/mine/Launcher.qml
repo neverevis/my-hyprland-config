@@ -120,7 +120,7 @@ Scope {
 
             // acoplado: parte visivel do painel (cresce da borda) recorta o conteudo, que sobe junto
             readonly property real fullDepth: docked && pk ? pk.t : 0
-            readonly property real vis: docked ? Math.max(0, Math.min(fullDepth, e + (fullDepth - e) * pp)) : 0
+            readonly property real vis: docked ? Math.max(0, e + (fullDepth - e) * pp) : 0
             readonly property rect clipR: !docked || !pk ? Qt.rect(0, 0, 0, 0)
                 : side === "top" ? Qt.rect(pk.rect.x, 0, pk.rect.w, vis)
                 : side === "bottom" ? Qt.rect(pk.rect.x, height - vis, pk.rect.w, vis)

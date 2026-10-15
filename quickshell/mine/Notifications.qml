@@ -73,7 +73,7 @@ Scope {
             readonly property var pk: root.geo.notif
             readonly property real pp: BarState.notifProg
             readonly property real fullDepth: pk ? pk.t : 0
-            readonly property real vis: Math.max(0, Math.min(fullDepth, e + (fullDepth - e) * pp))
+            readonly property real vis: Math.max(0, e + (fullDepth - e) * pp)
             // parte visivel do bloco (cresce da borda): recorta o conteudo
             readonly property rect clipR: !pk ? Qt.rect(0, 0, 0, 0)
                 : side === "top" ? Qt.rect(pk.rect.x, 0, pk.rect.w, vis)
