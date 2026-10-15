@@ -11,7 +11,7 @@ Rectangle {
     implicitHeight: col.implicitHeight + 32
     height: implicitHeight
     radius: 14
-    color: Theme.card
+    color: Theme.gl(Theme.card, 1)
     border.width: 1
     border.color: Theme.border
 

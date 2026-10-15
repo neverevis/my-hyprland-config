@@ -31,7 +31,7 @@ PanelWindow {
     // quando o seletor de wallpaper compete pelo mesmo espaco, a barra recolhe junto com a subida dele
     readonly property real cover: info && info.cover ? info.cover : 0
     readonly property real eff: prog * (1 - cover)
-    readonly property real ovl: info && info.overlap ? info.overlap : 0   // parte da barra que ainda esta sob o seletor: os modulos esmaecem
+    readonly property real ovl: info && info.fade ? info.fade : 0   // barra saindo da frente do seletor: os modulos dao fade out (e fade in na volta), no inicio do movimento
     property real fade: shown ? 1 : 0
     Behavior on fade {
         NumberAnimation {

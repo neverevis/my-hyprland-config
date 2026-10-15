@@ -21,6 +21,7 @@ Scope {
         { id: "look", label: "Aparência" },
         { id: "wall", label: "Wallpaper" },
         { id: "blur", label: "Blur" },
+        { id: "launcher", label: "Launcher" },
         { id: "anim", label: "Animação" }
     ]
 
@@ -39,7 +40,7 @@ Scope {
             Rectangle {
                 anchors.fill: parent
                 radius: 20
-                color: Theme.bg
+                color: Theme.gl(Theme.bg, 1)
                 border.width: 1
                 border.color: Theme.border
                 clip: true
@@ -52,8 +53,9 @@ Scope {
                     anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
                     width: 210
                     color: "transparent"
-                    Rectangle { anchors.fill: parent; radius: 20; color: Theme.sidebar }   // cantos de fora arredondados
-                    Rectangle { anchors { right: parent.right; top: parent.top; bottom: parent.bottom } width: 24; color: Theme.sidebar }
+                    // um unico retangulo com cantos arredondados so na esquerda (o da direita fica cortado): sem sobreposicao, o vidro nao dobra
+                    clip: true
+                    Rectangle { x: 0; y: 0; width: parent.width + 40; height: parent.height; radius: 20; color: Theme.gl(Theme.sidebar, 1) }
 
                     Column {
                         anchors { fill: parent; margins: 16 }
@@ -131,9 +133,10 @@ Scope {
                             Loader {
                                 id: pageLoader
                                 width: parent.width
-                                sourceComponent: root.page === "frame" ? frameC : (root.page === "blur" ? blurC : (root.page === "anim" ? animC : (root.page === "wall" ? wallC : lookC)))
+                                sourceComponent: root.page === "launcher" ? launcherC : root.page === "frame" ? frameC : (root.page === "blur" ? blurC : (root.page === "anim" ? animC : (root.page === "wall" ? wallC : lookC)))
                             }
                         }
+                        Component { id: launcherC; PageLauncher {} }
                         Component { id: frameC; PageFrame {} }
                         Component { id: lookC; PageLook {} }
                         Component { id: blurC; PageBlur {} }

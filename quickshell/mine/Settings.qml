@@ -63,6 +63,13 @@ Singleton {
     property alias wpPickerSide: adapter.wpPickerSide         // bottom | top | left | right
     property alias wpPickerDocked: adapter.wpPickerDocked     // acoplado a moldura (sai da borda) ou flutuante
     property alias wpPickerOffset: adapter.wpPickerOffset     // deslocamento ao longo da borda (px)
+    // ---- launcher de aplicativos (ver Launcher.qml) ----
+    property alias launcherWidth: adapter.launcherWidth
+    property alias launcherRows: adapter.launcherRows           // linhas de resultado visiveis
+    property alias launcherIcon: adapter.launcherIcon           // tamanho dos icones (px)
+    property alias launcherRadius: adapter.launcherRadius
+    property alias launcherPos: adapter.launcherPos             // center | top
+    property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
     property alias wpPickerCount: adapter.wpPickerCount       // quantos wallpapers aparecem no seletor (1, 3 ou 5)
     property alias wpPickerRadius: adapter.wpPickerRadius     // arredondamento dos cantos do painel (topo)
     property alias wpPickerFillet: adapter.wpPickerFillet     // curva onde o painel encontra a moldura
@@ -91,9 +98,10 @@ Singleton {
         { id: "bars", label: "Barras (mostrar / esconder)" },
         { id: "picker", label: "Seletor de wallpaper" },
         { id: "wallpaper", label: "Transição de wallpaper" },
-        { id: "workspaces", label: "Workspaces" }
+        { id: "workspaces", label: "Workspaces" },
+        { id: "launcher", label: "Launcher de aplicativos" }
     ]
-    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida" })
+    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera" })
 
     function allAnims(): var { return builtinAnims.concat(anims) }
     function findAnim(name: string): var { return allAnims().find(a => a.name === name) ?? null }
@@ -214,6 +222,11 @@ Singleton {
         adapter.wpPickerOffset = 0
         adapter.wpPickerGap = 14
         adapter.wpPickerCount = 5
+        adapter.launcherWidth = 640
+        adapter.launcherRows = 7
+        adapter.launcherIcon = 32
+        adapter.launcherRadius = 22
+        adapter.launcherPos = "center"
         adapter.wpPickerRadius = 12
         adapter.wpPickerFillet = 10
         adapter.wpCardRadius = 14
@@ -334,6 +347,12 @@ Singleton {
             property int wpPickerOffset: 0
             property int wpPickerGap: 14
             property int wpPickerCount: 5
+            property int launcherWidth: 640
+            property int launcherRows: 7
+            property int launcherIcon: 32
+            property int launcherRadius: 22
+            property string launcherPos: "center"
+            property var launcherUsage: ({})
             property int wpPickerRadius: 11
             property int wpPickerFillet: 13
             property int wpCardRadius: 14

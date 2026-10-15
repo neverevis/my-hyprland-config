@@ -6,6 +6,7 @@ local AUTOSTART = true   -- inicia o shell ao logar (deixe false se voce ja inic
 -- atalhos
 hl.bind("SUPER + C", hl.dsp.exec_cmd("qs -c mine ipc call settings toggle"))    -- janela de configuracoes
 hl.bind("SUPER + W", hl.dsp.exec_cmd("qs -c mine ipc call wallpaper pick"))     -- seletor de wallpaper
+hl.bind("SUPER + SPACE", hl.dsp.exec_cmd("qs -c mine ipc call launcher toggle"))  -- launcher de aplicativos
 
 -- o seletor de wallpaper faz a propria animacao: desliga a animacao de camada do Hyprland nele
 hl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })

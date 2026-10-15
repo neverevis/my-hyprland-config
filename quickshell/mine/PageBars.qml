@@ -181,7 +181,7 @@ Item {
 
                         Rectangle {
                             width: parent.width; height: 46; radius: 10
-                            color: Theme.bg; border.width: 1; border.color: mrow.hasOpts && page.openMod === mrow.index ? Theme.accent : Theme.border
+                            color: Theme.gl(Theme.bg, 1); border.width: 1; border.color: mrow.hasOpts && page.openMod === mrow.index ? Theme.accent : Theme.border
 
                             Text {
                                 id: mname
@@ -217,7 +217,7 @@ Item {
                             width: parent.width
                             height: visible ? mCol.implicitHeight + 24 : 0
                             radius: 10
-                            color: Theme.bg; border.width: 1; border.color: Theme.border
+                            color: Theme.gl(Theme.bg, 1); border.width: 1; border.color: Theme.border
                             Column {
                                 id: mCol
                                 anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
@@ -298,7 +298,7 @@ Item {
                             width: parent.width
                             height: visible ? wsCol.implicitHeight + 24 : 0
                             radius: 10
-                            color: Theme.bg; border.width: 1; border.color: Theme.border
+                            color: Theme.gl(Theme.bg, 1); border.width: 1; border.color: Theme.border
                             Column {
                                 id: wsCol
                                 anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }

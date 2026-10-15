@@ -146,7 +146,7 @@ Singleton {
                     : s === "right" ? { x: W - t, y: it.lo, w: t, h: it.hi - it.lo }
                     : s === "bottom" ? { x: it.lo, y: H - t, w: it.hi - it.lo, h: t }
                     : { x: 0, y: it.lo, w: t, h: it.hi - it.lo }
-                res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
+                res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], fade: slide[it.i] !== undefined ? Math.min(1, pp * 2.5) : 0, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
             }
 
             // caminho do buraco neste lado, em ordem crescente de u

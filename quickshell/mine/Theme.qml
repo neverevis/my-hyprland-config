@@ -15,4 +15,7 @@ Singleton {
     readonly property color accent: Settings.accent
     readonly property color accentText: Settings.themeOn ? ThemeColors.onPrimary : "#15131a"
     readonly property color danger: Settings.themeOn ? ThemeColors.error : "#f7768e"
+
+    // cor com a transparencia do vidro (Aparencia > Vidro); k escala a opacidade (1 = a mesma da moldura)
+    function gl(c: color, k: real): color { return Qt.rgba(c.r, c.g, c.b, Settings.glass ? Math.min(1, Settings.glassOpacity / 100 * k) : 1) }
 }
