@@ -15,6 +15,7 @@ Scope {
     // painel acoplado aberto agora (retangulo dele na moldura): a janela tenta desviar dele em vez de sumir
     readonly property var busy: Settings.wpPickerOpen ? geo.picker : (Settings.launcherOpen ? geo.launcher : (Settings.homeOpen ? geo.home : null))
     property string page: "bars"
+    signal scrollTo(int y)
 
     IpcHandler {
         target: "settings"
@@ -22,6 +23,7 @@ Scope {
         function close(): void { Settings.settingsOpen = false }
         function isopen(): bool { return root.open }
         function go(p: string): void { root.page = p; Settings.settingsOpen = true }   // abre numa pagina (bars, look, wall...)
+        function scroll(y: int): void { root.scrollTo(y) }   // rola a pagina aberta (para testes)
     }
     // abrir as configuracoes (pelo atalho ou pelo botao do Inicio) fecha os paineis que estiverem abertos
     onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; alive = true }
@@ -231,6 +233,7 @@ Scope {
 
                     Flickable {
                         id: pageFlick
+                        Connections { target: root; function onScrollTo(y) { pageFlick.contentY = Math.max(0, Math.min(pageFlick.contentHeight - pageFlick.height, y)) } }
                         anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 18 }
                         contentHeight: pageLoader.implicitHeight + 28
                         clip: true
