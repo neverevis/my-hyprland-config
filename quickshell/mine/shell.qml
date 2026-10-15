@@ -20,7 +20,7 @@ ShellRoot {
 
     WallpaperWindow {}
     WallpaperPicker { geo: shell.geo }
-    SettingsWindow {}
+    SettingsWindow { geo: shell.geo }
     Launcher { geo: shell.geo }
     Notifications { geo: shell.geo }
     Home { geo: shell.geo }

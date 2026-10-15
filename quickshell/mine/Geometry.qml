@@ -112,7 +112,7 @@ Singleton {
             const items = []
             bars.forEach((b, i) => {
                 if (i === pIdx || b.side !== pb.side) return
-                if (b.full) { cover[i] = qv; return }   // barra de ponta a ponta: sem espaco para sair, recolhe
+                if (b.full) { cover[i] = qv; sepSet[i] = true; return }   // barra de ponta a ponta: sem espaco para sair, recolhe
                 items.push({ i: i, r: rng(b), f: b.fillet ?? f0 })
             })
             // dir = -1: barras antes do painel (vao para o inicio do lado); +1: depois dele
@@ -134,7 +134,7 @@ Singleton {
                             continue
                         }
                     }
-                    if (mode === "sink") { if (!clear) cover[o.i] = qv; continue }
+                    if (mode === "sink") { if (!clear) { cover[o.i] = qv; sepSet[o.i] = true } continue }   // recolhida nao guarda lugar: o painel fica com a largura toda
                     // sai pela borda da tela, do lado em que ja esta
                     slide[o.i] = dir < 0 ? -(o.r[1] + 2 * fm + 8) : PL - o.r[0] + 2 * fm + 8
                     sepSet[o.i] = true; exitSet[o.i] = true
@@ -153,7 +153,7 @@ Singleton {
         for (const s of order) {
             let idx = grp[s]
             const full = idx.find(i => bars[i].full)
-            if (full !== undefined) idx = grp[s] = [full]
+            if (full !== undefined) idx = grp[s] = [full].concat(idx.filter(i => i === pIdx))   // o painel acoplado continua junto da barra de ponta a ponta
             // espaco reservado: barra fixa reserva tudo; barra que se esconde depende de "reserve":
             //   overlay (padrao) = nao reserva (aparece por cima das janelas), always = reserva sempre, follow = acompanha a animacao
             const zone1 = i => !bars[i].autoHide || bars[i].reserve === "always" ? tOf(i)

@@ -1,6 +1,7 @@
 // Janela de configuracoes (barra lateral + paginas). Todas as mudancas valem ao vivo e ficam salvas.
 // Abra/feche com:  qs -c mine ipc call settings toggle
-// Quando o launcher, o seletor ou o Inicio abrem, a janela so sai da frente (nao fecha) e volta quando eles fecham.
+// Quando o launcher, o seletor ou o Inicio abrem, a janela desliza para fora do caminho deles se couber na tela;
+// se nao couber, so some (nao fecha) e volta quando eles fecham.
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
@@ -9,7 +10,10 @@ import QtQuick
 Scope {
     id: root
     readonly property bool open: Settings.settingsOpen
-    readonly property bool away: Settings.launcherOpen || Settings.wpPickerOpen || Settings.homeOpen
+    property var geo: ({})
+    readonly property bool panelOpen: Settings.launcherOpen || Settings.wpPickerOpen || Settings.homeOpen
+    // painel acoplado aberto agora (retangulo dele na moldura): a janela tenta desviar dele em vez de sumir
+    readonly property var busy: Settings.wpPickerOpen ? geo.picker : (Settings.launcherOpen ? geo.launcher : (Settings.homeOpen ? geo.home : null))
     property string page: "bars"
 
     IpcHandler {
@@ -46,26 +50,46 @@ Scope {
 
         PanelWindow {
             id: win
-            // sem ancoras: aparece centralizada
-            implicitWidth: 1000
-            implicitHeight: Math.min(720, (screen ? screen.height : 800) - 80)
+            // tela inteira e transparente (so a janela de verdade recebe o mouse): assim ela pode deslizar sem o compositor redimensionar nada
+            anchors { left: true; right: true; top: true; bottom: true }
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: root.away ? WlrKeyboardFocus.None : WlrKeyboardFocus.OnDemand
+            WlrLayershell.keyboardFocus: win.away ? WlrKeyboardFocus.None : WlrKeyboardFocus.OnDemand
             WlrLayershell.namespace: "mine-settings"
-            mask: Region { item: root.away ? null : body }
+            mask: Region { item: win.away ? null : body }
+
+            readonly property real bw: Math.min(1000, width - 40)
+            readonly property real bh: Math.min(720, height - 80)
+            readonly property real cx0: (width - bw) / 2
+            readonly property real cy0: (height - bh) / 2
+            readonly property var place: {
+                const m = 16
+                if (!root.panelOpen) return { ok: true, x: cx0, y: cy0 }
+                if (!root.busy) return { ok: false, x: cx0, y: cy0 }   // flutuante ou ainda esperando outro painel recolher
+                const R = root.busy.rect, sd = root.busy.side
+                if (cx0 + bw <= R.x - m || R.x + R.w + m <= cx0 || cy0 + bh <= R.y - m || R.y + R.h + m <= cy0) return { ok: true, x: cx0, y: cy0 }
+                if (sd === "bottom") { const y = Math.min(cy0, R.y - m - bh); return { ok: y >= m, x: cx0, y: y } }
+                if (sd === "top") { const y = Math.max(cy0, R.y + R.h + m); return { ok: y + bh <= height - m, x: cx0, y: y } }
+                if (sd === "left") { const x = Math.max(cx0, R.x + R.w + m); return { ok: x + bw <= width - m, x: x, y: cy0 } }
+                const x = Math.min(cx0, R.x - m - bw); return { ok: x >= m, x: x, y: cy0 }
+            }
+            readonly property bool away: !place.ok
 
             Rectangle {
                 id: body
-                anchors.fill: parent
+                x: win.away ? win.cx0 : win.place.x
+                y: win.away ? win.cy0 : win.place.y
+                width: win.bw; height: win.bh
+                Behavior on x { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
+                Behavior on y { NumberAnimation { duration: 320; easing.type: Easing.OutCubic } }
                 radius: 22
                 color: Theme.gl(Theme.bg, 1)
                 clip: true
                 focus: true
                 Keys.onEscapePressed: Settings.settingsOpen = false
-                opacity: root.away ? 0 : 1
-                scale: root.away ? 0.96 : 1
+                opacity: win.away ? 0 : 1
+                scale: win.away ? 0.96 : 1
                 Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                 Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
 
