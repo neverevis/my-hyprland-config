@@ -255,7 +255,7 @@ Item {
                                     width: parent.width
                                     spacing: 6
                                     Repeater {
-                                        model: mCol.isCpuMem ? [["text", "Texto"], ["bar", "Barra"], ["graph", "Gráfico de linha"], ["segments", "Segmentos"]] : [["text", "Texto"], ["bar", "Barra"], ["segments", "Segmentos"]]
+                                        model: mCol.isCpuMem ? [["text", "Texto"], ["bar", "Barra"], ["graph", "Gráfico de linha"], ["segments", "Segmentos"]] : [["text", "Texto"], ["bar", "Barra"], ["segments", "Segmentos"], ["slider", "Ícone + barra"]]
                                         delegate: UiButton {
                                             required property var modelData
                                             text: modelData[1]

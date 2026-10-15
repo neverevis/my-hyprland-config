@@ -60,7 +60,14 @@ Item {
 
     Component {
         id: volumeC
-        VolumeModule { opts: root.opts; vertical: root.vertical }
+        Loader {
+            sourceComponent: root.opts.display === "slider" ? volSliderC : volMeterC
+        }
+    }
+    Component { id: volMeterC; VolumeModule { opts: root.opts; vertical: root.vertical } }
+    Component {
+        id: volSliderC
+        VolumeSlider { opts: root.opts; vertical: root.vertical }
     }
 
     Component {
