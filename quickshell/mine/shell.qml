@@ -7,6 +7,7 @@
 // Recarregue com: shell-switch restart
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Io
 import QtQuick
 import QtQuick.Shapes
 import QtQuick.Effects
@@ -17,7 +18,20 @@ ShellRoot {
     readonly property color baseColor: Settings.barColor
     readonly property color fillColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, Settings.glass ? Settings.glassOpacity / 100 : 1)
 
-    Component.onCompleted: { HyprSync.ready; AppThemes.ready }   // carrega o HyprSync (singleton) ja no inicio
+    Component.onCompleted: { HyprSync.ready; AppThemes.ready }
+
+    // Super+Q (qs-close-or-kill): fecha o que estiver aberto do shell; responde false se nao havia nada (ai fecha a janela do app)
+    IpcHandler {
+        target: "panels"
+        function closeall(): bool {
+            const any = Settings.settingsOpen || Settings.launcherOpen || Settings.wpPickerOpen || Settings.homeOpen
+                || Power.menuOpen || Profile.picking || Profile.editing !== ""
+            Settings.settingsOpen = false; Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false
+            Power.menuOpen = false
+            if (Profile.picking || Profile.editing !== "") Profile.cancel()
+            return any
+        }
+    }   // carrega o HyprSync (singleton) ja no inicio
 
     WallpaperWindow {}
     WallpaperPicker { geo: shell.geo }

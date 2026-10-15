@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Super+Q: se algo do seu Quickshell estiver aberto (configuracoes, launcher, seletor, Inicio, menu de energia, foto), fecha;
+# senao fecha a janela ativa normalmente. Pergunta ao proprio shell (as janelas dele podem existir escondidas).
+r=$(timeout 1 qs -c mine ipc call panels closeall 2>/dev/null)
+[ "$r" = "true" ] || hyprctl eval 'hl.dispatch(hl.dsp.window.close())' >/dev/null
