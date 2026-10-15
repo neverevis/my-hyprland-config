@@ -21,7 +21,7 @@ Scope {
         function close(): void { Settings.launcherOpen = false }
     }
     onOpenChanged: {
-        if (open) { closeTimer.stop(); Settings.wpPickerOpen = false; Settings.settingsOpen = false; Settings.homeOpen = false; query = ""; alive = true }
+        if (open) { closeTimer.stop(); Settings.wpPickerOpen = false; Settings.homeOpen = false; query = ""; alive = true }
         else closeTimer.restart()
     }
     Timer { id: closeTimer; interval: 480; onTriggered: root.alive = false }

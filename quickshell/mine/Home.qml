@@ -1,68 +1,143 @@
-// Painel "Inicio": cartao do usuario, player de midia, atalhos (Wi-Fi, Bluetooth, cafeina, nao perturbe, perfil de energia, vidro) e relogio.
+// Painel "Inicio": abas na lateral (Inicio, Midia, Audio, Sistema, Conexao, Bluetooth).
 // Acoplado a moldura (sai da borda como o launcher) ou flutuante, conforme Settings.home*.
-// IPC:  qs -c mine ipc call home toggle | open | close
+// IPC:  qs -c mine ipc call home toggle | open | close | go <aba>
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Services.Mpris
+import Quickshell.Services.Pipewire
+import Quickshell.Networking
+import Quickshell.Bluetooth
 import QtQuick
-import QtQuick.Effects
 
 Scope {
     id: root
     property var geo: ({ home: null })        // resultado de Geometry.compute (vem do shell.qml)
     readonly property bool open: Settings.homeOpen
     property bool alive: false
+    property string tab: "home"
+
+    readonly property var tabs: [
+        { id: "home", label: "Início", icon: "home" },
+        { id: "media", label: "Mídia", icon: "music" },
+        { id: "audio", label: "Áudio", icon: "volume" },
+        { id: "system", label: "Sistema", icon: "chip" },
+        { id: "net", label: "Conexão", icon: "wifi" },
+        { id: "bt", label: "Bluetooth", icon: "bluetooth" }
+    ]
 
     IpcHandler {
         target: "home"
         function toggle(): void { Settings.homeOpen = !Settings.homeOpen }
         function open(): void { Settings.homeOpen = true }
         function close(): void { Settings.homeOpen = false }
+        function go(t: string): void { root.tab = t; Settings.homeOpen = true }
     }
     onOpenChanged: {
-        if (open) { closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.settingsOpen = false; alive = true }
+        if (open) { closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; alive = true }
         else closeTimer.restart()
     }
-    Timer { id: closeTimer; interval: 520; onTriggered: root.alive = false }
+    Timer { id: closeTimer; interval: 520; onTriggered: { root.alive = false; root.tab = "home" } }
 
-    // ---- estado dos atalhos (consultado ao abrir e a cada poucos segundos enquanto aberto) ----
-    property bool wifiOn: false
-    property bool btOn: false
+    function fmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2) }
+    function bytes(b) {
+        b = b || 0
+        if (b >= 1073741824) return (b / 1073741824).toFixed(1) + " GiB"
+        if (b >= 1048576) return (b / 1048576).toFixed(0) + " MiB"
+        return (b / 1024).toFixed(0) + " KiB"
+    }
+    function rate(b) {
+        b = b || 0
+        if (b >= 1048576) return (b / 1048576).toFixed(1) + " MB/s"
+        if (b >= 1024) return (b / 1024).toFixed(0) + " KB/s"
+        return Math.round(b) + " B/s"
+    }
+    function dur(sec) {
+        sec = Math.floor(sec || 0)
+        const d = Math.floor(sec / 86400), h = Math.floor(sec % 86400 / 3600), m = Math.floor(sec % 3600 / 60)
+        return (d > 0 ? d + " d " : "") + (h > 0 ? h + " h " : "") + m + " min"
+    }
+
+    // ---- sistema (scripts/sysinfo.py: uma linha JSON por segundo, so com o painel aberto) ----
+    readonly property string sysScript: Qt.resolvedUrl("scripts/sysinfo.py").toString().replace("file://", "")
+    property var sys: ({})
+    property var st: ({})
+    property var disks: []
+    property var cpuH: []
+    property var memH: []
+    property var gpuH: []
+    property var rxH: []
+    property var txH: []
+    function push(a, v) { const r = a.slice(-39); r.push(v || 0); return r }
+    Process {
+        running: root.alive
+        command: ["python3", root.sysScript]
+        stdout: SplitParser {
+            onRead: line => {
+                let d
+                try { d = JSON.parse(line) } catch (e) { return }
+                root.sys = d
+                if (d.static) root.st = d.static
+                if (d.disks) root.disks = d.disks
+                root.cpuH = root.push(root.cpuH, d.cpu)
+                root.memH = root.push(root.memH, d.memTotal ? d.memUsed / d.memTotal * 100 : 0)
+                root.gpuH = root.push(root.gpuH, d.gpu ? d.gpu.usage : 0)
+                root.rxH = root.push(root.rxH, d.rx)
+                root.txH = root.push(root.txH, d.tx)
+            }
+        }
+    }
+
+    // ---- perfil de energia e enderecos IP ----
     property string profile: "balanced"
-    property string upText: ""
-    property string hostName: ""
-
-    Process { id: pWifi; command: ["nmcli", "radio", "wifi"]; stdout: StdioCollector { onStreamFinished: root.wifiOn = text.trim() === "enabled" } }
-    Process { id: pBt; command: ["sh", "-c", "timeout 2 bluetoothctl show 2>/dev/null | grep -q 'Powered: yes' && echo yes || echo no"]; stdout: StdioCollector { onStreamFinished: root.btOn = text.trim() === "yes" } }
+    property var ips: ({})
     Process { id: pProf; command: ["powerprofilesctl", "get"]; stdout: StdioCollector { onStreamFinished: root.profile = text.trim() || "balanced" } }
-    Process { id: pUp; command: ["cat", "/proc/uptime"]; stdout: StdioCollector { onStreamFinished: {
-        const sec = Math.floor(parseFloat(text.split(" ")[0]) || 0), h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60)
-        root.upText = (h > 0 ? h + (h === 1 ? " hora " : " horas ") : "") + m + (m === 1 ? " minuto" : " minutos")
-    } } }
-    Process { id: pHost; command: ["cat", "/etc/hostname"]; stdout: StdioCollector { onStreamFinished: root.hostName = text.trim() } }
-    function refresh() { pWifi.running = false; pWifi.running = true; pBt.running = false; pBt.running = true; pProf.running = false; pProf.running = true; pUp.running = false; pUp.running = true }
-    Timer { interval: 4000; repeat: true; running: root.alive; onTriggered: root.refresh() }
-    onAliveChanged: if (alive) { refresh(); pHost.running = false; pHost.running = true }
+    Process {
+        id: pIp
+        command: ["sh", "-c", "ip -4 -o addr show scope global | awk '{print $2\" \"$4}'"]
+        stdout: StdioCollector { onStreamFinished: { const m = {}; text.trim().split("\n").forEach(l => { const p = l.split(" "); if (p.length > 1) m[p[0]] = p[1].split("/")[0] }); root.ips = m } }
+    }
+    function refresh() { pProf.running = false; pProf.running = true; pIp.running = false; pIp.running = true }
+    Timer { interval: 5000; repeat: true; running: root.alive; onTriggered: root.refresh() }
+    onAliveChanged: if (alive) refresh()
 
     Process { id: pAct }
     function run(cmd) { pAct.command = cmd; pAct.running = false; pAct.running = true }
-    function toggleWifi() { root.wifiOn = !root.wifiOn; run(["nmcli", "radio", "wifi", root.wifiOn ? "on" : "off"]) }
-    function toggleBt() { root.btOn = !root.btOn; run(["timeout", "4", "bluetoothctl", "power", root.btOn ? "on" : "off"]) }
+    readonly property var profileNames: ({ "balanced": "Equilibrado", "performance": "Desempenho", "power-saver": "Economia" })
     function cycleProfile() {
         const next = { "balanced": "performance", "performance": "power-saver", "power-saver": "balanced" }[root.profile] ?? "balanced"
         root.profile = next
         run(["powerprofilesctl", "set", next])
     }
-    // cafeina: mantem um "inhibit" de ociosidade enquanto estiver ligada
-    property bool caffeine: false
-    Process { id: pCaf; running: root.caffeine; command: ["systemd-inhibit", "--what=idle:sleep", "--who=Quickshell", "--why=Cafeina", "--mode=block", "sleep", "infinity"] }
 
     // ---- midia ----
     readonly property var players: Mpris.players.values
-    readonly property var player: players.find(p => p.isPlaying) ?? (players.length > 0 ? players[0] : null)
+    property int playerPick: -1   // -1 = automatico (o que esta tocando)
+    readonly property var player: playerPick >= 0 && playerPick < players.length ? players[playerPick]
+        : (players.find(p => p.isPlaying) ?? (players.length > 0 ? players[0] : null))
 
-    function fmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2) }
+    // ---- audio ----
+    readonly property var sink: Pipewire.defaultAudioSink
+    readonly property var source: Pipewire.defaultAudioSource
+    readonly property var nodes: Pipewire.nodes.values
+    readonly property var sinks: nodes.filter(n => n.audio && n.isSink && !n.isStream)
+    readonly property var sources: nodes.filter(n => n.audio && !n.isSink && !n.isStream)
+    readonly property var streams: nodes.filter(n => n.audio && n.isStream && !n.isSink)
+    PwObjectTracker { objects: root.alive ? root.nodes : [] }
+    function nodeName(n) { return n ? (n.description || n.nickname || n.name || "?") : "" }
+    function volIcon(a) { return !a || a.muted ? "volumeOff" : (a.volume > 0.66 ? "volume" : (a.volume > 0.25 ? "volumeMed" : "volumeLow")) }
+
+    // ---- rede ----
+    readonly property var netDevs: Networking.devices.values
+    readonly property var wifiDev: netDevs.find(d => d.type === DeviceType.Wifi) ?? null
+    readonly property var wiredDev: netDevs.find(d => d.type === DeviceType.Wired && d.connected) ?? netDevs.find(d => d.type === DeviceType.Wired) ?? null
+    readonly property var wifiNets: wifiDev ? wifiDev.networks.values : []
+    readonly property var wifiCur: wifiNets.find(n => n.connected) ?? null
+
+    // ---- bluetooth ----
+    readonly property var bt: Bluetooth.defaultAdapter
+    readonly property var btDevs: bt ? bt.devices.values : []
+    readonly property var btConnected: btDevs.filter(d => d.connected)
 
     LazyLoader {
         active: root.alive
@@ -137,177 +212,70 @@ Scope {
                         transformOrigin: Item.Top
                         focus: true
                         Keys.onEscapePressed: Settings.homeOpen = false
+                        Keys.onTabPressed: { const i = root.tabs.findIndex(t => t.id === root.tab); root.tab = root.tabs[(i + 1) % root.tabs.length].id }
                         MouseArea { anchors.fill: parent }
 
-                        // ---------- cabecalho ----------
-                        Text { x: 22; y: 14; text: "Início"; color: Theme.text; font.pixelSize: 17; font.weight: Font.DemiBold }
-                        Row {
-                            anchors { right: parent.right; rightMargin: 16; top: parent.top; topMargin: 8 }
-                            spacing: 8
-                            component HBtn: Rectangle {
-                                id: hb
-                                property string glyph
-                                signal clicked()
-                                width: 34; height: 34; radius: 10
-                                color: hbm.containsMouse ? Theme.cardHi : Theme.card
-                                border.width: 1; border.color: Theme.border
-                                Text { anchors.centerIn: parent; text: hb.glyph; color: Theme.text; font.pixelSize: 15; font.family: "JetBrainsMono Nerd Font" }
-                                MouseArea { id: hbm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: hb.clicked() }
-                            }
-                            HBtn { glyph: String.fromCodePoint(0xF013); onClicked: { Settings.homeOpen = false; Settings.settingsOpen = true } }
-                            HBtn { glyph: String.fromCodePoint(0xF00D); onClicked: Settings.homeOpen = false }
-                        }
-
-                        // mascara arredondada compartilhada (fora da area visivel: item invisivel nao atualiza a textura)
-                        Rectangle { id: round14; x: -width - 30; y: 0; width: 200; height: 200; radius: 14; layer.enabled: true; color: "white" }
-                        Rectangle { id: round10; x: -width - 30; y: 220; width: 200; height: 200; radius: 10; layer.enabled: true; color: "white" }
-
-                        // ---------- cartao do usuario ----------
+                        // ---------- abas (lateral) ----------
                         Rectangle {
-                            id: userCard
-                            x: 16; y: 54; width: parent.width - 32; height: 130; radius: 14
-                            color: Theme.card; border.width: 1; border.color: Theme.border
-                            Image {
-                                id: bgImg
-                                x: 1; y: 1; width: parent.width - 2; height: parent.height - 2
-                                source: Wallpaper.current !== "" ? "file://" + Wallpaper.current : ""
-                                sourceSize: Qt.size(560, 160)
-                                fillMode: Image.PreserveAspectCrop
-                                asynchronous: true
-                                visible: false
-                            }
-                            MultiEffect {
-                                x: 1; y: 1; width: parent.width - 2; height: parent.height - 2
-                                source: bgImg
-                                maskEnabled: true
-                                maskSource: round14
-                                blurEnabled: true; blurMax: 24; blur: 0.5
-                                brightness: -0.45
-                            }
-                            // avatar: ~/.face se existir, senao a inicial
-                            Rectangle {
-                                id: avatar
-                                x: 22; y: 22; width: 86; height: 86; radius: 43
-                                color: Qt.rgba(1, 1, 1, 0.12)
-                                border.width: 2; border.color: Theme.accent
-                                Text { anchors.centerIn: parent; text: (Quickshell.env("USER") || "?").charAt(0).toUpperCase(); color: Theme.text; font.pixelSize: 36; font.weight: Font.Bold; visible: faceImg.status !== Image.Ready }
-                                Image { id: faceImg; anchors.fill: parent; anchors.margins: 2; source: "file://" + Quickshell.env("HOME") + "/.face"; fillMode: Image.PreserveAspectCrop; visible: false; asynchronous: true }
-                                MultiEffect { anchors.fill: faceImg; source: faceImg; visible: faceImg.status === Image.Ready; maskEnabled: true; maskSource: faceMask }
-                                Rectangle { id: faceMask; x: -200; width: 82; height: 82; radius: 41; layer.enabled: true; color: "white" }
-                            }
+                            id: rail
+                            x: 12; y: 12; width: 56; height: parent.height - 24
+                            radius: 16
+                            color: Theme.gl(Theme.card, 1.15)
+                            border.width: 1; border.color: Theme.border
                             Column {
-                                anchors { left: avatar.right; leftMargin: 22; verticalCenter: parent.verticalCenter }
-                                spacing: 4
-                                Text { text: Quickshell.env("USER"); color: "white"; font.pixelSize: 20; font.weight: Font.Bold }
-                                Text { text: Quickshell.env("USER") + "@" + (root.hostName || "linux"); color: Qt.rgba(1, 1, 1, 0.78); font.pixelSize: 13 }
-                                Text { text: "Tempo ativo – " + root.upText; color: Qt.rgba(1, 1, 1, 0.78); font.pixelSize: 13; visible: root.upText !== "" }
-                                Text { text: "Quickshell"; color: Qt.rgba(1, 1, 1, 0.78); font.pixelSize: 13 }
-                            }
-                        }
-
-                        // ---------- midia ----------
-                        Rectangle {
-                            id: mediaCard
-                            x: 16; y: 194; width: 296; height: 142; radius: 14
-                            color: Theme.card; border.width: 1; border.color: Theme.border
-                            readonly property var pl: root.player
-                            Item {
-                                visible: !mediaCard.pl
-                                anchors.fill: parent
-                                Text { anchors.centerIn: parent; text: "Nada tocando"; color: Theme.muted; font.pixelSize: 13 }
-                            }
-                            Item {
-                                visible: !!mediaCard.pl
-                                anchors.fill: parent
-                                Image {
-                                    id: art
-                                    x: 12; y: 12; width: 80; height: 80
-                                    source: mediaCard.pl ? mediaCard.pl.trackArtUrl : ""
-                                    sourceSize: Qt.size(160, 160)
-                                    fillMode: Image.PreserveAspectCrop
-                                    asynchronous: true
-                                    visible: false
-                                }
-                                Rectangle { x: 12; y: 12; width: 80; height: 80; radius: 10; color: Theme.cardHi; visible: art.status !== Image.Ready }
-                                MultiEffect { x: 12; y: 12; width: 80; height: 80; source: art; visible: art.status === Image.Ready; maskEnabled: true; maskSource: round10 }
-                                Column {
-                                    x: 104; y: 14; width: parent.width - 116
-                                    spacing: 3
-                                    Text { width: parent.width; text: mediaCard.pl ? mediaCard.pl.trackTitle : ""; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
-                                    Text { width: parent.width; text: mediaCard.pl ? mediaCard.pl.trackArtist : ""; color: Theme.muted; font.pixelSize: 12; elide: Text.ElideRight }
-                                    Text { width: parent.width; text: mediaCard.pl ? (mediaCard.pl.isPlaying ? "Reproduzindo" : "Pausado") + (mediaCard.pl.lengthSupported ? " · " + root.fmt(mediaCard.pl.position) + " / " + root.fmt(mediaCard.pl.length) : "") : ""; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
-                                }
-                                Timer { interval: 1000; repeat: true; running: !!mediaCard.pl && mediaCard.pl.isPlaying && root.alive; onTriggered: mediaCard.pl.positionChanged() }
-                                // barra de progresso
-                                Rectangle {
-                                    x: 12; y: 102; width: parent.width - 24; height: 5; radius: 2.5
-                                    color: Qt.rgba(1, 1, 1, 0.12)
-                                    visible: !!mediaCard.pl && mediaCard.pl.lengthSupported && mediaCard.pl.length > 0
-                                    Rectangle { width: parent.width * Math.max(0, Math.min(1, mediaCard.pl ? mediaCard.pl.position / Math.max(1, mediaCard.pl.length) : 0)); height: parent.height; radius: 2.5; color: Theme.accent }
-                                }
-                                // controles
-                                Row {
-                                    anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 8 }
-                                    spacing: 10
-                                    component MBtn: Rectangle {
-                                        id: mb
-                                        property string glyph
-                                        property bool main: false
-                                        signal clicked()
-                                        width: main ? 34 : 28; height: width; radius: width / 2
-                                        color: mbm.containsMouse ? Theme.cardHi : (main ? Theme.accent : "transparent")
-                                        Text { anchors.centerIn: parent; text: mb.glyph; color: mb.main ? Theme.accentText : Theme.text; font.pixelSize: 13; font.family: "JetBrainsMono Nerd Font" }
-                                        MouseArea { id: mbm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: mb.clicked() }
-                                    }
-                                    MBtn { glyph: String.fromCodePoint(0xF048); onClicked: if (mediaCard.pl && mediaCard.pl.canGoPrevious) mediaCard.pl.previous() }
-                                    MBtn { main: true; glyph: String.fromCodePoint(mediaCard.pl && mediaCard.pl.isPlaying ? 0xF04C : 0xF04B); onClicked: if (mediaCard.pl && mediaCard.pl.canTogglePlaying) mediaCard.pl.togglePlaying() }
-                                    MBtn { glyph: String.fromCodePoint(0xF051); onClicked: if (mediaCard.pl && mediaCard.pl.canGoNext) mediaCard.pl.next() }
-                                }
-                            }
-                        }
-
-                        // ---------- relogio ----------
-                        Rectangle {
-                            x: 16; y: 346; width: 296; height: 90; radius: 14
-                            color: Theme.card; border.width: 1; border.color: Theme.border
-                            SystemClock { id: clk; precision: SystemClock.Minutes }
-                            Text { x: 20; anchors.verticalCenter: parent.verticalCenter; text: Qt.formatDateTime(clk.date, "HH:mm"); color: Theme.text; font.pixelSize: 38; font.weight: Font.Bold }
-                            Column {
-                                anchors { left: parent.left; leftMargin: 138; verticalCenter: parent.verticalCenter }
-                                spacing: 3
-                                Text { text: clk.date.toLocaleDateString(Qt.locale("pt_BR"), "dddd, dd/MM/yyyy"); color: Theme.text; font.pixelSize: 12 }
-                                Text { text: clk.date.toLocaleDateString(Qt.locale("pt_BR"), "MMMM"); color: Theme.muted; font.pixelSize: 12 }
-                            }
-                        }
-
-                        // ---------- atalhos ----------
-                        component Tile: Rectangle {
-                            id: tl
-                            property string glyph
-                            property string label
-                            property bool on: false
-                            signal clicked()
-                            width: 124; height: 80; radius: 14
-                            color: on ? Theme.accent : (tlm.containsMouse ? Theme.cardHi : Theme.card)
-                            border.width: 1; border.color: on ? Theme.accent : Theme.border
-                            Column {
-                                anchors.centerIn: parent
+                                anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 7 }
                                 spacing: 6
-                                Text { anchors.horizontalCenter: parent.horizontalCenter; text: tl.glyph; color: tl.on ? Theme.accentText : Theme.text; font.pixelSize: 22; font.family: "JetBrainsMono Nerd Font" }
-                                Text { anchors.horizontalCenter: parent.horizontalCenter; text: tl.label; color: tl.on ? Theme.accentText : Theme.text; font.pixelSize: 12; elide: Text.ElideRight; width: tl.width - 12; horizontalAlignment: Text.AlignHCenter }
+                                Repeater {
+                                    model: root.tabs
+                                    delegate: Rectangle {
+                                        id: rt
+                                        required property var modelData
+                                        readonly property bool on: root.tab === modelData.id
+                                        width: 42; height: 42; radius: 12
+                                        color: on ? Theme.accent : (rtm.containsMouse ? Theme.cardHi : "transparent")
+                                        Behavior on color { ColorAnimation { duration: 140 } }
+                                        UiIcon { anchors.centerIn: parent; name: rt.modelData.icon; size: 20; color: rt.on ? Theme.accentText : (rtm.containsMouse ? Theme.text : Theme.muted) }
+                                        MouseArea { id: rtm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.tab = rt.modelData.id }
+                                    }
+                                }
                             }
-                            MouseArea { id: tlm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: tl.clicked() }
+                            Rectangle {
+                                anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 7 }
+                                width: 42; height: 42; radius: 12
+                                color: gm.containsMouse ? Theme.cardHi : "transparent"
+                                UiIcon { anchors.centerIn: parent; name: "cog"; size: 20; color: gm.containsMouse ? Theme.text : Theme.muted }
+                                MouseArea { id: gm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.settingsOpen = true }
+                            }
                         }
-                        Grid {
-                            x: 324; y: 194
-                            columns: 2; spacing: 8
-                            Tile { glyph: String.fromCodePoint(0xF1EB); label: "Wi-Fi"; on: root.wifiOn; onClicked: root.toggleWifi() }
-                            Tile { glyph: String.fromCodePoint(0xF293); label: "Bluetooth"; on: root.btOn; onClicked: root.toggleBt() }
-                            Tile { glyph: String.fromCodePoint(0xF0F4); label: "Cafeína"; on: root.caffeine; onClicked: root.caffeine = !root.caffeine }
-                            Tile { glyph: String.fromCodePoint(0xF1F6); label: "Não perturbe"; on: Settings.notifDnd; onClicked: Settings.notifDnd = !Settings.notifDnd }
-                            Tile { glyph: String.fromCodePoint(0xF0E7); label: ({ "balanced": "Equilibrado", "performance": "Desempenho", "power-saver": "Economia" })[root.profile] ?? root.profile; on: root.profile === "performance"; onClicked: root.cycleProfile() }
-                            Tile { glyph: String.fromCodePoint(0xF06E); label: "Vidro"; on: Settings.glass; onClicked: Settings.glass = !Settings.glass }
+
+                        // ---------- cabecalho ----------
+                        Item {
+                            id: header
+                            anchors { left: rail.right; leftMargin: 14; right: parent.right; rightMargin: 12; top: parent.top; topMargin: 12 }
+                            height: 36
+                            Text {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: (root.tabs.find(t => t.id === root.tab) ?? root.tabs[0]).label
+                                color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold
+                            }
+                            UiButton { anchors { right: parent.right; verticalCenter: parent.verticalCenter } icon: "close"; kind: "ghost"; onClicked: Settings.homeOpen = false }
                         }
+
+                        // ---------- conteudo da aba ----------
+                        Loader {
+                            id: pageL
+                            anchors { left: rail.right; leftMargin: 12; right: parent.right; rightMargin: 12; top: header.bottom; topMargin: 10; bottom: parent.bottom; bottomMargin: 12 }
+                            sourceComponent: ({ home: pHome, media: pMedia, audio: pAudio, system: pSystem, net: pNet, bt: pBt })[root.tab] ?? pHome
+                            opacity: 0
+                            onLoaded: fadeIn.restart()
+                            NumberAnimation { id: fadeIn; target: pageL; property: "opacity"; from: 0; to: 1; duration: 180; easing.type: Easing.OutCubic }
+                        }
+                        Component { id: pHome; HomeMain { home: root } }
+                        Component { id: pMedia; HomeMedia { home: root } }
+                        Component { id: pAudio; HomeAudio { home: root } }
+                        Component { id: pSystem; HomeSystem { home: root } }
+                        Component { id: pNet; HomeNet { home: root } }
+                        Component { id: pBt; HomeBt { home: root } }
                     }
                 }
             }

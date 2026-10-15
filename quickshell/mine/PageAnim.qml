@@ -10,6 +10,7 @@ Column {
     readonly property bool locked: !!cur.builtin
 
     Card {
+        icon: "animation"
         title: "Animações"
         subtitle: "As do sistema (não editáveis) e as suas. Escolha uma para ver ou editar."
         Flow {
@@ -24,11 +25,12 @@ Column {
                     onClicked: page.sel = modelData.name
                 }
             }
-            UiButton { text: "+ Nova animação"; kind: "accent"; onClicked: page.sel = Settings.addAnim(page.cur) }
+            UiButton { icon: "plus"; text: "Nova animação"; kind: "ghost"; onClicked: page.sel = Settings.addAnim(page.cur) }
         }
     }
 
     Card {
+        icon: page.locked ? "lock" : "curve"
         title: page.cur.name
         subtitle: page.locked ? "Animação do sistema: não dá para editar. Duplique para criar a sua." : "Arraste os pinos para desenhar a curva e a bolinha de baixo para a duração."
 
@@ -53,7 +55,7 @@ Column {
         // teste: a bolinha anda com a curva e a duracao desta animacao
         Item {
             width: parent.width; height: 34
-            Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 4; radius: 2; color: Theme.cardHi }
+            Rectangle { anchors.verticalCenter: parent.verticalCenter; width: parent.width; height: 6; radius: 3; color: Theme.cardHi }
             Rectangle {
                 id: dot
                 property real t: 0
@@ -74,9 +76,9 @@ Column {
         Flow {
             width: parent.width
             spacing: 6
-            UiButton { text: "Testar"; kind: "accent"; onClicked: { anim.stop(); anim.start() } }
-            UiButton { text: "Duplicar"; onClicked: page.sel = Settings.addAnim(page.cur) }
-            UiButton { visible: !page.locked; text: "Excluir"; kind: "danger"; onClicked: { const n = page.cur.name; page.sel = "Padrão"; Settings.removeAnim(n) } }
+            UiButton { icon: "play"; text: "Testar"; kind: "accent"; onClicked: { anim.stop(); anim.start() } }
+            UiButton { icon: "cards"; text: "Duplicar"; onClicked: page.sel = Settings.addAnim(page.cur) }
+            UiButton { visible: !page.locked; icon: "trash"; text: "Excluir"; kind: "danger"; onClicked: { const n = page.cur.name; page.sel = "Padrão"; Settings.removeAnim(n) } }
         }
     }
 }

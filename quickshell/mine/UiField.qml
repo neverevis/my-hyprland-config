@@ -13,8 +13,8 @@ TextField {
     leftPadding: 10
     selectByMouse: true
     background: Rectangle {
-        radius: 8
-        color: Theme.bg
+        radius: 10
+        color: Theme.track
         border.width: 1
         border.color: f.activeFocus ? Theme.accent : Theme.border
     }

@@ -31,8 +31,8 @@ Singleton {
     }
     property real launcherDepth: 64
     // painel Inicio: tamanho fixo do conteudo e progresso
-    readonly property real homeW: 580
-    readonly property real homeH: 452
+    readonly property real homeW: 700
+    readonly property real homeH: 556
     property real homeProg: Settings.homeOpen && !(homeDockedAll && ((pickerDockedAll && pickerProg > 0.02) || (launcherDockedAll && launcherProg > 0.02))) ? 1 : 0
     Behavior on homeProg {
         NumberAnimation {

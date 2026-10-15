@@ -6,48 +6,32 @@ Column {
     spacing: 14
 
     Card {
+        icon: "bell"
         title: "Notificações"
         subtitle: "O Quickshell recebe os avisos dos apps e mostra como um bloco ligado à moldura. Se outro programa (dunst, mako…) já estiver recebendo, pare-o."
         UiSwitch { label: "Mostrar notificações"; checked: Settings.notifOn; onToggled: on => Settings.notifOn = on }
-        UiSwitch { label: "Não perturbe"; checked: Settings.notifDnd; onToggled: on => Settings.notifDnd = on }
+        UiSwitch { label: "Não perturbe"; description: "Os avisos continuam chegando, mas não aparecem na tela."; checked: Settings.notifDnd; onToggled: on => Settings.notifDnd = on }
         Row {
             spacing: 8
-            UiButton { text: "Enviar teste"; kind: "accent"; onClicked: test.running = true }
-            UiButton { text: "Limpar todas"; onClicked: clear.running = true }
+            UiButton { icon: "send"; text: "Enviar teste"; kind: "accent"; onClicked: test.running = true }
+            UiButton { icon: "broom"; text: "Limpar todas"; onClicked: clear.running = true }
         }
     }
 
     Card {
+        icon: "dock"
         title: "Posição"
-        Row {
-            spacing: 6
-            Text { anchors.verticalCenter: parent.verticalCenter; text: "Lado"; color: Theme.text; font.pixelSize: 13; width: 70 }
-            Repeater {
-                model: [["right", "Direita"], ["left", "Esquerda"], ["top", "Cima"], ["bottom", "Baixo"]]
-                delegate: UiButton {
-                    required property var modelData
-                    text: modelData[1]
-                    checked: Settings.notifSide === modelData[0]
-                    onClicked: Settings.notifSide = modelData[0]
-                }
-            }
-        }
-        Row {
-            spacing: 6
-            Text { anchors.verticalCenter: parent.verticalCenter; text: "Ponto"; color: Theme.text; font.pixelSize: 13; width: 70 }
-            Repeater {
-                model: [["start", "Início"], ["center", "Centro"], ["end", "Fim"]]
-                delegate: UiButton {
-                    required property var modelData
-                    text: modelData[1]
-                    checked: Settings.notifAnchor === modelData[0]
-                    onClicked: Settings.notifAnchor = modelData[0]
-                }
-            }
+        SidePick { sides: ["right", "left", "top", "bottom"]; value: Settings.notifSide; onPicked: v => Settings.notifSide = v }
+        UiLabel { text: "Ponto da borda" }
+        UiSeg {
+            options: [["start", "Início", "alignLeft"], ["center", "Centro", "alignCenter"], ["end", "Fim", "alignRight"]]
+            value: Settings.notifAnchor
+            onPicked: v => Settings.notifAnchor = v
         }
     }
 
     Card {
+        icon: "tune"
         title: "Aparência"
         UiSlider { label: "Largura do cartão"; from: 260; to: 520; value: Settings.notifWidth; suffix: " px"; onMoved: v => Settings.notifWidth = Math.round(v) }
         UiSlider { label: "Notificações visíveis"; from: 1; to: 8; value: Settings.notifMax; onMoved: v => Settings.notifMax = Math.round(v) }
@@ -57,6 +41,7 @@ Column {
     }
 
     Card {
+        icon: "animation"
         title: "Animação"
         AnimPicker { target: "notifications" }
     }
