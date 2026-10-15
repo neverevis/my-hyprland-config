@@ -50,26 +50,6 @@ ShellRoot {
             }
         }
 
-        // ---- brilho (glow): um contorno desfocado que vaza da moldura para dentro da tela (so fora do preenchimento) ----
-        readonly property string holePath: frame.geo.path.replace(/^M0 0 L0 [^Z]*Z /, "")   // so o contorno do "buraco" (sem o retangulo da tela)
-        // ---- brilho interno: faixas semitransparentes DENTRO do vidro, junto a borda da moldura e dos elementos que saem dela ----
-        // (Geometry.compute entrega cada faixa pronta: o "buraco" expandido para dentro da moldura menos o proprio buraco)
-        Repeater {
-            model: Settings.glowOn ? frame.geo.glow : []
-            delegate: Shape {
-                required property var modelData     // { p: caminho da faixa, a: alfa dela }
-                anchors.fill: parent
-                opacity: Settings.glowOpacity / 100
-                preferredRendererType: Shape.GeometryRenderer
-                ShapePath {
-                    fillColor: Settings.glowMode === "shadow" ? Qt.rgba(0, 0, 0, modelData.a) : Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, modelData.a)
-                    strokeColor: "transparent"
-                    fillRule: ShapePath.OddEvenFill
-                    PathSvg { path: modelData.p + " " + frame.holePath }
-                }
-            }
-        }
-
         // grao proprio da moldura: textura de ruido recortada pelo formato da moldura (so aparece se shellGrain > 0)
         Item {   // mascara: o mesmo desenho, em branco
             id: grainMask

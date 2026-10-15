@@ -27,8 +27,6 @@ Singleton {
         return x.toFixed(2) + " " + y.toFixed(2)
     }
 
-    function lenOf(s: string, W: real, H: real): real { return (s === "top" || s === "bottom") ? W : H }
-
     function compute(W: real, H: real, prog: var): var {
         const bars = (Settings.bars || []).slice()
         // notificacoes: um bloco so (todos os cartoes) que cresce da moldura, como uma barra extra
@@ -136,7 +134,6 @@ Singleton {
         let extra = ""
         let d = "M0 0 L0 " + H + " L" + W + " " + H + " L" + W + " 0 Z "   // retangulo da tela em sentido anti-horario (o buraco e horario; fill WindingFill)
 
-        const sideData = []
         for (let k = 0; k < 4; k++) {
             const s = order[k], prev = order[(k + 3) % 4], next = order[(k + 1) % 4]
             const L = (s === "top" || s === "bottom") ? W : H
@@ -196,7 +193,6 @@ Singleton {
                 d += "L" + P(e.b, base + f) + " " + arc(f, e.b + f, base, 1)
             }
             d += "L" + P(endU, base) + " "
-            sideData.push({ s: s, next: next, startU: startU, base: base, ul: ul })
             // poligonos das barras cobertas (so a parte que sobe acima da faixa fina)
             for (const it of items.filter(x => x.sep && x.te - base > 1.5)) {   // sem fiapos quando ja quase sumiu
                 const a = rev ? L - it.hi : it.lo, b = rev ? L - it.lo : it.hi
@@ -210,43 +206,6 @@ Singleton {
             d += r > 0.01 ? "A" + r + " " + r + " 0 0 1 " + q + " " : "L" + q + " "
         }
         d += "Z"
-        // ---- brilho interno: faixas dentro do vidro, junto ao contorno do buraco ----
-        // cada faixa e o buraco "expandido" para dentro da moldura em k px (a moldura fina recua, as barras estreitam e ficam mais rasas,
-        // as curvas de encontro engrossam, o topo arredondado das barras afina); a faixa = buraco expandido menos o buraco (regra par-impar)
-        const glow = []
-        const nGlow = Settings.glowOn ? 18 : 0
-        // perfil gaussiano: o borrao alarga a cauda alem do alcance (extensao e sigma crescem com ele)
-        const soft = Settings.glowSoft / 100
-        const ext = Settings.glowSize * (1 + 2 * soft)
-        const sig = Settings.glowSize * 0.55 * (1 + soft)
-        const prof = x => Math.exp(-(x / sig) * (x / sig))
-        for (let n = 1; n <= nGlow; n++) {
-            const gr = ext * n / nGlow
-            const ga = Math.max(0, prof(ext * (n - 1) / nGlow) - prof(gr))   // alfa da faixa: a soma das faixas por cima de um ponto segue o perfil
-            let gp = ""
-            for (let k = 0; k < 4; k++) {
-                const sd = sideData[k], s = sd.s, next = sd.next
-                const P = (u, v) => pt(s, u, v, W, H)
-                const arc = (rad, u, v, sweep) => rad > 0.01 ? "A" + rad + " " + rad + " 0 0 " + sweep + " " + P(u, v) + " " : "L" + P(u, v) + " "
-                const base = sd.base - gr
-                gp += (k === 0 ? "M" : "L") + P(sd.startU, base) + " "
-                for (const e of sd.ul) {
-                    const f = e.it.fe + gr, gg = Math.max(0, e.it.ge - gr), t = e.it.te - gr
-                    const a = e.a + gr, b = e.b - gr
-                    if (b - a < 2 * gg + 2 || t - gg < base + f) continue   // barra fina demais para esta faixa: o contorno segue reto
-                    gp += "L" + P(a - f, base) + " " + arc(f, a, base + f, 1)
-                    gp += "L" + P(a, t - gg) + " " + arc(gg, a + gg, t, 0)
-                    gp += "L" + P(b - gg, t) + " " + arc(gg, b, t - gg, 0)
-                    gp += "L" + P(b, base + f) + " " + arc(f, b + f, base, 1)
-                }
-                const nx = (u, v) => pt(next, u, v, W, H)
-                const rr = r + gr
-                const q = nx(inset[s] - gr + rr, inset[next] - gr)
-                gp += "L" + P(lenOf(s, W, H) - inset[next] - r, base) + " "
-                gp += rr > 0.01 ? "A" + rr + " " + rr + " 0 0 1 " + q + " " : "L" + q + " "
-            }
-            glow.push({ p: gp + "Z", a: ga })
-        }
-        return { glow: glow, path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null }
+        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null }
     }
 }
