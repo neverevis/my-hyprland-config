@@ -56,9 +56,9 @@ Scope {
             readonly property bool vert: side === "left" || side === "right"
             readonly property bool docked: Settings.wpPickerDocked
             readonly property real e: Settings.edge                       // espessura da moldura
-            readonly property real cellLen: vert ? 156 : 230              // tamanho de um item ao longo da fila
+            readonly property real cellLen: vert ? 142 : 256              // tamanho de um item ao longo da fila
             readonly property real contentDepth: Geometry.pickerDepth(vert)   // profundidade do conteudo
-            readonly property real len: vert ? Math.min(940, height - 140) : Math.min(1180, width - 140)
+            readonly property real len: vert ? Math.min(940, height - 140) : Math.min(1360, width - 140)
             readonly property real total: vert ? height : width
             readonly property real pp: BarState.pickerProg                // progresso (0..1), mesma animacao das barras
 
@@ -179,23 +179,28 @@ Scope {
                             id: tile
                             anchors.horizontalCenter: parent.horizontalCenter
                             y: (parent.height - height) / 2
-                            width: 210; height: 118
-                            scale: card.cur ? 1.28 : 0.9
+                            width: 240; height: 135
+                            property real sel: card.cur ? 1.12 : 0.92
+                            Behavior on sel { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                            scale: sel
                             transformOrigin: Item.Center
+                            // renderiza o cartao com o dobro de resolucao e suavizado: sem serrilhado ao escalar (o selecionado cresce um pouco)
+                            layer.enabled: true
+                            layer.smooth: true
+                            layer.textureSize: Qt.size(width * 2, height * 2)
                             opacity: card.cur ? 1 : 0.7
-                            Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                             Behavior on opacity { NumberAnimation { duration: 220 } }
 
                             Image {
                                 id: thumb
                                 anchors.fill: parent
                                 source: "file://" + card.modelData.path
-                                sourceSize: Qt.size(420, 236)
+                                sourceSize: Qt.size(480, 270)
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
                                 visible: false
                             }
-                            Rectangle { id: round; anchors.fill: parent; radius: 14; x: -width - 20; layer.enabled: true }
+                            Rectangle { id: round; anchors.fill: parent; radius: Settings.wpCardRadius; x: -width - 20; layer.enabled: true; layer.smooth: true; layer.textureSize: Qt.size(width * 2, height * 2) }
                             MultiEffect {
                                 anchors.fill: parent
                                 source: thumb
@@ -204,10 +209,10 @@ Scope {
                             }
                             Rectangle {   // contorno do selecionado / do aplicado
                                 anchors.fill: parent
-                                radius: 14
+                                radius: Settings.wpCardRadius
                                 color: "transparent"
-                                border.width: card.cur || card.applied ? 2 : 0
-                                border.color: card.cur ? Theme.accent : Qt.rgba(1, 1, 1, 0.5)
+                                border.width: card.applied && !card.cur ? 2 : 0
+                                border.color: Theme.text
                             }
                             MouseArea {
                                 anchors.fill: parent

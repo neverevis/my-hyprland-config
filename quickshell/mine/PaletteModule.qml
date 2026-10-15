@@ -13,23 +13,19 @@ Item {
         surfaces: ["background", "surface", "surfaceHigh", "outline", "muted", "text"]
     })[opts.set ?? "all"]
 
-    implicitWidth: grid.implicitWidth
-    implicitHeight: grid.implicitHeight
+    readonly property int total: ids.length * dot + Math.max(0, ids.length - 1) * gap
+    implicitWidth: vertical ? dot : total
+    implicitHeight: vertical ? total : dot
 
-    Grid {
-        id: grid
-        spacing: root.gap
-        rows: root.vertical ? 99 : 1
-        columns: root.vertical ? 1 : 99
-        Repeater {
-            model: root.ids
-            delegate: Rectangle {
-                required property string modelData
-                width: root.dot; height: root.dot; radius: root.dot / 2
-                color: ThemeColors.of(modelData)
-                border.width: 1
-                border.color: Qt.rgba(1, 1, 1, 0.22)
-            }
+    Repeater {
+        model: root.ids
+        delegate: Rectangle {
+            required property int index
+            required property string modelData
+            x: root.vertical ? 0 : index * (root.dot + root.gap)
+            y: root.vertical ? index * (root.dot + root.gap) : 0
+            width: root.dot; height: root.dot; radius: root.dot / 2
+            color: ThemeColors.of(modelData)
         }
     }
 }

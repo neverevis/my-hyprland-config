@@ -83,6 +83,15 @@ else
     say "Copie hypr/quickshell.lua para a sua config e adicione: pcall(require, \"quickshell\")"
 fi
 
+# ---- kitty (tema do wallpaper): inclui o arquivo gerado pelo shell ----
+KITTY_CONF="$HOME/.config/kitty/kitty.conf"
+if [ -f "$KITTY_CONF" ] && ! grep -q 'themes/quickshell.conf' "$KITTY_CONF"; then
+    cp -a "$KITTY_CONF" "$KITTY_CONF.backup-$STAMP"
+    mkdir -p "$HOME/.config/kitty/themes"; : > "$HOME/.config/kitty/themes/quickshell.conf"
+    printf '\n# Tema do wallpaper gerado pelo Quickshell\ninclude themes/quickshell.conf\n' >> "$KITTY_CONF"
+    say "kitty: linha 'include themes/quickshell.conf' adicionada ao kitty.conf"
+fi
+
 # ---- wallpapers ----
 WPDIR="$(python3 -c "import json,os;print(os.path.expanduser(json.load(open('$QS_DIR/settings.json')).get('wpDir','~/Imagens/Wallpapers')))" 2>/dev/null || echo "$HOME/Imagens/Wallpapers")"
 mkdir -p "$WPDIR"

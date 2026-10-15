@@ -42,6 +42,7 @@ Column {
             }
         }
         UiSwitch { label: "Aplicar nas bordas das janelas (Hyprland)"; checked: Settings.themeBorders; onToggled: on => Settings.themeBorders = on }
+        UiSwitch { label: "Aplicar no kitty"; checked: Settings.themeKitty; onToggled: on => Settings.themeKitty = on }
         Flow {
             width: parent.width
             spacing: 14

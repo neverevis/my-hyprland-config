@@ -36,12 +36,34 @@ Item {
     // papeis do Material You -> os papeis usados pelo shell
     function apply(m) {
         ThemeColors.m = m
-        ThemeColors.t = {
+        setTarget({
             primary: m.primary, onPrimary: m.onPrimary, secondary: m.secondary, tertiary: m.tertiary,
             primaryContainer: m.primaryContainer, secondaryContainer: m.secondaryContainer, tertiaryContainer: m.tertiaryContainer,
             background: m.background, surface: m.surfaceContainer, surfaceHigh: m.surfaceContainerHigh,
             outline: m.outline, text: m.onSurface, muted: m.onSurfaceVariant, error: m.error
+        })
+    }
+
+    // ---- fade entre paletas: interpola de cor em cor (sem Behavior no singleton, que derrubava o shell) ----
+    property var fromT: ({})
+    property var toT: ({})
+    property real mix: 1
+    function setTarget(t) {
+        const cur = ThemeColors.t
+        if (!cur || cur.primary === undefined) { ThemeColors.t = t; toT = t; return }   // primeira paleta: sem fade
+        fromT = cur; toT = t
+        fade.restart()
+    }
+    NumberAnimation { id: fade; target: root; property: "mix"; from: 0; to: 1; duration: 700; easing.type: Easing.OutCubic }
+    onMixChanged: {
+        if (!toT.primary) return
+        if (mix >= 1) { ThemeColors.t = toT; return }
+        const out = {}
+        for (const k in toT) {
+            const a = Qt.color(fromT[k] ?? toT[k]), b = Qt.color(toT[k])
+            out[k] = Qt.rgba(a.r + (b.r - a.r) * mix, a.g + (b.g - a.g) * mix, a.b + (b.b - a.b) * mix, 1)
         }
+        ThemeColors.t = out
     }
     Process {
         id: runner
@@ -118,7 +140,7 @@ Item {
         const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
         const s1 = clamp(a.s1, 0.5, 0.85), s2 = clamp(a.s2 * 0.9, 0.38, 0.75), s3 = clamp(a.s3 * 0.9, 0.38, 0.75)
         const tone = dark ? 0.76 : 0.40
-        ThemeColors.t = {
+        setTarget({
             primary: hsl(a.h1, s1, tone),
             onPrimary: hsl(a.h1, 0.35, dark ? 0.13 : 0.97),
             secondary: hsl(a.h2, s2, dark ? 0.72 : 0.42),
@@ -130,7 +152,7 @@ Item {
             text: hsl(a.h1, 0.2, dark ? 0.92 : 0.12),
             muted: hsl(a.h1, 0.1, dark ? 0.66 : 0.38),
             error: dark ? "#ff8a9a" : "#ba1a3a"
-        }
+        })
     }
 
     // canvas de amostragem: o wallpaper reduzido a 64x36

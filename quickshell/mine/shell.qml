@@ -16,7 +16,7 @@ ShellRoot {
     readonly property color baseColor: Settings.barColor
     readonly property color fillColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, Settings.glass ? Settings.glassOpacity / 100 : 1)
 
-    Component.onCompleted: HyprSync.ready   // carrega o HyprSync (singleton) ja no inicio
+    Component.onCompleted: { HyprSync.ready; AppThemes.ready }   // carrega o HyprSync (singleton) ja no inicio
 
     WallpaperWindow {}
     WallpaperPicker { geo: shell.geo }

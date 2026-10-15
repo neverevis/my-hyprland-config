@@ -30,15 +30,16 @@ Singleton {
             const ps = Settings.wpPickerSide
             const pv = ps === "left" || ps === "right"
             pIdx = bars.length
-            bars.push({ side: ps, width: pv ? Math.min(940, H - 140) : Math.min(1180, W - 140), offset: Settings.wpPickerOffset,
-                        height: Settings.edge + 8 + pickerDepth(pv) + 12, full: false, autoHide: true, reserve: "overlay", picker: true })
+            bars.push({ side: ps, width: pv ? Math.min(940, H - 140) : Math.min(1360, W - 140), offset: Settings.wpPickerOffset,
+                        height: Settings.edge + 8 + pickerDepth(pv) + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
+                        fillet: Settings.wpPickerFillet, topRadius: Settings.wpPickerRadius })
             prog = Object.assign({}, prog || {})
             prog[pIdx] = pp
         }
         const edge = Settings.edge
         const outline = Settings.outline
         const r = outline ? Settings.cornerRadius : 0
-        const minT = edge + Settings.fillet + Settings.topRadius
+        const minT = edge + Math.max(Settings.fillet + Settings.topRadius, Settings.wpPickerFillet + Settings.wpPickerRadius)
 
         // barras que competem com o seletor (mesmo lado, faixas que se tocam) se escondem para dar lugar a ele
         const cover = new Array(bars.length).fill(0)
@@ -110,7 +111,7 @@ Singleton {
             for (const i of grp[s]) {
                 const b = bars[i]
                 const full = !!b.full
-                const f = full ? 0 : Settings.fillet, g = full ? 0 : Settings.topRadius
+                const f = full ? 0 : (b.fillet ?? Settings.fillet), g = full ? 0 : (b.topRadius ?? Settings.topRadius)
                 const t = tOf(i)
                 const p = pf(i)
                 const avail = Math.max(0, shi - slo - 2 * f)

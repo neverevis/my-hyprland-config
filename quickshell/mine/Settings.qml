@@ -25,6 +25,7 @@ Singleton {
     property alias themeOn: adapter.themeOn
     property alias themeMode: adapter.themeMode          // dark | light
     property alias themeVariant: adapter.themeVariant    // tonalspot | vibrant | expressive | fidelity | content | neutral | monochrome | rainbow | fruitsalad
+    property alias themeKitty: adapter.themeKitty        // gera o tema do kitty
     property alias themeBorders: adapter.themeBorders    // aplica as cores nas bordas das janelas do Hyprland
     property alias outline: adapter.outline             // contorno fino em todas as bordas
     property alias glass: adapter.glass
@@ -60,6 +61,9 @@ Singleton {
     property alias wpPickerSide: adapter.wpPickerSide         // bottom | top | left | right
     property alias wpPickerDocked: adapter.wpPickerDocked     // acoplado a moldura (sai da borda) ou flutuante
     property alias wpPickerOffset: adapter.wpPickerOffset     // deslocamento ao longo da borda (px)
+    property alias wpPickerRadius: adapter.wpPickerRadius     // arredondamento dos cantos do painel (topo)
+    property alias wpPickerFillet: adapter.wpPickerFillet     // curva onde o painel encontra a moldura
+    property alias wpCardRadius: adapter.wpCardRadius         // arredondamento das miniaturas
     property alias wpPickerGap: adapter.wpPickerGap           // distancia da borda quando flutuante (px)
     property bool wpPickerOpen: false                   // seletor aberto (nao e salvo)
     // ---- animacoes nomeadas: lista propria + qual usar em cada lugar ----
@@ -206,8 +210,12 @@ Singleton {
         adapter.wpPickerDocked = true
         adapter.wpPickerOffset = 0
         adapter.wpPickerGap = 14
+        adapter.wpPickerRadius = 12
+        adapter.wpPickerFillet = 10
+        adapter.wpCardRadius = 14
         adapter.themeOn = false
         adapter.themeMode = "dark"
+        adapter.themeKitty = true
         adapter.themeVariant = "tonalspot"
         adapter.themeBorders = true
         adapter.animCfg = { anims: [], use: animDefaults, migrated: true }
@@ -319,6 +327,10 @@ Singleton {
             property bool wpPickerDocked: true
             property int wpPickerOffset: 0
             property int wpPickerGap: 14
+            property int wpPickerRadius: 11
+            property int wpPickerFillet: 13
+            property int wpCardRadius: 14
+            property bool themeKitty: true
             property bool themeOn: false
             property string themeMode: "dark"
             property string themeVariant: "tonalspot"

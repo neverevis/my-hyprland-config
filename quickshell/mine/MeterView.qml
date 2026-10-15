@@ -19,7 +19,7 @@ Item {
     property int segments: 8
     property bool dim: false            // ex.: volume mudo
 
-    readonly property color tint: warn && value > 0.85 ? "#f7768e" : (warn && value > 0.65 ? "#e0af68" : col)
+    readonly property color tint: warn && value > 0.85 ? Theme.danger : (warn && value > 0.65 ? (Settings.themeOn ? ThemeColors.tertiary : "#e0af68") : col)
     readonly property bool graphic: display !== "text"
 
     implicitWidth: grid.implicitWidth

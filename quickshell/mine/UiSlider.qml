@@ -29,7 +29,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             width: 16; height: 16; radius: 8
             x: area.ratio * (area.width - width)
-            color: "#ffffff"
+            color: Theme.text
             border.width: 3; border.color: Theme.accent
             scale: mouse.pressed ? 1.15 : 1
             Behavior on scale { NumberAnimation { duration: 100 } }
