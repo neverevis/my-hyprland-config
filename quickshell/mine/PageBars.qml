@@ -46,7 +46,7 @@ Column {
                 Column {
                     anchors { left: mini.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
                     spacing: 1
-                    Text { text: "Barra " + (item.index + 1); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                    Text { width: 104; elide: Text.ElideRight; text: item.modelData.name || ("Barra " + (item.index + 1)); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
                     Text { text: (page.sideNames[item.modelData.side] ?? "?") + " · " + Settings.sectionsOf(item.modelData).reduce((n, x) => n + x.modules.length, 0) + " módulos"; color: Theme.muted; font.pixelSize: 11 }
                 }
                 MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { page.cur = item.index; page.curSec = 0; page.openMod = -1 } }
@@ -71,10 +71,30 @@ Column {
         icon: "monitor"
         title: "Posição e tamanho"
         subtitle: "Em que lado da tela a barra fica e quanto espaço ocupa."
+        Row {
+            width: parent.width
+            spacing: 10
+            UiIcon { name: "pencil"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+            Text { text: "Nome"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+            UiField {
+                width: Math.min(280, parent.width - 80)
+                text: page.bar ? (page.bar.name ?? "") : ""
+                placeholderText: "Barra " + (page.idx + 1)
+                onEditingFinished: page.setBar("name", text.trim())
+            }
+        }
         SidePick { value: page.bar ? page.bar.side : ""; onPicked: v => page.setBar("side", v) }
         UiSwitch { label: "Ocupar o lado inteiro"; description: "A barra vai de uma ponta à outra da tela."; checked: page.bar ? page.bar.full : false; onToggled: on => page.setBar("full", on) }
         UiSlider { visible: page.bar ? !page.bar.full : true; label: "Largura"; from: 100; to: 3000; value: page.bar ? page.bar.width : 0; suffix: " px"; onMoved: v => page.setBar("width", v) }
-        UiSlider { visible: page.bar ? !page.bar.full : true; label: "Deslocamento"; from: -1500; to: 1500; value: page.bar ? page.bar.offset : 0; suffix: " px"; onMoved: v => page.setBar("offset", v) }
+        UiLabel { visible: page.bar ? !page.bar.full : false; text: "Encostar num canto" }
+        UiSeg {
+            visible: page.bar ? !page.bar.full : false
+            readonly property bool vert: page.bar ? (page.bar.side === "left" || page.bar.side === "right") : false
+            options: [["", "Não", "close"], ["start", vert ? "No topo" : "À esquerda", vert ? "arrowUp" : "arrow_left"], ["end", vert ? "Embaixo" : "À direita", vert ? "arrowDown" : "arrow_right"]]
+            value: page.bar ? (page.bar.corner ?? "") : ""
+            onPicked: v => page.setBar("corner", v)
+        }
+        UiSlider { visible: page.bar ? !page.bar.full && !page.bar.corner : true; label: "Deslocamento"; from: -1500; to: 1500; value: page.bar ? page.bar.offset : 0; suffix: " px"; onMoved: v => page.setBar("offset", v) }
         UiSlider { label: "Espessura"; from: 24; to: 90; value: page.bar ? page.bar.height : 0; suffix: " px"; onMoved: v => page.setBar("height", v) }
     }
 

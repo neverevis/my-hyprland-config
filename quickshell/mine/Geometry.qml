@@ -42,7 +42,8 @@ Singleton {
             const off = Settings.notifAnchor === "start" ? -sl + marg : (Settings.notifAnchor === "end" ? sl - marg : 0)
             nIdx = bars.length
             bars.push({ side: ns, width: len, offset: Math.max(-sl, Math.min(sl, off)), height: Settings.edge + 10 + BarState.notifDepth + 10,
-                        full: false, autoHide: true, reserve: "overlay", notif: true, fillet: fN, topRadius: Settings.notifRadius })
+                        full: false, autoHide: true, reserve: "overlay", notif: true, fillet: fN, topRadius: Settings.notifRadius,
+                        corner: Settings.notifCorner && Settings.notifAnchor !== "center" ? Settings.notifAnchor : "" })
             prog = Object.assign({}, prog || {})
             prog[nIdx] = npr
         }
@@ -167,15 +168,16 @@ Singleton {
         let extra = ""
         let d = "M0 0 L0 " + H + " L" + W + " " + H + " L" + W + " 0 Z "   // retangulo da tela em sentido anti-horario (o buraco e horario; fill WindingFill)
 
+        // ---- passo 1: posicao das barras de cada lado ----
+        // barra "encostada no canto" (corner: "start" | "end", no eixo da tela: esquerda/topo = start): ela vai ate a linha
+        // do lado vizinho, sem a curva daquele lado; o canto da moldura passa a sair do topo dela. att: -1 = start, +1 = end
+        const SIDE = {}
         for (let k = 0; k < 4; k++) {
             const s = order[k], prev = order[(k + 3) % 4], next = order[(k + 1) % 4]
             const L = (s === "top" || s === "bottom") ? W : H
-            const startU = inset[prev] + r, endU = L - inset[next] - r
             const rev = (s === "bottom" || s === "left")   // u cresce contra o eixo da tela
+            const startU = inset[prev] + r, endU = L - inset[next] - r
             const slo = rev ? L - endU : startU, shi = rev ? L - startU : endU   // limites no eixo da tela
-            const base = inset[s]
-
-            // posicoes de cada barra deste lado, no eixo da tela
             const items = []
             for (const i of grp[s]) {
                 const b = bars[i]
@@ -187,55 +189,79 @@ Singleton {
                 const bw = full ? shi - slo : Math.max(60, Math.min(b.width, avail))
                 const slack = Math.max(0, (avail - bw) / 2)
                 const zero = (slo + shi) / 2
-                const cs = zero + Math.max(-slack, Math.min(slack, b.offset || 0)) + (slide[i] !== undefined ? slide[i] * qv : 0)
-                // o arredondamento NAO anima: so encolhe se a barra ainda for mais rasa que as curvas
+                const off = b.offset || 0
+                const att = full || slide[i] !== undefined || cover[i] > 0 ? 0 : (b.corner === "start" ? -1 : (b.corner === "end" ? 1 : 0))
+                let cs = zero + Math.max(-slack, Math.min(slack, off)) + (slide[i] !== undefined ? slide[i] * qv : 0)
+                // encostada: a ponta vai ate a linha do lado vizinho (no eixo da tela)
+                const lineLo = rev ? inset[next] : inset[prev], lineHi = rev ? L - inset[prev] : L - inset[next]
+                if (att < 0) cs = lineLo + bw / 2
+                else if (att > 0) cs = lineHi - bw / 2
                 const te = full ? inset[s] : inset[s] + (t - inset[s]) * p
                 const dr = Math.max(0, te - inset[s])
                 const sc = (f + g) > 0 ? Math.min(1, dr / (f + g)) : 1
-                items.push({ i: i, f: f, g: g, t: t, fe: f * sc, ge: g * sc, te: te, sep: !!sepSet[i], lo: cs - bw / 2, hi: cs + bw / 2, zero: zero })
+                // att no eixo u (o caminho anda em u): inicio de u = fim do eixo nos lados invertidos
+                const attU = rev ? -att : att
+                items.push({ i: i, f: f, g: g, t: t, fe: f * sc, ge: g * sc, te: te, sep: !!sepSet[i], lo: cs - bw / 2, hi: cs + bw / 2, zero: zero, att: att, attU: attU })
             }
-            // barras cobertas pelo seletor saem do desenho principal (viram poligonos separados, que podem se sobrepor a ele)
             const main = items.filter(it => !it.sep)
             main.sort((a, b) => a.lo - b.lo)
             let cursor = slo
             for (const it of main) {   // sem sobreposicao
+                if (it.att < 0) { cursor = it.hi + it.f; continue }
+                if (it.att > 0) continue
                 it.lo = Math.max(it.lo, cursor + it.f)
                 if (it.hi < it.lo + 40) it.hi = it.lo + 40
                 cursor = it.hi + it.f
             }
+            const aS = main.find(it => it.attU < 0), aE = main.find(it => it.attU > 0)
+            SIDE[s] = { L: L, rev: rev, items: items, main: main, startDepth: aS ? aS.te : null, endDepth: aE ? aE.te : null }
+        }
+
+        // ---- passo 2: caminho do buraco ----
+        for (let k = 0; k < 4; k++) {
+            const s = order[k], prev = order[(k + 3) % 4], next = order[(k + 1) % 4]
+            const S = SIDE[s], L = S.L, rev = S.rev
+            const base = inset[s]
+            // profundidade nos dois cantos deste lado (topo da barra encostada, ou a linha da moldura)
+            const vStart = S.startDepth ?? base, vEnd = S.endDepth ?? base
+            const prevEnd = SIDE[prev].endDepth ?? inset[prev], nextStart = SIDE[next].startDepth ?? inset[next]
+            const startU = prevEnd + r, endU = L - nextStart - r
+            const items = S.items, main = S.main
             for (const it of items) {
                 const t = it.t
                 const rect = s === "top" ? { x: it.lo, y: 0, w: it.hi - it.lo, h: t }
                     : s === "right" ? { x: W - t, y: it.lo, w: t, h: it.hi - it.lo }
                     : s === "bottom" ? { x: it.lo, y: H - t, w: it.hi - it.lo, h: t }
                     : { x: 0, y: it.lo, w: t, h: it.hi - it.lo }
-                res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], fade: exitSet[it.i] ? Math.min(1, qv * 2.2) : 0, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
+                res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], fade: exitSet[it.i] ? Math.min(1, qv * 2.2) : 0, corner: it.att, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
             }
 
-            // caminho do buraco neste lado, em ordem crescente de u
             const ul = main.map(it => ({ it: it, a: rev ? L - it.hi : it.lo, b: rev ? L - it.lo : it.hi }))
             ul.sort((x, y) => x.a - y.a)
             const P = (u, v) => pt(s, u, v, W, H)
             const arc = (rad, u, v, sweep) => rad > 0.01 ? "A" + rad + " " + rad + " 0 0 " + sweep + " " + P(u, v) + " " : "L" + P(u, v) + " "
-            d += (k === 0 ? "M" : "L") + P(startU, base) + " "
+            d += (k === 0 ? "M" : "L") + P(startU, vStart) + " "
             for (const e of ul) {
                 const f = e.it.fe, g = e.it.ge, t = e.it.te
-                d += "L" + P(e.a - f, base) + " " + arc(f, e.a, base + f, 1)
-                d += "L" + P(e.a, t - g) + " " + arc(g, e.a + g, t, 0)
-                d += "L" + P(e.b - g, t) + " " + arc(g, e.b, t - g, 0)
-                d += "L" + P(e.b, base + f) + " " + arc(f, e.b + f, base, 1)
+                if (e.it.attU >= 0) {   // ponta de baixo (u menor): curva da moldura + arredondamento do topo
+                    d += "L" + P(e.a - f, base) + " " + arc(f, e.a, base + f, 1)
+                    d += "L" + P(e.a, t - g) + " " + arc(g, e.a + g, t, 0)
+                }
+                if (e.it.attU <= 0) {   // ponta de cima
+                    d += "L" + P(e.b - g, t) + " " + arc(g, e.b, t - g, 0)
+                    d += "L" + P(e.b, base + f) + " " + arc(f, e.b + f, base, 1)
+                }
             }
-            d += "L" + P(endU, base) + " "
-            // poligonos das barras cobertas (so a parte que sobe acima da faixa fina)
+            d += "L" + P(endU, vEnd) + " "
             for (const it of items.filter(x => x.sep && x.te - base > 1.5)) {   // sem fiapos quando ja quase sumiu
                 const a = rev ? L - it.hi : it.lo, b = rev ? L - it.lo : it.hi
                 const f = it.fe, g = it.ge, t = it.te
                 extra += "M" + P(a - f, base) + " " + arc(f, a, base + f, 1) + "L" + P(a, t - g) + " " + arc(g, a + g, t, 0)
                     + "L" + P(b - g, t) + " " + arc(g, b, t - g, 0) + "L" + P(b, base + f) + " " + arc(f, b + f, base, 1) + "Z "
             }
-            // canto ate o inicio do proximo lado
+            // canto ate o inicio do proximo lado (sai do topo da barra encostada, se houver)
             const nx = (u, v) => pt(next, u, v, W, H)
-            const q = nx(inset[s] + r, inset[next])
+            const q = nx(vEnd + r, nextStart)
             d += r > 0.01 ? "A" + r + " " + r + " 0 0 1 " + q + " " : "L" + q + " "
         }
         d += "Z"

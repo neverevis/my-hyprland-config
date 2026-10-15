@@ -28,6 +28,12 @@ Column {
             value: Settings.notifAnchor
             onPicked: v => Settings.notifAnchor = v
         }
+        UiSwitch {
+            visible: Settings.notifAnchor !== "center"
+            label: "Encostar no canto"; icon: "arrow_top_right"
+            description: "As notificações saem do canto da tela, emendadas com a moldura."
+            checked: Settings.notifCorner; onToggled: on => Settings.notifCorner = on
+        }
     }
 
     Card {

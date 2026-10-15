@@ -13,20 +13,8 @@ Column {
         icon: "animation"
         title: "Animações"
         subtitle: "As do sistema (não editáveis) e as suas. Escolha uma para ver ou editar."
-        Flow {
-            width: parent.width
-            spacing: 6
-            Repeater {
-                model: Settings.allAnims()
-                delegate: UiButton {
-                    required property var modelData
-                    text: modelData.name
-                    checked: page.sel === modelData.name
-                    onClicked: page.sel = modelData.name
-                }
-            }
-            UiButton { icon: "plus"; text: "Nova animação"; kind: "ghost"; onClicked: page.sel = Settings.addAnim(page.cur) }
-        }
+        AnimPicker { editMode: true; selected: page.sel; onChosen: n => page.sel = n }
+        UiButton { icon: "plus"; text: "Nova animação"; kind: "ghost"; onClicked: page.sel = Settings.addAnim(page.cur) }
     }
 
     Card {

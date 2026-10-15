@@ -88,6 +88,7 @@ Singleton {
     // ---- notificacoes (ver Notifications.qml) ----
     property alias notifOn: adapter.notifOn                     // o Quickshell e o servidor de notificacoes
     property alias notifSide: adapter.notifSide                 // right | left | top | bottom
+    property alias notifCorner: adapter.notifCorner             // encostar no canto (com o ponto da borda no inicio ou no fim)
     property alias notifAnchor: adapter.notifAnchor             // start | center | end (ao longo da borda)
     property alias notifWidth: adapter.notifWidth               // largura do cartao (px)
     property alias notifMax: adapter.notifMax                   // cartoes visiveis ao mesmo tempo
@@ -282,6 +283,7 @@ Singleton {
         adapter.notifOn = true
         adapter.notifSide = "right"
         adapter.notifAnchor = "start"
+        adapter.notifCorner = false
         adapter.notifWidth = 360
         adapter.notifMax = 4
         adapter.notifTimeout = 6
@@ -435,6 +437,7 @@ Singleton {
             property bool notifOn: true
             property string notifSide: "right"
             property string notifAnchor: "start"
+            property bool notifCorner: false
             property int notifWidth: 360
             property int notifMax: 4
             property int notifTimeout: 6
