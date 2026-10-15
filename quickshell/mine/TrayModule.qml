@@ -12,7 +12,6 @@ Grid {
 
     readonly property real size: opts.size ?? 18
     spacing: opts.spacing ?? 8
-    rows: vertical ? 99 : 1
     columns: vertical ? 1 : 99
 
     Repeater {

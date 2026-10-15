@@ -25,7 +25,6 @@ Grid {
     readonly property var roman: ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ", "Ⅹ"]
 
     spacing: opts.spacing ?? 6
-    rows: vertical ? 99 : 1
     columns: vertical ? 1 : 99
 
     // estado de cada workspace mostrado: [{id, active, occupied, cls}]  (cls = classe do app principal)

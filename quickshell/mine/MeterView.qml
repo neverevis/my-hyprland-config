@@ -28,7 +28,6 @@ Item {
     Grid {
         id: grid
         spacing: 6
-        rows: m.vertical ? 99 : 1
         columns: m.vertical ? 1 : 99
         horizontalItemAlignment: Grid.AlignHCenter
         verticalItemAlignment: Grid.AlignVCenter

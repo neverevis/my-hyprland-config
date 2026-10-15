@@ -106,7 +106,7 @@ PanelWindow {
                     readonly property real total: vert ? win.height : win.width          // comprimento da barra
                     // o Repeater tambem conta como filho do Grid e soma um espacamento a mais: tira esse espacamento
                     readonly property real gridLen: vert ? grid.implicitHeight : grid.implicitWidth
-                    readonly property real contentLen: Math.max(0, gridLen - (sec.cfg.modules && sec.cfg.modules.length > 0 ? (sec.cfg.spacing ?? 14) : 0))
+                    readonly property real contentLen: Math.max(0, gridLen - (!vert && sec.cfg.modules && sec.cfg.modules.length > 0 ? (sec.cfg.spacing ?? 14) : 0))
                     readonly property real len: (cfg.width ?? 0) > 0 ? Math.min(cfg.width, total - 2 * pad) : contentLen
                     readonly property real off: cfg.offset ?? 0
                     readonly property real start: cfg.anchor === "start" ? pad + off
@@ -123,7 +123,6 @@ PanelWindow {
                     Grid {
                         id: grid
                         spacing: sec.cfg.spacing ?? 14
-                        rows: sec.vert ? 99 : 1
                         columns: sec.vert ? 1 : 99
                         horizontalItemAlignment: Grid.AlignHCenter
                         verticalItemAlignment: Grid.AlignVCenter
