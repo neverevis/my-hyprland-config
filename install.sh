@@ -92,6 +92,22 @@ if [ -f "$KITTY_CONF" ] && ! grep -q 'themes/quickshell.conf' "$KITTY_CONF"; the
     say "kitty: linha 'include themes/quickshell.conf' adicionada ao kitty.conf"
 fi
 
+# ---- GTK (tema do wallpaper): o gtk.css importa o arquivo gerado pelo shell ----
+for v in 3.0 4.0; do
+    G="$HOME/.config/gtk-$v/gtk.css"
+    if [ -f "$G" ] && ! grep -q 'quickshell.css' "$G"; then
+        cp -a "$G" "$G.backup-$STAMP"; : > "$HOME/.config/gtk-$v/quickshell.css"
+        printf '\n/* tema do wallpaper do Quickshell */\n@import url("quickshell.css");\n' >> "$G"
+        say "GTK $v: import adicionado ao gtk.css"
+    fi
+done
+
+# ---- Brave: o shell escreve a cor do tema na politica gerenciada (precisa existir e ser gravavel) ----
+BP=/etc/brave/policies/managed/caelestia.json
+if [ ! -w "$BP" ]; then
+    say "Brave (opcional): para o tema ao vivo rode uma vez: sudo mkdir -p /etc/brave/policies/managed && sudo touch $BP && sudo chown \$USER $BP"
+fi
+
 # ---- wallpapers ----
 WPDIR="$(python3 -c "import json,os;print(os.path.expanduser(json.load(open('$QS_DIR/settings.json')).get('wpDir','~/Imagens/Wallpapers')))" 2>/dev/null || echo "$HOME/Imagens/Wallpapers")"
 mkdir -p "$WPDIR"

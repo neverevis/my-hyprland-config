@@ -85,6 +85,19 @@ Column {
         UiSwitch { label: "Acoplado à moldura"; checked: Settings.wpPickerDocked; onToggled: on => Settings.wpPickerDocked = on }
         UiSlider { label: "Deslocamento"; from: -1000; to: 1000; value: Settings.wpPickerOffset; suffix: " px"; onMoved: v => Settings.wpPickerOffset = v }
         UiSlider { visible: !Settings.wpPickerDocked; label: "Distância da borda"; from: 0; to: 80; value: Settings.wpPickerGap; suffix: " px"; onMoved: v => Settings.wpPickerGap = v }
+        Row {
+            spacing: 6
+            Text { anchors.verticalCenter: parent.verticalCenter; text: "Wallpapers visíveis"; color: Theme.text; font.pixelSize: 13; width: 140 }
+            Repeater {
+                model: [1, 3, 5]
+                delegate: UiButton {
+                    required property int modelData
+                    text: modelData
+                    checked: Settings.wpPickerCount === modelData
+                    onClicked: Settings.wpPickerCount = modelData
+                }
+            }
+        }
         UiSlider { label: "Arredondamento do painel"; from: 0; to: 40; value: Settings.wpPickerRadius; suffix: " px"; onMoved: v => Settings.wpPickerRadius = v }
         UiSlider { visible: Settings.wpPickerDocked; label: "Curva ao encontrar a moldura"; from: 0; to: 40; value: Settings.wpPickerFillet; suffix: " px"; onMoved: v => Settings.wpPickerFillet = v }
         UiSlider { label: "Arredondamento das miniaturas"; from: 0; to: 40; value: Settings.wpCardRadius; suffix: " px"; onMoved: v => Settings.wpCardRadius = v }

@@ -58,7 +58,7 @@ Scope {
             readonly property real e: Settings.edge                       // espessura da moldura
             readonly property real cellLen: vert ? 142 : 256              // tamanho de um item ao longo da fila
             readonly property real contentDepth: Geometry.pickerDepth(vert)   // profundidade do conteudo
-            readonly property real len: vert ? Math.min(940, height - 140) : Math.min(1360, width - 140)
+            readonly property real len: Geometry.pickerLen(vert, width, height)
             readonly property real total: vert ? height : width
             readonly property real pp: BarState.pickerProg                // progresso (0..1), mesma animacao das barras
 
@@ -127,7 +127,9 @@ Scope {
                 // ---- fila de imagens ----
                 ListView {
                     id: list
-                    x: win.box.x; y: win.box.y; width: win.box.width; height: win.box.height
+                    // a lista mostra exatamente N cartoes (a folga das margens fica fora dela: sem lasca do proximo wallpaper)
+                    x: win.box.x + (win.vert ? 0 : Geometry.pickerPad); y: win.box.y + (win.vert ? Geometry.pickerPad : 0)
+                    width: win.box.width - (win.vert ? 0 : 2 * Geometry.pickerPad); height: win.box.height - (win.vert ? 2 * Geometry.pickerPad : 0)
                     orientation: win.vert ? ListView.Vertical : ListView.Horizontal
                     model: Wallpaper.files
                     focus: true

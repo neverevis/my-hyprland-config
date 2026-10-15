@@ -8,7 +8,7 @@ Meu shell em **Quickshell** para o **Hyprland**: uma moldura fina na tela com ba
 - **Várias barras**, em qualquer lado, com **seções** posicionáveis e **módulos**: relógio, workspaces (10 estilos), janela ativa, CPU, memória, volume, bandeja do sistema e texto.
 - Barras que **se escondem** e aparecem ao passar o mouse, com animação por curva de Bézier.
 - **Wallpaper em QML** com transições (fade, slide, wipe, circle, zoom) e **seletor** que sai da moldura (qualquer lado, acoplado ou flutuante). As barras saem da frente dele.
-- **Tema pelo wallpaper (Material You)**, igual ao Caelestia: a cor-fonte vem da imagem (quantização + pontuação) e um esquema do Material gera os papéis de cor (variantes tonal spot, vibrante, expressivo, etc., escuro/claro). Aplica na moldura, barras, janelas e nas bordas do Hyprland; há um módulo de barra com as bolinhas das cores. O tema também é aplicado no kitty (arquivo `~/.config/kitty/themes/quickshell.conf`, recarregado ao vivo).
+- **Tema pelo wallpaper (Material You)**, igual ao Caelestia: a cor-fonte vem da imagem (quantização + pontuação) e um esquema do Material gera os papéis de cor (variantes tonal spot, vibrante, expressivo, etc., escuro/claro). Aplica na moldura, barras, janelas e nas bordas do Hyprland; há um módulo de barra com as bolinhas das cores. O tema também é aplicado no kitty (`~/.config/kitty/themes/quickshell.conf`, recarregado ao vivo), nos apps GTK3/GTK4 (`quickshell.css` importado pelo `gtk.css`) e no Brave (cor-semente na política gerenciada `/etc/brave/policies/managed/caelestia.json`, que precisa ser gravável pelo seu usuário).
 - **Biblioteca de animações** nomeadas (editor de curva arrastando os pontos) e página de **Blur**.
 
 ## Requisitos

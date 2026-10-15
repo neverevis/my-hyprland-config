@@ -9,6 +9,12 @@ import QtQuick
 Singleton {
     // profundidade do conteudo do seletor de wallpaper (so as miniaturas, sem titulos)
     function pickerDepth(vertical: bool): real { return vertical ? 296 : 186 }
+    // comprimento do painel do seletor: N cartoes (passo 256 na horizontal, 142 na vertical) + folga + margens internas
+    function pickerLen(vertical: bool, W: real, H: real): real {
+        const n = Math.max(1, Math.min(5, Settings.wpPickerCount))
+        return Math.min(n * (vertical ? 142 : 256) + 12 + 2 * pickerPad, (vertical ? H : W) - 140)
+    }
+    readonly property real pickerPad: 14
 
     readonly property var order: ["top", "right", "bottom", "left"]
 
@@ -30,7 +36,7 @@ Singleton {
             const ps = Settings.wpPickerSide
             const pv = ps === "left" || ps === "right"
             pIdx = bars.length
-            bars.push({ side: ps, width: pv ? Math.min(940, H - 140) : Math.min(1360, W - 140), offset: Settings.wpPickerOffset,
+            bars.push({ side: ps, width: pickerLen(pv, W, H), offset: Settings.wpPickerOffset,
                         height: Settings.edge + 8 + pickerDepth(pv) + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
                         fillet: Settings.wpPickerFillet, topRadius: Settings.wpPickerRadius })
             prog = Object.assign({}, prog || {})
