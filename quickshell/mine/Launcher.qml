@@ -22,7 +22,8 @@ Scope {
     }
     onOpenChanged: {
         if (open) { closeTimer.stop(); Settings.wpPickerOpen = false; Settings.homeOpen = false; query = ""; alive = true }
-        else closeTimer.restart()
+        else if (Settings.launcherDocked) closeTimer.restart()   // acoplado: espera a moldura recolher
+        else alive = false                                        // flutuante: quem anima a saida e o Hyprland
     }
     Timer { id: closeTimer; interval: 480; onTriggered: root.alive = false }
 
@@ -93,7 +94,8 @@ Scope {
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
-            WlrLayershell.namespace: "mine-launcher"   // regra de blur/sem animacao do Hyprland
+            // flutuante: o Hyprland anima a janela; acoplado: sem animacao do Hyprland (quem anima e a moldura)
+            WlrLayershell.namespace: docked ? "mine-launcher-docked" : "mine-launcher"
 
             // ---- geometria ----
             readonly property bool docked: Settings.launcherDocked
@@ -102,18 +104,8 @@ Scope {
             readonly property real e: Settings.edge
             readonly property real cw: Math.min(Settings.launcherWidth, width - 100)   // largura do conteudo
             readonly property real ch: root.contentH                                    // altura do conteudo
-            // progresso: acoplado = o da moldura (BarState); flutuante = proprio, mesma animacao
-            // nasce em 0 e so depois passa a seguir "open": assim o Behavior anima a entrada (senao a janela ja nasce aberta)
-            property real fprog: 0
-            Component.onCompleted: fprog = Qt.binding(() => root.open ? 1 : 0)
-            Behavior on fprog {
-                NumberAnimation {
-                    duration: Settings.animOf("launcher").duration
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Settings.animOf("launcher").curve
-                }
-            }
-            readonly property real pp: docked ? BarState.launcherProg : fprog
+            // progresso da moldura (so no modo acoplado; flutuante fica sempre aberto)
+            readonly property real pp: docked ? BarState.launcherProg : 1
 
             readonly property var pk: root.geo.launcher
             // acoplado: retangulo do conteudo dentro da "barra" calculada pela moldura
@@ -122,8 +114,8 @@ Scope {
                 : side === "bottom" ? Qt.rect(pk.rect.x, pk.rect.y + 12, pk.rect.w, ch)
                 : side === "left" ? Qt.rect(pk.rect.x + e + 8, pk.rect.y, cw, pk.rect.h)
                 : Qt.rect(pk.rect.x + 12, pk.rect.y, cw, pk.rect.h))
-            // flutuante: centro ou topo, com leve subida
-            readonly property rect fbox: Qt.rect((width - cw) / 2, (Settings.launcherPos === "top" ? 110 : (height - ch) / 2 - 60) + (1 - Math.min(1, pp)) * 18, cw, ch)
+            // flutuante: centro ou topo
+            readonly property rect fbox: Qt.rect((width - cw) / 2, Settings.launcherPos === "top" ? 110 : (height - ch) / 2 - 60, cw, ch)
             readonly property rect box: docked ? dbox : fbox
 
             // acoplado: parte visivel do painel (cresce da borda) recorta o conteudo, que sobe junto
@@ -152,7 +144,7 @@ Scope {
                     x: -holder.x + (win.side === "left" ? -win.lag : (win.side === "right" ? win.lag : 0))
                     y: -holder.y + (win.side === "top" ? -win.lag : (win.side === "bottom" ? win.lag : 0))
                     width: win.width; height: win.height
-                    opacity: win.docked ? Math.max(0, Math.min(1, win.pp * 1.4 - 0.2)) : Math.max(0, Math.min(1, win.pp * 1.6))
+                    opacity: win.docked ? Math.max(0, Math.min(1, win.pp * 1.4 - 0.2)) : 1
 
                     // ---- painel (conteudo) ----
                     Rectangle {
@@ -162,9 +154,7 @@ Scope {
                         radius: win.docked ? 0 : Settings.launcherRadius
                         color: win.docked ? "transparent" : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.glass ? Math.min(1, Settings.glassOpacity / 100 + 0.08) : 1)
                         border.width: win.docked ? 0 : 1; border.color: Theme.border
-                        scale: win.docked ? 1 : 0.94 + 0.06 * Math.min(1, win.pp)
-                        transformOrigin: Item.Top
-                        clip: true
+                                                clip: true
                         MouseArea { anchors.fill: parent }
 
                         // ---- campo de busca ----

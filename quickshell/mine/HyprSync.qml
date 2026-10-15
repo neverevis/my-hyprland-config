@@ -25,8 +25,8 @@ Singleton {
     // blur da moldura e das janelas de vidro do shell (configuracoes e launcher); o launcher tambem sem animacao propria do Hyprland
     function ruleLine(): string {
         const tail = ", blur = " + Settings.shellBlur + ", ignore_alpha = " + (Settings.shellIgnoreAlpha / 100).toFixed(2) + " })"
-        return ["mine-frame", "mine-settings", "mine-launcher"].map(n => 'hl.layer_rule({ match = { namespace = "' + n + '" }' + tail).join("\n")
-            + '\nhl.layer_rule({ match = { namespace = "mine-launcher" }, no_anim = true })'
+        return ["mine-frame", "mine-settings", "mine-launcher", "mine-launcher-docked"].map(n => 'hl.layer_rule({ match = { namespace = "' + n + '" }' + tail).join("\n")
+            + '\nhl.layer_rule({ match = { namespace = "mine-launcher-docked" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-notifications" }, no_anim = true })'
     }
     // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
