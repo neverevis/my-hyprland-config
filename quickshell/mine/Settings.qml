@@ -31,6 +31,8 @@ Singleton {
     property alias themeBorders: adapter.themeBorders    // aplica as cores nas bordas das janelas do Hyprland
     property alias outline: adapter.outline             // contorno fino em todas as bordas
     property alias glowOn: adapter.glowOn                 // brilho (glow) ao redor da moldura e dos paineis
+    property alias glowMode: adapter.glowMode             // light (cor de destaque) | shadow (preto)
+    property alias glowSoft: adapter.glowSoft             // borrao: espalha a luz alem do alcance (0..100)
     property alias glowSize: adapter.glowSize             // alcance (px)
     property alias glowOpacity: adapter.glowOpacity       // intensidade (%)
     property alias glass: adapter.glass
@@ -216,6 +218,8 @@ Singleton {
         adapter.outline = true
         adapter.glass = false
         adapter.glowOn = true
+        adapter.glowMode = "light"
+        adapter.glowSoft = 40
         adapter.glowSize = 16
         adapter.glowOpacity = 45
         adapter.glassOpacity = 60
@@ -356,6 +360,8 @@ Singleton {
             property string accent: "#bb9af7"
             property bool outline: true
             property bool glowOn: true
+            property string glowMode: "light"
+            property int glowSoft: 40
             property int glowSize: 16
             property int glowOpacity: 45
             property bool glass: false

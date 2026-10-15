@@ -57,15 +57,15 @@ ShellRoot {
         Repeater {
             model: Settings.glowOn ? frame.geo.glow : []
             delegate: Shape {
-                required property string modelData
+                required property var modelData     // { p: caminho da faixa, a: alfa dela }
                 anchors.fill: parent
                 opacity: Settings.glowOpacity / 100
                 preferredRendererType: Shape.GeometryRenderer
                 ShapePath {
-                    fillColor: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, 0.11)
+                    fillColor: Settings.glowMode === "shadow" ? Qt.rgba(0, 0, 0, modelData.a) : Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, modelData.a)
                     strokeColor: "transparent"
                     fillRule: ShapePath.OddEvenFill
-                    PathSvg { path: modelData + " " + frame.holePath }
+                    PathSvg { path: modelData.p + " " + frame.holePath }
                 }
             }
         }

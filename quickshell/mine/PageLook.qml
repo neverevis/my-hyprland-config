@@ -14,7 +14,21 @@ Column {
         title: "Brilho interno"
         subtitle: "A borda da moldura e dos elementos que saem dela (barras, launcher, seletor, notificações) acende por dentro do vidro, na cor de destaque."
         UiSwitch { label: "Ativar brilho interno"; checked: Settings.glowOn; onToggled: on => Settings.glowOn = on }
+        Row {
+            spacing: 6
+            Text { anchors.verticalCenter: parent.verticalCenter; text: "Tipo"; color: Theme.text; font.pixelSize: 13; width: 70 }
+            Repeater {
+                model: [["light", "Luz (cor de destaque)"], ["shadow", "Sombra (preto)"]]
+                delegate: UiButton {
+                    required property var modelData
+                    text: modelData[1]
+                    checked: Settings.glowMode === modelData[0]
+                    onClicked: Settings.glowMode = modelData[0]
+                }
+            }
+        }
         UiSlider { label: "Alcance"; from: 4; to: 36; value: Settings.glowSize; suffix: " px"; onMoved: v => Settings.glowSize = Math.round(v) }
+        UiSlider { label: "Borrão (espalha além do alcance)"; from: 0; to: 100; value: Settings.glowSoft; suffix: " %"; onMoved: v => Settings.glowSoft = Math.round(v) }
         UiSlider { label: "Intensidade"; from: 5; to: 100; value: Settings.glowOpacity; suffix: " %"; onMoved: v => Settings.glowOpacity = Math.round(v) }
     }
     Card {

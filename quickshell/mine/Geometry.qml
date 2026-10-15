@@ -214,9 +214,15 @@ Singleton {
         // cada faixa e o buraco "expandido" para dentro da moldura em k px (a moldura fina recua, as barras estreitam e ficam mais rasas,
         // as curvas de encontro engrossam, o topo arredondado das barras afina); a faixa = buraco expandido menos o buraco (regra par-impar)
         const glow = []
-        const nGlow = Settings.glowOn ? 12 : 0
+        const nGlow = Settings.glowOn ? 18 : 0
+        // perfil gaussiano: o borrao alarga a cauda alem do alcance (extensao e sigma crescem com ele)
+        const soft = Settings.glowSoft / 100
+        const ext = Settings.glowSize * (1 + 2 * soft)
+        const sig = Settings.glowSize * 0.55 * (1 + soft)
+        const prof = x => Math.exp(-(x / sig) * (x / sig))
         for (let n = 1; n <= nGlow; n++) {
-            const gr = Settings.glowSize * n / nGlow
+            const gr = ext * n / nGlow
+            const ga = Math.max(0, prof(ext * (n - 1) / nGlow) - prof(gr))   // alfa da faixa: a soma das faixas por cima de um ponto segue o perfil
             let gp = ""
             for (let k = 0; k < 4; k++) {
                 const sd = sideData[k], s = sd.s, next = sd.next
@@ -239,7 +245,7 @@ Singleton {
                 gp += "L" + P(lenOf(s, W, H) - inset[next] - r, base) + " "
                 gp += rr > 0.01 ? "A" + rr + " " + rr + " 0 0 1 " + q + " " : "L" + q + " "
             }
-            glow.push(gp + "Z")
+            glow.push({ p: gp + "Z", a: ga })
         }
         return { glow: glow, path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null }
     }
