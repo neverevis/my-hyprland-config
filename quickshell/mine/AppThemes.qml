@@ -80,7 +80,10 @@ Singleton {
     Timer {
         id: timer
         interval: 400
-        onTriggered: { out.setText(root.kittyConf()); reload.running = false; reload.running = true }
+        onTriggered: {
+            if (Wallpaper.busy) { restart(); return }   // espera a transicao do wallpaper acabar (o recarregamento dos apps engasga a animacao)
+            out.setText(root.kittyConf()); reload.running = false; reload.running = true
+        }
     }
 
     FileView { id: gtk3; path: root.home + "/.config/gtk-3.0/quickshell.css" }
@@ -89,10 +92,14 @@ Singleton {
     Timer {
         id: gtkTimer
         interval: 400
+        property string lastScheme: ""
         onTriggered: {
+            if (Wallpaper.busy) { restart(); return }
             const css = root.gtkCss()
             gtk3.setText(css); gtk4.setText(css)
-            if (root.gtkOn) {
+            const sc = Settings.themeModeEff === "light" ? "prefer-light" : "prefer-dark"
+            if (root.gtkOn && sc !== lastScheme) {   // so quando muda: avisar a troca faz todos os apps GTK/Qt recarregarem o tema
+                lastScheme = sc
                 scheme.command = ["gsettings", "set", "org.gnome.desktop.interface", "color-scheme", Settings.themeModeEff === "light" ? "prefer-light" : "prefer-dark"]
                 scheme.running = false; scheme.running = true
             }
@@ -104,6 +111,7 @@ Singleton {
         id: braveTimer
         interval: 150
         onTriggered: {
+            if (Wallpaper.busy) { restart(); return }
             if (!root.braveOn) return
             // o Brave (Chromium) so aplica uma politica alterada depois de 5 s sem novas mudancas no arquivo: o atraso e dele
             brave.command = ["sh", "-c", "printf '%s' \"$1\" > \"$2\"", "sh", root.braveJson(), root.bravePolicy]

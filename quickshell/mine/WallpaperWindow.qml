@@ -64,7 +64,12 @@ Variants {
             duration: Wallpaper.duration
             easing.type: Easing.BezierSpline
             easing.bezierCurve: Wallpaper.curve
-            onFinished: { win.shown = win.incoming; win.incoming = "" }
+            onRunningChanged: Wallpaper.busy = running
+            // a de baixo carrega em segundo plano; a camada nova so some quando ela estiver pronta (sem decodificar na hora e travar)
+            onFinished: { win.shown = win.incoming; win.settle() }
+        }
+        function settle() {
+            if (baseImg.status === Image.Ready && baseImg.source.toString() === "file://" + shown) incoming = ""
         }
 
         // pre-carga da proxima imagem provavel (mantem a imagem decodificada no cache)
@@ -88,8 +93,9 @@ Variants {
             source: win.shown !== "" ? "file://" + win.shown : ""
             fillMode: Image.PreserveAspectCrop
             sourceSize: Qt.size(win.width, win.height)
-            asynchronous: false
+            asynchronous: true
             smooth: true
+            onStatusChanged: if (!anim.running && win.incoming !== "" && win.shown === win.incoming) win.settle()
         }
 
         // imagem entrando: carregada aqui (fora da tela, mas visivel) e mostrada pelo MultiEffect abaixo (que tambem aplica as mascaras);

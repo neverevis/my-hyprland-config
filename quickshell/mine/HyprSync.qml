@@ -72,6 +72,7 @@ Singleton {
         id: timer
         interval: 250
         onTriggered: {
+            if (Wallpaper.busy) { restart(); return }   // espera a transicao do wallpaper (reconfigurar o Hyprland no meio engasga)
             out.setText(root.content())
             const themeOff = root.lastTheme && !root.themeActive   // desligou o tema: volta as cores do HyprMod/Hyprland
             root.lastTheme = root.themeActive
