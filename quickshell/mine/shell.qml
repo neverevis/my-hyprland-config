@@ -52,52 +52,28 @@ ShellRoot {
 
         // ---- brilho (glow): um contorno desfocado que vaza da moldura para dentro da tela (so fora do preenchimento) ----
         readonly property string holePath: frame.geo.path.replace(/^M0 0 L0 [^Z]*Z /, "")   // so o contorno do "buraco" (sem o retangulo da tela)
-        Item {   // fonte: o contorno em linha grossa (fora da tela visivel, mas desenhado)
-            id: glowSrc
-            x: -frame.width - 80; y: 0
-            width: frame.width; height: frame.height
-            layer.enabled: Settings.glowOn
-            Shape {
-                anchors.fill: parent
-                preferredRendererType: Shape.GeometryRenderer
-                ShapePath {
-                    fillColor: "transparent"
-                    strokeColor: Settings.accent
-                    strokeWidth: Math.max(2, Settings.glowSize * 0.9)
-                    joinStyle: ShapePath.RoundJoin
-                    PathSvg { path: frame.holePath }
-                }
-            }
-        }
-        Item {   // mascara: o preenchimento da moldura (o brilho so aparece fora dele)
-            id: glowMask
-            x: -2 * frame.width - 160; y: 0
-            width: frame.width; height: frame.height
-            layer.enabled: Settings.glowOn
-            Shape {
-                anchors.fill: parent
-                preferredRendererType: Shape.GeometryRenderer
-                ShapePath {
-                    fillColor: "white"
-                    strokeColor: "transparent"
-                    fillRule: ShapePath.WindingFill
-                    PathSvg { path: frame.geo.path }
-                }
-            }
-        }
-        MultiEffect {
+        Item {
+            id: glowLayer
             anchors.fill: parent
             visible: Settings.glowOn
-            source: glowSrc
-            blurEnabled: true
-            blurMax: 64
-            blur: Math.min(1, Settings.glowSize / 36)
-            maskEnabled: true
-            maskSource: glowMask
-            maskInverted: true
-            maskThresholdMin: 0.5
             opacity: Settings.glowOpacity / 100
-            z: 7
+            z: -1      // por baixo do preenchimento da moldura: o brilho so se mostra para dentro da tela (o vidro cobre a outra metade)
+            // varias linhas largas e quase transparentes, da mais larga para a mais fina: o acumulo forma o degrade do brilho
+            Repeater {
+                model: 10
+                delegate: Shape {
+                    required property int index
+                    anchors.fill: parent
+                    preferredRendererType: Shape.GeometryRenderer
+                    ShapePath {
+                        fillColor: "transparent"
+                        strokeColor: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, 0.13)
+                        strokeWidth: Math.max(1, Settings.glowSize * 2 * Math.pow(1 - index / 10, 1.35))
+                        joinStyle: ShapePath.RoundJoin
+                        PathSvg { path: frame.holePath }
+                    }
+                }
+            }
         }
 
         // grao proprio da moldura: textura de ruido recortada pelo formato da moldura (so aparece se shellGrain > 0)
