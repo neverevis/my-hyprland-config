@@ -110,7 +110,7 @@ Item {
         Text {
             visible: m.showValue
             text: m.valueText
-            color: Settings.textColor; font.pixelSize: 14
+            color: m.graphic ? Settings.textColor : m.col; font.pixelSize: 14   // so texto: o proprio valor leva a cor de destaque
         }
     }
 }

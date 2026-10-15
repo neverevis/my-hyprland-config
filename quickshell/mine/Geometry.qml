@@ -39,7 +39,6 @@ Singleton {
         const edge = Settings.edge
         const outline = Settings.outline
         const r = outline ? Settings.cornerRadius : 0
-        const minT = edge + Math.max(Settings.fillet + Settings.topRadius, Settings.wpPickerFillet + Settings.wpPickerRadius)
 
         // barras que competem com o seletor (mesmo lado, faixas que se tocam) se escondem para dar lugar a ele
         const cover = new Array(bars.length).fill(0)
@@ -57,16 +56,17 @@ Singleton {
             }
             const pr = rng(pb)
             pRange = pr; pSide = pb.side
-            const m = 2 * f0 + 8                 // folga entre a barra e o seletor
+            const fm = Math.max(f0, pb.fillet ?? 0)   // a curva do seletor tambem ocupa espaco
+            const m = 2 * fm + 8                 // folga entre a barra e o seletor
             bars.forEach((b, i) => {
                 if (i === pIdx || b.side !== pb.side) return
                 const br = rng(b)
-                const hit = b.full || (br[0] < pr[1] + 2 * f0 && br[1] > pr[0] - 2 * f0)
+                const hit = b.full || (br[0] < pr[1] + 2 * fm && br[1] > pr[0] - 2 * fm)
                 if (!hit) return
                 sepSet[i] = !b.full
                 // sai pelo lado em que a barra ja esta (em relacao ao centro do seletor) ate sumir da tela
                 if (!b.full) {
-                    const outLow = -(br[1] + 2 * f0 + 8), outHigh = PL - br[0] + 2 * f0 + 8
+                    const outLow = -(br[1] + 2 * fm + 8), outHigh = PL - br[0] + 2 * fm + 8
                     slide[i] = (br[0] + br[1]) / 2 <= (pr[0] + pr[1]) / 2 ? outLow : outHigh
                     return
                 }
@@ -79,7 +79,7 @@ Singleton {
         bars.forEach((b, i) => { if (grp[b.side]) grp[b.side].push(i) })
         // progresso de mostrar (0 = escondida, 1 = visivel) das barras com autoHide
         const pf = i => (bars[i].autoHide ? Math.max(0, Math.min(1.3, prog && prog[i] !== undefined ? prog[i] : 1)) : 1) * (1 - cover[i])
-        const tOf = i => bars[i].full ? Math.max(bars[i].height, edge) : Math.max(bars[i].height, minT)
+        const tOf = i => bars[i].full ? Math.max(bars[i].height, edge) : Math.max(bars[i].height, edge + (bars[i].fillet ?? Settings.fillet) + (bars[i].topRadius ?? Settings.topRadius))   // altura minima: cada barra com as proprias curvas
         const inset = {}, zone = {}
         for (const s of order) {
             let idx = grp[s]

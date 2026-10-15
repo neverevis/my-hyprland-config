@@ -14,7 +14,7 @@ MeterView {
     showValue: opts.showValue ?? (display === "text")
     w: opts.width ?? 60
     h: opts.height ?? 16
-    col: opts.color ? opts.color : Settings.textColor
+    col: opts.color ? opts.color : (Settings.themeOn ? ThemeColors.primary : Settings.textColor)   // sem cor escolhida: destaque do tema (se ligado)
     segments: opts.segments ?? 8
     value: audio && !audio.muted ? Math.min(1, audio.volume) : 0
     dim: !!(audio && audio.muted)

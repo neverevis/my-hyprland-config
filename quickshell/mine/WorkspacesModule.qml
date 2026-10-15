@@ -16,7 +16,10 @@ Grid {
     readonly property int animMs: Settings.animOf("workspaces").duration
     readonly property var animCurve: Settings.animOf("workspaces").curve
     readonly property color base: Settings.textColor
-    readonly property color accentCol: opts.activeColor ? opts.activeColor : Settings.textColor
+    // ativo: a cor escolhida no modulo; sem escolha, usa o destaque do tema (se ligado) ou a cor do texto
+    readonly property color accentCol: opts.activeColor ? opts.activeColor : (Settings.themeOn ? ThemeColors.primary : Settings.textColor)
+    // texto sobre o ativo (estilo numeros/capsulas): contraste com a cor ativa
+    readonly property color onAccent: opts.activeColor ? Settings.barColor : (Settings.themeOn ? ThemeColors.onPrimary : Settings.barColor)
     readonly property var symbols: (opts.symbols ?? "").trim().split(/\s+/).filter(s => s.length > 0)
     readonly property var kanji: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
     readonly property var roman: ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ", "Ⅹ"]
@@ -170,7 +173,7 @@ Grid {
                 text: cell.label
                 font.pixelSize: cell.sty === "numbers" ? cell.s * 0.5 : cell.s * 0.72
                 font.bold: cell.active
-                color: cell.sty === "numbers" ? (cell.active ? Settings.barColor : root.base) : (cell.active ? root.accentCol : root.base)
+                color: cell.sty === "numbers" ? (cell.active ? root.onAccent : root.base) : (cell.active ? root.accentCol : root.base)
                 opacity: cell.active ? 1 : (cell.occupied ? 0.8 : 0.4)
                 Behavior on opacity { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
             }
@@ -180,7 +183,7 @@ Grid {
                 visible: cell.sty === "squares"
                 text: cell.label
                 font.pixelSize: cell.s * 0.5
-                color: cell.active ? Settings.barColor : root.base
+                color: cell.active ? root.onAccent : root.base
                 opacity: cell.active ? 1 : (cell.occupied ? 0.8 : 0.4)
             }
 
