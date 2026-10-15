@@ -35,6 +35,15 @@ Item {
         Label {
             SystemClock { id: clk; precision: SystemClock.Minutes }
             text: root.vertical ? Qt.formatDateTime(clk.date, "HH\nmm") : Qt.formatDateTime(clk.date, root.opts.format || "ddd dd MMM   HH:mm")
+            opacity: cm.containsMouse ? 0.75 : 1
+            Behavior on opacity { NumberAnimation { duration: 120 } }
+            MouseArea {   // clique no relogio abre o painel Inicio
+                id: cm
+                anchors.fill: parent; anchors.margins: -4
+                hoverEnabled: true
+                cursorShape: Qt.PointingHandCursor
+                onClicked: Settings.homeOpen = !Settings.homeOpen
+            }
         }
     }
 
@@ -82,11 +91,29 @@ Item {
 
     Component {
         id: windowC
-        Label {
-            width: Math.min(implicitWidth, root.vertical ? 24 : 320)
-            elide: Text.ElideRight
-            visible: !root.vertical
-            text: Hyprland.activeToplevel ? Hyprland.activeToplevel.title : ""
+        // janela ativa: icone do app + titulo (nas barras laterais, so o icone)
+        Row {
+            id: winRow
+            spacing: 8
+            readonly property var tl: Hyprland.activeToplevel
+            readonly property string cls: tl && tl.lastIpcObject ? (tl.lastIpcObject.class ?? "") : ""
+            readonly property var entry: cls !== "" ? DesktopEntries.heuristicLookup(cls) : null
+            readonly property string iconUrl: cls === "" ? "" : Quickshell.iconPath(entry && entry.icon ? entry.icon : cls.toLowerCase(), true)
+            Image {
+                visible: winRow.iconUrl !== ""
+                anchors.verticalCenter: parent.verticalCenter
+                width: 18; height: 18
+                source: winRow.iconUrl
+                sourceSize: Qt.size(36, 36)
+                fillMode: Image.PreserveAspectFit
+            }
+            Label {
+                visible: !root.vertical
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.min(implicitWidth, 320)
+                elide: Text.ElideRight
+                text: winRow.tl ? winRow.tl.title : ""
+            }
         }
     }
 

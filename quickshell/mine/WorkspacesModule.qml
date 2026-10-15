@@ -2,6 +2,7 @@
 //   style: numbers | dots | pills | squares | bars | ring | icons | roman | kanji | custom
 //   size (px), spacing (px), anim (ms), count (0 = so os que existem), onlyOccupied (esconde vazios),
 //   symbols ("a b c ..." para "custom"), activeColor (#rrggbb; vazio = cor do texto)
+// Clique vai para o workspace; a roda do mouse passa para o proximo/anterior.
 import Quickshell
 import Quickshell.Hyprland
 import QtQuick
@@ -26,6 +27,21 @@ Grid {
 
     spacing: opts.spacing ?? 6
     columns: vertical ? 1 : 99
+
+    // roda do mouse em cima dos workspaces: vai para o proximo / anterior
+    function go(ws) { Quickshell.execDetached(["hyprctl", "eval", "hl.dispatch(hl.dsp.focus({ workspace = \"" + ws + "\" }))"]) }
+    WheelHandler {
+        property real acc: 0
+        onWheel: e => {
+            acc += e.angleDelta.y
+            if (Math.abs(acc) < 100) return
+            // passa pelos workspaces que o modulo mostra (em volta: do ultimo volta ao primeiro)
+            const cur = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
+            const i = root.ids.indexOf(cur), n = root.ids.length
+            if (n > 0) root.go(root.ids[((i < 0 ? 0 : i) + (acc < 0 ? 1 : -1) + n) % n])
+            acc = 0
+        }
+    }
 
     // estado de cada workspace mostrado: [{id, active, occupied, cls}]  (cls = classe do app principal)
     readonly property var entries: {
@@ -186,11 +202,15 @@ Grid {
                 opacity: cell.active ? 1 : (cell.occupied ? 0.8 : 0.4)
             }
 
+            scale: wm.containsMouse && !cell.active ? 1.12 : 1
+            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
             MouseArea {
+                id: wm
                 anchors.fill: parent
                 anchors.margins: -2
+                hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Quickshell.execDetached(["hyprctl", "eval", "hl.dispatch(hl.dsp.focus({ workspace = \"" + cell.modelData + "\" }))"])
+                onClicked: root.go(cell.modelData)
             }
         }
     }

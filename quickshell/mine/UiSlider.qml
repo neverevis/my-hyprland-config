@@ -19,12 +19,48 @@ Item {
         UiIcon { visible: r.icon !== ""; name: r.icon; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
         Text { text: r.label; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
     }
+    // valor: clique para digitar (Enter aplica, Esc cancela; fica entre "from" e "to")
     Rectangle {
+        id: pill
+        property bool editing: false
         anchors.right: parent.right
-        width: valText.implicitWidth + 14; height: 22; radius: 7
-        color: Theme.track
-        border.width: 1; border.color: Theme.border
-        Text { id: valText; anchors.centerIn: parent; text: r.value + r.suffix; color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium }
+        width: Math.max(44, (editing ? input.contentWidth + unit.implicitWidth + 4 : valText.implicitWidth) + 16)
+        height: 24; radius: 7
+        color: editing ? Theme.bg : (pm.containsMouse ? Theme.cardHi : Theme.track)
+        border.width: 1; border.color: editing ? Theme.accent : Theme.border
+        Behavior on width { NumberAnimation { duration: 90 } }
+        Text { id: valText; visible: !pill.editing; anchors.centerIn: parent; text: r.value + r.suffix; color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium }
+        MouseArea {
+            id: pm
+            anchors.fill: parent
+            visible: !pill.editing
+            hoverEnabled: true
+            cursorShape: Qt.IBeamCursor
+            onClicked: { input.text = String(r.value); pill.editing = true; input.forceActiveFocus(); input.selectAll() }
+        }
+        Row {
+            visible: pill.editing
+            anchors.centerIn: parent
+            spacing: 2
+            TextInput {
+                id: input
+                color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium
+                selectionColor: Theme.accent; selectedTextColor: Theme.accentText
+                validator: IntValidator { bottom: Math.floor(Math.min(r.from, 0) - 100000); top: Math.ceil(r.to + 100000) }
+                function commit() {
+                    if (!pill.editing) return
+                    pill.editing = false
+                    const v = parseInt(text)
+                    if (!isNaN(v)) r.moved(Math.round(Math.max(r.from, Math.min(r.to, v))))
+                }
+                onAccepted: commit()
+                onActiveFocusChanged: if (!activeFocus) commit()
+                Keys.onEscapePressed: e => { pill.editing = false; e.accepted = true }
+                Keys.onUpPressed: text = String(Math.min(r.to, (parseInt(text) || 0) + 1))
+                Keys.onDownPressed: text = String(Math.max(r.from, (parseInt(text) || 0) - 1))
+            }
+            Text { id: unit; text: r.suffix.trim(); color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+        }
     }
 
     Item {

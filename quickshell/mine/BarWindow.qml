@@ -17,7 +17,8 @@ PanelWindow {
 
     // ---- mostrar / esconder ----
     property bool hovering: false   // alimentado pelo HoverHandler abaixo
-    property bool shown: !autoHide || hovering || hideTimer.running
+    property bool armed: false      // mouse parado na borda pelo tempo de Settings.showDelay (0 = na hora)
+    property bool shown: !autoHide || armed || hideTimer.running
     property real prog: shown ? 1 : 0
     Behavior on prog {
         NumberAnimation {
@@ -42,7 +43,17 @@ PanelWindow {
     onProgChanged: BarState.set(modelData, prog)
     Component.onCompleted: BarState.set(modelData, prog)
 
-    onHoveringChanged: if (!hovering) hideTimer.restart()
+    onHoveringChanged: {
+        if (hovering) {
+            if (Settings.showDelay <= 0 || prog > 0.01) armed = true
+            else showTimer.restart()
+        } else {
+            showTimer.stop()
+            if (armed) hideTimer.restart()   // so segura aberta se chegou a abrir
+            armed = false
+        }
+    }
+    Timer { id: showTimer; interval: Math.max(1, Settings.showDelay); onTriggered: win.armed = win.hovering }
     Timer { id: hideTimer; interval: Settings.hideDelay }
 
     visible: !!info && !!bar
@@ -119,6 +130,12 @@ PanelWindow {
                     y: vert ? along : clipper.cy - clipper.y - height / 2
                     opacity: Math.min(win.fade, Math.pow(Math.max(0, Math.min(1, win.eff)), 2)) * (1 - win.ovl)   // ao esconder acompanha a barra; ao mostrar usa o fade lento
                     visible: opacity > 0.02
+                    // ao aparecer os modulos sobem um pouquinho a partir da borda (e descem ao sumir)
+                    readonly property real rise: (1 - Math.max(0, Math.min(1, win.fade))) * 7
+                    transform: Translate {
+                        x: sec.vert ? (win.side === "left" ? -sec.rise : sec.rise) : 0
+                        y: sec.vert ? 0 : (win.side === "top" ? -sec.rise : sec.rise)
+                    }
 
                     Grid {
                         id: grid

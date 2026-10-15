@@ -56,6 +56,8 @@ Singleton {
     property alias animX2: adapter.animX2
     property alias animY2: adapter.animY2
     property alias hideDelay: adapter.hideDelay         // ms antes de esconder apos o mouse sair
+    property alias showDelay: adapter.showDelay         // ms com o mouse na borda antes de mostrar (evita abrir sem querer)
+    property alias barsPanelMode: adapter.barsPanelMode // push | out | sink: o que as barras fazem quando um painel acoplado abre
     readonly property var animCurve: [animX1 / 100, animY1 / 100, animX2 / 100, animY2 / 100, 1, 1]
     // ---- wallpaper (ver Wallpaper.qml) ----
     property alias wpDir: adapter.wpDir                 // pasta de imagens
@@ -243,6 +245,8 @@ Singleton {
         adapter.animX2 = 10
         adapter.animY2 = 100
         adapter.hideDelay = 450
+        adapter.showDelay = 0
+        adapter.barsPanelMode = "push"
         adapter.wpDir = "~/Imagens/Wallpapers"
         adapter.wpTransition = "circle"
         adapter.wpParallax = 20
@@ -388,6 +392,8 @@ Singleton {
             property int animX2: 10
             property int animY2: 100
             property int hideDelay: 450
+            property int showDelay: 0
+            property string barsPanelMode: "push"
             property string wpDir: "~/Imagens/Wallpapers"
             property string wallpaper: ""
             property string wpTransition: "circle"

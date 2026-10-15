@@ -99,9 +99,28 @@ Column {
                 width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
                 text: ({ overlay: "A barra aparece por cima das janelas.", always: "As janelas sempre deixam o espaço da barra livre.", follow: "As janelas abrem espaço só enquanto a barra está visível." })[page.bar ? (page.bar.reserve ?? "overlay") : "overlay"]
             }
+            UiSlider { label: "Esperar antes de mostrar"; from: 0; to: 1000; value: Settings.showDelay; suffix: " ms"; onMoved: v => Settings.showDelay = v }
             UiSlider { label: "Esperar antes de esconder"; from: 0; to: 2000; value: Settings.hideDelay; suffix: " ms"; onMoved: v => Settings.hideDelay = v }
             UiLabel { text: "Animação" }
             AnimPicker { target: "bars" }
+        }
+    }
+
+    Card {
+        icon: "dock"
+        title: "Quando um painel abre"
+        subtitle: "O que as barras do mesmo lado fazem quando o launcher, o seletor de wallpaper ou o Início saem da moldura. Vale para todas as barras."
+        UiSeg {
+            fill: true
+            options: [["push", "Abrir espaço", "swap_horizontal"], ["out", "Sair pela borda", "arrow_right"], ["sink", "Recolher", "arrowDown"]]
+            value: Settings.barsPanelMode
+            onPicked: v => Settings.barsPanelMode = v
+        }
+        Text {
+            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+            text: ({ push: "As barras deslizam só até encostar no painel e continuam visíveis. Se não houver espaço, saem pela borda.",
+                     out: "As barras deslizam pela borda até sair da tela e voltam quando o painel fecha.",
+                     sink: "As barras que estão no caminho recolhem para dentro da moldura." })[Settings.barsPanelMode] ?? ""
         }
     }
 

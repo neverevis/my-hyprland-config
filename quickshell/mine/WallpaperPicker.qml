@@ -1,5 +1,5 @@
 // Seletor de wallpaper: um painel sai da borda da tela (acoplado a moldura, ou flutuante) com as imagens enfileiradas.
-// Role o mouse (ou use as setas) para ir ao proximo/anterior; Enter ou clique aplica; Esc fecha.
+// Role o mouse (ou use as setas, Home/End, R = aleatorio) para navegar; Enter, Espaco ou clique aplica; Esc fecha.
 // Lado (cima/baixo/esquerda/direita), acoplado e deslocamento: Settings.wpPicker*  (pagina Wallpaper).
 // IPC:  qs -c mine ipc call wallpaper pick | next | prev | random
 import Quickshell
@@ -189,6 +189,17 @@ Scope {
                     Keys.onDownPressed: e => step(1, e.isAutoRepeat)
                     Keys.onReturnPressed: apply()
                     Keys.onEnterPressed: apply()
+                    Keys.onSpacePressed: apply()
+                    Keys.onPressed: e => {
+                        if (e.key === Qt.Key_Home) { highlightMoveDuration = 260; currentIndex = 0 }
+                        else if (e.key === Qt.Key_End) { highlightMoveDuration = 260; currentIndex = Wallpaper.files.length - 1 }
+                        else if (e.key === Qt.Key_R && Wallpaper.files.length > 1) {   // R: vai para um aleatorio (Enter aplica)
+                            let n = currentIndex
+                            while (n === currentIndex) n = Math.floor(Math.random() * Wallpaper.files.length)
+                            highlightMoveDuration = 380; currentIndex = n
+                        } else return
+                        e.accepted = true
+                    }
                     function apply() {
                         if (currentIndex >= 0 && currentIndex < Wallpaper.files.length) Wallpaper.set(Wallpaper.files[currentIndex].path)
                     }
@@ -213,7 +224,7 @@ Scope {
                             anchors.horizontalCenter: parent.horizontalCenter
                             y: (parent.height - height) / 2
                             width: 240; height: 135
-                            property real sel: card.cur ? 1.12 : 0.92
+                            property real sel: card.cur ? 1.12 : (cm.containsMouse ? 0.97 : 0.92)
                             Behavior on sel { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                             scale: sel
                             transformOrigin: Item.Center
@@ -221,7 +232,7 @@ Scope {
                             layer.enabled: true
                             layer.smooth: true
                             layer.textureSize: Qt.size(width * 2, height * 2)
-                            opacity: card.cur ? 1 : 0.7
+                            opacity: card.cur ? 1 : (cm.containsMouse ? 0.92 : 0.7)
                             Behavior on opacity { NumberAnimation { duration: 220 } }
 
                             Image {
@@ -240,15 +251,45 @@ Scope {
                                 maskEnabled: true
                                 maskSource: round
                             }
-                            Rectangle {   // contorno do selecionado / do aplicado
+                            // nome e posicao do wallpaper em foco, sobre um degrade na parte de baixo do cartao
+                            Item {
                                 anchors.fill: parent
-                                radius: Settings.wpCardRadius
-                                color: "transparent"
-                                border.width: card.applied && !card.cur ? 2 : 0
-                                border.color: Theme.text
+                                opacity: card.cur ? 1 : 0
+                                Behavior on opacity { NumberAnimation { duration: 200 } }
+                                Rectangle {
+                                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                                    height: 44
+                                    bottomLeftRadius: Settings.wpCardRadius; bottomRightRadius: Settings.wpCardRadius
+                                    gradient: Gradient {
+                                        GradientStop { position: 0; color: "transparent" }
+                                        GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.62) }
+                                    }
+                                }
+                                Text {
+                                    anchors { left: parent.left; leftMargin: 10; right: count.left; rightMargin: 6; bottom: parent.bottom; bottomMargin: 7 }
+                                    text: card.modelData.path.split("/").pop().replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")
+                                    color: "white"; font.pixelSize: 11; font.weight: Font.DemiBold
+                                    elide: Text.ElideRight
+                                }
+                                Text {
+                                    id: count
+                                    anchors { right: parent.right; rightMargin: 10; bottom: parent.bottom; bottomMargin: 7 }
+                                    text: (card.index + 1) + " / " + Wallpaper.files.length
+                                    color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 10
+                                }
+                            }
+                            // marca do wallpaper aplicado
+                            Rectangle {
+                                visible: card.applied
+                                anchors { right: parent.right; top: parent.top; margins: 7 }
+                                width: 20; height: 20; radius: 10
+                                color: Theme.accent
+                                UiIcon { anchors.centerIn: parent; name: "check"; size: 13; color: Theme.accentText }
                             }
                             MouseArea {
+                                id: cm
                                 anchors.fill: parent
+                                hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: { list.currentIndex = card.index; Wallpaper.set(card.modelData.path) }
                             }

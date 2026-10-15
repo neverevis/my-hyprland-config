@@ -55,20 +55,20 @@ Singleton {
             const hv = hs === "left" || hs === "right"
             const hlen = Math.min(hv ? BarState.homeH : BarState.homeW, (hv ? H : W) - 140)
             const hdep = hv ? BarState.homeW : BarState.homeH
-            panel = { kind: "home", prog: hp, bar: { side: hs, width: hlen, offset: Settings.homeOffset,
+            panel = { kind: "home", prog: hp, opening: Settings.homeOpen, bar: { side: hs, width: hlen, offset: Settings.homeOffset,
                       height: Settings.edge + 8 + hdep + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
                       fillet: Settings.homeFillet, topRadius: Settings.homeRadius } }
         } else if (Settings.launcherDocked && lp > 0.002) {
             const ls = Settings.launcherSide
             const lv = ls === "left" || ls === "right"
             const cw = Math.min(Settings.launcherWidth, (lv ? W : W) - 100), ch = BarState.launcherDepth
-            panel = { kind: "launcher", prog: lp, bar: { side: ls, width: Math.min(lv ? ch : cw, (lv ? H : W) - 140), offset: Settings.launcherOffset,
+            panel = { kind: "launcher", prog: lp, opening: Settings.launcherOpen, bar: { side: ls, width: Math.min(lv ? ch : cw, (lv ? H : W) - 140), offset: Settings.launcherOffset,
                       height: Settings.edge + 8 + (lv ? cw : ch) + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
                       fillet: Settings.launcherFillet, topRadius: Settings.launcherRadius } }
         } else if (wp > 0.002 && Settings.wpPickerDocked) {
             const ps = Settings.wpPickerSide
             const pv = ps === "left" || ps === "right"
-            panel = { kind: "picker", prog: wp, bar: { side: ps, width: pickerLen(pv, W, H), offset: Settings.wpPickerOffset,
+            panel = { kind: "picker", prog: wp, opening: Settings.wpPickerOpen, bar: { side: ps, width: pickerLen(pv, W, H), offset: Settings.wpPickerOffset,
                       height: Settings.edge + 8 + pickerDepth(pv) + 12, full: false, autoHide: true, reserve: "overlay", picker: true,
                       fillet: Settings.wpPickerFillet, topRadius: Settings.wpPickerRadius } }
         }
@@ -84,15 +84,21 @@ Singleton {
         const outline = Settings.outline
         const r = outline ? Settings.cornerRadius : 0
 
-        // barras que competem com o seletor (mesmo lado, faixas que se tocam) se escondem para dar lugar a ele
+        // barras do mesmo lado que um painel acoplado (launcher, seletor, Inicio) abrem espaco para ele (Settings.barsPanelMode):
+        //   push = deslizam so ate encostar no painel (continuam visiveis); se nao couberem, saem pela borda
+        //   out  = saem pela borda da tela;  sink = recolhem para dentro da moldura
+        // tempo proprio (qv): saem antes do painel terminar de subir e so voltam quando ele ja recolheu boa parte
+        const qv = (() => { const t = Math.max(0, Math.min(1, pp / (panel && !panel.opening ? 0.4 : 0.7))); return t * t * (3 - 2 * t) })()   // ao fechar so voltam com o painel quase recolhido
         const cover = new Array(bars.length).fill(0)
         const sepSet = {}
+        const exitSet = {}
         let pRange = null, pSide = ""
-        const slide = {}   // deslocamento (px, no eixo da tela) das barras que saem pelo lado
+        const slide = {}   // deslocamento final (px, no eixo da tela) das barras que abrem espaco
         if (pIdx >= 0) {
             const pb = bars[pIdx]
             const PL = (pb.side === "top" || pb.side === "bottom") ? W : H
             const f0 = Settings.fillet
+            const mode = Settings.barsPanelMode
             const rng = b => {
                 const w = b.full ? PL : Math.min(b.width, Math.max(0, PL - 2 * (edge + r + f0)))
                 const cs = Math.max(w / 2, Math.min(PL - w / 2, PL / 2 + (b.offset || 0)))
@@ -100,22 +106,41 @@ Singleton {
             }
             const pr = rng(pb)
             pRange = pr; pSide = pb.side
-            const fm = Math.max(f0, pb.fillet ?? 0)   // a curva do seletor tambem ocupa espaco
-            const m = 2 * fm + 8                 // folga entre a barra e o seletor
+            const fm = Math.max(f0, pb.fillet ?? 0)   // a curva do painel tambem ocupa espaco
+            const pc = (pr[0] + pr[1]) / 2
+            const lim0 = edge + r, lim1 = PL - edge - r   // ate onde uma barra empurrada pode ir (antes do canto da tela)
+            const items = []
             bars.forEach((b, i) => {
                 if (i === pIdx || b.side !== pb.side) return
-                const br = rng(b)
-                const hit = b.full || (br[0] < pr[1] + 2 * fm && br[1] > pr[0] - 2 * fm)
-                if (!hit) return
-                sepSet[i] = !b.full
-                // sai pelo lado em que a barra ja esta (em relacao ao centro do seletor) ate sumir da tela
-                if (!b.full) {
-                    const outLow = -(br[1] + 2 * fm + 8), outHigh = PL - br[0] + 2 * fm + 8
-                    slide[i] = (br[0] + br[1]) / 2 <= (pr[0] + pr[1]) / 2 ? outLow : outHigh
-                    return
-                }
-                cover[i] = Math.min(1, pp * 3)    // sem espaco para sair: recolhe (3x mais rapido que o seletor sobe)
+                if (b.full) { cover[i] = qv; return }   // barra de ponta a ponta: sem espaco para sair, recolhe
+                items.push({ i: i, r: rng(b), f: b.fillet ?? f0 })
             })
+            // dir = -1: barras antes do painel (vao para o inicio do lado); +1: depois dele
+            for (const dir of [-1, 1]) {
+                const list = items.filter(o => dir < 0 ? (o.r[0] + o.r[1]) / 2 <= pc : (o.r[0] + o.r[1]) / 2 > pc)
+                    .sort((a, b) => dir < 0 ? b.r[1] - a.r[1] : a.r[0] - b.r[0])   // a mais perto do painel primeiro
+                let wall = dir < 0 ? pr[0] - fm : pr[1] + fm   // ate onde o painel (com a curva) ocupa
+                let leaving = false                          // uma barra saiu pela borda: as de fora dela saem junto (estao no caminho)
+                for (const o of list) {
+                    const gap = o.f + 10
+                    const clear = dir < 0 ? o.r[1] <= wall - gap : o.r[0] >= wall + gap
+                    if (clear && !leaving) { wall = dir < 0 ? o.r[0] - o.f : o.r[1] + o.f; continue }
+                    if (mode === "push" && !leaving) {
+                        const d = dir < 0 ? (wall - gap) - o.r[1] : (wall + gap) - o.r[0]
+                        const fits = dir < 0 ? o.r[0] + d - o.f >= lim0 : o.r[1] + d + o.f <= lim1
+                        if (fits) {
+                            slide[o.i] = d; sepSet[o.i] = true
+                            wall = dir < 0 ? o.r[0] + d - o.f : o.r[1] + d + o.f
+                            continue
+                        }
+                    }
+                    if (mode === "sink") { if (!clear) cover[o.i] = qv; continue }
+                    // sai pela borda da tela, do lado em que ja esta
+                    slide[o.i] = dir < 0 ? -(o.r[1] + 2 * fm + 8) : PL - o.r[0] + 2 * fm + 8
+                    sepSet[o.i] = true; exitSet[o.i] = true
+                    leaving = true
+                }
+            }
         }
 
         // barras por lado (uma barra "full" sozinha ocupa o lado todo)
@@ -162,7 +187,7 @@ Singleton {
                 const bw = full ? shi - slo : Math.max(60, Math.min(b.width, avail))
                 const slack = Math.max(0, (avail - bw) / 2)
                 const zero = (slo + shi) / 2
-                const cs = zero + Math.max(-slack, Math.min(slack, b.offset || 0)) + (slide[i] !== undefined ? slide[i] * pp : 0)
+                const cs = zero + Math.max(-slack, Math.min(slack, b.offset || 0)) + (slide[i] !== undefined ? slide[i] * qv : 0)
                 // o arredondamento NAO anima: so encolhe se a barra ainda for mais rasa que as curvas
                 const te = full ? inset[s] : inset[s] + (t - inset[s]) * p
                 const dr = Math.max(0, te - inset[s])
@@ -184,7 +209,7 @@ Singleton {
                     : s === "right" ? { x: W - t, y: it.lo, w: t, h: it.hi - it.lo }
                     : s === "bottom" ? { x: it.lo, y: H - t, w: it.hi - it.lo, h: t }
                     : { x: 0, y: it.lo, w: t, h: it.hi - it.lo }
-                res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], fade: slide[it.i] !== undefined ? Math.min(1, pp * 2.5) : 0, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
+                res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], fade: exitSet[it.i] ? Math.min(1, qv * 2.2) : 0, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
             }
 
             // caminho do buraco neste lado, em ordem crescente de u
