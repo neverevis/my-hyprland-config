@@ -126,7 +126,8 @@ Variants {
             x: -win.width - 60
             clip: true
             width: win.width; height: win.height
-            layer.enabled: win.trans === "circle" && win.incoming !== ""
+            // camada sempre ligada: ligar/desligar a cada troca deixava o MultiEffect com a textura velha (o circulo nao crescia mais)
+            layer.enabled: true
         }
 
         Item {
@@ -172,8 +173,8 @@ Variants {
         Item {
             id: circleMask
             x: -win.width - 50        // fora da tela, mas visivel: item invisivel nao atualiza a textura da mascara
-            clip: true                // sem a camada, o circulo grande vazaria para dentro da tela
-            layer.enabled: win.trans === "circle" && win.incoming !== ""
+            clip: true                // o circulo grande nao vaza para dentro da tela
+            layer.enabled: true       // sempre ligada (mesmo motivo do newWrap); so redesenha quando o circulo muda
             width: win.width; height: win.height
             Rectangle {
                 readonly property real d: win.diag * win.progress
