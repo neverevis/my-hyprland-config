@@ -56,6 +56,11 @@ Singleton {
     property alias animX2: adapter.animX2
     property alias animY2: adapter.animY2
     property alias hideDelay: adapter.hideDelay         // ms antes de esconder apos o mouse sair
+    // ---- area de trabalho: widgets e presets (ver Desktop.qml) ----
+    property alias desktopOn: adapter.desktopOn             // mostra os widgets da area de trabalho
+    property alias desktopWidgets: adapter.desktopWidgets   // [{ id, type, fx, fy, cols, rows, opts }]
+    property alias desktopCard: adapter.desktopCard         // opacidade do fundo dos cartoes (0..100)
+    property alias presets: adapter.presets                 // [{ name, created, data: { chave: valor } }]
     // ---- sessao: tela de bloqueio e menu de energia ----
     property alias lockBlur: adapter.lockBlur             // 0..100: desfoque do wallpaper na tela de bloqueio
     property alias lockDim: adapter.lockDim               // 0..80: escurecimento
@@ -142,9 +147,10 @@ Singleton {
         { id: "notifications", label: "Notificações" },
         { id: "home", label: "Painel Início" },
         { id: "power", label: "Menu de energia" },
-        { id: "lock", label: "Tela de bloqueio" }
+        { id: "lock", label: "Tela de bloqueio" },
+        { id: "desktop", label: "Widgets da área de trabalho" }
     ]
-    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera", power: "Desacelera", lock: "Desacelera" })
+    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera", power: "Desacelera", lock: "Desacelera", desktop: "Suave" })
 
     function allAnims(): var { return builtinAnims.concat(anims) }
     function findAnim(name: string): var { return allAnims().find(a => a.name === name) ?? null }
@@ -424,6 +430,10 @@ Singleton {
             property int animY2: 100
             property int hideDelay: 450
             property int showDelay: 0
+            property bool desktopOn: true
+            property var desktopWidgets: []
+            property int desktopCard: 72
+            property var presets: []
             property int lockBlur: 100
             property int lockDim: 32
             property bool lockMedia: true

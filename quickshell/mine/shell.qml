@@ -42,6 +42,7 @@ ShellRoot {
     PowerMenu {}
     PhotoEditor {}
     LockScreen {}
+    DesktopLayer { geo: shell.geo }
 
     PanelWindow {
         id: frame

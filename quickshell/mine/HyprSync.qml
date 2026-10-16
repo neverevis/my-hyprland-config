@@ -33,6 +33,8 @@ Singleton {
             + '\nhl.layer_rule({ match = { namespace = "mine-power" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-lock-preview" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-home" }, no_anim = true })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-desktop" }, blur = true, ignore_alpha = 0.3 })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-desktop" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })'
     }
     // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
