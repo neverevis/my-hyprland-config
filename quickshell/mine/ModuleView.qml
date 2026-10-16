@@ -69,7 +69,17 @@ Item {
 
     Component {
         id: textC
-        Label { text: root.opts.text ?? "" }
+        // na barra lateral o texto fica deitado ao longo da barra (girado), em vez de estourar a espessura
+        Item {
+            implicitWidth: root.vertical ? tl.implicitHeight : tl.implicitWidth
+            implicitHeight: root.vertical ? tl.implicitWidth : tl.implicitHeight
+            Label {
+                id: tl
+                anchors.centerIn: parent
+                text: root.opts.text ?? ""
+                rotation: root.vertical ? (root.side === "right" ? 90 : -90) : 0
+            }
+        }
     }
 
     Component {

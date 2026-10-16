@@ -29,6 +29,7 @@ Singleton {
 
     function compute(W: real, H: real, prog: var): var {
         const bars = (Settings.bars || []).slice()
+        const nUser = bars.length   // as primeiras sao as do usuario (prioridade = ordem); depois vem notificacoes e paineis
         // notificacoes: um bloco so (todos os cartoes) que cresce da moldura, como uma barra extra
         const npr = BarState.notifProg
         let nIdx = -1
@@ -100,12 +101,18 @@ Singleton {
             const PL = (pb.side === "top" || pb.side === "bottom") ? W : H
             const f0 = Settings.fillet
             const mode = Settings.barsPanelMode
-            const rng = b => {
+            const rng = (b, i) => {
+                if (i < nUser && !b.full) {   // barras do usuario: largura/posicao em % (mesma conta do passo 1)
+                    const a0 = edge, a1 = PL - edge
+                    const w = Math.max(60, Math.min(a1 - a0, Settings.barSize(b, PL) / 100 * PL))
+                    const lo = a0 + Settings.barPos(b, PL) / 100 * (a1 - a0 - w)
+                    return [lo, lo + w]
+                }
                 const w = b.full ? PL : Math.min(b.width, Math.max(0, PL - 2 * (edge + r + f0)))
                 const cs = Math.max(w / 2, Math.min(PL - w / 2, PL / 2 + (b.offset || 0)))
                 return [cs - w / 2, cs + w / 2]
             }
-            const pr = rng(pb)
+            const pr = rng(pb, pIdx)
             pRange = pr; pSide = pb.side
             const fm = Math.max(f0, pb.fillet ?? 0)   // a curva do painel tambem ocupa espaco
             const pc = (pr[0] + pr[1]) / 2
@@ -114,7 +121,7 @@ Singleton {
             bars.forEach((b, i) => {
                 if (i === pIdx || b.side !== pb.side) return
                 if (b.full) { cover[i] = qv; sepSet[i] = true; return }   // barra de ponta a ponta: sem espaco para sair, recolhe
-                items.push({ i: i, r: rng(b), f: b.fillet ?? f0 })
+                items.push({ i: i, r: rng(b, i), f: b.fillet ?? f0 })
             })
             // dir = -1: barras antes do painel (vao para o inicio do lado); +1: depois dele
             for (const dir of [-1, 1]) {
@@ -149,7 +156,10 @@ Singleton {
         bars.forEach((b, i) => { if (grp[b.side]) grp[b.side].push(i) })
         // progresso de mostrar (0 = escondida, 1 = visivel) das barras com autoHide
         const pf = i => (bars[i].autoHide ? Math.max(0, Math.min(1.3, prog && prog[i] !== undefined ? prog[i] : 1)) : 1) * (1 - cover[i])
-        const tOf = i => bars[i].full ? Math.max(bars[i].height, edge) : Math.max(bars[i].height, edge + (bars[i].fillet ?? Settings.fillet) + (bars[i].topRadius ?? Settings.topRadius))   // altura minima: cada barra com as proprias curvas
+        const detOf = i => i < nUser && !!bars[i].detached && !bars[i].full
+        const gapOf = i => bars[i].gap ?? 8
+        const thOf = i => Math.max(18, bars[i].height - edge)   // espessura da barra solta (sem a moldura)
+        const tOf = i => detOf(i) ? edge + gapOf(i) + thOf(i) : bars[i].full ? Math.max(bars[i].height, edge) : Math.max(bars[i].height, edge + (bars[i].fillet ?? Settings.fillet) + (bars[i].topRadius ?? Settings.topRadius))   // altura minima: cada barra com as proprias curvas
         const inset = {}, zone = {}
         for (const s of order) {
             let idx = grp[s]
@@ -169,8 +179,11 @@ Singleton {
         let d = "M0 0 L0 " + H + " L" + W + " " + H + " L" + W + " 0 Z "   // retangulo da tela em sentido anti-horario (o buraco e horario; fill WindingFill)
 
         // ---- passo 1: posicao das barras de cada lado ----
-        // barra "encostada no canto" (corner: "start" | "end", no eixo da tela: esquerda/topo = start): ela vai ate a linha
-        // do lado vizinho, sem a curva daquele lado; o canto da moldura passa a sair do topo dela. att: -1 = start, +1 = end
+        // barras do usuario: largura e posicao em % do lado (pos 0 = encostada no inicio, 50 = centro, 100 = no fim).
+        // perto das pontas (sem espaco para a curva da moldura) ela "gruda" no canto: vai ate a linha do lado vizinho
+        // e o canto da moldura passa a sair do topo dela. att: -1 = canto do inicio do eixo da tela, +1 = do fim.
+        // disputa de espaco: quem tem prioridade maior (paineis, notificacoes, depois a ordem das barras) fica onde pediu;
+        // as outras vao para o lugar livre mais perto do que pediram, encolhem se precisar e, sem espaco, ficam escondidas.
         const SIDE = {}
         for (let k = 0; k < 4; k++) {
             const s = order[k], prev = order[(k + 3) % 4], next = order[(k + 1) % 4]
@@ -178,43 +191,77 @@ Singleton {
             const rev = (s === "bottom" || s === "left")   // u cresce contra o eixo da tela
             const startU = inset[prev] + r, endU = L - inset[next] - r
             const slo = rev ? L - endU : startU, shi = rev ? L - startU : endU   // limites no eixo da tela
+            const lineLo = rev ? inset[next] : inset[prev], lineHi = rev ? L - inset[prev] : L - inset[next]   // linhas dos lados vizinhos
             const items = []
             for (const i of grp[s]) {
                 const b = bars[i]
                 const full = !!b.full
-                const f = full ? 0 : (b.fillet ?? Settings.fillet), g = full ? 0 : (b.topRadius ?? Settings.topRadius)
+                const det = detOf(i)
+                const f = full || det ? 0 : (b.fillet ?? Settings.fillet), g = full ? 0 : (b.topRadius ?? Settings.topRadius)
                 const t = tOf(i)
                 const p = pf(i)
-                const avail = Math.max(0, shi - slo - 2 * f)
-                const bw = full ? shi - slo : Math.max(60, Math.min(b.width, avail))
-                const slack = Math.max(0, (avail - bw) / 2)
                 const zero = (slo + shi) / 2
-                const off = b.offset || 0
-                const att = full || slide[i] !== undefined || cover[i] > 0 ? 0 : (b.corner === "start" ? -1 : (b.corner === "end" ? 1 : 0))
-                let cs = zero + Math.max(-slack, Math.min(slack, off)) + (slide[i] !== undefined ? slide[i] * qv : 0)
-                // encostada: a ponta vai ate a linha do lado vizinho (no eixo da tela)
-                const lineLo = rev ? inset[next] : inset[prev], lineHi = rev ? L - inset[prev] : L - inset[next]
-                if (att < 0) cs = lineLo + bw / 2
-                else if (att > 0) cs = lineHi - bw / 2
+                let bw, lo
+                if (full) { bw = shi - slo; lo = slo }
+                else if (i < nUser) {
+                    const a0 = det ? lineLo + gapOf(i) : lineLo, a1 = det ? lineHi - gapOf(i) : lineHi
+                    bw = Math.max(60, Math.min(a1 - a0, Settings.barSize(b, L) / 100 * L))
+                    lo = a0 + Settings.barPos(b, L) / 100 * (a1 - a0 - bw)
+                } else {
+                    const avail = Math.max(0, shi - slo - 2 * f)
+                    bw = Math.max(60, Math.min(b.width, avail))
+                    const slack = Math.max(0, (avail - bw) / 2)
+                    lo = zero + Math.max(-slack, Math.min(slack, b.offset || 0)) - bw / 2
+                }
+                if (slide[i] !== undefined) lo += slide[i] * qv
                 const te = full ? inset[s] : inset[s] + (t - inset[s]) * p
                 const dr = Math.max(0, te - inset[s])
                 const sc = (f + g) > 0 ? Math.min(1, dr / (f + g)) : 1
-                // att no eixo u (o caminho anda em u): inicio de u = fim do eixo nos lados invertidos
-                const attU = rev ? -att : att
-                items.push({ i: i, f: f, g: g, t: t, fe: f * sc, ge: g * sc, te: te, sep: !!sepSet[i], lo: cs - bw / 2, hi: cs + bw / 2, zero: zero, att: att, attU: attU })
+                const pri = i >= nUser ? -1000 + i : i   // menor = mais importante
+                items.push({ i: i, f: f, g: g, t: t, fe: f * sc, ge: g * sc, te: te, p: p, sep: !!sepSet[i], det: det, full: full,
+                             lo: lo, hi: lo + bw, bw: bw, zero: zero, att: 0, attU: 0, pri: pri, hidden: false })
             }
+            // disputa de espaco (so as que ficam na faixa principal; as afastadas pelo painel ja tem caminho proprio)
             const main = items.filter(it => !it.sep)
-            main.sort((a, b) => a.lo - b.lo)
-            let cursor = slo
-            for (const it of main) {   // sem sobreposicao
-                if (it.att < 0) { cursor = it.hi + it.f; continue }
-                if (it.att > 0) continue
-                it.lo = Math.max(it.lo, cursor + it.f)
-                if (it.hi < it.lo + 40) it.hi = it.lo + 40
-                cursor = it.hi + it.f
+            const placed = []
+            for (const it of main.slice().sort((a, b) => a.pri - b.pri)) {
+                if (it.full) { placed.push(it); continue }
+                const pad = it.det ? 8 : 0
+                // trechos livres entre as ja colocadas (com espaco para as curvas das duas)
+                const occ = placed.slice().sort((a, b) => a.lo - b.lo)
+                const gaps = []
+                let a = lineLo
+                for (const o of occ) {
+                    gaps.push([a, o.lo - o.f - it.f - pad - (o.det ? 8 : 0)])
+                    a = o.hi + o.f + it.f + pad + (o.det ? 8 : 0)
+                }
+                gaps.push([a, lineHi])
+                let best = null, bestD = 1e9
+                for (const [g0, g1] of gaps) {
+                    if (g1 - g0 < it.bw) continue
+                    const lo = Math.max(g0, Math.min(g1 - it.bw, it.lo))
+                    const d = Math.abs(lo - it.lo)
+                    if (d < bestD) { bestD = d; best = lo }
+                }
+                if (best === null) {   // nao cabe inteira: encolhe no maior trecho livre (ou esconde)
+                    const big = gaps.reduce((m, x) => (x[1] - x[0] > m[1] - m[0] ? x : m), [0, 0])
+                    if (big[1] - big[0] >= 60) { it.bw = big[1] - big[0]; best = big[0] }
+                    else { it.hidden = true; continue }
+                }
+                it.lo = best; it.hi = best + it.bw
+                // gruda no canto quando nao sobra espaco para a curva da moldura
+                if (!it.det && slide[it.i] === undefined && cover[it.i] <= 0) {
+                    const b = bars[it.i]
+                    const want = it.i >= nUser ? (b.corner === "start" ? -1 : (b.corner === "end" ? 1 : 0)) : 0
+                    if (want < 0 || it.lo < slo + it.f) { it.att = -1; it.lo = lineLo; it.hi = lineLo + it.bw }
+                    else if (want > 0 || it.hi > shi - it.f) { it.att = 1; it.hi = lineHi; it.lo = lineHi - it.bw }
+                    it.attU = rev ? -it.att : it.att
+                }
+                placed.push(it)
             }
-            const aS = main.find(it => it.attU < 0), aE = main.find(it => it.attU > 0)
-            SIDE[s] = { L: L, rev: rev, items: items, main: main, startDepth: aS ? aS.te : null, endDepth: aE ? aE.te : null }
+            const hole = main.filter(it => !it.hidden && !it.det)
+            const aS = hole.find(it => it.attU < 0), aE = hole.find(it => it.attU > 0)
+            SIDE[s] = { L: L, rev: rev, items: items, main: hole, dets: items.filter(it => !it.hidden && it.det), startDepth: aS ? aS.te : null, endDepth: aE ? aE.te : null }
         }
 
         // ---- passo 2: caminho do buraco ----
@@ -233,7 +280,8 @@ Singleton {
                     : s === "right" ? { x: W - t, y: it.lo, w: t, h: it.hi - it.lo }
                     : s === "bottom" ? { x: it.lo, y: H - t, w: it.hi - it.lo, h: t }
                     : { x: 0, y: it.lo, w: t, h: it.hi - it.lo }
-                res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], fade: exitSet[it.i] ? Math.min(1, qv * 2.2) : 0, corner: it.att, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
+                res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], fade: exitSet[it.i] ? Math.min(1, qv * 2.2) : 0, corner: it.att,
+                              hidden: it.hidden, detached: it.det, v0: it.det ? edge + gapOf(it.i) : 0, th: it.det ? thOf(it.i) : 0, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
             }
 
             const ul = main.map(it => ({ it: it, a: rev ? L - it.hi : it.lo, b: rev ? L - it.lo : it.hi }))
@@ -253,11 +301,23 @@ Singleton {
                 }
             }
             d += "L" + P(endU, vEnd) + " "
-            for (const it of items.filter(x => x.sep && x.te - base > 1.5)) {   // sem fiapos quando ja quase sumiu
+            for (const it of items.filter(x => x.sep && !x.det && x.te - base > 1.5)) {   // sem fiapos quando ja quase sumiu
                 const a = rev ? L - it.hi : it.lo, b = rev ? L - it.lo : it.hi
                 const f = it.fe, g = it.ge, t = it.te
                 extra += "M" + P(a - f, base) + " " + arc(f, a, base + f, 1) + "L" + P(a, t - g) + " " + arc(g, a + g, t, 0)
                     + "L" + P(b - g, t) + " " + arc(g, b, t - g, 0) + "L" + P(b, base + f) + " " + arc(f, b + f, base, 1) + "Z "
+            }
+            // barras soltas: retangulos arredondados afastados da moldura (entram/saem deslizando pela borda)
+            for (const it of S.dets) {
+                const a = rev ? L - it.hi : it.lo, b = rev ? L - it.lo : it.hi
+                const th = thOf(it.i), v1f = edge + gapOf(it.i) + th
+                const v1 = v1f - (1 - it.p) * (v1f + 6)   // p > 1 (curva elastica) passa um pouco do lugar
+                const v0 = v1 - th
+                const rr = Math.min(th / 2, bars[it.i].radius ?? 14)
+                if (v1 <= 0.5) continue
+                extra += "M" + P(a + rr, v0) + " L" + P(b - rr, v0) + " " + arc(rr, b, v0 + rr, 1)
+                    + "L" + P(b, v1 - rr) + " " + arc(rr, b - rr, v1, 1) + "L" + P(a + rr, v1) + " " + arc(rr, a, v1 - rr, 1)
+                    + "L" + P(a, v0 + rr) + " " + arc(rr, a + rr, v0, 1) + "Z "
             }
             // canto ate o inicio do proximo lado (sai do topo da barra encostada, se houver)
             const nx = (u, v) => pt(next, u, v, W, H)

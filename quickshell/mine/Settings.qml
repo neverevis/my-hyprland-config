@@ -320,7 +320,17 @@ Singleton {
     function defaultBar(side: string): var {
         const sec = defaultSection("Centro")
         sec.modules = [{ type: "clock", format: "ddd dd MMM   HH:mm" }]
-        return { side: side, width: 520, offset: 0, height: 34, full: false, autoHide: false, sections: [sec] }
+        return { side: side, size: 30, pos: 50, height: 34, full: false, autoHide: false, sections: [sec] }
+    }
+    // largura e posicao das barras em % do lado da tela (L = comprimento do lado em px).
+    // barras antigas guardavam em px (width/offset/corner): convertidas na hora, ate a primeira edicao
+    function barSize(b: var, L: real): real { return b.size ?? Math.max(3, Math.min(100, (b.width ?? 520) / Math.max(1, L) * 100)) }
+    function barPos(b: var, L: real): real {
+        if (b.pos !== undefined) return b.pos
+        if (b.corner === "start") return 0
+        if (b.corner === "end") return 100
+        const travel = L - (barSize(b, L) / 100 * L)
+        return travel > 1 ? Math.max(1.5, Math.min(98.5, 50 + (b.offset ?? 0) / travel * 100)) : 50
     }
     // barras antigas guardavam "modules" direto na barra: viram uma secao central
     function sectionsOf(bar: var): var {
@@ -338,6 +348,11 @@ Singleton {
     function setBar(i: int, key: string, value: var): void { mutate(b => { if (b[i]) b[i][key] = value }) }
     function addBar(side: string): void { mutate(b => b.push(defaultBar(side))) }
     function removeBar(i: int): void { mutate(b => b.splice(i, 1)) }
+    // prioridade = ordem da lista (a primeira ganha a disputa por espaco): d = -1 sobe, +1 desce
+    function moveBar(i: int, d: int): void { mutate(b => { const j = i + d; if (j < 0 || j >= b.length) return; const t = b[i]; b[i] = b[j]; b[j] = t }) }
+    // depuracao visual na propria barra enquanto a pagina Barras esta aberta (nao e salvo)
+    property int barDebugBar: -1
+    property int barDebugSec: -1
 
     function addSection(i: int): void { mutate(b => { const n = b[i].sections.length; b[i].sections.push(Object.assign(defaultSection("Seção " + (n + 1)), { anchor: n % 2 === 0 ? "start" : "end" })) }) }
     function removeSection(i: int, si: int): void { mutate(b => { if (b[i].sections.length > 1) b[i].sections.splice(si, 1) }) }

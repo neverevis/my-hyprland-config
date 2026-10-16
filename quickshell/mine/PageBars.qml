@@ -1,9 +1,11 @@
 // Pagina "Barras": escolha da barra (no topo), ajustes da barra escolhida, secoes e modulos.
+import Quickshell
 import QtQuick
 
 Column {
     id: page
     spacing: 14
+    property var geo: ({})
     property int cur: 0
     property int openMod: -1   // modulo com o painel de opcoes aberto
     property int curSec: 0     // secao selecionada da barra
@@ -14,63 +16,93 @@ Column {
     readonly property var sideNames: ({ top: "Cima", bottom: "Baixo", left: "Esquerda", right: "Direita" })
     readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil" })
     function setBar(k, v) { Settings.setBar(idx, k, v) }
+    // marca as secoes na propria barra enquanto esta pagina esta aberta
+    Binding { target: Settings; property: "barDebugBar"; value: page.idx }
+    Binding { target: Settings; property: "barDebugSec"; value: page.sec }
+    Component.onDestruction: { Settings.barDebugBar = -1; Settings.barDebugSec = -1 }
 
-    // ---- escolha da barra ----
-    Flow {
-        width: parent.width
-        spacing: 10
-        Repeater {
-            model: Settings.bars
-            delegate: Rectangle {
-                id: item
-                required property int index
-                required property var modelData
-                readonly property bool on: page.idx === index
-                readonly property bool vert: modelData.side === "left" || modelData.side === "right"
-                width: 176; height: 60; radius: 14
-                color: on ? Theme.tint(0.14) : (bm.containsMouse ? Theme.cardHi : Theme.gl(Theme.card, 1))
-                border.width: 1
-                border.color: on ? Theme.accent : Theme.border
-                Rectangle {   // miniatura da tela com a barra no lado dela
-                    id: mini
-                    x: 12; anchors.verticalCenter: parent.verticalCenter
-                    width: 40; height: 28; radius: 5
-                    color: "transparent"; border.width: 1.5; border.color: item.on ? Theme.accent : Theme.muted
-                    Rectangle {
-                        width: item.vert ? 5 : parent.width - 12; height: item.vert ? parent.height - 10 : 5; radius: 2
-                        x: item.modelData.side === "left" ? 4 : (item.modelData.side === "right" ? parent.width - width - 4 : (parent.width - width) / 2)
-                        y: item.modelData.side === "top" ? 4 : (item.modelData.side === "bottom" ? parent.height - height - 4 : (parent.height - height) / 2)
-                        color: item.on ? Theme.accent : Theme.muted
+    // ---- mapa da tela + escolha da barra ----
+    Card {
+        icon: "monitor"
+        title: "Suas barras"
+        subtitle: "O mapa mostra onde cada uma está agora. Clique numa barra (no mapa ou nos cartões) para editar. O número é a prioridade."
+        BarsMap {
+            width: parent.width
+            geo: page.geo
+            selected: page.idx
+            onPicked: i => { page.cur = i; page.curSec = 0; page.openMod = -1 }
+        }
+        Flow {
+            width: parent.width
+            spacing: 8
+            Repeater {
+                model: Settings.bars
+                delegate: Rectangle {
+                    id: item
+                    required property int index
+                    required property var modelData
+                    readonly property bool on: page.idx === index
+                    readonly property var info: page.geo && page.geo.bars ? page.geo.bars[index] : null
+                    width: 196; height: 58; radius: 14
+                    color: on ? Theme.tint(0.14) : (bm.containsMouse ? Theme.cardHi : Theme.gl(Theme.card, 1))
+                    border.width: 1
+                    border.color: on ? Theme.accent : Theme.border
+                    Rectangle {   // prioridade
+                        id: prio
+                        x: 10; anchors.verticalCenter: parent.verticalCenter
+                        width: 26; height: 26; radius: 13
+                        color: item.on ? Theme.accent : Theme.track
+                        Text { anchors.centerIn: parent; text: item.index + 1; color: item.on ? Theme.accentText : Theme.muted; font.pixelSize: 12; font.weight: Font.Bold }
                     }
+                    Column {
+                        anchors { left: prio.right; leftMargin: 10; right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                        spacing: 1
+                        Text { width: parent.width; elide: Text.ElideRight; text: item.modelData.name || ("Barra " + (item.index + 1)); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                        Text {
+                            width: parent.width; elide: Text.ElideRight
+                            text: item.info && item.info.hidden ? "Sem espaço: escondida"
+                                : (page.sideNames[item.modelData.side] ?? "?") + (item.modelData.detached ? " · solta" : "") + " · " + Settings.sectionsOf(item.modelData).reduce((n, x) => n + x.modules.length, 0) + " módulos"
+                            color: item.info && item.info.hidden ? Theme.danger : Theme.muted; font.pixelSize: 11
+                        }
+                    }
+                    MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { page.cur = item.index; page.curSec = 0; page.openMod = -1 } }
                 }
-                Column {
-                    anchors { left: mini.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
-                    spacing: 1
-                    Text { width: 104; elide: Text.ElideRight; text: item.modelData.name || ("Barra " + (item.index + 1)); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                    Text { text: (page.sideNames[item.modelData.side] ?? "?") + " · " + Settings.sectionsOf(item.modelData).reduce((n, x) => n + x.modules.length, 0) + " módulos"; color: Theme.muted; font.pixelSize: 11 }
+            }
+            Rectangle {
+                width: 120; height: 58; radius: 14
+                color: am.containsMouse ? Theme.cardHi : "transparent"
+                border.width: 1; border.color: Theme.border
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 6
+                    UiIcon { name: "plus"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                    Text { text: "Nova barra"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
                 }
-                MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { page.cur = item.index; page.curSec = 0; page.openMod = -1 } }
+                MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addBar("top"); page.cur = Settings.bars.length - 1 } }
             }
         }
-        Rectangle {
-            width: 120; height: 60; radius: 14
-            color: am.containsMouse ? Theme.cardHi : "transparent"
-            border.width: 1; border.color: Theme.border
-            Row {
-                anchors.centerIn: parent
-                spacing: 6
-                UiIcon { name: "plus"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                Text { text: "Nova barra"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
-            }
-            MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addBar("top"); page.cur = Settings.bars.length - 1 } }
+        // prioridade da barra escolhida
+        Row {
+            visible: Settings.bars.length > 1 && !!page.bar
+            spacing: 8
+            UiIcon { name: "layers"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+            Text { anchors.verticalCenter: parent.verticalCenter; text: "Prioridade " + (page.idx + 1) + " de " + Settings.bars.length; color: Theme.text; font.pixelSize: 13 }
+            UiButton { icon: "arrowUp"; text: "Subir"; kind: "ghost"; enabled: page.idx > 0; onClicked: { Settings.moveBar(page.idx, -1); page.cur = page.idx - 1 } }
+            UiButton { icon: "arrowDown"; text: "Descer"; kind: "ghost"; enabled: page.idx < Settings.bars.length - 1; onClicked: { Settings.moveBar(page.idx, 1); page.cur = page.idx + 1 } }
+        }
+        Text {
+            visible: Settings.bars.length > 1
+            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+            text: "Quando duas barras do mesmo lado querem o mesmo lugar, a de maior prioridade fica onde você colocou; a outra vai para o espaço livre mais perto, encolhe se precisar e, sem espaço nenhum, fica escondida."
         }
     }
 
     Card {
         visible: !!page.bar
-        icon: "monitor"
+        icon: "frame"
         title: "Posição e tamanho"
-        subtitle: "Em que lado da tela a barra fica e quanto espaço ocupa."
+        subtitle: "Lado, tamanho e posição em porcentagem do lado da tela. Nas pontas a barra encosta no canto sozinha."
+        readonly property var info: page.geo && page.geo.bars ? page.geo.bars[page.idx] : null
         Row {
             width: parent.width
             spacing: 10
@@ -84,18 +116,46 @@ Column {
             }
         }
         SidePick { value: page.bar ? page.bar.side : ""; onPicked: v => page.setBar("side", v) }
-        UiSwitch { label: "Ocupar o lado inteiro"; description: "A barra vai de uma ponta à outra da tela."; checked: page.bar ? page.bar.full : false; onToggled: on => page.setBar("full", on) }
-        UiSlider { visible: page.bar ? !page.bar.full : true; label: "Largura"; from: 100; to: 3000; value: page.bar ? page.bar.width : 0; suffix: " px"; onMoved: v => page.setBar("width", v) }
-        UiLabel { visible: page.bar ? !page.bar.full : false; text: "Encostar num canto" }
+        UiLabel { text: "Estilo" }
         UiSeg {
-            visible: page.bar ? !page.bar.full : false
-            readonly property bool vert: page.bar ? (page.bar.side === "left" || page.bar.side === "right") : false
-            options: [["", "Não", "close"], ["start", vert ? "No topo" : "À esquerda", vert ? "arrowUp" : "arrow_left"], ["end", vert ? "Embaixo" : "À direita", vert ? "arrowDown" : "arrow_right"]]
-            value: page.bar ? (page.bar.corner ?? "") : ""
-            onPicked: v => page.setBar("corner", v)
+            options: [["frame", "Na moldura", "frame"], ["detached", "Solta", "cards"]]
+            value: page.bar && page.bar.detached ? "detached" : "frame"
+            onPicked: v => page.setBar("detached", v === "detached")
         }
-        UiSlider { visible: page.bar ? !page.bar.full && !page.bar.corner : true; label: "Deslocamento"; from: -1500; to: 1500; value: page.bar ? page.bar.offset : 0; suffix: " px"; onMoved: v => page.setBar("offset", v) }
-        UiSlider { label: "Espessura"; from: 24; to: 90; value: page.bar ? page.bar.height : 0; suffix: " px"; onMoved: v => page.setBar("height", v) }
+        Text {
+            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+            text: page.bar && page.bar.detached ? "A barra flutua afastada da moldura, como uma ilha, com os cantos arredondados." : "A barra sai da moldura, emendada nela pelas curvas."
+        }
+        UiSwitch { visible: page.bar ? !page.bar.detached : true; label: "Ocupar o lado inteiro"; description: "A barra vai de uma ponta à outra da tela."; checked: page.bar ? !!page.bar.full : false; onToggled: on => page.setBar("full", on) }
+        Column {
+            visible: page.bar ? !page.bar.full : true
+            width: parent.width
+            spacing: 12
+            readonly property real sideLen: page.bar && (page.bar.side === "left" || page.bar.side === "right") ? (Quickshell.screens[0] ? Quickshell.screens[0].height : 1080) : (Quickshell.screens[0] ? Quickshell.screens[0].width : 1920)
+            readonly property real size: page.bar ? Settings.barSize(page.bar, sideLen) : 30
+            readonly property real pos: page.bar ? Settings.barPos(page.bar, sideLen) : 50
+            readonly property bool vert: page.bar ? (page.bar.side === "left" || page.bar.side === "right") : false
+            UiSlider { label: "Largura"; icon: "swap_horizontal"; from: 3; to: 100; value: Math.round(parent.size); suffix: " %"; onMoved: v => page.setBar("size", v) }
+            UiSlider { label: "Posição"; icon: "arrow_right"; from: 0; to: 100; value: Math.round(parent.pos); suffix: " %"; onMoved: v => { page.setBar("pos", v); page.setBar("corner", "") } }
+            Row {
+                spacing: 6
+                readonly property var info: page.geo && page.geo.bars ? page.geo.bars[page.idx] : null
+                UiButton { icon: parent.parent.vert ? "arrowUp" : "arrow_left"; text: parent.parent.vert ? "No topo" : "No início"; kind: "ghost"; onClicked: { page.setBar("pos", 0); page.setBar("corner", "") } }
+                UiButton { icon: "alignCenter"; text: "Centro"; kind: "ghost"; onClicked: { page.setBar("pos", 50); page.setBar("corner", "") } }
+                UiButton { icon: parent.parent.vert ? "arrowDown" : "arrow_right"; text: parent.parent.vert ? "Embaixo" : "No fim"; kind: "ghost"; onClicked: { page.setBar("pos", 100); page.setBar("corner", "") } }
+                Rectangle {   // estado atual (vindo da geometria)
+                    anchors.verticalCenter: parent.verticalCenter
+                    readonly property string msg: !parent.info ? "" : (parent.info.hidden ? "Sem espaço" : (parent.info.corner < 0 ? (parent.parent.vert ? "Encostada no topo" : "Encostada à esquerda") : (parent.info.corner > 0 ? (parent.parent.vert ? "Encostada embaixo" : "Encostada à direita") : "")))
+                    visible: msg !== ""
+                    width: st.implicitWidth + 18; height: 26; radius: 13
+                    color: parent.info && parent.info.hidden ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.tint(0.18)
+                    Text { id: st; anchors.centerIn: parent; text: parent.msg; color: parent.parent.info && parent.parent.info.hidden ? Theme.danger : Theme.accent; font.pixelSize: 11; font.weight: Font.DemiBold }
+                }
+            }
+        }
+        UiSlider { label: "Espessura"; icon: "bars"; from: 24; to: 90; value: page.bar ? page.bar.height : 0; suffix: " px"; onMoved: v => page.setBar("height", v) }
+        UiSlider { visible: page.bar ? !!page.bar.detached : false; label: "Distância da moldura"; icon: "dock"; from: 0; to: 40; value: page.bar ? (page.bar.gap ?? 8) : 8; suffix: " px"; onMoved: v => page.setBar("gap", v) }
+        UiSlider { visible: page.bar ? !!page.bar.detached : false; label: "Arredondamento"; icon: "curve"; from: 0; to: 40; value: page.bar ? (page.bar.radius ?? 14) : 14; suffix: " px"; onMoved: v => page.setBar("radius", v) }
     }
 
     Card {
@@ -148,7 +208,7 @@ Column {
         visible: !!page.bar
         icon: "view_column"
         title: "Seções"
-        subtitle: "Cada seção é um grupo de módulos com posição própria dentro da barra."
+        subtitle: "Cada seção é um grupo de módulos com posição própria. Enquanto esta página está aberta, as seções aparecem marcadas na própria barra (a escolhida em destaque)."
         Flow {
             width: parent.width
             spacing: 6

@@ -56,7 +56,7 @@ PanelWindow {
     Timer { id: showTimer; interval: Math.max(1, Settings.showDelay); onTriggered: win.armed = win.hovering }
     Timer { id: hideTimer; interval: Settings.hideDelay }
 
-    visible: !!info && !!bar
+    visible: !!info && !!bar && !info.hidden   // hidden: sem espaco livre neste lado (outra barra tem prioridade)
     anchors { top: true; left: true }
     // a janela e ~30% mais funda que a barra, para os modulos acompanharem curvas com overshoot (elastica)
     readonly property real full: info ? info.t : 0
@@ -95,15 +95,22 @@ PanelWindow {
             id: clipper
             readonly property bool vert: win.side === "left" || win.side === "right"
             readonly property real vis: Math.max(0, Math.min(win.full + win.extra, Settings.edge + (win.full - Settings.edge) * win.eff))
+            // faixa ocupada (em profundidade a partir da borda da tela): presa na moldura = 0..vis;
+            // solta = so o retangulo dela, que entra deslizando pela borda
+            readonly property bool det: !!(win.info && win.info.detached)
+            readonly property real d1: det ? win.full - (1 - win.eff) * (win.full + 6) : vis
+            readonly property real d0: det ? Math.max(0, d1 - win.info.th) : 0
+            readonly property real dl: Math.max(0, d1 - d0)
             clip: true
-            x: win.side === "right" ? win.width - vis : 0
-            y: win.side === "bottom" ? win.height - vis : 0
-            width: vert ? vis : win.width
-            height: vert ? win.height : vis
+            x: win.side === "right" ? win.width - d1 : (win.side === "left" ? d0 : 0)
+            y: win.side === "bottom" ? win.height - d1 : (win.side === "top" ? d0 : 0)
+            width: vert ? dl : win.width
+            height: vert ? win.height : dl
 
-            // centro dos modulos: no meio da parte visivel (vis/2 a partir da borda) e no meio da barra ao longo dela
-            readonly property real cx: vert ? (win.side === "right" ? win.width - vis / 2 : vis / 2) : win.width / 2
-            readonly property real cy: vert ? win.height / 2 : (win.side === "bottom" ? win.height - vis / 2 : vis / 2)
+            // centro dos modulos: no meio da faixa ocupada e no meio da barra ao longo dela
+            readonly property real dm: (d0 + d1) / 2
+            readonly property real cx: vert ? (win.side === "right" ? win.width - dm : dm) : win.width / 2
+            readonly property real cy: vert ? win.height / 2 : (win.side === "bottom" ? win.height - dm : dm)
 
             // ---- secoes: cada uma e posicionada ao longo da barra (inicio / centro / fim + deslocamento + largura) ----
             Repeater {
@@ -117,7 +124,7 @@ PanelWindow {
                     readonly property real total: vert ? win.height : win.width          // comprimento da barra
                     // o Repeater tambem conta como filho do Grid e soma um espacamento a mais: tira esse espacamento
                     readonly property real gridLen: vert ? grid.implicitHeight : grid.implicitWidth
-                    readonly property real contentLen: Math.max(0, gridLen - (!vert && sec.cfg.modules && sec.cfg.modules.length > 0 ? (sec.cfg.spacing ?? 14) : 0))
+                    readonly property real contentLen: Math.max(0, gridLen - (sec.cfg.modules && sec.cfg.modules.length > 0 ? (sec.cfg.spacing ?? 14) : 0))
                     readonly property real len: (cfg.width ?? 0) > 0 ? Math.min(cfg.width, total - 2 * pad) : contentLen
                     readonly property real off: cfg.offset ?? 0
                     readonly property real start: cfg.anchor === "start" ? pad + off
@@ -135,6 +142,29 @@ PanelWindow {
                     transform: Translate {
                         x: sec.vert ? (win.side === "left" ? -sec.rise : sec.rise) : 0
                         y: sec.vert ? 0 : (win.side === "top" ? -sec.rise : sec.rise)
+                    }
+
+                    // depuracao: com a pagina Barras aberta, mostra a area de cada secao (a escolhida em destaque)
+                    Rectangle {
+                        readonly property bool dbg: Settings.barDebugBar === win.modelData
+                        readonly property bool hot: dbg && Settings.barDebugSec === sec.index
+                        visible: dbg
+                        anchors.fill: parent
+                        anchors.margins: -3
+                        radius: 6
+                        color: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, hot ? 0.22 : 0.07)
+                        border.width: hot ? 1.5 : 1
+                        border.color: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, hot ? 0.95 : 0.4)
+                        z: -1
+                        Behavior on color { ColorAnimation { duration: 160 } }
+                        // nome da secao (so na escolhida)
+                        Rectangle {
+                            visible: parent.hot && !sec.vert
+                            anchors { left: parent.left; bottom: parent.top; bottomMargin: -height / 2 }
+                            width: dl.implicitWidth + 8; height: 13; radius: 4
+                            color: Settings.accent
+                            Text { id: dl; anchors.centerIn: parent; text: sec.cfg.name || ("Seção " + (sec.index + 1)); color: Theme.accentText; font.pixelSize: 8; font.weight: Font.Bold }
+                        }
                     }
 
                     Grid {

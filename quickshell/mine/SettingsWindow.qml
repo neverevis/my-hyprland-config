@@ -261,7 +261,7 @@ Scope {
                         height: Math.max(30, pageFlick.height * pageFlick.height / pageFlick.contentHeight)
                         color: Theme.border
                     }
-                    Component { id: barsC; PageBars {} }
+                    Component { id: barsC; PageBars { geo: root.geo } }
                     Component { id: homeC; PageHome {} }
                     Component { id: notifC; PageNotifications {} }
                     Component { id: launcherC; PageLauncher {} }
