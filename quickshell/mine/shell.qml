@@ -59,6 +59,7 @@ ShellRoot {
         function setsec(bar: int, sec: int, key: string, json: string): string {
             try { Settings.setSection(bar, sec, key, JSON.parse(json)); return JSON.stringify(Settings.bars[bar].sections[sec][key]) } catch (e) { return "erro: " + e }
         }
+        function rmbar(i: int): string { if (i < 0 || i >= Settings.bars.length) return "erro: indice"; Settings.removeBar(i); return String(Settings.bars.length) }
         function call(fn: string): string {
             const f = Settings[fn]
             if (typeof f !== "function") return "erro: " + fn + " nao existe"

@@ -98,7 +98,7 @@ Item {
 
     Component {
         id: taskbarC
-        TaskbarModule { opts: root.opts; vertical: root.vertical }
+        TaskbarModule { opts: root.opts; vertical: root.vertical; side: root.side; origin: root.origin }
     }
     Component {
         id: islandC

@@ -6,6 +6,7 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.Pipewire
+import Quickshell.Hyprland
 import QtQuick
 
 Scope {
@@ -34,7 +35,8 @@ Scope {
             readonly property string side: p ? p.side : "bottom"
             readonly property var r: p ? p.rect : ({ x: 0, y: 0, w: 0, h: 0 })
             readonly property size sz: ({ calendar: Qt.size(320, 330), weather: Qt.size(380, 250), system: Qt.size(360, 250), media: Qt.size(400, 210),
-                                          volume: Qt.size(320, 170), privacy: Qt.size(300, 120), updates: Qt.size(300, 130) })[kind] ?? Qt.size(300, 150)
+                                          volume: Qt.size(320, 170), privacy: Qt.size(300, 120), updates: Qt.size(300, 130),
+                                          windows: Qt.size(Math.min(width - 40, Math.max(1, p && p.wins ? p.wins.length : 1) * 232 + 22), 196) })[kind] ?? Qt.size(300, 150)
             readonly property real gap: 12
             readonly property real cx: Math.max(12, Math.min(width - sz.width - 12, r.x + r.w / 2 - sz.width / 2))
             readonly property real cy: Math.max(12, Math.min(height - sz.height - 12, r.y + r.h / 2 - sz.height / 2))
@@ -57,7 +59,7 @@ Scope {
                 HoverHandler { onHoveredChanged: BarState.popHover = hovered }
                 Loader {
                     anchors { fill: parent; margins: 16 }
-                    sourceComponent: ({ calendar: calC, weather: weatherC, system: sysC, media: mediaC, volume: volC, privacy: privC, updates: updC })[win.kind] ?? null
+                    sourceComponent: ({ calendar: calC, weather: weatherC, system: sysC, media: mediaC, volume: volC, privacy: privC, updates: updC, windows: winsC })[win.kind] ?? null
                 }
             }
         }
@@ -115,6 +117,44 @@ Scope {
                     spacing: 8
                     UiIcon { name: modelData.type === PwNodeType.VideoSource ? "monitor" : "mic"; size: 15; color: Theme.danger }
                     UiText { text: parent.parent.appOf(modelData); color: Theme.text; font.pixelSize: 12 }
+                }
+            }
+        }
+    }
+    // miniaturas das janelas de um app do dock (ao vivo); clique foca, X fecha
+    Component {
+        id: winsC
+        Row {
+            spacing: 12
+            Repeater {
+                model: root.shown && root.shown.wins ? root.shown.wins : []
+                delegate: Column {
+                    id: wc
+                    required property var modelData
+                    spacing: 6
+                    readonly property var o: modelData.lastIpcObject || {}
+                    Row {
+                        spacing: 6
+                        width: 220
+                        UiText { width: 190; elide: Text.ElideRight; text: wc.modelData.title || root.shown.title; color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
+                        Rectangle {
+                            width: 20; height: 20; radius: 10; color: xm.containsMouse ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.25) : "transparent"
+                            UiIcon { anchors.centerIn: parent; name: "close"; size: 12; color: xm.containsMouse ? Theme.danger : Theme.muted }
+                            MouseArea { id: xm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                onClicked: { Quickshell.execDetached(["hyprctl", "eval", 'hl.dispatch(hl.dsp.window.close({ window = "address:' + wc.o.address + '" }))']); BarState.pop = null } }
+                        }
+                    }
+                    Rectangle {
+                        width: 220; height: 140; radius: 12; color: Theme.card; clip: true
+                        border.width: tm.containsMouse ? 2 : 1; border.color: tm.containsMouse ? Theme.accent : Theme.border
+                        ScreencopyView {
+                            anchors.fill: parent; anchors.margins: 2
+                            captureSource: wc.modelData.wayland ?? null
+                            live: true
+                        }
+                        MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: { Quickshell.execDetached(["hyprctl", "eval", 'hl.dispatch(hl.dsp.focus({ window = "address:' + wc.o.address + '" }))']); BarState.pop = null } }
+                    }
                 }
             }
         }

@@ -28,7 +28,14 @@ Singleton {
         launcher: [{ key: "icon", label: "Ícone (nome, ex.: apps, arch, rocket)", type: "text", def: "apps" }],
         visualizer: [{ key: "bars", label: "Barrinhas", type: "slider", from: 4, to: 32, def: 10 }],
         taskbar: [{ key: "iconSize", label: "Tamanho dos ícones", type: "slider", from: 18, to: 48, def: 26, suffix: " px" },
-                  { key: "running", label: "Mostrar também os apps abertos que não estão fixados", type: "switch", def: true }]
+                  { key: "magnify", label: "Ampliar ao passar o mouse (como no Mac)", type: "slider", from: 0, to: 100, def: 35, suffix: " %" },
+                  { key: "running", label: "Mostrar também os apps abertos que não estão fixados", type: "switch", def: true },
+                  { key: "separator", label: "Linha entre fixados e abertos", type: "switch", def: false },
+                  { key: "previews", label: "Miniaturas das janelas ao passar o mouse", type: "switch", def: true },
+                  { key: "appsButton", label: "Botão de apps (abre o launcher)", type: "switch", def: false },
+                  { key: "media", label: "Música tocando no fim", type: "switch", def: false },
+                  { key: "mono", label: "Ícones monocromáticos", type: "switch", def: false },
+                  { key: "ignore", label: "Esconder apps (classes separadas por espaço; * no fim vale prefixo)", type: "text", def: "" }]
     })
     function schema(type) { return schemas[type] ?? [] }
     function value(mod, key) { const d = schema(mod.type).find(x => x.key === key); return mod[key] !== undefined ? mod[key] : (d ? d.def : undefined) }
