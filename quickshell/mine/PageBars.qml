@@ -14,7 +14,10 @@ Column {
     readonly property int idx: Math.max(0, Math.min(cur, Settings.bars.length - 1))
     readonly property var bar: Settings.bars[idx] ?? null
     readonly property var sideNames: ({ top: "Cima", bottom: "Baixo", left: "Esquerda", right: "Direita" })
-    readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil" })
+    readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil",
+        media: "music", weather: "wPartly", netspeed: "network", gpu: "gpuCard", temp: "temperature", updates: "download", keyboard: "keyboard",
+        notifs: "bell", recorder: "monitor", utils: "frame", caffeine: "coffee", launcher: "apps", visualizer: "wave", taskbar: "dock",
+        island: "pulse", privacy: "eye" })
     function setBar(k, v) { Settings.setBar(idx, k, v) }
     // marca as secoes na propria barra enquanto esta pagina esta aberta
     // so a pagina de verdade (a copia escondida que a busca cria para montar o indice nao mexe na depuracao)
@@ -272,6 +275,9 @@ Column {
         UiSlider { label: "Largura (0 = automática)"; from: 0; to: 3000; value: page.sections[page.sec] ? (page.sections[page.sec].width ?? 0) : 0; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "width", v) }
         UiSlider { label: "Deslocamento"; from: -1500; to: 1500; value: page.sections[page.sec] ? (page.sections[page.sec].offset ?? 0) : 0; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "offset", v) }
         UiSlider { label: "Espaço entre módulos"; from: 0; to: 40; value: page.sections[page.sec] ? (page.sections[page.sec].spacing ?? 14) : 14; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "spacing", v) }
+        UiSwitch { label: "Fundo em pílula"; description: "Um fundo arredondado atrás dos módulos desta seção (grupos, como no end4)."; checked: page.sections[page.sec] ? !!page.sections[page.sec].bg : false; onToggled: on => Settings.setSection(page.idx, page.sec, "bg", on) }
+        UiSlider { visible: page.sections[page.sec] ? !!page.sections[page.sec].bg : false; label: "Opacidade do fundo"; from: 4; to: 40; value: page.sections[page.sec] ? (page.sections[page.sec].bgAlpha ?? 10) : 10; suffix: " %"; onMoved: v => Settings.setSection(page.idx, page.sec, "bgAlpha", Math.round(v)) }
+        UiSwitch { visible: page.sections[page.sec] ? !!page.sections[page.sec].bg : false; label: "Contorno na cor de destaque"; checked: page.sections[page.sec] ? !!page.sections[page.sec].bgBorder : false; onToggled: on => Settings.setSection(page.idx, page.sec, "bgBorder", on) }
         UiButton { visible: page.sections.length > 1; icon: "trash"; text: "Remover esta seção"; kind: "danger"; onClicked: { Settings.removeSection(page.idx, page.sec); page.curSec = 0; page.openMod = -1 } }
     }
 
@@ -289,7 +295,8 @@ Column {
                 readonly property bool hasField: mod.type === "clock" || mod.type === "text"
                 readonly property string mtype: mod.type
                 readonly property bool isMeter: mtype === "cpu" || mtype === "memory" || mtype === "volume"
-                readonly property bool hasOpts: mtype === "workspaces" || isMeter || mtype === "tray" || mtype === "palette"
+                readonly property var schema: BarModules.schema(mtype)
+                readonly property bool hasOpts: mtype === "workspaces" || isMeter || mtype === "tray" || mtype === "palette" || schema.length > 0
                 readonly property bool optsOpen: hasOpts && page.openMod === index
                 width: parent.width
                 spacing: 6
@@ -397,6 +404,23 @@ Column {
                     }
                 }
 
+                // opcoes pelo formulario generico (modulos novos e as que faltavam nos antigos)
+                Rectangle {
+                    visible: mrow.schema.length > 0 && mrow.optsOpen
+                    width: parent.width
+                    height: visible ? gCol.implicitHeight + 28 : 0
+                    radius: 12
+                    color: Theme.track; border.width: 1; border.color: Theme.border
+                    OptionsForm {
+                        id: gCol
+                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14 }
+                        width: parent.width - 28
+                        schema: mrow.schema
+                        get: k => BarModules.value(mrow.mod, k)
+                        set: (k, v) => Settings.setModuleOpt(page.idx, page.sec, mrow.index, k, v)
+                        isShown: d => BarModules.shown(mrow.mod, d)
+                    }
+                }
                 // opcoes do modulo de workspaces
                 Rectangle {
                     visible: mrow.mtype === "workspaces" && mrow.optsOpen
@@ -459,6 +483,18 @@ Column {
                 }
             }
         }
+    }
+
+    Card {
+        icon: "info"
+        title: "Detalhes e ilha dinâmica"
+        subtitle: "Parar o mouse em cima do relógio, clima, sistema, música, volume ou atualizações mostra um cartão com mais detalhes. A ilha dinâmica é um módulo (adicione numa seção): ela muda de forma com música, notificações, volume, timer e gravação — numa barra com \"Largura do conteúdo\" a moldura cresce junto."
+        UiSwitch { label: "Detalhes ao passar o mouse"; checked: Settings.barPopups; onToggled: on => Settings.barPopups = on }
+        UiSlider { visible: Settings.barPopups; label: "Esperar antes de mostrar"; from: 100; to: 1500; value: Settings.barPopupDelay; suffix: " ms"; onMoved: v => Settings.barPopupDelay = Math.round(v / 50) * 50 }
+        UiLabel { text: "Animação dos detalhes" }
+        AnimPicker { target: "popups" }
+        UiLabel { text: "Animação da ilha (ao mudar de forma)" }
+        AnimPicker { target: "island" }
     }
 
     Row {

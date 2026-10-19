@@ -28,6 +28,7 @@ Item {
         property bool hot: false
         signal clicked(var mouse)
         signal wheel(int dy)
+        readonly property bool hovered: ma.containsMouse
         implicitWidth: root.vertical ? Math.max(ic.implicitWidth, tx.implicitWidth) : ic.implicitWidth + (tx.text !== "" ? tx.implicitWidth + 6 : 0)
         implicitHeight: root.vertical ? ic.implicitHeight + (tx.text !== "" ? tx.implicitHeight + 2 : 0) : Math.max(ic.implicitHeight, tx.implicitHeight)
         opacity: ma.containsMouse ? 0.8 : 1
@@ -43,7 +44,7 @@ Item {
     Loader {
         id: ld
         sourceComponent: ({ weather: weatherC, media: mediaC, netspeed: netC, gpu: gpuC, temp: tempC, updates: updC, keyboard: kbC, recorder: recC,
-                            notifs: notifC, launcher: launchC, utils: utilsC, caffeine: cafC, visualizer: visC })[root.type] ?? null
+                            notifs: notifC, launcher: launchC, utils: utilsC, caffeine: cafC, visualizer: visC, privacy: privC })[root.type] ?? null
     }
 
     // clima: icone e temperatura; clique atualiza
@@ -128,6 +129,20 @@ Item {
         Chip { icon: "palette"; onClicked: Actions.run("picker") }
         Chip { icon: parent.mic && parent.mic.audio && parent.mic.audio.muted ? "micOff" : "mic"; hot: !!(parent.mic && parent.mic.audio && !parent.mic.audio.muted)
             onClicked: if (parent.mic && parent.mic.audio) parent.mic.audio.muted = !parent.mic.audio.muted }
+    } }
+    // privacidade: aparece quando um app usa o microfone ou compartilha a tela (nos do PipeWire); o visualizador (cava)
+    // e o proprio shell nao contam. Passar o mouse diz quem esta usando (detalhes da barra).
+    Component { id: privC; Row {
+        id: pv
+        spacing: 6
+        readonly property var streams: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioInStream || n.type === PwNodeType.VideoSource)
+        PwObjectTracker { objects: pv.streams }
+        function appOf(n) { const p = n.properties || {}; return p["application.name"] || p["node.name"] || n.name || "" }
+        readonly property var mic: streams.filter(n => n.type === PwNodeType.AudioInStream && !/cava|quickshell|pavucontrol|peak|monitor/i.test(appOf(n)))
+        readonly property var screen: streams.filter(n => n.type === PwNodeType.VideoSource && /xdpw|portal|screen|cast/i.test(appOf(n) + " " + (n.description || "")))
+        visible: mic.length > 0 || screen.length > 0
+        Chip { visible: pv.mic.length > 0; icon: "mic"; tint: Theme.danger; text: ""}
+        Chip { visible: pv.screen.length > 0; icon: "monitor"; tint: Theme.danger; text: ""}
     } }
     // mini visualizador (cava)
     Component { id: visC; Item {

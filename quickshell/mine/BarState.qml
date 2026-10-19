@@ -5,7 +5,25 @@ import Quickshell
 import QtQuick
 
 Singleton {
+    id: bs
     property var p: ({})
+
+    // ---- detalhes ao passar o mouse nos modulos (BarPopup.qml) ----
+    // pop = { kind, opts, side, rect: {x, y, w, h} na tela }; aparece depois de um tempo parado em cima e some ao sair
+    // (a menos que o mouse va para o proprio cartao)
+    property var pop: null
+    property var popPending: null
+    property bool popHover: false
+    Timer { id: popShowT; interval: Settings.barPopupDelay; onTriggered: bs.pop = bs.popPending }
+    Timer { id: popHideT; interval: 260; onTriggered: if (!bs.popHover) bs.pop = null }
+    function popEnter(p) {
+        if (!Settings.barPopups) return
+        popPending = p; popHideT.stop()
+        if (pop) pop = p      // ja aberto: troca na hora (passar de um modulo para o outro)
+        else popShowT.restart()
+    }
+    function popLeave() { popShowT.stop(); popHideT.restart() }
+    onPopHoverChanged: if (!popHover) popHideT.restart(); else popHideT.stop()
     // barras com "fit" (largura do conteudo, ex.: o dock): comprimento que os modulos pedem, por indice da barra
     property var fitLen: ({})
     function setFit(i, v) {

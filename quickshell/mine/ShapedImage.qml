@@ -29,6 +29,8 @@ Item {
             asynchronous: true
             smooth: true
             mipmap: true
+            // ao terminar de carregar, refaz a camada usada pelo efeito (ela podia ficar com a textura vazia e a foto sumia)
+            onStatusChanged: if (status === Image.Ready) { holder.layer.enabled = false; holder.layer.enabled = true }
         }
     }
     Flower {

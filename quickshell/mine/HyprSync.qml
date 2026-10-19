@@ -38,6 +38,8 @@ Singleton {
             + '\nhl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-osd" }, blur = true, ignore_alpha = 0.3 })'
             + '\nhl.layer_rule({ match = { namespace = "mine-osd" }, no_anim = true })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-popup" }, blur = true, ignore_alpha = 0.3 })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-popup" }, no_anim = true })'
             + floatRules()
     }
     // paineis soltos (fora da moldura) tem fundo proprio: ganham o blur do Hyprland so nesse modo

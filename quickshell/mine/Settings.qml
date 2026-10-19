@@ -160,6 +160,8 @@ Singleton {
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
     property alias launcherEngine: adapter.launcherEngine       // busca na web (prefixo "?"): a busca vai no fim
+    property alias barPopups: adapter.barPopups                 // detalhes ao passar o mouse nos modulos da barra
+    property alias barPopupDelay: adapter.barPopupDelay
     property alias launcherExclude: adapter.launcherExclude     // sites fora da busca na web (vira -site:x)
     property alias launcherPrefixes: adapter.launcherPrefixes   // prefixo de cada modo (so os trocados; ver Launcher.prefixDefaults)
     property alias launcherDefaults: adapter.launcherDefaults   // o que aparece sem prefixo: math, actions, settings, web
@@ -221,6 +223,8 @@ Singleton {
         { id: "power", label: "Menu de energia", group: "panels", phases: true, page: "session" },
         { id: "bars", label: "Barras (mostrar / esconder)", group: "shell", phases: true, page: "bars" },
         { id: "workspaces", label: "Workspaces na barra", group: "shell" },
+        { id: "island", label: "Ilha dinâmica (mudar de forma)", group: "shell", page: "bars" },
+        { id: "popups", label: "Detalhes ao passar o mouse", group: "shell", phases: true, page: "bars" },
         { id: "wallpaper", label: "Transição de wallpaper", group: "desk", page: "wallpaper" },
         { id: "desktop", label: "Widgets da área de trabalho", group: "desk", page: "desktop" },
         { id: "lock", label: "Tela de bloqueio", group: "desk", page: "session" },
@@ -230,7 +234,7 @@ Singleton {
         { id: "hyprLayers", label: "Camadas flutuantes (launcher solto, menus)", group: "hypr", phases: true, hypr: ["layersIn", "layersOut"], style: "layers" }
     ]
     readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera", power: "Desacelera", lock: "Desacelera", desktop: "Suave",
-        osd: "Desacelera", settings: "Ênfase (entrada)", hyprWindows: "Ênfase (entrada)", hyprMove: "Padrão M3", hyprWorkspaces: "Padrão M3", hyprLayers: "Ênfase (entrada)" })
+        osd: "Desacelera", island: "Mola", popups: "Desacelera", settings: "Ênfase (entrada)", hyprWindows: "Ênfase (entrada)", hyprMove: "Padrão M3", hyprWorkspaces: "Padrão M3", hyprLayers: "Ênfase (entrada)" })
     // saida: so onde a fechada sempre foi diferente (o resto fecha igual abre, como antes)
     readonly property var animOutDefaults: ({ settings: "Ênfase (saída)", hyprWindows: "Saída rápida", hyprLayers: "Ênfase (saída)" })
     readonly property var hyprStyleDefaults: ({ windows: "popin 85%", workspaces: "slide", layers: "slide" })
@@ -380,7 +384,9 @@ Singleton {
         { type: "caffeine", label: "Manter acordado" },
         { type: "launcher", label: "Botão do launcher" },
         { type: "visualizer", label: "Mini visualizador" },
-        { type: "taskbar", label: "Dock (apps fixados e abertos)" }
+        { type: "taskbar", label: "Dock (apps fixados e abertos)" },
+        { type: "island", label: "Ilha dinâmica" },
+        { type: "privacy", label: "Privacidade (microfone / tela em uso)" }
     ]
 
     function reset(): void {
@@ -676,6 +682,8 @@ Singleton {
             property var launcherUsage: ({})
             property string launcherEngine: "https://www.google.com/search?q="
             property var launcherExclude: []
+            property bool barPopups: true
+            property int barPopupDelay: 450
             property var launcherPrefixes: ({})
             property var launcherDefaults: ({})
             property bool launcherFuzzy: true

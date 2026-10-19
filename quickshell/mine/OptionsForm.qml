@@ -168,24 +168,30 @@ Column {
     }
     Component {
         id: imageC
-        Row {
-            spacing: 10
+        // miniatura + nome + botao; o nome encolhe (reticencias) para o botao caber sempre
+        Item {
+            id: ic
+            width: parent ? parent.width : 300
+            height: 48
             Rectangle {
+                id: ith
                 width: 64; height: 44; radius: 8; color: Theme.track; clip: true
+                anchors.verticalCenter: parent.verticalCenter
                 border.width: 1; border.color: Theme.border
-                Image { anchors.fill: parent; source: parent.parent.parent.val ? "file://" + parent.parent.parent.val : ""; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(128, 88); asynchronous: true }
-                UiIcon { visible: !parent.parent.parent.val; anchors.centerIn: parent; name: "image"; size: 18; color: Theme.muted }
+                Image { anchors.fill: parent; source: ic.parent.val ? "file://" + ic.parent.val : ""; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(128, 88); asynchronous: true }
+                UiIcon { visible: !ic.parent.val; anchors.centerIn: parent; name: "image"; size: 18; color: Theme.muted }
             }
             Column {
-                anchors.verticalCenter: parent.verticalCenter
+                anchors { left: ith.right; leftMargin: 10; right: ib.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
                 spacing: 4
-                UiText { text: parent.parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
-                UiText { width: 220; elide: Text.ElideMiddle; text: parent.parent.parent.val || "nenhuma"; color: Theme.muted; font.pixelSize: 11 }
+                UiText { width: parent.width; elide: Text.ElideRight; text: ic.parent.def.label; color: Theme.text; font.pixelSize: 13 }
+                UiText { width: parent.width; elide: Text.ElideMiddle; text: ic.parent.val ? ic.parent.val.split("/").pop() : "nenhuma"; color: Theme.muted; font.pixelSize: 11 }
             }
             UiButton {
-                anchors.verticalCenter: parent.verticalCenter
-                icon: "folderOpen"; text: "Escolher…"
-                onClicked: { const k = parent.parent.def.key; Pick.image("Imagem do widget", p => form.set(k, p)) }
+                id: ib
+                anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                icon: "folderOpen"; text: form.compact ? "" : "Escolher…"
+                onClicked: { const k = ic.parent.def.key; Pick.image("Imagem do widget", p => form.set(k, p)) }
             }
         }
     }

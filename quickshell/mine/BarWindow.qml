@@ -174,6 +174,19 @@ PanelWindow {
                         }
                     }
 
+                    // fundo da secao (opcao "bg"): pilula atras dos modulos, como os grupos do end4
+                    Rectangle {
+                        visible: !!sec.cfg.bg && sec.contentLen > 0
+                        readonly property real pad: sec.cfg.bgPad ?? 9
+                        x: (sec.vert ? 0 : grid.x) - pad
+                        y: (sec.vert ? grid.y : 0) - pad * 0.55
+                        width: (sec.vert ? grid.implicitWidth : sec.contentLen) + pad * 2
+                        height: (sec.vert ? sec.contentLen : grid.implicitHeight) + pad * 1.1
+                        radius: Math.min(width, height) / 2
+                        color: Qt.rgba(Settings.textColor.r, Settings.textColor.g, Settings.textColor.b, (sec.cfg.bgAlpha ?? 10) / 100)
+                        border.width: sec.cfg.bgBorder ? 1 : 0
+                        border.color: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, 0.45)
+                    }
                     Grid {
                         id: grid
                         spacing: sec.cfg.spacing ?? 14
@@ -195,6 +208,7 @@ PanelWindow {
                                 opts: m
                                 vertical: sec.vert
                                 side: win.side
+                                origin: Qt.point(win.margins.left, win.margins.top)
                             }
                         }
                     }

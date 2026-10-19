@@ -50,6 +50,15 @@ ShellRoot {
             try { const v = JSON.parse(json); Settings.mutate(b => { b[i][key] = v }); return JSON.stringify(Settings.bars[i][key]) } catch (e) { return "erro: " + e }
         }
         // so funcoes sem argumentos (uma chamada sem o indice ja apagou a barra errada)
+        // modulos de teste numa secao de uma barra (a pagina Barras faz o mesmo pela interface)
+        function addmod(bar: int, sec: int, type: string): string { Settings.addModule(bar, sec, type); return JSON.stringify(Settings.bars[bar].sections[sec].modules.map(m => m.type)) }
+        function rmmod(bar: int, sec: int, idx: int): string { Settings.removeModule(bar, sec, idx); return JSON.stringify(Settings.bars[bar].sections[sec].modules.map(m => m.type)) }
+        function setmod(bar: int, sec: int, idx: int, key: string, json: string): string {
+            try { Settings.setModuleOpt(bar, sec, idx, key, JSON.parse(json)); return JSON.stringify(Settings.bars[bar].sections[sec].modules[idx]) } catch (e) { return "erro: " + e }
+        }
+        function setsec(bar: int, sec: int, key: string, json: string): string {
+            try { Settings.setSection(bar, sec, key, JSON.parse(json)); return JSON.stringify(Settings.bars[bar].sections[sec][key]) } catch (e) { return "erro: " + e }
+        }
         function call(fn: string): string {
             const f = Settings[fn]
             if (typeof f !== "function") return "erro: " + fn + " nao existe"
@@ -68,6 +77,7 @@ ShellRoot {
     Launcher { geo: shell.geo; settingsRef: settingsWin }
     Notifications { geo: shell.geo }
     OsdWindow { geo: shell.geo }
+    BarPopup {}
     Home { geo: shell.geo }
     PowerMenu {}
     PhotoEditor {}

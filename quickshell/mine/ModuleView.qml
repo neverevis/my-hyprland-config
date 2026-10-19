@@ -12,6 +12,20 @@ Item {
     property var opts: ({})
     property bool vertical: false
     property string side: "bottom"
+    property point origin: Qt.point(0, 0)   // canto da janela da barra na tela (para os detalhes ao passar o mouse)
+
+    // detalhes ao passar o mouse: que cartao cada modulo abre (opcao "popup" desliga)
+    readonly property string popKind: root.opts.popup === false ? "" : ({ clock: "calendar", weather: "weather", cpu: "system", memory: "system", gpu: "system",
+        temp: "system", netspeed: "system", media: "media", volume: "volume", privacy: "privacy", updates: "updates" })[root.type] ?? ""
+    HoverHandler {
+        enabled: root.popKind !== ""
+        onHoveredChanged: {
+            if (!hovered) { BarState.popLeave(); return }
+            const p = root.mapToItem(null, 0, 0)
+            BarState.popEnter({ kind: root.popKind, opts: root.opts, side: root.side, type: root.type,
+                                rect: { x: p.x + root.origin.x, y: p.y + root.origin.y, w: root.width, h: root.height } })
+        }
+    }
 
     implicitWidth: loader.item ? loader.item.implicitWidth : 0
     implicitHeight: loader.item ? loader.item.implicitHeight : 0
@@ -26,7 +40,7 @@ Item {
         id: loader
         sourceComponent: ({
             clock: clockC, workspaces: workspacesC, window: windowC,
-            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC, power: powerC, taskbar: taskbarC
+            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC, power: powerC, taskbar: taskbarC, island: islandC
         })[root.type] ?? extraC
     }
 
@@ -85,6 +99,10 @@ Item {
     Component {
         id: taskbarC
         TaskbarModule { opts: root.opts; vertical: root.vertical }
+    }
+    Component {
+        id: islandC
+        IslandModule { opts: root.opts; vertical: root.vertical }
     }
     Component {
         id: extraC

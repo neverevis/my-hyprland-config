@@ -29,7 +29,11 @@ Singleton {
     property bool armed: false
     Timer { interval: 2500; running: true; onTriggered: root.armed = true }
 
+    // a ilha dinamica tambem mostra volume/microfone/midia (mesmo com o indicador desligado)
+    property int bump: 0
+    property string bumpKind: "volume"
     function show(k) {
+        if (armed) { bumpKind = k; bump++ }
         if (!Settings.osdOn || !armed) return
         if (k !== "media" && (Settings.homeOpen || Power.locked)) return
         kind = k
