@@ -111,6 +111,16 @@ Scope {
 
             // clique fora fecha
             MouseArea { anchors.fill: parent; onClicked: Settings.wpPickerOpen = false }
+            // soltar uma imagem (ou video) vinda do gerenciador de arquivos: vira o wallpaper
+            DropArea {
+                anchors.fill: parent
+                keys: ["text/uri-list"]
+                onDropped: d => {
+                    if (!d.hasUrls) return
+                    const p = decodeURIComponent(d.urls[0].toString().replace(/^file:\/\//, ""))
+                    if (/\.(png|jpe?g|webp|bmp|mp4|webm|mkv|mov|m4v)$/i.test(p)) { Wallpaper.set(p); d.acceptProposedAction() }
+                }
+            }
 
             // ---- flutuante: painel proprio que desliza da borda ----
             Rectangle {

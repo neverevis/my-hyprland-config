@@ -16,7 +16,7 @@ Item {
     Rectangle { anchors.fill: parent; radius: 10; color: Theme.bg }
     RoundImage {
         anchors.fill: parent; radius: 10
-        source: { const p = lp.look && lp.look.wallpaper ? lp.look.wallpaper : Wallpaper.current; return p ? "file://" + p : "" }
+        source: { const p = lp.look && lp.look.wallpaper ? lp.look.wallpaper : Wallpaper.current; return p ? Wallpaper.stillUrl(p) : "" }
         sourceSize: Qt.size(384, 216)
         dim: 0.15
     }

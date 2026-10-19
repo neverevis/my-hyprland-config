@@ -85,7 +85,7 @@ Scope {
                         // wallpaper de fundo de cada workspace
                         RoundImage {
                             anchors.fill: parent; anchors.margins: 1; radius: 13
-                            source: Wallpaper.current !== "" ? "file://" + Wallpaper.current : ""
+                            source: Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
                             sourceSize: Qt.size(320, 180)
                             dim: 0.35
                             opacity: 0.85

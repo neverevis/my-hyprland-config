@@ -16,7 +16,7 @@ Item {
         RoundImage {
             x: 1; y: 1; width: parent.width - 2; height: parent.height - 2
             radius: 15
-            source: Wallpaper.current !== "" ? "file://" + Wallpaper.current : ""
+            source: Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
             sourceSize: Qt.size(640, 200)
             blur: 0.7
             dim: 0.48

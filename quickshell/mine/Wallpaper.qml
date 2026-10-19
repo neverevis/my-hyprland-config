@@ -3,6 +3,7 @@
 pragma Singleton
 
 import Quickshell
+import Quickshell.Io
 import Qt.labs.folderlistmodel
 import QtQuick
 
@@ -14,6 +15,40 @@ Singleton {
     property var files: []   // [{ path, name }]
 
     readonly property string current: Settings.wallpaper !== "" ? Settings.wallpaper : (files.length ? files[0].path : "")
+    // ---- videos (mp4, webm, mkv, mov): o primeiro quadro vira um jpg em ~/.cache/quickshell-mine/vidframe (transicoes,
+    // paleta de cores, miniaturas e tudo o que precisa de imagem usam esse quadro) ----
+    readonly property var videoExt: ["mp4", "webm", "mkv", "mov", "m4v"]
+    function isVideo(p) { return !!p && videoExt.indexOf(String(p).split(".").pop().toLowerCase()) >= 0 }
+    readonly property string frameDir: home + "/.cache/quickshell-mine/vidframe"
+    function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) } return (h >>> 0).toString(16) }
+    function framePath(p) { return frameDir + "/" + hash(p) + ".jpg" }
+    property var frames: ({})        // video -> true quando o quadro existe
+    property var frameQueue: []
+    function stillOf(p) {
+        if (!isVideo(p)) return p
+        if (frames[p]) return framePath(p)
+        if (frameQueue.indexOf(p) < 0) Qt.callLater(() => root.enqueue(p))   // fora do binding que perguntou
+        return ""
+    }
+    function stillUrl(p) { const s = stillOf(p); return s ? "file://" + s : "" }
+    function enqueue(p) { if (frameQueue.indexOf(p) < 0 && !frames[p]) { frameQueue = frameQueue.concat([p]); nextFrame() } }
+    readonly property string still: stillOf(current)
+    function nextFrame() {
+        if (frameProc.running || !frameQueue.length) return
+        const p = frameQueue[0]
+        frameProc.target = p
+        frameProc.command = ["sh", "-c", 'mkdir -p "$1" && { [ -s "$2" ] || ffmpeg -y -loglevel error -ss 0.3 -i "$3" -frames:v 1 -vf "scale=1920:-2" "$2"; }', "sh", frameDir, framePath(p), p]
+        frameProc.running = true
+    }
+    Process {
+        id: frameProc
+        property string target: ""
+        onExited: {
+            const f = Object.assign({}, root.frames); f[target] = true; root.frames = f
+            root.frameQueue = root.frameQueue.filter(x => x !== target)
+            Qt.callLater(root.nextFrame)
+        }
+    }
     readonly property var curves: ({
         smooth: [0.4, 0, 0.2, 1, 1, 1],
         decel: [0.05, 0.7, 0.1, 1, 1, 1],
@@ -77,7 +112,7 @@ Singleton {
     FolderListModel {
         id: model
         folder: "file://" + root.dir
-        nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp", "*.bmp", "*.PNG", "*.JPG", "*.JPEG", "*.WEBP"]
+        nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp", "*.bmp", "*.PNG", "*.JPG", "*.JPEG", "*.WEBP"].concat(Settings.wpVideos ? ["*.mp4", "*.webm", "*.mkv", "*.mov", "*.m4v", "*.MP4", "*.WEBM"] : [])
         showDirs: false
         sortField: FolderListModel.Name
         onCountChanged: root.refresh()

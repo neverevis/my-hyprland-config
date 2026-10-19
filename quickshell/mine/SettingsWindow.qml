@@ -191,6 +191,7 @@ Scope {
             Rectangle { anchors { right: parent.right; top: parent.top; bottom: parent.bottom } width: 1; color: Theme.border; opacity: 0.6 }
 
             Column {
+                id: sideTop
                 anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16; topMargin: 20 }
                 spacing: 4
 
@@ -222,7 +223,18 @@ Scope {
                     Keys.onReturnPressed: if (root.results.length) body.open(root.results[0])
                     UiIcon { anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: "search"; size: 15; color: Theme.muted }
                 }
-                Item { width: 1; height: 6 }
+            }
+            // lista das paginas: rola quando nao cabe (ao passar o mouse por cima, a roda rola)
+            Flickable {
+                id: navFlick
+                anchors { left: parent.left; right: parent.right; top: sideTop.bottom; bottom: resetBtn.top; leftMargin: 16; rightMargin: 16; topMargin: 6; bottomMargin: 8 }
+                contentHeight: navCol.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                Column {
+                    id: navCol
+                    width: navFlick.width
+                    spacing: 4
                 Repeater {
                     model: root.groups
                     delegate: Column {
@@ -258,6 +270,7 @@ Scope {
                         }
                     }
                 }
+            }
             }
 
             // restaurar: pede confirmacao (segundo clique em ate 4 s)

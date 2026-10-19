@@ -209,7 +209,7 @@ Singleton {
     property var auto: ({})
     property rect area: Qt.rect(0, 0, 1920, 1080)   // area livre (DesktopLayer informa)
     property size screenSize: Qt.size(1920, 1080)
-    readonly property string analysisKey: Wallpaper.current + "|" + JSON.stringify((Settings.desktopWidgets || []).map(w => [w.id, w.cols, w.rows, w.fx, w.fy, opt(w, "place")])) + "|" + area
+    readonly property string analysisKey: Wallpaper.still + "|" + JSON.stringify((Settings.desktopWidgets || []).map(w => [w.id, w.cols, w.rows, w.fx, w.fy, opt(w, "place")])) + "|" + area
     onAnalysisKeyChanged: analyzeT.restart()
     Timer { id: analyzeT; interval: 400; onTriggered: root.analyze() }
     function posOf(w) {
@@ -218,13 +218,13 @@ Singleton {
     }
     function analyze() {
         const ws = Settings.desktopWidgets || []
-        if (!ws.length || Wallpaper.current === "") return
+        if (!ws.length || Wallpaper.still === "") return
         const ar = area
         const list = ws.map(w => {
             const pw = px(w.cols), ph = px(w.rows)
             return { id: w.id, w: pw, h: ph, mode: opt(w, "place"), x: ar.x + w.fx * Math.max(0, ar.width - pw), y: ar.y + w.fy * Math.max(0, ar.height - ph) }
         })
-        placer.command = ["python3", Qt.resolvedUrl("scripts/desk_place.py").toString().replace("file://", ""), Wallpaper.current, String(Math.round(screenSize.width)), String(Math.round(screenSize.height)),
+        placer.command = ["python3", Qt.resolvedUrl("scripts/desk_place.py").toString().replace("file://", ""), Wallpaper.still, String(Math.round(screenSize.width)), String(Math.round(screenSize.height)),
             JSON.stringify({ area: [ar.x, ar.y, ar.width, ar.height], widgets: list })]
         placer.running = false
         placer.running = true

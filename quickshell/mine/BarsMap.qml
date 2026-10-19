@@ -27,7 +27,7 @@ Item {
         // wallpaper bem apagado ao fundo
         Image {
             anchors.fill: parent
-            source: Wallpaper.current !== "" ? "file://" + Wallpaper.current : ""
+            source: Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
             sourceSize: Qt.size(480, 270)
             fillMode: Image.PreserveAspectCrop
             opacity: 0.22

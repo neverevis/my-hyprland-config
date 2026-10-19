@@ -8,7 +8,7 @@ import QtQuick
 Item {
     id: root
     width: 1; height: 1
-    readonly property string src: Wallpaper.current
+    readonly property string src: Wallpaper.still
     readonly property string mode: Settings.themeModeEff
     readonly property string variant: Settings.themeVariant
     readonly property string py: Quickshell.env("HOME") + "/.local/share/quickshell-mine/venv/bin/python"

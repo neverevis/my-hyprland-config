@@ -119,7 +119,7 @@ Scope {
         Image {
             id: wp
             anchors.fill: parent
-            source: Wallpaper.current !== "" ? "file://" + Wallpaper.current : ""
+            source: Settings.lockWallpaper !== "" ? Wallpaper.stillUrl(Settings.lockWallpaper) : (Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : "")
             sourceSize: Qt.size(Math.round(width / 4), Math.round(height / 4))   // menor = desfoque mais forte e mais barato
             fillMode: Image.PreserveAspectCrop
             visible: false

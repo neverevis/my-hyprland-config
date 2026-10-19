@@ -109,6 +109,26 @@ Singleton {
     // ---- wallpaper (ver Wallpaper.qml) ----
     property alias wpDir: adapter.wpDir                 // pasta de imagens
     property alias wallpaper: adapter.wallpaper         // arquivo atual
+    property alias wpMode: adapter.wpMode   // modo: fill | centered | collage
+    property alias wpBgRole: adapter.wpBgRole   // cor de fundo (papel da paleta) nos modos centralizado e mosaico
+    property alias wpCenterSize: adapter.wpCenterSize   // tamanho da forma (% da altura)
+    property alias wpCenterShape: adapter.wpCenterShape   // flower | circle | rounded | square
+    property alias wpCenterSides: adapter.wpCenterSides
+    property alias wpCenterSpin: adapter.wpCenterSpin
+    property alias wpCollage: adapter.wpCollage   // imagens extras do mosaico
+    property alias wpCollageLayout: adapter.wpCollageLayout   // 2v | 2h | 3 | 1+2 | 2x2
+    property alias wpCollageGap: adapter.wpCollageGap
+    property alias wpCollageMargin: adapter.wpCollageMargin
+    property alias wpCollageRadius: adapter.wpCollageRadius
+    property alias wpWsParallax: adapter.wpWsParallax   // % de zoom/deslize do wallpaper ao trocar de workspace
+    property alias wpWsVertical: adapter.wpWsVertical
+    property alias wpBlur: adapter.wpBlur   // desfoque (0-100)
+    property alias wpBlurWhen: adapter.wpBlurWhen   // never | windows | always
+    property alias wpDim: adapter.wpDim   // escurecer (0-100)
+    property alias wpDimWhen: adapter.wpDimWhen
+    property alias wpVideoPause: adapter.wpVideoPause   // pausa o video com janela em tela cheia
+    property alias wpVideos: adapter.wpVideos   // videos da pasta entram na lista
+    property alias lockWallpaper: adapter.lockWallpaper   // wallpaper da tela de bloqueio (vazio = o mesmo)
     property alias wpWipeAngle: adapter.wpWipeAngle     // direcao da cortina em graus (0 = esquerda->direita, 90 = cima->baixo)
     property alias wpParallax: adapter.wpParallax       // % da largura que os wallpapers andam junto com a cortina
     property alias wpTransition: adapter.wpTransition   // fade | slide | wipe | circle | zoom | random | none
@@ -643,6 +663,26 @@ Singleton {
             property string wallpaper: ""
             property string wpTransition: "circle"
             property int wpParallax: 20
+            property string wpMode: "fill"
+            property string wpBgRole: "primaryContainer"
+            property int wpCenterSize: 55
+            property string wpCenterShape: "flower"
+            property int wpCenterSides: 12
+            property bool wpCenterSpin: false
+            property var wpCollage: []
+            property string wpCollageLayout: "2v"
+            property int wpCollageGap: 24
+            property int wpCollageMargin: 60
+            property int wpCollageRadius: 24
+            property int wpWsParallax: 0
+            property bool wpWsVertical: false
+            property int wpBlur: 0
+            property string wpBlurWhen: "windows"
+            property int wpDim: 0
+            property string wpDimWhen: "windows"
+            property bool wpVideoPause: true
+            property bool wpVideos: true
+            property string lockWallpaper: ""
             property int wpWipeAngle: 0
             property int wpDuration: 900
             property string wpEasing: "smooth"

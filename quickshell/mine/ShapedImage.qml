@@ -1,5 +1,8 @@
 // Imagem recortada numa forma: flower | circle | rounded | square (Flower.qml como mascara). fit: crop | fit.
 // spin gira a imagem dentro da forma (capa como disco). Mesmo esquema do RoundImage.
+// A imagem e a mascara viram texturas por ShaderEffectSource (hideSource), nao por camadas escondidas: a camada de um
+// item com visible: false ficava vazia quando a imagem carregava com um pai invisivel (a foto do perfil sumia, o
+// wallpaper centralizado nao aparecia).
 import QtQuick
 import QtQuick.Effects
 
@@ -17,8 +20,6 @@ Item {
     Item {
         id: holder
         anchors.fill: parent
-        visible: false
-        layer.enabled: true
         Image {
             id: img
             anchors.centerIn: parent
@@ -29,26 +30,25 @@ Item {
             asynchronous: true
             smooth: true
             mipmap: true
-            // ao terminar de carregar, refaz a camada usada pelo efeito (ela podia ficar com a textura vazia e a foto sumia)
-            onStatusChanged: if (status === Image.Ready) { holder.layer.enabled = false; holder.layer.enabled = true }
         }
     }
     Flower {
         id: msk
         anchors.fill: parent
-        visible: false
-        layer.enabled: true
         shape: si.shape
         sides: si.sides
         radius: si.radius
         color: "white"
     }
+    // texturas (1 px no centro, coberto pelo resultado): escondem a fonte e atualizam sempre que ela muda
+    ShaderEffectSource { id: imgTex; sourceItem: holder; hideSource: true; live: true; x: si.width / 2; y: si.height / 2; width: 1; height: 1 }
+    ShaderEffectSource { id: mskTex; sourceItem: msk; hideSource: true; live: true; x: si.width / 2; y: si.height / 2; width: 1; height: 1 }
     MultiEffect {
         anchors.fill: parent
-        source: holder
+        source: imgTex
         visible: si.ready
         maskEnabled: si.shape !== "square"
-        maskSource: msk
+        maskSource: mskTex
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1.0
         autoPaddingEnabled: false
