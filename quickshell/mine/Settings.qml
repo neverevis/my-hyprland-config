@@ -129,6 +129,10 @@ Singleton {
     property alias wpVideoPause: adapter.wpVideoPause   // pausa o video com janela em tela cheia
     property alias wpVideos: adapter.wpVideos   // videos da pasta entram na lista
     property alias lockWallpaper: adapter.lockWallpaper
+    property alias shelfFiles: adapter.shelfFiles       // prateleira de arquivos
+    property alias recAudio: adapter.recAudio           // gravacao: none | system | mic
+    property alias recDir: adapter.recDir
+    property alias recFps: adapter.recFps               // 0 = do monitor
     property alias lockClock: adapter.lockClock         // big | analog (flor) | digital | daily | pixel
     property alias lockClockPos: adapter.lockClockPos   // top | center
     property alias lockChars: adapter.lockChars         // dots | shapes (cada letra uma forma: flor, estrela...)
@@ -689,6 +693,10 @@ Singleton {
             property bool wpVideos: true
             property string lockWallpaper: ""
             property string lockClock: "big"
+            property string recAudio: "none"
+            property var shelfFiles: []
+            property string recDir: "~/Vídeos/Gravações"
+            property int recFps: 0
             property string lockClockPos: "top"
             property string lockChars: "dots"
             property bool lockKeyring: false

@@ -13,15 +13,18 @@ Singleton {
     property real now: Date.now()
     Timer { interval: 1000; repeat: true; running: root.active; onTriggered: root.now = Date.now() }
     readonly property string elapsed: { const s = Math.max(0, Math.round((now - started) / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") }
-    property bool audio: false
     property string file: ""
-    readonly property string dir: Quickshell.env("HOME") + "/Vídeos/Gravações"
+    readonly property string dir: (Settings.recDir || "~/Vídeos/Gravações").replace(/^~/, Quickshell.env("HOME"))
+    // audio: none | system (o que toca no PC) | mic (microfone) - pelo PipeWire (nomes do pulse)
+    readonly property string audioArg: Settings.recAudio === "system" ? '--audio="@DEFAULT_MONITOR@" ' : Settings.recAudio === "mic" ? '--audio="@DEFAULT_SOURCE@" ' : ""
 
+    // region: false = tela inteira, true = escolher com o slurp, texto "x,y wxh" = essa area (seletor do shell)
     function start(region) {
         if (active) return
         file = dir + "/gravacao_" + Qt.formatDateTime(new Date(), "yyyyMMdd_HH-mm-ss") + ".mp4"
-        const sel = region ? 'g=$(slurp -d -b "#00000066" -c "#ffffffff" -w 2) || exit 0; ' : ""
-        proc.command = ["sh", "-c", 'mkdir -p "$1"; ' + sel + 'exec wf-recorder ' + (region ? '-g "$g" ' : "") + (audio ? "--audio " : "") + '-f "$2"', "sh", dir, file]
+        const geo = typeof region === "string" ? region : ""
+        const sel = region === true ? 'g=$(slurp -d -b "#00000066" -c "#ffffffff" -w 2) || exit 0; ' : (geo ? 'g="$3"; ' : "")
+        proc.command = ["sh", "-c", 'mkdir -p "$1"; ' + sel + 'exec wf-recorder ' + (region ? '-g "$g" ' : "") + root.audioArg + (Settings.recFps > 0 ? "-r " + Settings.recFps + " " : "") + '-f "$2"', "sh", dir, file, geo]
         started = Date.now(); now = started
         proc.running = true
     }

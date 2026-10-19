@@ -46,7 +46,8 @@ Scope {
             { id: "bars", label: "Barras", icon: "bars", desc: "Onde ficam as barras e o que cada uma mostra." },
             { id: "home", label: "Início", icon: "dashboard", desc: "O painel com mídia, áudio, sistema e conexões (Super)." },
             { id: "launcher", label: "Launcher", icon: "apps", desc: "O menu de aplicativos (Super + Tab)." },
-            { id: "notifications", label: "Notificações", icon: "bell", desc: "Os avisos dos aplicativos." }
+            { id: "notifications", label: "Notificações", icon: "bell", desc: "Os avisos dos aplicativos." },
+            { id: "tools", label: "Ferramentas", icon: "frame", desc: "Captura (OCR, tradução, anotar, Lens), gravação de tela e a prateleira de arquivos." }
         ] },
         { label: "Área de trabalho", pages: [
             { id: "wall", label: "Wallpaper", icon: "wallpaper", desc: "Imagem de fundo, transições e o seletor (Super + W)." },
@@ -83,7 +84,7 @@ Scope {
     readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === Settings.settingsPage) ?? groups[0].pages[0]
 
     // ---- paginas e indice de busca (fora da janela: o launcher tambem procura opcoes com ela fechada) ----
-    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC })
+    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC })
     Item { id: indexHost; visible: false; width: 900; height: 10 }
     Component { id: barsC; PageBars { geo: root.geo } }
     Component { id: homeC; PageHome {} }
@@ -98,6 +99,7 @@ Scope {
     Component { id: desktopC; PageDesktop {} }
     Component { id: looksC; PageLooks {} }
     Component { id: hyprC; PageHypr {} }
+    Component { id: toolsC; PageTools {} }
     function walk(o, card, out, pg) {
         if (!o) return
         let c = card
@@ -323,7 +325,7 @@ Scope {
                     id: pageLoader
                     x: 28
                     width: pageFlick.width - 56
-                    sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC })[Settings.settingsPage] ?? lookC
+                    sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC })[Settings.settingsPage] ?? lookC
                     visible: root.query === ""
                     onSourceComponentChanged: { pageFlick.contentY = 0; pageIn.restart() }
                     // troca de pagina: entra subindo um pouco e aparecendo

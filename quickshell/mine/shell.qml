@@ -79,6 +79,8 @@ ShellRoot {
     Notifications { geo: shell.geo }
     OsdWindow { geo: shell.geo }
     BarPopup {}
+    RegionSelector {}
+    DropShelf {}
     Home { geo: shell.geo }
     PowerMenu {}
     PhotoEditor {}
