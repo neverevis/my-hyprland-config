@@ -30,5 +30,6 @@ Singleton {
     property Component timer: Component { DwTimer {} }
     property Component text: Component { DwText {} }
     property Component image: Component { DwImage {} }
+    property Component convert: Component { DwConvert {} }
     function component(type) { return root[type] instanceof Component ? root[type] : null }
 }

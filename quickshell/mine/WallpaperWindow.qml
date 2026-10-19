@@ -243,8 +243,12 @@ Variants {
                 fragmentShader: win.isShader ? Qt.resolvedUrl("shaders/" + win.trans + ".frag.qsb") : ""
             }
 
-            // video: depois da transicao (feita com o primeiro quadro), o video aparece por cima e roda em loop
-            Video {
+            // video: depois da transicao (feita com o primeiro quadro), o video aparece por cima e roda em loop.
+            // So existe com wallpaper de video: o player carrega o decodificador (ffmpeg, CUDA, Mesa) e custa ~150 MB
+            Loader {
+                anchors.fill: parent
+                active: Wallpaper.isVideo(win.shown)
+                sourceComponent: Video {
                 id: vid
                 anchors.fill: parent
                 readonly property bool on: Wallpaper.isVideo(win.shown) && win.incoming === ""
@@ -259,6 +263,7 @@ Variants {
                 autoPlay: true
                 onSourceChanged: if (source.toString() !== "") Qt.callLater(play)
                 onHoldChanged: if (on) { if (hold) pause(); else play() }
+                }
             }
         }
         // escurecer (por cima do palco)

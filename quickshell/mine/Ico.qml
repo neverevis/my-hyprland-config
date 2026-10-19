@@ -33,7 +33,15 @@ Singleton {
         wSnow: 0xF0598, wStorm: 0xF0593, wWind: 0xF059D, wHail: 0xF0592, humidity: 0xF058E, sunrise: 0xF059C, sunset: 0xF059B, umbrella: 0xF054A, mapMarker: 0xF034E,
         stopwatch: 0xF051F, bellRing: 0xF009E, coffee: 0xF0176, target: 0xF04FE, textBox: 0xF09ED, flower: 0xF024A, disc: 0xF0025, quote: 0xF0757, earth: 0xF01E7,
         listCheck: 0xF0C51, checkbox: 0xF0135, checkboxEmpty: 0xF0131, gpuCard: 0xF08AE, network: 0xF06F3, temperature: 0xF050F, lockOpen: 0xF0FC6, menu: 0xF035C,
-        calc: 0xF00EC, chevUp: 0xF0143, chevDown: 0xF0140, window: 0xF05B2, wave: 0xF095B, moon: 0xF0F65, sparkle: 0xF1545, tag: 0xF04F9, compose: 0xF0284
+        calc: 0xF00EC, chevUp: 0xF0143, chevDown: 0xF0140, window: 0xF05B2, wave: 0xF095B, moon: 0xF0F65, sparkle: 0xF1545, tag: 0xF04F9, compose: 0xF0284,
+        font: 0xF06D6, textSize: 0xF027F, bold: 0xF0264, italic: 0xF0277, swatch: 0xF08B5, shape: 0xF0831, ruler: 0xF046D, resize: 0xF0A68,
+        rotate: 0xF0467, crop: 0xF019E, clockDigital: 0xF0E97, clockOutline: 0xF0150, calendarWeek: 0xF0A33, cloudSun: 0xF0595, noteText: 0xF039E,
+        sticker: 0xF1364, textShadow: 0xF0669, lockClock: 0xF097F, sineWave: 0xF095B, equalizer: 0xF0EA2, counter: 0xF0199, grid: 0xF02C1,
+        circleOutline: 0xF0766, squareRounded: 0xF14FC, hexagon: 0xF02D9, flowerOutline: 0xF09F0, cursorMove: 0xF01BE, fileImage: 0xF021F,
+        eyedropper: 0xF020A, opacity: 0xF05CC, numeric: 0xF03A0, text: 0xF09A8, album: 0xF0025, accountCircle: 0xF0009, greeting: 0xF17C4,
+        fileSwap: 0xF0FB4, imageEdit: 0xF11E3, dotsCircle: 0xF1978, progressCheck: 0xF0995, listChecks: 0xF0756, quoteClose: 0xF027E,
+        chartDonut: 0xF07AF, alignVCenter: 0xF11C6, tap: 0xF0741, star4: 0xF0AE2, imageFrame: 0xF0E49, bringForward: 0xF003D, copy: 0xF018F,
+        paint: 0xF027C, compass: 0xF018C, tuneVariant: 0xF1542, wave2: 0xF0F2E
     })
     function g(name: string): string { const c = map[name]; return c ? String.fromCodePoint(c) : "" }
 }

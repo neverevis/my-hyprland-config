@@ -83,6 +83,8 @@ Singleton {
     property alias desktopToneColor: adapter.desktopToneColor
     property alias desktopSnap: adapter.desktopSnap         // encaixar na grade ao arrastar
     property alias desktopMenu: adapter.desktopMenu         // menu de clique direito na area de trabalho
+    property alias desktopMenuHidden: adapter.desktopMenuHidden // tipos que nao aparecem em "Adicionar widget" do menu
+    property alias desktopBlur: adapter.desktopBlur         // desfoque do Hyprland atras dos cartoes
     property alias weatherCity: adapter.weatherCity         // "" = descobrir pela internet (IP)
     property alias weatherUnits: adapter.weatherUnits       // metric | imperial
     property alias weatherInterval: adapter.weatherInterval // minutos
@@ -682,6 +684,8 @@ Singleton {
             property string desktopToneColor: "#ffffff"
             property bool desktopSnap: true
             property bool desktopMenu: true
+            property var desktopMenuHidden: []
+            property bool desktopBlur: true
             property string weatherCity: ""
             property string weatherUnits: "metric"
             property int weatherInterval: 20

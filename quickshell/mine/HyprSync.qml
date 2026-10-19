@@ -33,7 +33,7 @@ Singleton {
             + '\nhl.layer_rule({ match = { namespace = "mine-power" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-lock-preview" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-home" }, no_anim = true })'
-            + '\nhl.layer_rule({ match = { namespace = "mine-desktop" }, blur = true, ignore_alpha = 0.3 })'
+            + (Settings.desktopBlur ? '\nhl.layer_rule({ match = { namespace = "mine-desktop" }, blur = true, ignore_alpha = 0.3 })' : "")
             + '\nhl.layer_rule({ match = { namespace = "mine-desktop" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-osd" }, blur = true, ignore_alpha = 0.3 })'
@@ -81,7 +81,7 @@ Singleton {
     }
 
     // mudancas que exigem recarregar a config (regra de camada) x mudancas ao vivo
-    readonly property string ruleSig: Settings.shellBlur + "/" + Settings.shellIgnoreAlpha + "/" + Settings.blurManaged + "/" + floatRules()   // desligar o controle tambem recarrega (volta aos valores do HyprMod)
+    readonly property string ruleSig: Settings.shellBlur + "/" + Settings.shellIgnoreAlpha + "/" + Settings.blurManaged + "/" + floatRules() + "/" + Settings.desktopBlur   // desligar o controle tambem recarrega (volta aos valores do HyprMod)
     readonly property string blurSig: Settings.blurManaged + "/" + blurTable()
     property string lastRule: ""
     property bool ready: false

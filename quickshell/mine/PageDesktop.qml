@@ -40,7 +40,38 @@ Column {
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Cada widget pode ter a própria cor nas opções dele (ou seguir esta, em \"Padrão\")." }
         UiSwitch { label: "Sombra nos widgets sem fundo"; description: "Deixa o texto legível em cima de qualquer wallpaper."; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }
         UiSwitch { label: "Encaixar na grade ao arrastar"; description: "Grade de 24 px e guias no centro da tela."; checked: Settings.desktopSnap; onToggled: on => Settings.desktopSnap = on }
-        UiSwitch { label: "Menu de clique direito na área de trabalho"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }
+        UiSwitch { label: "Desfoque atrás dos widgets"; icon: "blur"; description: "O desfoque do Hyprland por trás dos cartões e do vidro. A intensidade é a da página Blur."; checked: Settings.desktopBlur; onToggled: on => Settings.desktopBlur = on }
+        UiSwitch { label: "Menu de clique direito na área de trabalho"; icon: "menu"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }
+        Column {
+            visible: Settings.desktopMenu
+            width: parent.width
+            spacing: 8
+            UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Widgets que aparecem em \"Adicionar widget\" no menu (clique para tirar ou pôr de volta):" }
+            Flow {
+                width: parent.width
+                spacing: 5
+                Repeater {
+                    model: DeskState.catalog
+                    delegate: Rectangle {
+                        required property var modelData
+                        readonly property bool on: Settings.list(Settings.desktopMenuHidden).indexOf(modelData.type) < 0
+                        height: 30; width: mr.implicitWidth + 22; radius: 10
+                        color: on ? Theme.tint(0.16) : (mm.containsMouse ? Theme.cardHi : "transparent")
+                        border.width: 1; border.color: on ? Theme.accent : Theme.border
+                        opacity: on ? 1 : 0.6
+                        Row {
+                            id: mr
+                            anchors.centerIn: parent
+                            spacing: 6
+                            UiIcon { name: modelData.icon; size: 14; color: parent.parent.on ? Theme.accent : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                            UiText { text: modelData.name; color: Theme.text; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; font.strikeout: !parent.parent.on }
+                        }
+                        MouseArea { id: mm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: { const l = Settings.list(Settings.desktopMenuHidden), i = l.indexOf(modelData.type); if (i >= 0) l.splice(i, 1); else l.push(modelData.type); Settings.desktopMenuHidden = l } }
+                    }
+                }
+            }
+        }
     }
 
     Card {
@@ -136,25 +167,25 @@ Column {
                     x: 16; y: head.height
                     width: row.width - 32
                     spacing: 12
-                    Flow {
+                    WidgetPreview {
                         width: parent.width
-                        spacing: 4
-                        UiText { text: "Tamanho  "; color: Theme.text; font.pixelSize: 13; height: 28; verticalAlignment: Text.AlignVCenter }
-                        Repeater {
-                            model: row.info ? row.info.sizes : []
-                            delegate: Rectangle {
-                                required property var modelData
-                                readonly property bool on: row.w && row.w.cols === modelData[0] && row.w.rows === modelData[1]
-                                height: 28; width: 46; radius: 8
-                                color: on ? Theme.accent : (szm.containsMouse ? Theme.cardHi : Theme.track)
-                                border.width: 1; border.color: on ? Theme.accent : Theme.border
-                                UiText { anchors.centerIn: parent; text: modelData[0] + "×" + modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
-                                MouseArea { id: szm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.setSize(row.modelData, modelData[0], modelData[1]) }
-                            }
-                        }
+                        height: Math.min(260, Math.max(150, width * 0.36))
+                        w: row.w
+                    }
+                    SizePicker {
+                        width: parent.width
+                        sizes: row.info ? row.info.sizes : []
+                        cols: row.w ? row.w.cols : 1
+                        rows: row.w ? row.w.rows : 1
+                        onPicked: (c, r) => DeskState.setSize(row.modelData, c, r)
                     }
                     OptionsForm {
                         width: parent.width
+                        sectionIcons: DeskState.secIcons
+                        previewType: row.w ? row.w.type : ""
+                        previewOpts: row.w ? (row.w.opts || {}) : ({})
+                        previewCols: row.w ? row.w.cols : 2
+                        previewRows: row.w ? row.w.rows : 2
                         schema: row.w ? DeskState.optionsOf(row.w.type) : []
                         get: k => row.w ? DeskState.opt(row.w, k) : undefined
                         set: (k, v) => DeskState.setOpt(row.modelData, k, v)

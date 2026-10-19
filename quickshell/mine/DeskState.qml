@@ -26,118 +26,141 @@ Singleton {
         { id: "time", label: "Tempo" }, { id: "media", label: "Mídia" }, { id: "system", label: "Sistema" },
         { id: "work", label: "Produtividade" }, { id: "deco", label: "Decoração" }
     ]
+    // secoes do formulario: "sec" agrupa as opcoes seguidas com o mesmo nome (o icone vem de secIcons); "icon" e "desc" por
+    // opcao; nas opcoes seg o terceiro item e o icone; "preview": true desenha cada escolha com o proprio widget em miniatura
+    readonly property var secIcons: ({ "Estilo": "palette", "Hora e data": "clock", "Números": "font", "Flor": "flowerOutline", "Ponteiros": "clockOutline",
+        "Diário": "calendar", "Pixel": "grid", "Frase": "quoteClose", "Tela de bloqueio": "lockClock", "Mostrar": "eye", "Cidades": "earth",
+        "Mês": "calendarWeek", "Capa": "album", "Conteúdo": "listChecks", "Som": "sineWave", "Medidas": "gauge", "Perfil": "accountCircle",
+        "Lista": "checkbox", "Bloco": "noteText", "Tempos": "timer", "Texto": "text", "Fonte": "font", "Imagem": "image", "Conversão": "fileSwap",
+        "Visual": "paint", "Posição": "cursorMove" })
     readonly property var catalog: [
         { type: "clock", group: "time", name: "Relógio", icon: "clock", desc: "Digital, flor com ponteiros, diário ou pixel; com frase opcional.",
           sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [3, 2]], options: [
-            { key: "style", label: "Estilo", type: "seg", def: "auto", options: [["auto", "Automático"], ["digital", "Digital"], ["analog", "Flor"], ["daily", "Diário"], ["pixel", "Pixel"]] },
-            { key: "seconds", label: "Segundos", type: "switch", def: true },
-            { key: "date", label: "Mostrar a data", type: "switch", def: true },
-            { key: "h12", label: "12 horas (AM/PM)", type: "switch", def: false },
-            { key: "font", label: "Fonte", type: "font", def: "", when: { style: ["auto", "digital", "daily"] } },
-            { key: "weight", label: "Peso", type: "slider", from: 100, to: 900, step: 100, def: 700, when: { style: ["auto", "digital", "daily"] } },
-            { key: "scale", label: "Tamanho do texto", type: "slider", from: 50, to: 160, step: 5, suffix: " %", def: 100 },
-            { key: "vertical", label: "Hora em pé (horas sobre minutos)", type: "switch", def: false, when: { style: ["auto", "digital"] } },
-            { key: "animate", label: "Animar a troca dos números", type: "switch", def: true, when: { style: ["auto", "digital", "pixel"] } },
-            { key: "align", label: "Alinhamento", type: "seg", def: "center", options: [["left", "Esquerda"], ["center", "Centro"], ["right", "Direita"]], when: { style: ["auto", "digital", "daily"] } },
-            { key: "sides", label: "Pétalas da flor (0 = círculo)", type: "slider", from: 0, to: 24, step: 1, def: 12, when: { style: "analog" } },
-            { key: "rotate", label: "Flor girando devagar", type: "switch", def: false, when: { style: "analog" } },
-            { key: "dial", label: "Mostrador", type: "seg", def: "dots", options: [["none", "Nada"], ["dots", "Pontos"], ["lines", "Traços"], ["numbers", "Números"], ["full", "Completo"]], when: { style: "analog" } },
-            { key: "hourHand", label: "Ponteiro das horas", type: "seg", def: "fill", options: [["classic", "Clássico"], ["fill", "Cheio"], ["hollow", "Vazado"], ["hide", "Sem"]], when: { style: "analog" } },
-            { key: "minuteHand", label: "Ponteiro dos minutos", type: "seg", def: "medium", options: [["classic", "Clássico"], ["thin", "Fino"], ["medium", "Médio"], ["bold", "Grosso"], ["hide", "Sem"]], when: { style: "analog" } },
-            { key: "secondHand", label: "Ponteiro dos segundos", type: "seg", def: "dot", options: [["dot", "Bolinha"], ["line", "Linha"], ["classic", "Clássico"], ["hide", "Sem"]], when: { style: "analog" } },
-            { key: "dateStyle", label: "Data no mostrador", type: "seg", def: "bubble", options: [["bubble", "Bolha"], ["border", "Borda"], ["rect", "Etiqueta"], ["hide", "Sem"]], when: { style: "analog" } },
-            { key: "variant", label: "Variante", type: "seg", def: "badge", options: [["badge", "Selo"], ["morning", "Saudação"], ["script", "Manuscrito"], ["bold", "Forte"]], when: { style: "daily" } },
-            { key: "pixelSize", label: "Tamanho do pixel", type: "slider", from: 3, to: 14, step: 1, suffix: " px", def: 7, when: { style: "pixel" } },
-            { key: "quote", label: "Frase embaixo", type: "text", def: "" },
-            { key: "quoteFont", label: "Frase na fonte do relógio", type: "switch", def: true }
+            { sec: "Estilo", key: "style", label: "Estilo", type: "seg", preview: true, def: "auto", options: [["auto", "Automático", "auto"], ["digital", "Digital", "clockDigital"], ["analog", "Flor", "flowerOutline"], ["daily", "Diário", "calendar"], ["pixel", "Pixel", "grid"]] },
+            { sec: "Hora e data", key: "seconds", label: "Segundos", icon: "timer", type: "switch", def: true },
+            { sec: "Hora e data", key: "date", label: "Mostrar a data", icon: "calendar", type: "switch", def: true },
+            { sec: "Hora e data", key: "h12", label: "12 horas (AM/PM)", icon: "clockOutline", type: "switch", def: false },
+            { sec: "Números", key: "font", label: "Fonte", type: "font", def: "", when: { style: ["auto", "digital", "daily"] } },
+            { sec: "Números", key: "weight", label: "Peso", icon: "bold", type: "slider", from: 100, to: 900, step: 100, def: 700, when: { style: ["auto", "digital", "daily"] } },
+            { sec: "Números", key: "scale", label: "Tamanho", icon: "textSize", type: "slider", from: 50, to: 160, step: 5, suffix: " %", def: 100 },
+            { sec: "Números", key: "fwidth", label: "Largura da fonte", icon: "resize", desc: "Só em fontes variáveis com eixo de largura (ex.: Google Sans Flex, Roboto Flex).", type: "slider", from: 25, to: 151, step: 1, suffix: " %", def: 100, when: { style: ["auto", "digital", "daily"] } },
+            { sec: "Números", key: "fround", label: "Arredondamento da fonte", icon: "squareRounded", desc: "Só em fontes variáveis com eixo de arredondamento (ex.: Google Sans Flex).", type: "slider", from: 0, to: 100, step: 5, suffix: " %", def: 0, when: { style: ["auto", "digital", "daily"] } },
+            { sec: "Números", key: "vertical", label: "Hora em pé (horas sobre minutos)", icon: "alignVCenter", type: "switch", def: false, when: { style: ["auto", "digital"] } },
+            { sec: "Números", key: "animate", label: "Números rolando ao trocar", icon: "animation", type: "switch", def: true, when: { style: ["auto", "digital", "pixel"] } },
+            { sec: "Números", key: "align", label: "Alinhamento", type: "seg", def: "center", options: [["auto", "Pelo lugar", "magic"], ["left", "Esquerda", "alignLeft"], ["center", "Centro", "alignCenter"], ["right", "Direita", "alignRight"]], when: { style: ["auto", "digital", "daily"] } },
+            { sec: "Flor", key: "sides", label: "Pétalas (0 = círculo)", icon: "flowerOutline", type: "slider", from: 0, to: 24, step: 1, def: 12, when: { style: "analog" } },
+            { sec: "Flor", key: "dial", label: "Mostrador", type: "seg", preview: true, def: "dots", options: [["none", "Nada"], ["dots", "Pontos"], ["lines", "Traços"], ["numbers", "Números"], ["full", "Completo"]], when: { style: "analog" } },
+            { sec: "Flor", key: "centerTime", label: "Horas no meio", icon: "numeric", desc: "Os números da hora no centro da flor, rolando ao trocar.", type: "switch", def: false, when: { style: "analog" } },
+            { sec: "Flor", key: "hourMarks", label: "Disco com marcas das horas", icon: "dotsCircle", desc: "Um disco no meio com as 12 marcas.", type: "switch", def: false, when: { style: "analog" } },
+            { sec: "Flor", key: "dateStyle", label: "Data no mostrador", type: "seg", preview: true, def: "bubble", options: [["bubble", "Bolha"], ["border", "Borda"], ["rect", "Etiqueta"], ["hide", "Sem"]], when: { style: "analog" } },
+            { sec: "Flor", key: "rotate", label: "Flor girando devagar", icon: "rotate", type: "switch", def: false, when: { style: "analog" } },
+            { sec: "Ponteiros", key: "hourHand", label: "Horas", type: "seg", preview: true, def: "fill", options: [["classic", "Clássico"], ["fill", "Cheio"], ["hollow", "Vazado"], ["hide", "Sem"]], when: { style: "analog" } },
+            { sec: "Ponteiros", key: "minuteHand", label: "Minutos", type: "seg", preview: true, def: "medium", options: [["classic", "Clássico"], ["thin", "Fino"], ["medium", "Médio"], ["bold", "Grosso"], ["hide", "Sem"]], when: { style: "analog" } },
+            { sec: "Ponteiros", key: "secondHand", label: "Segundos", type: "seg", preview: true, def: "dot", options: [["dot", "Bolinha"], ["line", "Linha"], ["classic", "Clássico"], ["hide", "Sem"]], when: { style: "analog" } },
+            { sec: "Diário", key: "variant", label: "Variante", type: "seg", preview: true, def: "badge", options: [["badge", "Selo"], ["morning", "Saudação"], ["script", "Manuscrito"], ["bold", "Forte"]], when: { style: "daily" } },
+            { sec: "Pixel", key: "pixelSize", label: "Tamanho do pixel", icon: "grid", type: "slider", from: 3, to: 14, step: 1, suffix: " px", def: 7, when: { style: "pixel" } },
+            { sec: "Frase", key: "quote", label: "Frase embaixo", icon: "quoteClose", type: "text", def: "" },
+            { sec: "Frase", key: "quoteFont", label: "Frase na fonte do relógio", icon: "font", type: "switch", def: true },
+            { sec: "Tela de bloqueio", key: "lockStyle", label: "Estilo na tela de bloqueio", type: "seg", preview: true, previewAs: "style", def: "same", options: [["same", "O mesmo", "check"], ["digital", "Digital", "clockDigital"], ["analog", "Flor", "flowerOutline"], ["daily", "Diário", "calendar"], ["pixel", "Pixel", "grid"]], when: { lock: true } }
           ] },
         { type: "weather", group: "time", name: "Clima", icon: "sun", desc: "Agora e a previsão (Open-Meteo, sem chave).", sizes: [[2, 1], [1, 1], [3, 1], [2, 2], [3, 2]], options: [
-            { key: "show", label: "Mostrar", type: "seg", def: "auto", options: [["auto", "Conforme o tamanho"], ["now", "Só agora"], ["hours", "Próximas horas"], ["days", "Próximos dias"]] },
-            { key: "details", label: "Detalhes (sensação, vento, umidade)", type: "switch", def: true }
+            { sec: "Mostrar", key: "show", label: "Conteúdo", type: "seg", preview: true, def: "auto", options: [["auto", "Conforme o tamanho", "auto"], ["now", "Só agora", "cloudSun"], ["hours", "Próximas horas", "clockOutline"], ["days", "Próximos dias", "calendarWeek"]] },
+            { sec: "Mostrar", key: "details", label: "Detalhes (sensação, vento, umidade)", icon: "info", type: "switch", def: true }
           ] },
         { type: "world", group: "time", name: "Relógio mundial", icon: "web", desc: "Várias cidades ao mesmo tempo.", sizes: [[2, 1], [2, 2], [3, 1], [1, 2]], options: [
-            { key: "zones", label: "Fusos (um por linha: Região/Cidade)", type: "list", def: ["America/Sao_Paulo", "Europe/London", "Asia/Tokyo", "America/New_York"] },
-            { key: "faces", label: "Mostrar como", type: "seg", def: "digital", options: [["digital", "Digital"], ["analog", "Ponteiros"]] },
-            { key: "vertical", label: "Empilhar na vertical", type: "switch", def: false }
+            { sec: "Cidades", key: "zones", label: "Fusos (um por linha: Região/Cidade)", type: "list", def: ["America/Sao_Paulo", "Europe/London", "Asia/Tokyo", "America/New_York"] },
+            { sec: "Visual", key: "faces", label: "Mostrar como", type: "seg", preview: true, def: "digital", options: [["digital", "Digital", "clockDigital"], ["analog", "Ponteiros", "clockOutline"]] },
+            { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false }
           ] },
         { type: "calendar", group: "time", name: "Calendário", icon: "calendar", desc: "O mês, a semana ou o dia de hoje.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2]], options: [
-            { key: "weekStart", label: "Semana começa no", type: "seg", def: 0, options: [[0, "Domingo"], [1, "Segunda"]] },
-            { key: "weekends", label: "Destacar fins de semana", type: "switch", def: true },
-            { key: "weekNumbers", label: "Número da semana", type: "switch", def: false }
+            { sec: "Mês", key: "weekStart", label: "Semana começa no", type: "seg", def: 0, options: [[0, "Domingo"], [1, "Segunda"]] },
+            { sec: "Mês", key: "weekends", label: "Destacar fins de semana", icon: "calendarWeek", type: "switch", def: true },
+            { sec: "Mês", key: "weekNumbers", label: "Número da semana", icon: "numeric", type: "switch", def: false }
           ] },
         { type: "media", group: "media", name: "Mídia", icon: "music", desc: "Capa, música, controles e letra sincronizada.", sizes: [[2, 1], [3, 1], [2, 2], [1, 1], [3, 2]], options: [
-            { key: "controls", label: "Controles", type: "switch", def: true },
-            { key: "titles", label: "Título e artista", type: "switch", def: true },
-            { key: "lyrics", label: "Letra sincronizada (lrclib.net)", type: "switch", def: false },
-            { key: "artShape", label: "Forma da capa", type: "seg", def: "rounded", options: [["rounded", "Arredondada"], ["circle", "Círculo"], ["flower", "Flor"], ["square", "Quadrada"]] },
-            { key: "spin", label: "Capa girando (disco)", type: "switch", def: false, when: { artShape: ["circle", "flower"] } },
-            { key: "blurBg", label: "Fundo com a capa desfocada", type: "switch", def: true }
+            { sec: "Conteúdo", key: "controls", label: "Controles", icon: "play", type: "switch", def: true },
+            { sec: "Conteúdo", key: "titles", label: "Título e artista", icon: "text", type: "switch", def: true },
+            { sec: "Conteúdo", key: "lyrics", label: "Letra sincronizada", icon: "quoteClose", desc: "Busca no lrclib.net pelo nome da música.", type: "switch", def: false },
+            { sec: "Capa", key: "artShape", label: "Forma da capa", type: "seg", preview: true, def: "rounded", options: [["rounded", "Arredondada", "squareRounded"], ["circle", "Círculo", "circleOutline"], ["flower", "Flor", "flowerOutline"], ["square", "Quadrada", "crop"]] },
+            { sec: "Capa", key: "spin", label: "Capa girando (disco)", icon: "album", type: "switch", def: false, when: { artShape: ["circle", "flower"] } },
+            { sec: "Capa", key: "blurBg", label: "Fundo com a capa desfocada", icon: "blur", type: "switch", def: true }
           ] },
         { type: "visualizer", group: "media", name: "Visualizador", icon: "pulse", desc: "As frequências do som tocando (precisa do cava).", sizes: [[3, 1], [2, 1], [4, 1], [2, 2]], options: [
-            { key: "vstyle", label: "Estilo", type: "seg", def: "bars", options: [["bars", "Barras"], ["mirror", "Espelho"], ["wave", "Onda"], ["dots", "Pontos"], ["ring", "Anel"]] },
-            { key: "bars", label: "Faixas", type: "slider", from: 8, to: 64, step: 4, def: 32 },
-            { key: "colors", label: "Cores", type: "seg", def: "theme", options: [["theme", "Tema"], ["cover", "Capa da música"], ["mono", "Uma cor"]] },
-            { key: "sensitivity", label: "Sensibilidade", type: "slider", from: 30, to: 300, step: 10, suffix: " %", def: 100 },
-            { key: "idleHide", label: "Esconder quando nada toca", type: "switch", def: true }
+            { sec: "Estilo", key: "vstyle", label: "Estilo", type: "seg", def: "bars", options: [["bars", "Barras", "equalizer"], ["mirror", "Espelho", "swap_vertical"], ["wave", "Onda", "sineWave"], ["dots", "Pontos", "dotsCircle"], ["ring", "Anel", "circleOutline"], ["aurora", "Aurora", "wave2"]] },
+            { sec: "Estilo", key: "colors", label: "Cores", type: "seg", def: "theme", options: [["theme", "Tema", "palette"], ["cover", "Capa da música", "album"], ["mono", "Uma cor", "swatch"]] },
+            { sec: "Som", key: "bars", label: "Faixas", icon: "equalizer", type: "slider", from: 8, to: 64, step: 4, def: 32 },
+            { sec: "Som", key: "sensitivity", label: "Sensibilidade", icon: "gauge", type: "slider", from: 30, to: 300, step: 10, suffix: " %", def: 100 },
+            { sec: "Som", key: "idleHide", label: "Esconder quando nada toca", icon: "eyeOff", type: "switch", def: true }
           ] },
         { type: "system", group: "system", name: "Sistema", icon: "chip", desc: "CPU, memória, disco, temperatura, GPU e rede.", sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [1, 2]], options: [
-            { key: "metrics", label: "O que mostrar", type: "seg", def: "basic", options: [["basic", "CPU, RAM, disco"], ["hot", "CPU, temperatura, GPU"], ["all", "Tudo"]] },
-            { key: "look", label: "Visual", type: "seg", def: "rings", options: [["rings", "Anéis"], ["bars", "Barras"], ["graph", "Gráfico"]] }
+            { sec: "Medidas", key: "metrics", label: "O que mostrar", type: "seg", def: "basic", options: [["basic", "CPU, RAM, disco", "chip"], ["hot", "CPU, temperatura, GPU", "thermo"], ["all", "Tudo", "dashboard"]] },
+            { sec: "Visual", key: "look", label: "Visual", type: "seg", preview: true, def: "rings", options: [["rings", "Anéis", "chartDonut"], ["bars", "Barras", "bars"], ["graph", "Gráfico", "chart"]] }
           ] },
         { type: "user", group: "system", name: "Usuário", icon: "account", desc: "Sua foto, saudação e o computador.", sizes: [[2, 1], [3, 1], [1, 1], [2, 2]], options: [
-            { key: "greeting", label: "Saudação", type: "switch", def: true },
-            { key: "info", label: "Linha de informação", type: "seg", def: "uptime", options: [["uptime", "Tempo ligado"], ["host", "Usuário@máquina"], ["kernel", "Sistema e kernel"], ["none", "Nada"]] },
-            { key: "avatarShape", label: "Forma da foto", type: "seg", def: "circle", options: [["circle", "Círculo"], ["flower", "Flor"], ["rounded", "Arredondada"]] }
+            { sec: "Perfil", key: "greeting", label: "Saudação", icon: "greeting", type: "switch", def: true },
+            { sec: "Perfil", key: "info", label: "Linha de informação", type: "seg", def: "uptime", options: [["uptime", "Tempo ligado", "timer"], ["host", "Usuário@máquina", "desktop"], ["kernel", "Sistema e kernel", "linux"], ["none", "Nada", "close"]] },
+            { sec: "Perfil", key: "avatarShape", label: "Forma da foto", type: "seg", preview: true, def: "circle", options: [["circle", "Círculo", "circleOutline"], ["flower", "Flor", "flowerOutline"], ["rounded", "Arredondada", "squareRounded"]] }
           ] },
         { type: "todo", group: "work", name: "Tarefas", icon: "check", desc: "Lista de afazeres que fica salva.", sizes: [[2, 2], [2, 1], [3, 2], [2, 3]], options: [
-            { key: "hideDone", label: "Esconder as concluídas", type: "switch", def: false },
-            { key: "progress", label: "Barra de progresso", type: "switch", def: true }
+            { sec: "Lista", key: "hideDone", label: "Esconder as concluídas", icon: "eyeOff", type: "switch", def: false },
+            { sec: "Lista", key: "progress", label: "Barra de progresso", icon: "progressCheck", type: "switch", def: true }
           ] },
         { type: "notes", group: "work", name: "Notas", icon: "pencil", desc: "Um bloco de notas que fica salvo.", sizes: [[2, 2], [2, 1], [3, 2], [1, 1]], options: [
-            { key: "title", label: "Título", type: "text", def: "Notas" },
-            { key: "mono", label: "Fonte de código", type: "switch", def: false },
-            { key: "size", label: "Tamanho da letra", type: "slider", from: 10, to: 28, step: 1, suffix: " px", def: 14 }
+            { sec: "Bloco", key: "title", label: "Título", icon: "tag", type: "text", def: "Notas" },
+            { sec: "Bloco", key: "mono", label: "Fonte de código", icon: "keyboard", type: "switch", def: false },
+            { sec: "Bloco", key: "size", label: "Tamanho da letra", icon: "textSize", type: "slider", from: 10, to: 28, step: 1, suffix: " px", def: 14 }
           ] },
         { type: "timer", group: "work", name: "Timers", icon: "timer", desc: "Cronômetro, contagem regressiva e pomodoro.", sizes: [[2, 1], [2, 2], [1, 1], [3, 1]], options: [
-            { key: "mode", label: "Modo", type: "seg", def: "pomodoro", options: [["pomodoro", "Pomodoro"], ["countdown", "Regressivo"], ["stopwatch", "Cronômetro"]] },
-            { key: "focus", label: "Foco", type: "slider", from: 5, to: 90, step: 5, suffix: " min", def: 25, when: { mode: "pomodoro" } },
-            { key: "pause", label: "Pausa", type: "slider", from: 1, to: 30, step: 1, suffix: " min", def: 5, when: { mode: "pomodoro" } },
-            { key: "longPause", label: "Pausa longa", type: "slider", from: 5, to: 60, step: 5, suffix: " min", def: 15, when: { mode: "pomodoro" } },
-            { key: "cycles", label: "Ciclos até a pausa longa", type: "slider", from: 2, to: 8, step: 1, def: 4, when: { mode: "pomodoro" } },
-            { key: "minutes", label: "Duração", type: "slider", from: 1, to: 180, step: 1, suffix: " min", def: 10, when: { mode: "countdown" } },
-            { key: "notify", label: "Avisar ao terminar", type: "switch", def: true }
+            { sec: "Tempos", key: "mode", label: "Modo", type: "seg", def: "pomodoro", options: [["pomodoro", "Pomodoro", "target"], ["countdown", "Regressivo", "timer"], ["stopwatch", "Cronômetro", "stopwatch"]] },
+            { sec: "Tempos", key: "focus", label: "Foco", icon: "target", type: "slider", from: 5, to: 90, step: 5, suffix: " min", def: 25, when: { mode: "pomodoro" } },
+            { sec: "Tempos", key: "pause", label: "Pausa", icon: "coffee", type: "slider", from: 1, to: 30, step: 1, suffix: " min", def: 5, when: { mode: "pomodoro" } },
+            { sec: "Tempos", key: "longPause", label: "Pausa longa", icon: "sleep", type: "slider", from: 5, to: 60, step: 5, suffix: " min", def: 15, when: { mode: "pomodoro" } },
+            { sec: "Tempos", key: "cycles", label: "Ciclos até a pausa longa", icon: "repeat", type: "slider", from: 2, to: 8, step: 1, def: 4, when: { mode: "pomodoro" } },
+            { sec: "Tempos", key: "minutes", label: "Duração", icon: "timer", type: "slider", from: 1, to: 180, step: 1, suffix: " min", def: 10, when: { mode: "countdown" } },
+            { sec: "Tempos", key: "notify", label: "Avisar ao terminar", icon: "bellRing", type: "switch", def: true }
           ] },
         { type: "text", group: "deco", name: "Texto", icon: "compose", desc: "Uma frase, com a fonte e a cor que quiser.", sizes: [[3, 1], [2, 1], [4, 1], [2, 2], [4, 2]], options: [
-            { key: "text", label: "Texto", type: "text", multiline: true, def: "Olá, mundo" },
-            { key: "font", label: "Fonte", type: "font", def: "" },
-            { key: "size", label: "Tamanho", type: "slider", from: 12, to: 200, step: 2, suffix: " px", def: 64 },
-            { key: "weight", label: "Peso", type: "slider", from: 100, to: 900, step: 100, def: 600 },
-            { key: "italic", label: "Itálico", type: "switch", def: false },
-            { key: "align", label: "Alinhamento", type: "seg", def: "center", options: [["left", "Esquerda"], ["center", "Centro"], ["right", "Direita"]] },
-            { key: "shadow", label: "Sombra", type: "switch", def: true }
+            { sec: "Texto", key: "text", label: "Texto", type: "text", multiline: true, def: "Olá, mundo" },
+            { sec: "Fonte", key: "font", label: "Fonte", type: "font", def: "" },
+            { sec: "Fonte", key: "size", label: "Tamanho", icon: "textSize", type: "slider", from: 12, to: 200, step: 2, suffix: " px", def: 64 },
+            { sec: "Fonte", key: "weight", label: "Peso", icon: "bold", type: "slider", from: 100, to: 900, step: 100, def: 600 },
+            { sec: "Fonte", key: "italic", label: "Itálico", icon: "italic", type: "switch", def: false },
+            { sec: "Fonte", key: "align", label: "Alinhamento", type: "seg", def: "center", options: [["left", "Esquerda", "alignLeft"], ["center", "Centro", "alignCenter"], ["right", "Direita", "alignRight"]] },
+            { sec: "Fonte", key: "shadow", label: "Sombra", icon: "textShadow", type: "switch", def: true }
           ] },
         { type: "image", group: "deco", name: "Imagem", icon: "image", desc: "Foto com forma, cartão com legenda ou adesivo.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2], [2, 3]], options: [
-            { key: "path", label: "Imagem", type: "image", def: "" },
-            { key: "kind", label: "Tipo", type: "seg", def: "photo", options: [["photo", "Foto"], ["card", "Cartão"], ["sticker", "Adesivo"]] },
-            { key: "shape", label: "Forma", type: "seg", def: "rounded", options: [["rounded", "Arredondada"], ["circle", "Círculo"], ["flower", "Flor"], ["square", "Quadrada"]], when: { kind: "photo" } },
-            { key: "fit", label: "Enquadrar", type: "seg", def: "crop", options: [["crop", "Preencher"], ["fit", "Inteira"]] },
-            { key: "caption", label: "Legenda", type: "text", def: "", when: { kind: "card" } },
-            { key: "tilt", label: "Inclinação", type: "slider", from: -30, to: 30, step: 1, suffix: "°", def: -4, when: { kind: "sticker" } },
-            { key: "outline", label: "Contorno branco", type: "slider", from: 0, to: 16, step: 1, suffix: " px", def: 8, when: { kind: "sticker" } }
+            { sec: "Imagem", key: "path", label: "Imagem", type: "image", def: "" },
+            { sec: "Imagem", key: "kind", label: "Tipo", type: "seg", preview: true, def: "photo", options: [["photo", "Foto", "image"], ["card", "Cartão", "imageFrame"], ["sticker", "Adesivo", "sticker"]] },
+            { sec: "Imagem", key: "shape", label: "Forma", type: "seg", preview: true, def: "rounded", options: [["rounded", "Arredondada", "squareRounded"], ["circle", "Círculo", "circleOutline"], ["flower", "Flor", "flowerOutline"], ["square", "Quadrada", "crop"]], when: { kind: "photo" } },
+            { sec: "Imagem", key: "fit", label: "Enquadrar", type: "seg", def: "crop", options: [["crop", "Preencher", "crop"], ["fit", "Inteira", "fullscreen"]] },
+            { sec: "Imagem", key: "caption", label: "Legenda", icon: "tag", type: "text", def: "", when: { kind: "card" } },
+            { sec: "Imagem", key: "tilt", label: "Inclinação", icon: "rotate", type: "slider", from: -30, to: 30, step: 1, suffix: "°", def: -4, when: { kind: "sticker" } },
+            { sec: "Imagem", key: "outline", label: "Contorno branco", icon: "circleOutline", type: "slider", from: 0, to: 16, step: 1, suffix: " px", def: 8, when: { kind: "sticker" } }
+          ] },
+        { type: "convert", group: "deco", name: "Conversor de imagens", icon: "fileSwap", desc: "Solte imagens nele e elas viram PNG, JPG, WEBP, AVIF ou PDF.", sizes: [[2, 2], [2, 1], [1, 1], [3, 2]], options: [
+            { sec: "Conversão", key: "format", label: "Converter para", type: "seg", def: "webp", options: [["png", "PNG"], ["jpg", "JPG"], ["webp", "WEBP"], ["avif", "AVIF"], ["pdf", "PDF"]] },
+            { sec: "Conversão", key: "quality", label: "Qualidade", icon: "tuneVariant", type: "slider", from: 30, to: 100, step: 5, suffix: " %", def: 85, when: { format: ["jpg", "webp", "avif"] } },
+            { sec: "Conversão", key: "where", label: "Salvar em", type: "seg", def: "same", options: [["same", "Mesma pasta", "folder"], ["downloads", "Downloads", "download"]] },
+            { sec: "Conversão", key: "keep", label: "Manter o original", icon: "copy", type: "switch", def: true }
           ] }
     ]
     // opcoes que todo widget tem
     readonly property var commonOptions: [
-        { key: "card", label: "Fundo", type: "seg", def: "auto", options: [["auto", "Padrão"], ["card", "Cartão"], ["glass", "Vidro"], ["none", "Sem fundo"]] },
-        { key: "tone", label: "Cor", type: "tone", def: "global" },
-        { key: "fgColor", label: "Minha cor", type: "color", def: "#ffffff", when: { tone: "custom" } },
-        { key: "place", label: "Posição", type: "seg", def: "free", options: [["free", "Onde eu deixar"], ["calm", "Área calma do wallpaper"], ["busy", "Área movimentada"]] },
-        { key: "lock", label: "Mostrar também na tela de bloqueio", type: "switch", def: false }
+        { sec: "Visual", key: "card", label: "Fundo", type: "seg", def: "auto", options: [["auto", "Padrão", "auto"], ["card", "Cartão", "cards"], ["glass", "Vidro", "glass"], ["none", "Sem fundo", "image"]] },
+        { sec: "Visual", key: "tone", label: "Cor", type: "tone", def: "global" },
+        { sec: "Visual", key: "fgColor", label: "Minha cor", type: "color", def: "#ffffff", when: { tone: "custom" } },
+        { sec: "Posição", key: "place", label: "Posição", type: "seg", def: "free", options: [["free", "Onde eu deixar", "cursorMove"], ["calm", "Área calma", "leaf"], ["busy", "Área movimentada", "sparkle"]] },
+        { sec: "Tela de bloqueio", key: "lock", label: "Mostrar também na tela de bloqueio", icon: "lock", type: "switch", def: false },
+        { sec: "Tela de bloqueio", key: "lockOnly", label: "Só na tela de bloqueio", icon: "lockClock", desc: "Some da área de trabalho (aparece apagado enquanto você edita).", type: "switch", def: false, when: { lock: true } }
     ]
     // fundo padrao de cada tipo (relogio e texto ficam bem soltos no wallpaper)
     readonly property var cardDefaults: ({ clock: "none", text: "none", visualizer: "none", image: "none" })
     function info(type) { return catalog.find(c => c.type === type) ?? catalog[0] }
-    function optionsOf(type) { return info(type).options.concat(commonOptions) }
+    function optionsOf(type) {
+        // as opcoes de "Tela de bloqueio" do proprio widget (ex.: estilo do relogio) vao junto com as comuns da mesma secao
+        const own = info(type).options, lockOwn = own.filter(o => o.sec === "Tela de bloqueio")
+        return own.filter(o => o.sec !== "Tela de bloqueio").concat(commonOptions, lockOwn)
+    }
     // valor de uma opcao com o padrao do esquema
     function opt(w, key) {
         const o = (w && w.opts) || {}
@@ -150,7 +173,8 @@ Singleton {
     }
     function shown(w, def) {
         if (!def.when) return true
-        for (const k in def.when) { const v = opt(w, k), want = def.when[k]; if (Array.isArray(want) ? want.indexOf(v) < 0 : v !== want) return false }
+        // o Repeater entrega as listas do esquema como listas do Qt (Array.isArray da falso): Array.from resolve as duas
+        for (const k in def.when) { const v = opt(w, k), want = def.when[k]; if (want !== null && typeof want === "object" ? Array.from(want).indexOf(v) < 0 : v !== want) return false }
         return true
     }
 

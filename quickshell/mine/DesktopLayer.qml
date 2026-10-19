@@ -98,7 +98,7 @@ Scope {
             visible: opacity > 0
             opacity: DeskState.editing && !!w ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 180 } }
-            width: 380
+            width: 400
             height: Math.min(win.area.height, inspCol.implicitHeight + 32)
             x: rightHalf ? win.area.x + win.area.width - width : win.area.x
             y: win.area.y + (win.area.height - height) / 2
@@ -130,52 +130,21 @@ Scope {
                         }
                         UiButton { icon: "close"; kind: "ghost"; onClicked: DeskState.selected = "" }
                     }
-                    // tamanho
-                    Column {
+                    SizePicker {
                         width: parent.width
-                        spacing: 6
-                        UiText { text: "Tamanho"; color: Theme.text; font.pixelSize: 13 }
-                        Flow {
-                            width: parent.width
-                            spacing: 4
-                            Repeater {
-                                model: insp.info ? insp.info.sizes : []
-                                delegate: Rectangle {
-                                    required property var modelData
-                                    readonly property bool on: insp.w && insp.w.cols === modelData[0] && insp.w.rows === modelData[1]
-                                    height: 28; width: 46; radius: 8
-                                    color: on ? Theme.accent : (sm.containsMouse ? Theme.cardHi : Theme.track)
-                                    border.width: 1; border.color: on ? Theme.accent : Theme.border
-                                    UiText { anchors.centerIn: parent; text: modelData[0] + "×" + modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
-                                    MouseArea { id: sm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.setSize(insp.w.id, modelData[0], modelData[1]) }
-                                }
-                            }
-                            // tamanho livre: colunas e linhas
-                            Repeater {
-                                model: [["cols", "Larg."], ["rows", "Alt."]]
-                                delegate: Row {
-                                    required property var modelData
-                                    spacing: 2
-                                    UiText { text: modelData[1]; color: Theme.muted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter; rightPadding: 2; leftPadding: 6 }
-                                    Repeater {
-                                        model: [-1, 1]
-                                        delegate: Rectangle {
-                                            required property var modelData
-                                            readonly property string k: parent.modelData[0]
-                                            width: 24; height: 28; radius: 7
-                                            color: pm.containsMouse ? Theme.cardHi : Theme.track; border.width: 1; border.color: Theme.border
-                                            UiIcon { anchors.centerIn: parent; name: parent.modelData < 0 ? "minus" : "plus"; size: 12; color: Theme.text }
-                                            MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                                onClicked: { const w = insp.w; if (parent.k === "cols") DeskState.setSize(w.id, w.cols + parent.modelData, w.rows); else DeskState.setSize(w.id, w.cols, w.rows + parent.modelData) } }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        sizes: insp.info ? insp.info.sizes : []
+                        cols: insp.w ? insp.w.cols : 1
+                        rows: insp.w ? insp.w.rows : 1
+                        onPicked: (c, r) => DeskState.setSize(insp.w.id, c, r)
                     }
                     OptionsForm {
                         width: parent.width
                         compact: true
+                        sectionIcons: DeskState.secIcons
+                        previewType: insp.w ? insp.w.type : ""
+                        previewOpts: insp.w ? (insp.w.opts || {}) : ({})
+                        previewCols: insp.w ? insp.w.cols : 2
+                        previewRows: insp.w ? insp.w.rows : 2
                         schema: insp.w ? DeskState.optionsOf(insp.w.type) : []
                         get: k => insp.w ? DeskState.opt(insp.w, k) : undefined
                         set: (k, v) => DeskState.setOpt(insp.w.id, k, v)
@@ -220,11 +189,12 @@ Scope {
                 return out
             }
             readonly property var subItems: DeskMenu.sub === "add"
-                ? DeskState.groups.reduce((acc, g) => acc.concat([{ head: g.label }], DeskState.catalog.filter(c => c.group === g.id).map(c => ({ icon: c.icon, label: c.name, act: () => {
+                ? DeskState.groups.reduce((acc, g) => { const cs = DeskState.catalog.filter(c => c.group === g.id && Settings.list(Settings.desktopMenuHidden).indexOf(c.type) < 0)
+                    return cs.length ? acc.concat([{ head: g.label }], cs.map(c => ({ icon: c.icon, label: c.name, act: () => {
                     Settings.desktopOn = true
                     const a = win.area, pw = DeskState.px(c.sizes[0][0]), ph = DeskState.px(c.sizes[0][1])
                     DeskState.add(c.type, { fx: Math.max(0, Math.min(1, (DeskMenu.x - pw / 2 - a.x) / Math.max(1, a.width - pw))), fy: Math.max(0, Math.min(1, (DeskMenu.y - ph / 2 - a.y) / Math.max(1, a.height - ph))) })
-                } }))), [])
+                } }))) : acc }, [])
                 : DeskMenu.sub === "presets" ? (Looks.undoData ? [{ icon: "restore", label: "Desfazer (" + Looks.undoName + ")", act: () => Looks.undo() }] : []).concat(
                     DeskState.all.map(p => ({ icon: p.builtin ? (p.icon || "dashboard") : "layers", label: p.name, checked: DeskState.lastApplied === p.name, act: () => DeskState.apply(p.name) }))) : []
             component MenuList: Rectangle {

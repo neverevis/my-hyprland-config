@@ -19,7 +19,9 @@ Item {
 
     // lista estavel de ids: quem continua no layout nao e recriado (assim pode animar ate o novo lugar)
     ListModel { id: slots }
-    readonly property var wanted: (Settings.desktopWidgets || []).filter(w => !view.lockMode || DeskState.opt(w, "lock")).map(w => w.id)
+    // tela de bloqueio: so os marcados; area de trabalho: some quem e "so na tela de bloqueio" (menos editando, para achar e mexer)
+    readonly property var wanted: (Settings.desktopWidgets || []).filter(w => view.lockMode ? DeskState.opt(w, "lock")
+        : !(DeskState.opt(w, "lock") && DeskState.opt(w, "lockOnly")) || (view.editable && DeskState.editing)).map(w => w.id)
     onWantedChanged: sync()
     function sync() {
         const ids = wanted
@@ -57,7 +59,7 @@ Item {
             property real born: 0
             Component.onCompleted: born = 1
             Behavior on born { NumberAnimation { duration: Motion.durationOf("desktop", false) + 120; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
-            opacity: Math.min(1, born)
+            opacity: Math.min(1, born) * (!view.lockMode && w && DeskState.opt(w, "lock") && DeskState.opt(w, "lockOnly") ? 0.45 : 1)   // so da tela de bloqueio: apagado editando
             scale: (0.85 + 0.15 * born) * (moving ? 1.03 : 1)
             Behavior on scale { enabled: card.born >= 1; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
@@ -131,7 +133,11 @@ Item {
             function feed() {
                 const it = content.item
                 if (!it || !w) return
-                it.cols = w.cols; it.rows = w.rows; it.opts = w.opts || {}
+                it.cols = w.cols; it.rows = w.rows
+                // na tela de bloqueio o relogio pode ter outro estilo
+                const ls = view.lockMode ? DeskState.opt(w, "lockStyle") : undefined
+                it.opts = ls && ls !== "same" ? Object.assign({}, w.opts || {}, { style: ls }) : (w.opts || {})
+                if (it.posX !== undefined) it.posX = Qt.binding(() => card.pos.fx)
                 if (it.wid !== undefined) it.wid = wid
                 if (it.fg !== undefined) { it.fg = Qt.binding(() => card.fg); it.dim = Qt.binding(() => card.dim); it.ac = Qt.binding(() => card.ac) }
                 if (it.ac2 !== undefined) it.ac2 = Qt.binding(() => card.ac2)

@@ -6,7 +6,7 @@ Meu shell em **Quickshell** para o **Hyprland**: uma moldura fina na tela com ba
 
 - **Moldura** com cantos arredondados, vidro (opacidade + blur) e grão; **barras** em qualquer lado, presas na moldura ou soltas, com seções, grupos em pílula e dezenas de módulos (ilha dinâmica, workspaces, bandeja, privacidade, atualizações, clima, mídia...). Parar o mouse num módulo abre um cartão de detalhes.
 - **Dock** com ampliação dos ícones, miniatura das janelas e apps fixados.
-- **Widgets na área de trabalho** (relógio flor/digital/diário/pixel, clima, relógio mundial, calendário, mídia com letra sincronizada, visualizador, sistema, usuário, tarefas, notas, timers, texto, imagem): arrastar, redimensionar, inspetor na tela, posição automática pela área calma do wallpaper, também na tela de bloqueio.
+- **Widgets na área de trabalho** (relógio flor/digital/diário/pixel, clima, relógio mundial, calendário, mídia com letra sincronizada, visualizador, sistema, usuário, tarefas, notas, timers, texto, imagem, conversor de imagens): arrastar, redimensionar, inspetor na tela, posição automática pela área calma do wallpaper, também na tela de bloqueio.
 - **Visuais (presets)** do shell inteiro — widgets, wallpaper, barras, cores, animações, painéis, bloqueio, Hyprland e fontes — com miniatura, desfazer e exportar/importar `.zip`.
 - **Tema pelo wallpaper (Material You)** aplicado no shell, nas bordas do Hyprland, no kitty, no GTK3/4 e no Brave.
 - **Wallpaper**: imagens e vídeos, transições, deslize ao trocar de workspace, desfoque/escurecimento com janelas, modo centralizado em forma e mosaico; busca no Wallhaven.

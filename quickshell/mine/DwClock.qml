@@ -16,6 +16,7 @@ Item {
     property color cont: Theme.primaryContainer   // versao suave do tom (a flor)
     property color contInk: Theme.primaryContainerInk
     property bool bare: false
+    property real posX: 0.5                       // posicao na tela (0 = esquerda, 1 = direita): alinhamento "pelo lugar"
     function o(k) { return DeskState.opt({ type: "clock", opts: w.opts }, k) }
     readonly property bool ownBackground: style === "analog"   // a flor ja e o fundo (o DeskView nao poe sombra)
 
@@ -24,6 +25,10 @@ Item {
     readonly property bool h12: o("h12")
     readonly property real sc: o("scale") / 100
     readonly property string fontFam: o("font") || Theme.font
+    // eixos de fontes variaveis (largura e arredondamento); fontes comuns ignoram
+    readonly property var axes: { const a = {}, fw = o("fwidth"), fr = o("fround"); if (fw !== 100) a.wdth = fw; if (fr > 0) a.ROND = fr; return a }
+    readonly property int alignFlag: { let a = o("align"); if (a === "auto") a = posX < 0.34 ? "left" : posX > 0.66 ? "right" : "center"
+        return a === "left" ? Text.AlignLeft : a === "right" ? Text.AlignRight : Text.AlignHCenter }
     readonly property string quote: o("quote")
     readonly property real quoteH: quote !== "" ? Math.min(34, height * 0.18) : 0
     SystemClock { id: clk; precision: w.secs || w.style === "analog" ? SystemClock.Seconds : SystemClock.Minutes }
@@ -48,7 +53,7 @@ Item {
         readonly property string line1: vert ? w.hh : w.hh + ":" + w.mm + (showSecs ? ":" + w.ss : "")
         readonly property real dateH: w.o("date") && w.rows * w.cols > 1 ? Math.max(14, height * (vert ? 0.12 : 0.17)) : 0
         readonly property real fs: (vert ? Math.min((height - dateH) / 2.1, width / 1.5) : Math.min((height - dateH) * 0.92, width / (line1.length * 0.6 + (w.h12 ? 1.4 : 0)))) * w.sc
-        readonly property int al: { const a = w.o("align"); return a === "left" ? Text.AlignLeft : a === "right" ? Text.AlignRight : Text.AlignHCenter }
+        readonly property int al: w.alignFlag
         Column {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width
@@ -86,14 +91,16 @@ Item {
         property string ch: "0"
         property real size: 40
         property color tint: w.fg
+        property string fam: w.fontFam
+        property int wt: w.o("weight")
         property string prev: ch
         property real k: 1
         width: Math.max(cur.implicitWidth, old.implicitWidth); height: cur.implicitHeight * 0.92
         clip: true
         onChChanged: { if (w.o("animate") && w.style !== "pixel") { prev = old.text; k = 0; rollA.restart() } else old.text = ch }
         NumberAnimation { id: rollA; target: rl; property: "k"; from: 0; to: 1; duration: 420; easing.type: Easing.OutCubic; onFinished: old.text = rl.ch }
-        UiText { id: old; text: rl.ch; y: -rl.k * rl.height * 0.9; opacity: 1 - rl.k; color: rl.tint; font.family: w.fontFam; font.pixelSize: rl.size; font.weight: w.o("weight"); font.features: { "tnum": 1 }; visible: rl.k < 1 }
-        UiText { id: cur; text: rl.ch; y: (1 - rl.k) * rl.height * 0.9; opacity: rl.k; color: rl.tint; font.family: w.fontFam; font.pixelSize: rl.size; font.weight: w.o("weight"); font.features: { "tnum": 1 } }
+        UiText { id: old; text: rl.ch; y: -rl.k * rl.height * 0.9; opacity: 1 - rl.k; color: rl.tint; font.family: rl.fam; font.pixelSize: rl.size; font.weight: rl.wt; font.features: { "tnum": 1 }; font.variableAxes: w.axes; visible: rl.k < 1 }
+        UiText { id: cur; text: rl.ch; y: (1 - rl.k) * rl.height * 0.9; opacity: rl.k; color: rl.tint; font.family: rl.fam; font.pixelSize: rl.size; font.weight: rl.wt; font.features: { "tnum": 1 }; font.variableAxes: w.axes }
     }
 
     // ================= flor (analogico) =================
@@ -150,11 +157,67 @@ Item {
                     }
                 }
             }
-            // data no mostrador (lado das 3 horas)
+            // disco com as 12 marcas no meio (como o "hour marks" do end4): cresce ao ligar
+            Item {
+                id: marks
+                readonly property bool on: w.o("hourMarks")
+                property real k: on ? 1 : 0
+                Behavior on k { MotionAnim { use: "desktop" } }
+                visible: k > 0.01
+                opacity: k
+                width: face.width * 0.59 * (1.6 - 0.6 * k); height: width
+                anchors.centerIn: parent
+                Rectangle {
+                    anchors.fill: parent; radius: width / 2
+                    color: an.ink
+                    Repeater {
+                        model: 12
+                        Item {
+                            required property int index
+                            anchors.fill: parent
+                            rotation: index * 30
+                            Rectangle {
+                                x: parent.width * 0.06; anchors.verticalCenter: parent.verticalCenter
+                                width: parent.width * 0.09; height: Math.max(2, parent.width * 0.03); radius: height / 2
+                                color: Qt.tint(an.ink, Qt.rgba(an.body.r, an.body.g, an.body.b, 0.5))
+                            }
+                        }
+                    }
+                }
+            }
+            // horas no meio (numeros que rolam): menores quando ha o disco de marcas, na cor de contraste dele
+            Column {
+                id: mid
+                readonly property bool on: w.o("centerTime")
+                property real k: on ? 1 : 0
+                Behavior on k { MotionAnim { use: "desktop" } }
+                visible: k > 0.01
+                opacity: k
+                scale: 1.4 - 0.4 * k
+                anchors.centerIn: parent
+                spacing: -fs * 0.1
+                readonly property real fs: face.width * (marks.on ? 0.15 : 0.25)
+                readonly property color col: marks.on ? an.body : an.ink
+                Repeater {
+                    model: [w.hh, w.mm]
+                    delegate: Row {
+                        required property var modelData
+                        required property int index
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        Repeater {
+                            model: modelData.split("")
+                            delegate: Roll { required property var modelData; ch: modelData; size: mid.fs; tint: mid.col; fam: w.o("font") || Theme.font; wt: Font.Black }
+                        }
+                    }
+                }
+            }
+            // data no mostrador (lado das 3 horas; com as horas no meio vai para baixo)
             Rectangle {
                 readonly property string ds: w.o("dateStyle")
+                readonly property bool low: mid.on
                 visible: ds !== "hide" && face.width > 110
-                x: face.width * 0.62; y: face.height / 2 - height / 2
+                x: low ? face.width / 2 - width / 2 : face.width * 0.62
+                y: low ? face.height * (marks.on ? 0.87 : 0.78) - height / 2 : face.height / 2 - height / 2
                 width: ds === "bubble" ? face.width * 0.2 : dtx.implicitWidth + face.width * 0.06
                 height: ds === "bubble" ? width : face.width * 0.13
                 radius: ds === "bubble" ? width / 2 : height * 0.3
@@ -227,7 +290,7 @@ Item {
         width: parent.width; height: w.bodyH
         readonly property string v: w.o("variant")
         readonly property real fs: Math.min(height * 0.5, width / 4.2) * w.sc
-        readonly property int al: { const a = w.o("align"); return a === "left" ? Text.AlignLeft : a === "right" ? Text.AlignRight : Text.AlignHCenter }
+        readonly property int al: w.alignFlag
         Column {
             anchors.verticalCenter: parent.verticalCenter
             width: parent.width
@@ -261,7 +324,7 @@ Item {
                 color: w.fg
                 font.family: dl.v === "script" ? DeskWidgets.script : w.fontFam
                 font.pixelSize: dl.v === "script" ? dl.fs * 1.15 : dl.fs; font.weight: dl.v === "script" ? Font.Normal : w.o("weight")
-                font.features: { "tnum": 1 }
+                font.features: { "tnum": 1 }; font.variableAxes: dl.v === "script" ? ({}) : w.axes
             }
             UiText {
                 visible: w.o("date")

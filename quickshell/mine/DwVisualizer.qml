@@ -1,4 +1,4 @@
-// Visualizador de audio (Cava.qml): barras, espelho, onda, pontos ou anel. Cores do tema, da capa da musica ou uma so.
+// Visualizador de audio (Cava.qml): barras, espelho, onda, pontos, anel ou aurora (faixas translucidas que ondulam). Cores do tema, da capa da musica ou uma so.
 // Sem o cava instalado mostra como instalar. Pode sumir quando nada toca.
 import Quickshell
 import Quickshell.Services.Mpris
@@ -90,6 +90,24 @@ Item {
                 for (let i = 0; i < n; i++) for (let j = 0; j < rows; j++) {
                     if (j / rows > v[i]) break
                     c.beginPath(); c.arc(i * bw + bw / 2, H - j * (H / rows) - bw / 2, bw * 0.32, 0, Math.PI * 2); c.fill()
+                }
+            } else if (st === "aurora") {
+                // tres faixas suaves (destaque, companheira e uma mistura), cada uma com a fase andando no tempo
+                const t = Date.now() / 1000, cols = [w.c1, w.c2, Qt.tint(w.c1, Qt.rgba(w.c2.r, w.c2.g, w.c2.b, 0.5))]
+                const sm = []
+                for (let i = 0; i < n; i++) sm.push(((v[i - 1] ?? v[i]) + v[i] * 2 + (v[i + 1] ?? v[i])) / 4)
+                for (let k = 0; k < 3; k++) {
+                    const g = c.createLinearGradient(0, H, 0, 0), col = cols[k]
+                    g.addColorStop(0, Qt.rgba(col.r, col.g, col.b, 0.55)); g.addColorStop(1, Qt.rgba(col.r, col.g, col.b, 0))
+                    c.fillStyle = g
+                    const pts = []
+                    for (let i = 0; i <= 24; i++) {
+                        const f = i / 24, idx = Math.min(n - 1, Math.floor(f * n)), amp = sm[(idx + k * Math.floor(n / 3)) % n]
+                        pts.push([f * W, H - (0.12 + amp * 0.8) * H * (0.55 + 0.45 * Math.sin(t * (0.6 + k * 0.25) + f * 5 + k * 2.1) * 0.5 + 0.225)])
+                    }
+                    c.beginPath(); c.moveTo(0, H); c.lineTo(pts[0][0], pts[0][1])
+                    for (let i = 1; i < pts.length; i++) { const mx = (pts[i - 1][0] + pts[i][0]) / 2, my = (pts[i - 1][1] + pts[i][1]) / 2; c.quadraticCurveTo(pts[i - 1][0], pts[i - 1][1], mx, my) }
+                    c.lineTo(W, pts[pts.length - 1][1]); c.lineTo(W, H); c.closePath(); c.fill()
                 }
             } else {   // anel
                 const cx = W / 2, cy = H / 2, R = Math.min(W, H) * 0.26
