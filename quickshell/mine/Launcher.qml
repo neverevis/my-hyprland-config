@@ -13,12 +13,15 @@ Scope {
     readonly property bool open: Settings.launcherOpen   // pedido do usuario
     property bool alive: false                            // janela existe (fica ate a animacao de saida terminar)
     property string query: ""
+    property string pending: ""
+    signal searchFor(string q)
 
     IpcHandler {
         target: "launcher"
         function toggle(): void { Settings.launcherOpen = !Settings.launcherOpen }
         function open(): void { Settings.launcherOpen = true }
         function close(): void { Settings.launcherOpen = false }
+        function search(q: string): void { root.pending = q; Settings.launcherOpen = true; root.searchFor(q) }   // abre ja com o texto (ex.: "=2+2", ":fogo")
     }
     onOpenChanged: {
         if (open) { closeTimer.stop(); Settings.wpPickerOpen = false; Settings.homeOpen = false; query = ""; alive = true }
@@ -62,8 +65,13 @@ Scope {
         }
         return s
     }
-    function results(query) {
-        const q = query.trim().toLowerCase()
+    // ---- resultados: apps e, com prefixo, outras coisas (item = { name, desc, icon (tema) | glyph (Ico) | big (emoji), act }) ----
+    //   /acoes   ;area de transferencia   :emoji   =conta   $comando   ?web   >so apps
+    // sem prefixo: conta (se parecer uma), apps, acoes parecidas e buscar na web
+    readonly property var prefixes: [["/", "ações"], [";", "área de transferência"], [":", "emoji"], ["=", "conta"], ["$", "comando"], ["?", "web"]]
+    readonly property string mode: { const c = query.trim().charAt(0); return ["/", ";", ":", "=", "$", "?", ">"].indexOf(c) >= 0 ? c : "" }
+    function appItems(q) {
+        q = q.trim().toLowerCase()
         const usage = Settings.launcherUsage ?? {}
         const apps = DesktopEntries.applications.values.filter(e => !e.noDisplay)
         const scored = []
@@ -73,15 +81,73 @@ Scope {
             else { const r = rank(e, q); if (r > 0) scored.push({ e: e, s: r + boost }) }
         }
         scored.sort((a, b) => b.s - a.s || (a.e.name ?? "").localeCompare(b.e.name ?? ""))
-        return scored.map(x => x.e)
+        return scored.map(x => ({ name: x.e.name, desc: x.e.comment || x.e.genericName || "", icon: x.e.icon, act: () => root.launch(x.e) }))
     }
+    function norm(t) { return String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase() }
+    function actionItems(q) {
+        const w = norm(q).trim().split(/\s+/).filter(x => x)
+        return Actions.list.filter(a => w.every(x => norm(a.name + " " + a.keys).includes(x)))
+            .map(a => ({ name: a.name + (a.toggle ? (a.on() ? "  (ligado)" : "  (desligado)") : ""), desc: a.desc ?? "Ação do shell", glyph: a.icon, act: () => a.run() }))
+    }
+    function mathItems(q, forced) {
+        const t = q.trim()
+        if (t === "" || (!forced && !/[0-9]/.test(t)) || (!forced && !/[-+*/^%()]|sqrt|sin|cos|log/.test(t))) return []
+        if (!/^[0-9a-z+\-*/%^().,\s]+$/i.test(t)) return []
+        let ex = t.replace(/,/g, ".").replace(/\^/g, "**").replace(/\bpi\b/g, "Math.PI").replace(/\be\b/g, "Math.E")
+            .replace(/\b(sqrt|sin|cos|tan|asin|acos|atan|abs|round|floor|ceil|log10|log2|exp|pow|min|max)\b/g, "Math.$1").replace(/\bln\b/g, "Math.log").replace(/\blog\b(?!\d)/g, "Math.log10")
+        if (/[a-z]/i.test(ex.replace(/Math\.[a-zA-Z0-9]+/g, ""))) return []
+        let v
+        try { v = eval(ex) } catch (e) { return [] }
+        if (typeof v !== "number" || !isFinite(v)) return []
+        const out = Math.abs(v) >= 1e15 || (Math.abs(v) < 1e-6 && v !== 0) ? v.toExponential(6) : String(Math.round(v * 1e10) / 1e10)
+        return [{ name: "= " + out.replace(".", ","), desc: t + "  ·  Enter copia o resultado", glyph: "calc", act: () => { Quickshell.clipboardText = out } }]
+    }
+    property var clips: []
+    Process {
+        id: clipProc
+        command: ["cliphist", "list"]
+        stdout: StdioCollector { onStreamFinished: root.clips = text.split("\n").filter(l => l).slice(0, 300) }
+    }
+    onModeChanged: if (mode === ";") { clipProc.running = false; clipProc.running = true }
+    function clipItems(q) {
+        const w = norm(q).trim()
+        return clips.filter(l => w === "" || norm(l).includes(w)).slice(0, 60).map(l => {
+            const txt = l.split("\t").slice(1).join("\t"), img = /^\[\[ binary data/.test(txt)
+            return { name: img ? "Imagem" : txt.replace(/\s+/g, " ").slice(0, 160), desc: img ? txt.replace(/^\[\[ binary data |\]\]$/g, "") : "Enter copia de novo", glyph: img ? "image" : "cards",
+                     act: () => Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | cliphist decode | wl-copy', "sh", l]) }
+        })
+    }
+    property var emojis: []
+    FileView { id: emojiFile; path: Qt.resolvedUrl("assets/emoji.tsv").toString().replace("file://", ""); onLoaded: root.emojis = text().split("\n").map(l => l.split("\t")) }
+    function emojiItems(q) {
+        const w = norm(q).trim().split(/\s+/).filter(x => x)
+        return emojis.filter(e => w.every(x => (e[1] ?? "").includes(x))).slice(0, 80)
+            .map(e => ({ name: e[1], desc: "Enter copia", big: e[0], act: () => { Quickshell.clipboardText = e[0] } }))
+    }
+    function webItem(q) { return { name: "Buscar na web: " + q.trim(), desc: Settings.launcherEngine.replace(/https?:\/\//, "").split("/")[0], glyph: "web", act: () => Qt.openUrlExternally(Settings.launcherEngine + encodeURIComponent(q.trim())) } }
+    function cmdItem(q) { return { name: q.trim() === "" ? "Digite um comando" : "Executar: " + q.trim(), desc: "Roda em segundo plano (sem terminal)", glyph: "send", act: () => { if (q.trim()) Quickshell.execDetached(["sh", "-c", q.trim()]) } } }
+    function results(query) {
+        const t = query.trim(), rest = t.slice(1)
+        switch (mode) {
+        case "/": return actionItems(rest)
+        case ";": return clipItems(rest)
+        case ":": return emojiItems(rest)
+        case "=": return mathItems(rest, true)
+        case "$": return [cmdItem(rest)]
+        case "?": return [webItem(rest)]
+        case ">": return appItems(rest)
+        }
+        const apps = appItems(t)
+        if (t === "") return apps
+        return mathItems(t, false).concat(apps, t.length >= 3 ? actionItems(t).slice(0, 3) : [], [webItem(t)])
+    }
+    function run(it) { if (!it) return; Settings.launcherOpen = false; it.act() }
     function launch(e) {
         if (!e) return
         const u = Object.assign({}, Settings.launcherUsage ?? {})
         u[e.id] = (u[e.id] ?? 0) + 1
         Settings.launcherUsage = u
         e.execute()
-        Settings.launcherOpen = false
     }
 
     // a janela e criada uma vez (ao iniciar) e so mostrada/escondida: criar na hora custava 1-2 quadros no inicio da animacao
@@ -190,17 +256,34 @@ Scope {
                                 focus: true
                                 Connections {
                                     target: root
-                                    function onAliveChanged() { if (root.alive) { input.text = ""; view.currentIndex = 0; view.positionViewAtBeginning(); input.forceActiveFocus() } }
+                                    function onAliveChanged() { if (root.alive) { input.text = root.pending; root.pending = ""; view.currentIndex = 0; view.positionViewAtBeginning(); input.forceActiveFocus() } }
+                                    function onSearchFor(q) { if (root.alive) { input.text = q; root.pending = "" } }
                                 }
                                 onTextChanged: { root.query = text; view.currentIndex = 0 }
-                                Text { visible: input.text === ""; anchors.verticalCenter: parent.verticalCenter; text: "Buscar aplicativos…"; color: Theme.muted; font.pixelSize: 16 }
+                                Text { visible: input.text === ""; anchors.verticalCenter: parent.verticalCenter; text: "Buscar…"; color: Theme.muted; font.pixelSize: 16 }
+                                // dicas dos prefixos (some ao digitar)
+                                Row {
+                                    visible: input.text === "" && parent.width > 420
+                                    anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                                    spacing: 4
+                                    Repeater {
+                                        model: root.prefixes
+                                        delegate: Rectangle {
+                                            required property var modelData
+                                            height: 22; width: pt.implicitWidth + 12; radius: 6
+                                            color: pm.containsMouse ? Theme.tint(0.2) : Theme.tint(0.08)
+                                            Text { id: pt; anchors.centerIn: parent; text: modelData[0] + " " + modelData[1]; color: Theme.muted; font.pixelSize: 10 }
+                                            MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { input.text = modelData[0]; input.forceActiveFocus() } }
+                                        }
+                                    }
+                                }
 
                                 Keys.onEscapePressed: Settings.launcherOpen = false
                                 Keys.onDownPressed: view.currentIndex = Math.min(view.count - 1, view.currentIndex + 1)
                                 Keys.onUpPressed: view.currentIndex = Math.max(0, view.currentIndex - 1)
                                 Keys.onTabPressed: view.currentIndex = (view.currentIndex + 1) % Math.max(1, view.count)
-                                Keys.onReturnPressed: root.launch(root.list[view.currentIndex])
-                                Keys.onEnterPressed: root.launch(root.list[view.currentIndex])
+                                Keys.onReturnPressed: root.run(root.list[view.currentIndex])
+                                Keys.onEnterPressed: root.run(root.list[view.currentIndex])
                                 Keys.onPressed: e => {
                                     if (e.modifiers & Qt.ControlModifier) {
                                         if (e.key === Qt.Key_N || e.key === Qt.Key_J) { view.currentIndex = Math.min(view.count - 1, view.currentIndex + 1); e.accepted = true }
@@ -240,14 +323,25 @@ Scope {
                                     width: 3; height: parent.height * 0.5; radius: 2; color: Theme.accent
                                     anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
                                 }
-                                Image {
+                                Item {
                                     id: ico
                                     anchors { left: parent.left; leftMargin: 18; verticalCenter: parent.verticalCenter }
                                     width: Settings.launcherIcon; height: width
-                                    sourceSize: Qt.size(width * 2, height * 2)
-                                    source: Quickshell.iconPath(row.modelData.icon, "application-x-executable")
-                                    asynchronous: true
-                                    smooth: true
+                                    Image {
+                                        anchors.fill: parent
+                                        visible: !!row.modelData.icon
+                                        sourceSize: Qt.size(width * 2, height * 2)
+                                        source: row.modelData.icon ? Quickshell.iconPath(row.modelData.icon, "application-x-executable") : ""
+                                        asynchronous: true
+                                        smooth: true
+                                    }
+                                    Rectangle {
+                                        anchors.fill: parent; radius: width * 0.3
+                                        visible: !!row.modelData.glyph
+                                        color: Theme.tint(0.16)
+                                        UiIcon { anchors.centerIn: parent; name: row.modelData.glyph ?? ""; size: parent.width * 0.55; color: Theme.accent }
+                                    }
+                                    Text { anchors.centerIn: parent; visible: !!row.modelData.big; text: row.modelData.big ?? ""; font.pixelSize: parent.width * 0.85 }
                                 }
                                 Column {
                                     anchors { left: ico.right; leftMargin: 14; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
@@ -256,7 +350,7 @@ Scope {
                                     Text {
                                         visible: text !== ""
                                         width: parent.width
-                                        text: row.modelData.comment || row.modelData.genericName || ""
+                                        text: row.modelData.desc ?? ""
                                         color: Theme.muted; font.pixelSize: 12; elide: Text.ElideRight
                                     }
                                 }
@@ -264,7 +358,7 @@ Scope {
                                     anchors.fill: parent
                                     hoverEnabled: true
                                     onEntered: view.currentIndex = row.index
-                                    onClicked: root.launch(row.modelData)
+                                    onClicked: root.run(row.modelData)
                                 }
                             }
                         }

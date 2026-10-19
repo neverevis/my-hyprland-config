@@ -133,6 +133,7 @@ Singleton {
     property bool launcherOpen: false                           // launcher aberto (nao e salvo)
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
+    property alias launcherEngine: adapter.launcherEngine       // busca na web (prefixo "?"): a busca vai no fim
     property alias wpPickerCount: adapter.wpPickerCount       // quantos wallpapers aparecem no seletor (1, 3 ou 5)
     property alias wpPickerRadius: adapter.wpPickerRadius     // arredondamento dos cantos do painel (topo)
     property alias wpPickerFillet: adapter.wpPickerFillet     // curva onde o painel encontra a moldura
@@ -590,6 +591,7 @@ Singleton {
             property int launcherOffset: 0
             property int launcherFillet: 13
             property var launcherUsage: ({})
+            property string launcherEngine: "https://www.google.com/search?q="
             property int wpPickerRadius: 11
             property int wpPickerFillet: 13
             property int wpCardRadius: 14

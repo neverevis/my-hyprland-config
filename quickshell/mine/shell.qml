@@ -14,6 +14,9 @@ import QtQuick.Effects
 
 ShellRoot {
     id: shell
+    // sem recarregar sozinho ao salvar um .qml: com UseQApplication, desmontar as janelas no recarregamento as vezes
+    // aborta no Qt (QWindow::unsetCursor) e pode deixar o shell parado. Para aplicar mudancas: shell-switch restart
+    settings.watchFiles: false
 
     readonly property color baseColor: Settings.barColor
     readonly property color fillColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, Settings.glass ? Settings.glassOpacity / 100 : 1)

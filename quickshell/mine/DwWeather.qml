@@ -103,7 +103,8 @@ Item {
             y: side ? (parent.height - height) / 2 : parent.topH + 6
             width: side ? Math.min(parent.width * 0.55, count * 58) : parent.width
             height: side ? parent.height * 0.9 : parent.height - parent.topH - 6
-            readonly property var items: w.show === "days" ? Weather.days.slice(0, Math.max(3, Math.floor(width / 58))) : Weather.hours.filter((h, i) => i % (w.rows > 1 ? 2 : 3) === 0).slice(0, Math.max(3, Math.floor(width / 58)))
+            readonly property int fit: Math.max(3, Math.floor((side ? w.width * 0.55 : w.width) / 58))
+            readonly property var items: w.show === "days" ? Weather.days.slice(0, fit) : Weather.hours.filter((h, i) => i % (w.rows > 1 ? 2 : 3) === 0).slice(0, fit)
             readonly property int count: items.length
             Repeater {
                 model: fc.items

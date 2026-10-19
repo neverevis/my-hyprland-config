@@ -33,7 +33,7 @@ Singleton {
         wSnow: 0xF0598, wStorm: 0xF0593, wWind: 0xF059D, wHail: 0xF0592, humidity: 0xF058E, sunrise: 0xF059C, sunset: 0xF059B, umbrella: 0xF054A, mapMarker: 0xF034E,
         stopwatch: 0xF051F, bellRing: 0xF009E, coffee: 0xF0176, target: 0xF04FE, textBox: 0xF09ED, flower: 0xF024A, disc: 0xF0025, quote: 0xF0757, earth: 0xF01E7,
         listCheck: 0xF0C51, checkbox: 0xF0135, checkboxEmpty: 0xF0131, gpuCard: 0xF08AE, network: 0xF06F3, temperature: 0xF050F, lockOpen: 0xF0FC6, menu: 0xF035C,
-        chevUp: 0xF0143, chevDown: 0xF0140, window: 0xF05B2, wave: 0xF095B, moon: 0xF0F65, sparkle: 0xF1545, tag: 0xF04F9, compose: 0xF0284
+        calc: 0xF00EC, chevUp: 0xF0143, chevDown: 0xF0140, window: 0xF05B2, wave: 0xF095B, moon: 0xF0F65, sparkle: 0xF1545, tag: 0xF04F9, compose: 0xF0284
     })
     function g(name: string): string { const c = map[name]; return c ? String.fromCodePoint(c) : "" }
 }
