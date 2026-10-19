@@ -128,7 +128,12 @@ Singleton {
     property alias wpDimWhen: adapter.wpDimWhen
     property alias wpVideoPause: adapter.wpVideoPause   // pausa o video com janela em tela cheia
     property alias wpVideos: adapter.wpVideos   // videos da pasta entram na lista
-    property alias lockWallpaper: adapter.lockWallpaper   // wallpaper da tela de bloqueio (vazio = o mesmo)
+    property alias lockWallpaper: adapter.lockWallpaper
+    property alias lockClock: adapter.lockClock         // big | analog (flor) | digital | daily | pixel
+    property alias lockClockPos: adapter.lockClockPos   // top | center
+    property alias lockChars: adapter.lockChars         // dots | shapes (cada letra uma forma: flor, estrela...)
+    property alias lockKeyring: adapter.lockKeyring     // destrava o gnome-keyring junto
+    property alias lockPower: adapter.lockPower         // botoes de energia na tela de bloqueio   // wallpaper da tela de bloqueio (vazio = o mesmo)
     property alias wpWipeAngle: adapter.wpWipeAngle     // direcao da cortina em graus (0 = esquerda->direita, 90 = cima->baixo)
     property alias wpParallax: adapter.wpParallax       // % da largura que os wallpapers andam junto com a cortina
     property alias wpTransition: adapter.wpTransition   // fade | slide | wipe | circle | zoom | random | none
@@ -683,6 +688,11 @@ Singleton {
             property bool wpVideoPause: true
             property bool wpVideos: true
             property string lockWallpaper: ""
+            property string lockClock: "big"
+            property string lockClockPos: "top"
+            property string lockChars: "dots"
+            property bool lockKeyring: false
+            property bool lockPower: true
             property int wpWipeAngle: 0
             property int wpDuration: 900
             property string wpEasing: "smooth"

@@ -33,6 +33,13 @@ Column {
         UiSlider { label: "Escurecimento"; icon: "night"; from: 0; to: 80; value: Settings.lockDim; suffix: " %"; onMoved: v => Settings.lockDim = v }
         UiSwitch { label: "Relógio com segundos"; icon: "clock"; checked: Settings.lockSeconds; onToggled: on => Settings.lockSeconds = on }
         UiSwitch { label: "Mostrar a música tocando"; icon: "music"; description: "Com controles de anterior, pausar e próxima."; checked: Settings.lockMedia; onToggled: on => Settings.lockMedia = on }
+        UiLabel { text: "Relógio" }
+        UiSeg { options: [["big", "Grande"], ["analog", "Flor"], ["digital", "Digital"], ["daily", "Diário"], ["pixel", "Pixel"]]; value: Settings.lockClock; onPicked: v => Settings.lockClock = v }
+        UiSeg { options: [["top", "No topo", "arrowUp"], ["center", "No centro", "alignCenter"]]; value: Settings.lockClockPos; onPicked: v => Settings.lockClockPos = v }
+        UiLabel { text: "Senha" }
+        UiSeg { options: [["dots", "Bolinhas"], ["shapes", "Formas (flor, estrela…)"]]; value: Settings.lockChars; onPicked: v => Settings.lockChars = v }
+        UiSwitch { label: "Destravar o chaveiro junto"; icon: "lockOpen"; description: "Usa a mesma senha para abrir o gnome-keyring (senhas salvas de apps), se ele estiver trancado."; checked: Settings.lockKeyring; onToggled: on => Settings.lockKeyring = on }
+        UiSwitch { label: "Botões de energia na tela de bloqueio"; icon: "power"; description: "Desligado: para desligar ou reiniciar é preciso desbloquear antes."; checked: Settings.lockPower; onToggled: on => Settings.lockPower = on }
         UiLabel { text: "Animação de entrada" }
         AnimPicker { target: "lock" }
     }

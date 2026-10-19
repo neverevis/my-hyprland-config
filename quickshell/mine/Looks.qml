@@ -31,7 +31,7 @@ Singleton {
                  "wpPickerDocked", "wpPickerSide", "wpPickerOffset", "wpPickerFillet", "wpPickerRadius", "wpPickerGap", "wpPickerCount", "wpCardRadius",
                  "notifDocked", "notifSide", "notifAnchor", "notifCorner", "notifFillet", "notifRadius", "notifWidth",
                  "osdDocked", "osdSide"] },
-        { id: "lock", label: "Tela de bloqueio", icon: "lock", def: true, keys: ["lockBlur", "lockDim", "lockMedia", "lockSeconds"] },
+        { id: "lock", label: "Tela de bloqueio", icon: "lock", def: true, keys: ["lockBlur", "lockDim", "lockMedia", "lockSeconds", "lockClock", "lockClockPos", "lockChars", "lockWallpaper"] },
         { id: "hypr", label: "Hyprland (blur)", icon: "blur", def: false,
           keys: ["blurManaged", "blurEnabled", "blurSize", "blurPasses", "blurNoise", "blurContrast", "blurBrightness", "blurVibrancy"] },
         { id: "fonts", label: "Fontes", icon: "textBox", def: false, keys: ["fontUi", "fontMono"] }

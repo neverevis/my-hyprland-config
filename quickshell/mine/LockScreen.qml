@@ -44,6 +44,7 @@ Scope {
             root.checking = false
             if (result === PamResult.Success) {
                 root.fails = 0
+                if (Settings.lockKeyring && !root.preview) { keyring.secret = root.pw; keyring.running = true }
                 root.leaving = true
                 unlockTimer.restart()
             } else {
@@ -55,6 +56,14 @@ Scope {
         }
         onError: err => { root.checking = false; root.pw = ""; root.error = "Não foi possível verificar a senha (" + PamError.toString(err) + ")" }
     }
+    // destrava o chaveiro do GNOME com a mesma senha (pela entrada padrao: a senha nunca vai nos argumentos)
+    Process {
+        id: keyring
+        property string secret: ""
+        command: ["gnome-keyring-daemon", "--unlock"]
+        stdinEnabled: true
+        onStarted: { write(secret); secret = ""; stdinEnabled = false }
+    }
     // solta a tela so depois do fade terminar (nesse ponto ela ja esta invisivel: sem piscar preto)
     Timer { id: unlockTimer; interval: root.leaveMs + 30; onTriggered: { Power.locked = false; root.preview = false } }
 
@@ -65,6 +74,8 @@ Scope {
         function toggle(): void { root.preview = !root.preview; root.pw = ""; root.error = ""; root.leaving = false }
         // so na previa: simula a senha certa (para ver a saida); nunca solta um bloqueio de verdade
         function leave(): void { if (root.preview && !Power.locked) { root.leaving = true; unlockTimer.restart() } }
+        // so na previa: preenche n caracteres falsos (ver as bolinhas/formas sem digitar)
+        function fill(n: int): void { if (root.preview && !Power.locked) root.pw = "x".repeat(Math.max(0, Math.min(30, n))) }
     }
     LazyLoader {
         active: root.preview && !Power.locked
@@ -160,11 +171,26 @@ Scope {
         SystemClock { id: clk; precision: Settings.lockSeconds ? SystemClock.Seconds : SystemClock.Minutes }
         Item {
             id: clockBox
-            anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: parent.height * 0.12 - (1 - v.pClock) * 50 - v.q * 40 }
-            width: clockCol.width; height: clockCol.height
+            readonly property bool centered: Settings.lockClockPos === "center"
+            anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: (centered ? parent.height * 0.5 - height - 150 : parent.height * 0.12) - (1 - v.pClock) * 50 - v.q * 40 }
+            width: Settings.lockClock === "big" ? clockCol.width : wclock.width
+            height: Settings.lockClock === "big" ? clockCol.height : wclock.height
             opacity: Math.max(0, Math.min(1, v.pClock * 1.4))
+            // outros estilos: o mesmo relogio dos widgets (flor, digital, diario, pixel), no tom claro sobre o fundo escuro
+            DwClock {
+                id: wclock
+                visible: Settings.lockClock !== "big"
+                width: Settings.lockClock === "analog" ? 360 : 640
+                height: Settings.lockClock === "analog" ? 360 : 240
+                cols: Settings.lockClock === "analog" ? 2 : 3; rows: Settings.lockClock === "analog" ? 2 : 1
+                bare: true
+                fg: "white"; dim: Qt.rgba(1, 1, 1, 0.75); ac: Qt.lighter(Theme.accent, 1.15)
+                ac2: Theme.tertiary; cont: Theme.primaryContainer; contInk: Theme.primaryContainerInk
+                opts: ({ style: Settings.lockClock, seconds: Settings.lockSeconds, dial: "dots", variant: "morning" })
+            }
             Column {
                 id: clockCol
+                visible: Settings.lockClock === "big"
                 spacing: 0
                 UiText {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -301,13 +327,24 @@ Scope {
                         layoutDirection: root.pw.length * 17 > input.width ? Qt.RightToLeft : Qt.LeftToRight
                         Repeater {
                             model: 64
-                            delegate: Rectangle {
+                            delegate: Item {
                                 required property int index
                                 readonly property bool on: index < root.pw.length
+                                readonly property color color: root.leaving ? Theme.accent : "white"
                                 visible: on || scale > 0.02
-                                width: 10; height: 10; radius: 5
-                                color: root.leaving ? Theme.accent : "white"
-                                Behavior on color { ColorAnimation { duration: 180 } }
+                                width: Settings.lockChars === "shapes" ? 15 : 10; height: width
+                                // cada letra uma forma (flor, estrela, circulo, quadrado arredondado...), girada um pouco
+                                Flower {
+                                    anchors.fill: parent
+                                    visible: Settings.lockChars === "shapes"
+                                    readonly property var pick: [["flower", 6, 0.16], ["flower", 5, 0.5], ["circle", 0, 0], ["flower", 9, 0.12], ["rounded", 0, 0], ["flower", 4, 0.42], ["flower", 12, 0.1]][parent.index % 7]
+                                    shape: pick[0]; sides: pick[1]; depth: pick[2]
+                                    radius: width * 0.28
+                                    color: parent.color
+                                    rotation: (parent.index * 37) % 90
+                                }
+                                Rectangle { anchors.fill: parent; radius: width / 2; visible: Settings.lockChars !== "shapes"; color: parent.color
+                                    Behavior on color { ColorAnimation { duration: 180 } } }
                                 y: root.checking ? -4 * Math.max(0, Math.sin((field.wave * 1.6 - index / Math.max(1, root.pw.length)) * Math.PI * 2)) : 0
                                 scale: on ? 1 : 0
                                 Behavior on scale { NumberAnimation { duration: 170; easing.type: Easing.OutBack; easing.overshoot: 2.2 } }
@@ -400,6 +437,7 @@ Scope {
 
         // ---- energia (canto) ----
         Row {
+            visible: Settings.lockPower
             anchors { right: parent.right; bottom: parent.bottom; margins: 28 }
             anchors.bottomMargin: 28 - (1 - Math.min(1, v.pBox)) * 30
             spacing: 10
