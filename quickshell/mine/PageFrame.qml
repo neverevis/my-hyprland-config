@@ -7,6 +7,14 @@ Column {
     spacing: 14
 
     Card {
+        icon: "window"
+        title: "Janela de configurações"
+        subtitle: "Janela normal: o Hyprland cuida dela (arrastar, ladrilhar, fechar com Super+Q) e os painéis do shell abrem por cima, sem ela mudar de lugar. Camada do shell: desliza do topo com a animação dela e desvia dos painéis acoplados."
+        UiSeg { options: [["window", "Janela normal", "window"], ["layer", "Camada do shell", "layers"]]; value: Settings.settingsWindowed ? "window" : "layer"
+            onPicked: v => { const open = Settings.settingsOpen; Settings.settingsOpen = false; Settings.settingsWindowed = v === "window"; if (open) Qt.callLater(() => Settings.settingsOpen = true) } }
+    }
+
+    Card {
         icon: "layers"
         title: "Composição"
         subtitle: "Integrado: barras e painéis nascem da moldura, como uma peça só. Independente: cada um é uma superfície solta, com fundo próprio. Dá para misturar parte a parte."

@@ -160,6 +160,7 @@ Singleton {
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
     property alias launcherEngine: adapter.launcherEngine       // busca na web (prefixo "?"): a busca vai no fim
+    property alias settingsWindowed: adapter.settingsWindowed   // configuracoes numa janela normal do Hyprland (senao, camada do shell)
     property alias barPopups: adapter.barPopups                 // detalhes ao passar o mouse nos modulos da barra
     property alias barPopupDelay: adapter.barPopupDelay
     property alias launcherExclude: adapter.launcherExclude     // sites fora da busca na web (vira -site:x)
@@ -683,6 +684,7 @@ Singleton {
             property string launcherEngine: "https://www.google.com/search?q="
             property var launcherExclude: []
             property bool barPopups: true
+            property bool settingsWindowed: true
             property int barPopupDelay: 450
             property var launcherPrefixes: ({})
             property var launcherDefaults: ({})
