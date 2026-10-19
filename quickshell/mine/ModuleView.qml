@@ -26,7 +26,7 @@ Item {
         id: loader
         sourceComponent: ({
             clock: clockC, workspaces: workspacesC, window: windowC,
-            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC, power: powerC
+            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC, power: powerC, taskbar: taskbarC
         })[root.type] ?? extraC
     }
 
@@ -82,6 +82,10 @@ Item {
         }
     }
 
+    Component {
+        id: taskbarC
+        TaskbarModule { opts: root.opts; vertical: root.vertical }
+    }
     Component {
         id: extraC
         ExtraModule { type: root.type; opts: root.opts; vertical: root.vertical; side: root.side }

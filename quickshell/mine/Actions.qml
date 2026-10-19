@@ -35,6 +35,7 @@ Singleton {
         { id: "anims", name: "Animações", icon: "animation", keys: "animacoes curvas molas", run: () => { Settings.settingsPage = "anim"; Settings.settingsOpen = true } },
         { id: "integrated", name: "Composição: tudo na moldura", icon: "frame", keys: "moldura integrado composicao", run: () => Settings.applyComposition("integrated") },
         { id: "independent", name: "Composição: tudo solto", icon: "cards", keys: "solto independente composicao", run: () => Settings.applyComposition("independent") },
+        { id: "overview", name: "Visão geral dos workspaces", icon: "view_grid", keys: "overview workspaces janelas exposicao", run: () => Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "overview", "toggle"]) },
         { id: "home", name: "Painel Início", icon: "home", keys: "inicio painel", run: () => Settings.homeOpen = true },
         { id: "restart", name: "Reiniciar o shell", icon: "refresh", keys: "reload restart quickshell", run: () => sh("shell-switch restart") }
     ]

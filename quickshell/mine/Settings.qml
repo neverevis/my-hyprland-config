@@ -79,6 +79,9 @@ Singleton {
     property alias idleScreenOff: adapter.idleScreenOff
     property alias idleSuspend: adapter.idleSuspend
     property alias idleMedia: adapter.idleMedia
+    property alias dockPinned: adapter.dockPinned         // apps fixados no dock (ids .desktop)
+    property alias overviewRows: adapter.overviewRows     // visao geral: linhas x colunas de workspaces
+    property alias overviewCols: adapter.overviewCols
     property alias polkitOn: adapter.polkitOn             // o shell e o agente de polkit (pedidos de senha de administrador)
     property bool polkitRegistered: false                 // conseguiu registrar (falha se outro agente ja estiver rodando)     // segundos de contagem antes de sair/reiniciar/desligar (0 = na hora)
     property alias showDelay: adapter.showDelay         // ms com o mouse na borda antes de mostrar (evita abrir sem querer)
@@ -331,7 +334,8 @@ Singleton {
         { type: "utils", label: "Captura, cor e microfone" },
         { type: "caffeine", label: "Manter acordado" },
         { type: "launcher", label: "Botão do launcher" },
-        { type: "visualizer", label: "Mini visualizador" }
+        { type: "visualizer", label: "Mini visualizador" },
+        { type: "taskbar", label: "Dock (apps fixados e abertos)" }
     ]
 
     function reset(): void {
@@ -463,6 +467,13 @@ Singleton {
     }
     function setBar(i: int, key: string, value: var): void { mutate(b => { if (b[i]) b[i][key] = value }) }
     function addBar(side: string): void { mutate(b => b.push(defaultBar(side))) }
+    // dock: barra solta embaixo, que se esconde, com os apps (modulo taskbar)
+    function addDock(): void {
+        mutate(b => {
+            const sec = defaultSection("Apps"); sec.modules = [{ type: "taskbar", iconSize: 30 }]
+            b.push({ name: "Dock", side: "bottom", size: 30, pos: 50, height: 58, full: false, autoHide: true, detached: true, gap: 10, radius: 18, sections: [sec] })
+        })
+    }
     function removeBar(i: int): void { mutate(b => b.splice(i, 1)) }
     // prioridade = ordem da lista (a primeira ganha a disputa por espaco): d = -1 sobe, +1 desce
     function moveBar(i: int, d: int): void { mutate(b => { const j = i + d; if (j < 0 || j >= b.length) return; const t = b[i]; b[i] = b[j]; b[j] = t }) }
@@ -565,6 +576,9 @@ Singleton {
             property int idleSuspend: 0
             property bool idleMedia: true
             property bool polkitOn: false
+            property int overviewRows: 2
+            property var dockPinned: ["kitty", "brave-browser", "thunar"]
+            property int overviewCols: 5
             property string barsPanelMode: "push"
             property string wpDir: "~/Imagens/Wallpapers"
             property string wallpaper: ""

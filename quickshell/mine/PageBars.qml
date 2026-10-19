@@ -81,6 +81,18 @@ Column {
                 }
                 MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addBar("top"); page.cur = Settings.bars.length - 1 } }
             }
+            Rectangle {
+                width: 136; height: 58; radius: 14
+                color: dkm.containsMouse ? Theme.cardHi : "transparent"
+                border.width: 1; border.color: Theme.border
+                Row {
+                    anchors.centerIn: parent
+                    spacing: 6
+                    UiIcon { name: "dock"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                    Text { text: "Adicionar dock"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                }
+                MouseArea { id: dkm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addDock(); page.cur = Settings.bars.length - 1 } }
+            }
         }
         // prioridade da barra escolhida
         Row {

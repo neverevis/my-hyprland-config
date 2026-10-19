@@ -54,6 +54,7 @@ ShellRoot {
     PhotoEditor {}
     PickWindow {}
     PolkitWindow {}
+    Overview {}
     LockScreen {}
     DesktopLayer { geo: shell.geo }
 
