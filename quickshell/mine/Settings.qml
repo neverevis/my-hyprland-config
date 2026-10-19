@@ -116,7 +116,7 @@ Singleton {
     property alias wpMode: adapter.wpMode   // modo: fill | centered | collage
     property alias wpBgRole: adapter.wpBgRole   // cor de fundo (papel da paleta) nos modos centralizado e mosaico
     property alias wpCenterSize: adapter.wpCenterSize   // tamanho da forma (% da altura)
-    property alias wpCenterShape: adapter.wpCenterShape   // flower | circle | rounded | square
+    property alias wpCenterShape: adapter.wpCenterShape   // uma forma de Shapes.qml (flor, circulo, coracao...)
     property alias wpCenterSides: adapter.wpCenterSides
     property alias wpCenterSpin: adapter.wpCenterSpin
     property alias wpCollage: adapter.wpCollage   // imagens extras do mosaico

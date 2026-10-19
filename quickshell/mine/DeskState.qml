@@ -32,7 +32,7 @@ Singleton {
         "Diário": "calendar", "Pixel": "grid", "Frase": "quoteClose", "Tela de bloqueio": "lockClock", "Mostrar": "eye", "Cidades": "earth",
         "Mês": "calendarWeek", "Capa": "album", "Conteúdo": "listChecks", "Som": "sineWave", "Medidas": "gauge", "Perfil": "accountCircle",
         "Lista": "checkbox", "Bloco": "noteText", "Tempos": "timer", "Texto": "text", "Fonte": "font", "Imagem": "image", "Conversão": "fileSwap",
-        "Visual": "paint", "Posição": "cursorMove" })
+        "Visual": "paint", "Posição": "cursorMove", "Forma": "shape", "Enquadramento": "crop", "Adesivo": "sticker" })
     readonly property var catalog: [
         { type: "clock", group: "time", name: "Relógio", icon: "clock", desc: "Digital, flor com ponteiros, diário ou pixel; com frase opcional.",
           sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [3, 2]], options: [
@@ -81,8 +81,8 @@ Singleton {
             { sec: "Conteúdo", key: "controls", label: "Controles", icon: "play", type: "switch", def: true },
             { sec: "Conteúdo", key: "titles", label: "Título e artista", icon: "text", type: "switch", def: true },
             { sec: "Conteúdo", key: "lyrics", label: "Letra sincronizada", icon: "quoteClose", desc: "Busca no lrclib.net pelo nome da música.", type: "switch", def: false },
-            { sec: "Capa", key: "artShape", label: "Forma da capa", type: "seg", preview: true, def: "rounded", options: [["rounded", "Arredondada", "squareRounded"], ["circle", "Círculo", "circleOutline"], ["flower", "Flor", "flowerOutline"], ["square", "Quadrada", "crop"]] },
-            { sec: "Capa", key: "spin", label: "Capa girando (disco)", icon: "album", type: "switch", def: false, when: { artShape: ["circle", "flower"] } },
+            { sec: "Capa", key: "artShape", label: "Forma da capa", type: "seg", preview: true, def: "rounded", options: Shapes.list },
+            { sec: "Capa", key: "spin", label: "Capa girando (disco)", icon: "album", type: "switch", def: false, when: { artShape: ["circle", "flower", "sunny", "burst", "softburst", "clover4", "clover8", "puffy", "pixel"] } },
             { sec: "Capa", key: "blurBg", label: "Fundo com a capa desfocada", icon: "blur", type: "switch", def: true }
           ] },
         { type: "visualizer", group: "media", name: "Visualizador", icon: "pulse", desc: "As frequências do som tocando (precisa do cava).", sizes: [[3, 1], [2, 1], [4, 1], [2, 2]], options: [
@@ -99,7 +99,7 @@ Singleton {
         { type: "user", group: "system", name: "Usuário", icon: "account", desc: "Sua foto, saudação e o computador.", sizes: [[2, 1], [3, 1], [1, 1], [2, 2]], options: [
             { sec: "Perfil", key: "greeting", label: "Saudação", icon: "greeting", type: "switch", def: true },
             { sec: "Perfil", key: "info", label: "Linha de informação", type: "seg", def: "uptime", options: [["uptime", "Tempo ligado", "timer"], ["host", "Usuário@máquina", "desktop"], ["kernel", "Sistema e kernel", "linux"], ["none", "Nada", "close"]] },
-            { sec: "Perfil", key: "avatarShape", label: "Forma da foto", type: "seg", preview: true, def: "circle", options: [["circle", "Círculo", "circleOutline"], ["flower", "Flor", "flowerOutline"], ["rounded", "Arredondada", "squareRounded"]] }
+            { sec: "Perfil", key: "avatarShape", label: "Forma da foto", type: "seg", preview: true, def: "circle", options: Shapes.list }
           ] },
         { type: "todo", group: "work", name: "Tarefas", icon: "check", desc: "Lista de afazeres que fica salva.", sizes: [[2, 2], [2, 1], [3, 2], [2, 3]], options: [
             { sec: "Lista", key: "hideDone", label: "Esconder as concluídas", icon: "eyeOff", type: "switch", def: false },
@@ -128,14 +128,18 @@ Singleton {
             { sec: "Fonte", key: "align", label: "Alinhamento", type: "seg", def: "center", options: [["left", "Esquerda", "alignLeft"], ["center", "Centro", "alignCenter"], ["right", "Direita", "alignRight"]] },
             { sec: "Fonte", key: "shadow", label: "Sombra", icon: "textShadow", type: "switch", def: true }
           ] },
-        { type: "image", group: "deco", name: "Imagem", icon: "image", desc: "Foto com forma, cartão com legenda ou adesivo.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2], [2, 3]], options: [
+        { type: "image", group: "deco", name: "Imagem", icon: "image", desc: "Foto numa forma, cartão com legenda ou adesivo. Solte uma imagem nele para trocar.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2], [2, 3]], free: true, options: [
             { sec: "Imagem", key: "path", label: "Imagem", type: "image", def: "" },
             { sec: "Imagem", key: "kind", label: "Tipo", type: "seg", preview: true, def: "photo", options: [["photo", "Foto", "image"], ["card", "Cartão", "imageFrame"], ["sticker", "Adesivo", "sticker"]] },
-            { sec: "Imagem", key: "shape", label: "Forma", type: "seg", preview: true, def: "rounded", options: [["rounded", "Arredondada", "squareRounded"], ["circle", "Círculo", "circleOutline"], ["flower", "Flor", "flowerOutline"], ["square", "Quadrada", "crop"]], when: { kind: "photo" } },
-            { sec: "Imagem", key: "fit", label: "Enquadrar", type: "seg", def: "crop", options: [["crop", "Preencher", "crop"], ["fit", "Inteira", "fullscreen"]] },
+            { sec: "Forma", key: "shape", label: "Forma", type: "seg", preview: true, def: "rounded", options: Shapes.list, when: { kind: "photo" } },
+            { sec: "Forma", key: "sides", label: "Pétalas", icon: "flowerOutline", type: "slider", from: 3, to: 24, step: 1, def: 10, when: { kind: "photo", shape: "flower" } },
+            { sec: "Enquadramento", key: "fit", label: "Encaixe", type: "seg", def: "crop", options: [["crop", "Preencher a forma", "crop"], ["fit", "Imagem inteira", "fullscreen"]], when: { kind: ["photo", "card"] } },
+            { sec: "Enquadramento", key: "zoom", label: "Zoom", icon: "arrow_expand", desc: "Editando, a roda do mouse em cima da foto também dá zoom.", type: "slider", from: 100, to: 400, step: 5, suffix: " %", def: 100, when: { kind: ["photo", "card"], fit: "crop" } },
+            { sec: "Enquadramento", key: "panX", label: "Posição na horizontal", icon: "swap_horizontal", desc: "Qual parte aparece: -100 % mostra a esquerda, 100 % a direita.", type: "slider", from: -100, to: 100, step: 5, suffix: " %", def: 0, when: { kind: ["photo", "card"], fit: "crop" } },
+            { sec: "Enquadramento", key: "panY", label: "Posição na vertical", icon: "swap_vertical", type: "slider", from: -100, to: 100, step: 5, suffix: " %", def: 0, when: { kind: ["photo", "card"], fit: "crop" } },
+            { sec: "Enquadramento", key: "tilt", label: "Inclinação", icon: "rotate", desc: "Editando, a alça redonda em cima do widget gira arrastando.", type: "slider", from: -180, to: 180, step: 1, suffix: "°", def: 0, when: { kind: ["photo", "sticker"] } },
             { sec: "Imagem", key: "caption", label: "Legenda", icon: "tag", type: "text", def: "", when: { kind: "card" } },
-            { sec: "Imagem", key: "tilt", label: "Inclinação", icon: "rotate", type: "slider", from: -30, to: 30, step: 1, suffix: "°", def: -4, when: { kind: "sticker" } },
-            { sec: "Imagem", key: "outline", label: "Contorno branco", icon: "circleOutline", type: "slider", from: 0, to: 16, step: 1, suffix: " px", def: 8, when: { kind: "sticker" } }
+            { sec: "Adesivo", key: "outline", label: "Contorno branco", icon: "circleOutline", type: "slider", from: 0, to: 16, step: 1, suffix: " px", def: 8, when: { kind: "sticker" } }
           ] },
         { type: "convert", group: "deco", name: "Conversor de imagens", icon: "fileSwap", desc: "Solte imagens nele e elas viram PNG, JPG, WEBP, AVIF ou PDF.", sizes: [[2, 2], [2, 1], [1, 1], [3, 2]], options: [
             { sec: "Conversão", key: "format", label: "Converter para", type: "seg", def: "webp", options: [["png", "PNG"], ["jpg", "JPG"], ["webp", "WEBP"], ["avif", "AVIF"], ["pdf", "PDF"]] },
@@ -213,6 +217,8 @@ Singleton {
     function remove(id) { if (selected === id) selected = ""; mutate(l => { const i = l.findIndex(w => w.id === id); if (i >= 0) l.splice(i, 1) }) }
     function setPos(id, fx, fy) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.fx = fx; w.fy = fy; if (w.opts && w.opts.place && w.opts.place !== "free") w.opts.place = "free" } }) }
     function setOpt(id, k, v) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.opts = w.opts || {}; w.opts[k] = v } }) }
+    // tamanho e lugar de uma vez (alca do canto); tamanhos quebrados so nos widgets "free" (imagem)
+    function setGeom(id, c, r, fx, fy) { mutate(l => { const w = l.find(x => x.id === id); if (w) { const f = !!info(w.type).free; w.cols = Math.max(f ? 0.5 : 1, Math.min(6, c)); w.rows = Math.max(f ? 0.5 : 1, Math.min(5, r)); w.fx = fx; w.fy = fy; if (w.opts && w.opts.place && w.opts.place !== "free") w.opts.place = "free" } }) }
     function setSize(id, c, r) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.cols = Math.max(1, Math.min(6, c)); w.rows = Math.max(1, Math.min(5, r)) } }) }
     function cycleSize(id) {
         mutate(l => {

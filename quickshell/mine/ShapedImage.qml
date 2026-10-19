@@ -15,18 +15,31 @@ Item {
     property string fit: "crop"
     property real spin: 0
     property size sourceSize: Qt.size(512, 512)
+    // enquadramento (so em "crop"): zoom (1 = cobre a forma) e posicao de -1 (mostra a esquerda/topo) a 1
+    property real zoom: 1
+    property real offX: 0
+    property real offY: 0
     readonly property bool ready: img.status === Image.Ready
 
+    Image { id: probe; visible: false; source: img.source; sourceSize: Qt.size(64, 64); asynchronous: true }
     Item {
         id: holder
         anchors.fill: parent
         Image {
             id: img
-            anchors.centerIn: parent
-            width: parent.width; height: parent.height
+            // crop: a imagem cobre a forma (proporcao dela) vezes o zoom, e a posicao escolhe a parte que aparece
+            readonly property bool framed: si.fit !== "fit" && probe.implicitWidth > 0 && probe.implicitHeight > 0
+            readonly property real ar: probe.implicitWidth / Math.max(1, probe.implicitHeight)   // proporcao medida na miniatura
+            readonly property real cw: (ar > parent.width / Math.max(1, parent.height) ? parent.height * ar : parent.width) * Math.max(1, si.zoom)
+            readonly property real ch: cw / Math.max(0.001, ar)
+            x: framed ? (parent.width - cw) / 2 * (1 + Math.max(-1, Math.min(1, si.offX))) : 0
+            y: framed ? (parent.height - ch) / 2 * (1 + Math.max(-1, Math.min(1, si.offY))) : 0
+            width: framed ? cw : parent.width
+            height: framed ? ch : parent.height
             rotation: si.spin
-            sourceSize: si.sourceSize
-            fillMode: si.fit === "fit" ? Image.PreserveAspectFit : Image.PreserveAspectCrop
+            // enquadrada: carrega no tamanho que vai aparecer (com folga), senao no tamanho pedido
+            sourceSize: framed ? Qt.size(Math.min(3000, cw * 1.5), Math.min(3000, ch * 1.5)) : si.sourceSize
+            fillMode: si.fit === "fit" ? Image.PreserveAspectFit : (framed ? Image.Stretch : Image.PreserveAspectCrop)
             asynchronous: true
             smooth: true
             mipmap: true

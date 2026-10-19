@@ -85,7 +85,7 @@ Column {
             visible: Settings.wpMode === "centered"
             width: parent.width; spacing: 12
             UiLabel { text: "Forma" }
-            UiSeg { options: [["flower", "Flor", "flower"], ["circle", "Círculo", "target"], ["rounded", "Arredondada", "rounded"], ["square", "Quadrada", "fullscreen"]]; value: Settings.wpCenterShape; onPicked: v => Settings.wpCenterShape = v }
+            ShapePicker { width: parent.width; value: Settings.wpCenterShape; sides: Settings.wpCenterSides; onPicked: v => Settings.wpCenterShape = v }
             UiSlider { visible: Settings.wpCenterShape === "flower"; label: "Pétalas"; from: 4; to: 20; value: Settings.wpCenterSides; onMoved: v => Settings.wpCenterSides = Math.round(v) }
             UiSlider { label: "Tamanho"; from: 20; to: 95; value: Settings.wpCenterSize; suffix: " %"; onMoved: v => Settings.wpCenterSize = Math.round(v) }
             UiSwitch { label: "Girar devagar"; checked: Settings.wpCenterSpin; onToggled: on => Settings.wpCenterSpin = on }
