@@ -73,8 +73,12 @@ Item {
             // texto do tema; custom = a cor escolhida. Cada widget recebe fg, dim, ac (destaque), ac2 (cor companheira, ex.:
             // ponteiro dos minutos), cont (versao suave, ex.: a flor) e contInk (texto/marcas em cima da versao suave).
             readonly property real lum: { const a = DeskState.auto[wid]; return a && a.lum !== undefined ? a.lum : 0.3 }
-            readonly property string tone: { const t = w ? DeskState.opt(w, "tone") : "global"; return t === "global" ? Settings.desktopTone : t }
-            readonly property color custom: tone === "custom" ? (w && w.opts && w.opts.fgColor ? w.opts.fgColor : Settings.desktopToneColor) : "white"
+            // wall0..wall7: uma cor de verdade do wallpaper (acompanha a troca de wallpaper), tratada como "minha cor"
+            readonly property string rawTone: { const t = w ? DeskState.opt(w, "tone") : "global"; return t === "global" ? Settings.desktopTone : t }
+            readonly property bool wallTone: rawTone.indexOf("wall") === 0
+            readonly property string tone: wallTone ? "custom" : rawTone
+            readonly property color custom: wallTone ? Theme.readable(ThemeColors.wallColor(parseInt(rawTone.slice(4)) || 0))
+                : tone === "custom" ? (w && w.opts && w.opts.fgColor ? w.opts.fgColor : Settings.desktopToneColor) : "white"
             readonly property bool fam: tone === "primary" || tone === "secondary" || tone === "tertiary"
             readonly property var pal: Theme.family(fam ? tone : "primary")
             readonly property bool bare: cardStyle === "none"

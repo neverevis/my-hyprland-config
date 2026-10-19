@@ -3,7 +3,9 @@
 quantiza o wallpaper (Celebi), escolhe a cor-fonte pela pontuacao do Material e monta um esquema dinamico.
 
 uso: material.py <imagem> [dark|light] [variante]
-variantes: tonalspot (padrao) vibrant expressive fidelity content neutral monochrome rainbow fruitsalad
+variantes: tonalspot (padrao) vibrant expressive fidelity content neutral monochrome rainbow fruitsalad wallpaper
+  wallpaper = primaria da cor principal e secundaria/terciaria de outras cores que existem na imagem (sem girar o matiz)
+saida extra: _wall = ate 8 cores marcantes da imagem (para os widgets escolherem)
 saida: JSON { papel: "#rrggbb", ... } (papeis do Material + term0..term15). Resultado guardado em ~/.cache/quickshell-mine.
 """
 import hashlib
@@ -14,7 +16,8 @@ from pathlib import Path
 from materialyoucolor.dynamiccolor.material_dynamic_colors import MaterialDynamicColors
 from materialyoucolor.hct import Hct
 from materialyoucolor.quantize import ImageQuantizeCelebi
-from materialyoucolor.score.score import Score
+from materialyoucolor.score.score import Score, ScoreOptions
+from materialyoucolor.palettes.tonal_palette import TonalPalette
 from materialyoucolor.scheme.scheme_content import SchemeContent
 from materialyoucolor.scheme.scheme_expressive import SchemeExpressive
 from materialyoucolor.scheme.scheme_fidelity import SchemeFidelity
@@ -43,32 +46,83 @@ def to_hex(argb: int) -> str:
     return "#%06x" % (argb & 0xFFFFFF)
 
 
+def hue_dist(a: float, b: float) -> float:
+    d = abs(a - b) % 360
+    return min(d, 360 - d)
+
+
+def wallpaper_scheme(seed: int, ranked: list, dark: bool):
+    # base "Conteudo" (fiel a cor principal) com a secundaria e a terciaria trocadas por cores da propria imagem;
+    # se a imagem so tem uma cor, usa vizinhas proximas dela (+-25 graus), nunca a do lado oposto do circulo
+    base = SchemeContent(Hct.from_int(seed), dark, 0.0)
+    sh = Hct.from_int(seed)
+    others = [Hct.from_int(c) for c in ranked[1:] if Hct.from_int(c).chroma >= 10]
+    picks = []
+    for h in others:
+        if all(hue_dist(h.hue, x.hue) > 12 or abs(h.chroma - x.chroma) > 20 for x in [sh] + picks):
+            picks.append(h)
+    while len(picks) < 2:
+        n = len(picks)
+        picks.append(Hct.from_hct(sh.hue + (25 if n == 0 else -25), max(16, sh.chroma * 0.6), sh.tone))
+    base.secondary_palette = TonalPalette.from_hue_and_chroma(picks[0].hue, max(16, min(picks[0].chroma, 48)))
+    base.tertiary_palette = TonalPalette.from_hue_and_chroma(picks[1].hue, max(20, min(picks[1].chroma, 64)))
+    return base
+
+
+def wall_colors(data: dict) -> list:
+    # cores marcantes de verdade (as pontuadas e as mais presentes), sem repetir quase iguais
+    out = []
+    for c in data.get("ranked", []) + data.get("loose", []):
+        h = Hct.from_int(c)
+        if h.chroma < 6 and h.tone > 20 and h.tone < 90:
+            continue
+        if any(hue_dist(h.hue, o.hue) < 10 and abs(h.tone - o.tone) < 12 and abs(h.chroma - o.chroma) < 15 for o in out):
+            continue
+        out.append(h)
+        if len(out) >= 8:
+            break
+    return [to_hex(h.to_int()) for h in out]
+
+
 def main() -> None:
     image = sys.argv[1]
     mode = sys.argv[2] if len(sys.argv) > 2 else "dark"
     variant = sys.argv[3] if len(sys.argv) > 3 else "tonalspot"
-    if variant not in SCHEMES:
+    if variant not in SCHEMES and variant != "wallpaper":
         variant = "tonalspot"
 
     p = Path(image)
     key = hashlib.sha1(f"{p.resolve()}:{p.stat().st_mtime_ns}".encode()).hexdigest()[:16]
     cache_dir = Path.home() / ".cache" / "quickshell-mine"
-    cache = cache_dir / f"{key}-{variant}-{mode}.json"
+    cache = cache_dir / f"{key}-{variant}-{mode}-v2.json"   # v2: com _wall
     if cache.exists():
         print(cache.read_text())
         return
 
-    # cor-fonte: quantiza (128 cores) e pontua; a melhor vira a cor primaria do esquema
+    # cor-fonte: quantiza (128 cores) e pontua; a melhor vira a cor primaria do esquema. O arquivo .seed guarda tambem
+    # as outras cores marcantes (JSON); o formato antigo (so um numero) e recalculado
     seed_cache = cache_dir / f"{key}.seed"
+    data = None
     if seed_cache.exists():
-        source = int(seed_cache.read_text())
-    else:
+        try:
+            data = json.loads(seed_cache.read_text())
+            if not isinstance(data, dict):
+                data = None
+        except ValueError:
+            data = None
+    if data is None:
         colors = ImageQuantizeCelebi(str(p), 1, 128)
-        source = Score.score(colors)[0]
+        ranked = Score.score(colors, ScoreOptions(desired=8, filter=True))
+        loose = Score.score(colors, ScoreOptions(desired=8, filter=False))
+        data = {"seed": ranked[0], "ranked": ranked, "loose": loose}
         cache_dir.mkdir(parents=True, exist_ok=True)
-        seed_cache.write_text(str(source))
+        seed_cache.write_text(json.dumps(data))
+    source = data["seed"]
 
-    scheme = SCHEMES[variant](Hct.from_int(source), mode == "dark", 0.0)
+    if variant == "wallpaper":
+        scheme = wallpaper_scheme(source, data.get("ranked", []), mode == "dark")
+    else:
+        scheme = SCHEMES[variant](Hct.from_int(source), mode == "dark", 0.0)
     out = {}
     dyn = MaterialDynamicColors()
     for color in dyn.all_colors:
@@ -79,6 +133,7 @@ def main() -> None:
     for i, h in enumerate(TERM_DARK if mode == "dark" else TERM_LIGHT):
         out[f"term{i}"] = to_hex(Blend.harmonize(int("ff" + h, 16), key_color))
     out["_source"] = to_hex(source)
+    out["_wall"] = wall_colors(data)
     out["_variant"] = variant
     out["_mode"] = mode
 

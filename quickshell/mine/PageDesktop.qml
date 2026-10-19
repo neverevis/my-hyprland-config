@@ -35,7 +35,7 @@ Column {
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
             text: Settings.desktopTone === "auto" ? "Automática: texto claro ou escuro conforme o wallpaper embaixo de cada widget, destaques na cor do tema."
                 : Settings.desktopTone === "neutral" ? "Neutra: só o texto do tema, sem cor de destaque."
-                : Settings.desktopTone === "custom" ? "Uma cor só para todos os widgets." : "Cartões no tom suave dessa cor da paleta, texto e destaques nela. Muda junto com o tema." }
+                : Settings.desktopTone === "custom" ? "Uma cor só para todos os widgets." : Settings.desktopTone.indexOf("wall") === 0 ? "Uma cor que existe no wallpaper: muda junto quando o wallpaper muda." : "Cartões no tom suave dessa cor da paleta, texto e destaques nela. Muda junto com o tema." }
         ColorField { visible: Settings.desktopTone === "custom"; label: "Minha cor"; value: Settings.desktopToneColor; onPicked: c => Settings.desktopToneColor = c.toString() }
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Cada widget pode ter a própria cor nas opções dele (ou seguir esta, em \"Padrão\")." }
         UiSwitch { label: "Sombra nos widgets"; icon: "layers"; description: "Deixa o texto legível em cima de qualquer wallpaper. Estilo, intensidade e tamanho: Aparência › Sombras e brilhos."; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }

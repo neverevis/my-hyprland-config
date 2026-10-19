@@ -32,7 +32,7 @@ Singleton {
     property int clockHour: new Date().getHours()
     Timer { interval: 60000; repeat: true; running: true; onTriggered: Settings.clockHour = new Date().getHours() }
     readonly property string themeModeEff: themeMode === "auto" ? (clockHour >= 7 && clockHour < 18 ? "light" : "dark") : themeMode
-    property alias themeVariant: adapter.themeVariant    // tonalspot | vibrant | expressive | fidelity | content | neutral | monochrome | rainbow | fruitsalad
+    property alias themeVariant: adapter.themeVariant    // wallpaper | tonalspot | vibrant | expressive | fidelity | content | neutral | monochrome | rainbow | fruitsalad
     property alias themeKitty: adapter.themeKitty        // gera o tema do kitty
     property alias themeGtk: adapter.themeGtk            // cores nos apps GTK3/GTK4
     property alias themeBrave: adapter.themeBrave        // cor do tema do Brave (politica gerenciada)

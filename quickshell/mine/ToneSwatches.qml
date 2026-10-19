@@ -1,6 +1,7 @@
 // Escolha do tom de cor (widgets e outras partes): bolinhas com as cores reais do tema agora.
 // Valores: global (segue o padrao da pagina Widgets), auto (pelo brilho do wallpaper), primary / secondary / tertiary
-// (familias da paleta: cor, versao suave e texto sobre ela), neutral (so o texto do tema), custom (cor escolhida).
+// (familias da paleta: cor, versao suave e texto sobre ela), neutral (so o texto do tema), custom (cor escolhida),
+// wall0..wall7 (cores de verdade do wallpaper, linha "Do wallpaper"; mudam junto com ele).
 import QtQuick
 
 Column {
@@ -58,6 +59,32 @@ Column {
                     font.pixelSize: 11; font.weight: sw.on ? Font.DemiBold : Font.Normal
                 }
                 MouseArea { id: sm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ts.picked(sw.v) }
+            }
+        }
+    }
+    // cores que existem no wallpaper (nao as calculadas pelo Material You)
+    Column {
+        visible: ThemeColors.wall.length > 0
+        width: ts.width
+        spacing: 6
+        UiText { text: "Do wallpaper"; color: Theme.muted; font.pixelSize: 12 }
+        Flow {
+            width: ts.width
+            spacing: 8
+            Repeater {
+                model: ThemeColors.wall
+                delegate: Rectangle {
+                    id: wd
+                    required property string modelData
+                    required property int index
+                    readonly property bool on: ts.value === "wall" + index
+                    width: 30; height: 30; radius: 15
+                    color: modelData
+                    border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.16)
+                    Rectangle { anchors.fill: parent; anchors.margins: -4; radius: width / 2; color: "transparent"; border.width: 2; border.color: wd.on ? Theme.accent : (wm.containsMouse ? Theme.border : "transparent") }
+                    UiIcon { visible: wd.on; anchors.centerIn: parent; name: "check"; size: 14; color: (0.299 * wd.color.r + 0.587 * wd.color.g + 0.114 * wd.color.b) > 0.55 ? "#1b1a21" : "white" }
+                    MouseArea { id: wm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ts.picked("wall" + wd.index) }
+                }
             }
         }
     }

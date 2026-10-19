@@ -43,6 +43,12 @@ Singleton {
         ["primaryContainer", "Destaque suave"], ["secondaryContainer", "Secundária suave"], ["tertiaryContainer", "Terciária suave"],
         ["text", "Texto"], ["surfaceHigh", "Superfície"], ["bg", "Fundo"]
     ]
+    // a mesma cor clareada (tema escuro) ou escurecida (claro) ate dar para ler texto nela sobre o fundo
+    function readable(c: color): color {
+        const l = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b
+        if (Settings.themeModeEff !== "light") return l < 0.55 ? Qt.lighter(c, 1 + (0.62 - l) * 2.4) : c
+        return l > 0.5 ? Qt.darker(c, 1 + (l - 0.42) * 2.4) : c
+    }
     function role(id: string): color {
         switch (id) {
         case "primary": return primary

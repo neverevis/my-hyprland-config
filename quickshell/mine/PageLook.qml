@@ -63,13 +63,39 @@ Column {
                 width: parent.width
                 spacing: 6
                 Repeater {
-                    model: [["tonalspot", "Tonal spot"], ["vibrant", "Vibrante"], ["expressive", "Expressivo"], ["fidelity", "Fiel à imagem"], ["content", "Conteúdo"], ["neutral", "Neutro"], ["monochrome", "Monocromático"], ["rainbow", "Arco-íris"], ["fruitsalad", "Salada de frutas"]]
+                    model: [["wallpaper", "Do wallpaper"], ["tonalspot", "Tonal spot"], ["vibrant", "Vibrante"], ["expressive", "Expressivo"], ["fidelity", "Fiel à imagem"], ["content", "Conteúdo"], ["neutral", "Neutro"], ["monochrome", "Monocromático"], ["rainbow", "Arco-íris"], ["fruitsalad", "Salada de frutas"]]
                     delegate: UiButton {
                         required property var modelData
                         text: modelData[1]
                         checked: Settings.themeVariant === modelData[0]
                         onClicked: Settings.themeVariant = modelData[0]
                     }
+                }
+            }
+
+            UiText {
+                visible: Settings.themeSource === "wallpaper"
+                width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+                text: ({
+                    wallpaper: "Do wallpaper: a cor principal e outras duas que existem na imagem. Fica com a cara do wallpaper.",
+                    tonalspot: "Tonal spot (padrão do Android): a cor principal com uma terciária vizinha calculada; suave.",
+                    vibrant: "Vibrante: mais saturado; a secundária e a terciária são calculadas girando a cor principal.",
+                    expressive: "Expressivo: gira a cor de propósito para criar contraste, por isso aparecem cores que não estão no wallpaper (ex.: ciano num wallpaper rosa).",
+                    fidelity: "Fiel à imagem: a cor principal exatamente como na imagem; as outras são calculadas a partir dela.",
+                    content: "Conteúdo: parecido com o fiel, a terciária vem de uma cor vizinha que combina.",
+                    neutral: "Neutro: quase cinza, com um toque da cor principal.",
+                    monochrome: "Monocromático: só tons de cinza.",
+                    rainbow: "Arco-íris: as cores giram bastante; colorido e pouco ligado à imagem.",
+                    fruitsalad: "Salada de frutas: gira ainda mais que o arco-íris; bem colorido."
+                })[Settings.themeVariant] ?? ""
+            }
+            Row {
+                visible: Settings.themeSource === "wallpaper" && ThemeColors.wall.length > 0
+                spacing: 6
+                UiText { text: "Cores que existem no wallpaper:"; color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; rightPadding: 4 }
+                Repeater {
+                    model: ThemeColors.wall
+                    Rectangle { required property string modelData; width: 22; height: 22; radius: 11; color: modelData; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.16) }
                 }
             }
 

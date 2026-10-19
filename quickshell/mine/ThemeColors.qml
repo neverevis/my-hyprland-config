@@ -70,5 +70,8 @@ Singleton {
     property color surfaceLow: t.surfaceLow ?? defaults.surfaceLow
     property color surfaceHighest: t.surfaceHighest ?? defaults.surfaceHighest
     property var m: ({})   // todos os papeis do Material You (+ term0..15), como saem do script
+    // cores marcantes de verdade do wallpaper (scripts/material.py, _wall): os widgets podem usar uma delas
+    readonly property var wall: (m && m._wall) ? m._wall : []
+    function wallColor(i) { const w = wall; return w.length ? w[Math.min(i, w.length - 1)] : Theme.accent }
 
 }
