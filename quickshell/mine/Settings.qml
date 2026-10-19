@@ -66,7 +66,12 @@ Singleton {
     property alias lockDim: adapter.lockDim               // 0..80: escurecimento
     property alias lockMedia: adapter.lockMedia           // mostra a musica tocando
     property alias lockSeconds: adapter.lockSeconds       // relogio com segundos
-    property alias powerConfirm: adapter.powerConfirm     // segundos de contagem antes de sair/reiniciar/desligar (0 = na hora)
+    property alias powerConfirm: adapter.powerConfirm
+    // inatividade (ver Idle.qml): minutos sem uso ate cada acao (0 = desligado); idleMedia: musica tocando segura tudo
+    property alias idleLock: adapter.idleLock
+    property alias idleScreenOff: adapter.idleScreenOff
+    property alias idleSuspend: adapter.idleSuspend
+    property alias idleMedia: adapter.idleMedia     // segundos de contagem antes de sair/reiniciar/desligar (0 = na hora)
     property alias showDelay: adapter.showDelay         // ms com o mouse na borda antes de mostrar (evita abrir sem querer)
     property alias barsPanelMode: adapter.barsPanelMode // push | out | sink: o que as barras fazem quando um painel acoplado abre
     readonly property var animCurve: [animX1 / 100, animY1 / 100, animX2 / 100, animY2 / 100, 1, 1]
@@ -338,6 +343,10 @@ Singleton {
         adapter.lockMedia = true
         adapter.lockSeconds = false
         adapter.powerConfirm = 3
+        adapter.idleLock = 0
+        adapter.idleScreenOff = 0
+        adapter.idleSuspend = 0
+        adapter.idleMedia = true
         adapter.barsPanelMode = "push"
         adapter.wpDir = "~/Imagens/Wallpapers"
         adapter.wpTransition = "circle"
@@ -519,6 +528,10 @@ Singleton {
             property bool lockMedia: true
             property bool lockSeconds: false
             property int powerConfirm: 3
+            property int idleLock: 0
+            property int idleScreenOff: 0
+            property int idleSuspend: 0
+            property bool idleMedia: true
             property string barsPanelMode: "push"
             property string wpDir: "~/Imagens/Wallpapers"
             property string wallpaper: ""

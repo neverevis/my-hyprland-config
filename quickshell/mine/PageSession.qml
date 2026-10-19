@@ -37,6 +37,21 @@ Column {
         AnimPicker { target: "lock" }
     }
     Card {
+        icon: "sleep"
+        title: "Inatividade"
+        subtitle: "O que acontece quando você fica um tempo sem usar o computador (0 = nunca). Vídeos e jogos que pedem para a tela não dormir são respeitados."
+        UiSlider { label: "Bloquear depois de"; icon: "lock"; from: 0; to: 60; value: Settings.idleLock; suffix: " min"; onMoved: v => Settings.idleLock = v }
+        UiSlider { label: "Apagar a tela depois de"; icon: "monitor"; from: 0; to: 90; value: Settings.idleScreenOff; suffix: " min"; onMoved: v => Settings.idleScreenOff = v }
+        UiSlider { label: "Suspender depois de"; icon: "sleep"; from: 0; to: 240; value: Settings.idleSuspend; suffix: " min"; onMoved: v => Settings.idleSuspend = Math.round(v / 5) * 5 }
+        UiSwitch { label: "Não contar enquanto toca música"; description: "Com algo tocando (Spotify, navegador…), nada disso acontece."; icon: "music"; checked: Settings.idleMedia; onToggled: on => Settings.idleMedia = on }
+        Text {
+            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+            text: Settings.idleLock === 0 && Settings.idleScreenOff === 0 && Settings.idleSuspend === 0 ? "Tudo desligado." :
+                  "Pausar por um tempo:  qs -c mine ipc call idle hold   (de novo para voltar)."
+        }
+    }
+
+    Card {
         icon: "power"
         title: "Menu de energia"
         subtitle: "Ctrl + Alt + Del, o botão no Início ou o módulo \"Energia\" nas barras."
