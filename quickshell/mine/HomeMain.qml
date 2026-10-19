@@ -57,10 +57,10 @@ Item {
         id: tiles
         anchors { top: userCard.bottom; topMargin: 10 }
         width: parent.width
-        columns: 3; spacing: 8
-        readonly property real tw: (width - 16) / 3
+        columns: Math.max(2, Math.min(5, Settings.homeCols)); spacing: 8
+        readonly property real tw: (width - (columns - 1) * 8) / columns
         Repeater {
-            model: (Settings.homeToggles || []).filter(id => Toggles.find(id)).slice(0, 9)
+            model: Settings.list(Settings.homeToggles).filter(id => Toggles.find(id)).slice(0, tiles.columns * 3)
             delegate: Loader {
                 required property var modelData
                 width: tiles.tw; height: 58

@@ -70,9 +70,9 @@ Scope {
     // ---- resultados: apps e, com prefixo, outras coisas ----
     // item = { name, desc, icon (tema) | glyph (Ico) | big (emoji/simbolo) | thumb (imagem), keys (atalho), act, alt (clique direito), fav }
     // prefixos configuraveis na pagina Launcher (Settings.launcherPrefixes guarda so os trocados)
-    readonly property var prefixDefaults: ({ actions: "/", clipboard: ";", emoji: ":", symbols: ".", math: "=", cmd: "$", web: "?", keys: "<", apps: ">" })
+    readonly property var prefixDefaults: ({ actions: "/", clipboard: ";", emoji: ":", symbols: ".", math: "=", cmd: "$", web: "?", keys: "<", apps: ">", translate: "!" })
     readonly property var prefixLabels: [["actions", "ações"], ["clipboard", "área de transferência"], ["emoji", "emoji"], ["symbols", "símbolos"],
-        ["math", "conta"], ["cmd", "comando"], ["web", "web"], ["keys", "atalhos"], ["apps", "só apps"]]
+        ["math", "conta"], ["cmd", "comando"], ["web", "web"], ["keys", "atalhos"], ["translate", "traduzir"], ["apps", "só apps"]]
     readonly property var pfx: Object.assign({}, prefixDefaults, Settings.launcherPrefixes || {})
     readonly property var prefixes: prefixLabels.filter(x => pfx[x[0]]).map(x => [pfx[x[0]], x[1]])
     // o que aparece sem prefixo
@@ -181,6 +181,25 @@ Scope {
         return keybinds.filter(k => w.every(x => norm(k.label + " " + k.keys + " " + k.section).includes(x)))
             .map(k => ({ name: k.label, desc: k.section, glyph: "keyboard", keys: k.keys, act: () => { Quickshell.clipboardText = k.keys } }))
     }
+    // tradutor (trans): "!texto" traduz para o portugues; "!en texto" para o ingles (codigo de 2 letras no inicio)
+    property string trIn: ""
+    property string trOut: ""
+    readonly property string trWant: mode === "translate" ? rest.trim() : ""
+    onTrWantChanged: { if (trWant !== "") trT.restart(); else { trOut = ""; trIn = "" } }
+    Timer { id: trT; interval: 450; onTriggered: { const m = /^([a-z]{2})\s+(.+)$/i.exec(root.trWant); trProc.lang = m ? m[1].toLowerCase() : "pt"; trProc.txt = m ? m[2] : root.trWant
+        trProc.running = false; trProc.running = true } }
+    Process {
+        id: trProc
+        property string lang: "pt"
+        property string txt: ""
+        command: ["trans", "-b", "-no-autocorrect", ":" + lang, txt]
+        stdout: StdioCollector { onStreamFinished: { root.trIn = root.trWant; root.trOut = text.trim() } }
+    }
+    function translateItems() {
+        if (trWant === "") return [{ name: "Digite um texto para traduzir", desc: "Para o português; comece com o código para outra língua (ex.: !en bom dia)", glyph: "earth", act: () => {} }]
+        if (trIn !== trWant || trOut === "") return [{ name: "Traduzindo…", desc: trWant, glyph: "earth", act: () => {} }]
+        return [{ name: trOut, desc: "Enter copia a tradução", glyph: "earth", act: () => { Quickshell.clipboardText = root.trOut } }]
+    }
     // busca na web: %s no endereco vira o texto (senao vai no fim); sites excluidos viram -site:
     function webUrl(q) {
         const ex = (Settings.launcherExclude || []).filter(x => x).map(x => " -site:" + x).join("")
@@ -216,6 +235,7 @@ Scope {
         case "cmd": return cmdItems(r)
         case "web": return [webItem(r)]
         case "keys": return keyItems(r)
+        case "translate": return translateItems()
         case "apps": return appItems(r)
         }
         const apps = appItems(t)

@@ -72,6 +72,7 @@ Singleton {
             t += "hl.config({ decoration = { blur = " + blurTable() + " } })\n"
         t += ruleLine() + "\n"
         if (themeActive) t += themeLua() + "\n"
+        if (Settings.antiFlash) t += 'hl.config({ decoration = { screen_shader = "' + NightLight.shaderFile + '" } })\n'
         const hc = HyprConf.lua()
         if (hc !== "") t += "-- opcoes do Hyprland (pagina Hyprland)\n" + hc + "\n"
         const anim = Motion.hyprLua()

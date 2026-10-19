@@ -96,10 +96,10 @@ Column {
             columnSpacing: 18; rowSpacing: 8
             Repeater {
                 model: [["actions", "Ações do shell"], ["clipboard", "Área de transferência"], ["emoji", "Emoji"], ["symbols", "Símbolos"],
-                        ["math", "Conta"], ["cmd", "Comando"], ["web", "Busca na web"], ["keys", "Atalhos do Hyprland"], ["apps", "Só apps"]]
+                        ["math", "Conta"], ["cmd", "Comando"], ["web", "Busca na web"], ["keys", "Atalhos do Hyprland"], ["translate", "Traduzir"], ["apps", "Só apps"]]
                 delegate: Row {
                     required property var modelData
-                    readonly property var defs: ({ actions: "/", clipboard: ";", emoji: ":", symbols: ".", math: "=", cmd: "$", web: "?", keys: "<", apps: ">" })
+                    readonly property var defs: ({ actions: "/", clipboard: ";", emoji: ":", symbols: ".", math: "=", cmd: "$", web: "?", keys: "<", apps: ">", translate: "!" })
                     spacing: 10
                     width: (parent.width - 18) / 2
                     UiField {

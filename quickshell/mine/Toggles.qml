@@ -30,7 +30,11 @@ Singleton {
         { id: "picker", label: "Pegar cor", icon: "palette", sub: () => "Conta-gotas", on: () => false, click: () => { Settings.homeOpen = false; Actions.run("picker") } },
         { id: "widgets", label: "Widgets", icon: "dashboard", sub: () => Settings.desktopOn ? "Na área de trabalho" : "Escondidos", on: () => Settings.desktopOn, click: () => Settings.desktopOn = !Settings.desktopOn },
         { id: "game", label: "Modo jogo", icon: "gamepad", sub: () => root.gameMode ? "Sem efeitos do Hyprland" : "Desligado", on: () => root.gameMode, click: () => root.setGame(!root.gameMode) },
-        { id: "wallpaper", label: "Wallpaper", icon: "wallpaper", sub: () => "Próximo", on: () => false, click: () => Wallpaper.step(1) }
+        { id: "wallpaper", label: "Wallpaper", icon: "wallpaper", sub: () => "Próximo", on: () => false, click: () => Wallpaper.step(1) },
+        { id: "night", label: "Luz noturna", icon: "night", sub: () => !NightLight.available ? "Instale o hyprsunset" : NightLight.active ? Settings.nightTemp + " K" : (Settings.nightAuto ? Settings.nightFrom + "–" + Settings.nightTo : "Desligada"), on: () => NightLight.active, click: () => NightLight.toggle() },
+        { id: "antiflash", label: "Contra clarão", icon: "sun", sub: () => Settings.antiFlash ? "Escurece telas muito claras" : "Desligado", on: () => Settings.antiFlash, click: () => Settings.antiFlash = !Settings.antiFlash },
+        { id: "overlay", label: "Painel de jogo", icon: "gamepad", sub: () => "Mira, notas, sistema", on: () => false, click: () => { Settings.homeOpen = false; Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "overlay", "toggle"]) } },
+        { id: "ocr", label: "Copiar texto", icon: "textBox", sub: () => "Da tela (OCR)", on: () => false, click: () => { Settings.homeOpen = false; Capture.start("ocr") } }
     ]
     function find(id) { return all.find(t => t.id === id) ?? null }
 }

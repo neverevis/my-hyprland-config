@@ -130,6 +130,16 @@ Singleton {
     property alias wpVideos: adapter.wpVideos   // videos da pasta entram na lista
     property alias lockWallpaper: adapter.lockWallpaper
     property alias shelfFiles: adapter.shelfFiles       // prateleira de arquivos
+    // luz noturna, protecao contra clarao (NightLight.qml), colunas do Inicio, cantos ativos (HotCorners.qml)
+    property alias nightAuto: adapter.nightAuto
+    property alias nightFrom: adapter.nightFrom
+    property alias nightTo: adapter.nightTo
+    property alias nightTemp: adapter.nightTemp
+    property alias antiFlash: adapter.antiFlash
+    property alias antiFlashStrength: adapter.antiFlashStrength
+    property alias homeCols: adapter.homeCols
+    property alias hotCorners: adapter.hotCorners
+    property alias hotCornerDelay: adapter.hotCornerDelay
     // painel de jogo (GameOverlay.qml)
     property alias overlayItems: adapter.overlayItems
     property alias overlayPinnedOpacity: adapter.overlayPinnedOpacity
@@ -706,6 +716,15 @@ Singleton {
             property string lockClock: "big"
             property string recAudio: "none"
             property var shelfFiles: []
+            property bool nightAuto: false
+            property string nightFrom: "19:00"
+            property string nightTo: "06:30"
+            property int nightTemp: 4500
+            property bool antiFlash: false
+            property int antiFlashStrength: 50
+            property int homeCols: 3
+            property var hotCorners: ({})
+            property int hotCornerDelay: 250
             property var overlayItems: []
             property int overlayPinnedOpacity: 85
             property string overlayCrossColor: "#ff4f7a"
