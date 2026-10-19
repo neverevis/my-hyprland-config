@@ -69,13 +69,22 @@ Singleton {
         let r
         if ((a.type ?? "bezier") === "spring") {
             const inf = springInfo(a), f = inf.f, T = inf.T
-            // pontos de controle: quartos de oscilacao (subamortecida) ou espacamento denso no comeco (amortecida)
+            // pontos de controle. ATENCAO: o BezierEase do Qt reserva espaco fixo para 10 trechos e escreve alem disso
+            // sem crescer (qeasingcurve.cpp: _curves(10), _intervals(10)) -> mais de 10 trechos corrompe a memoria e
+            // derruba o shell em lugares aleatorios. Por isso: no maximo 10 trechos (9 pontos internos + o fim).
+            const MAXK = 9
+            // comeca pelos extremos da oscilacao (picos: onde a velocidade zera) e completa dividindo os maiores intervalos
             let knots = []
-            if (f.wd > 0 && f.z < 0.85) {
-                const q = Math.PI / (4 * f.wd)
-                for (let t = q; t < T - q * 0.25; t += q) knots.push(t / T)
-            } else {
-                for (let i = 1; i < 14; i++) knots.push(Math.pow(i / 14, 1.6))
+            if (f.wd > 0) {
+                const half = Math.PI / f.wd
+                for (let t = half; t < T - half * 0.25 && knots.length < MAXK; t += half) knots.push(t / T)
+            }
+            while (knots.length < MAXK) {
+                const pts = [0].concat(knots, [1])
+                let gi = 0, gw = 0
+                for (let i = 0; i < pts.length - 1; i++) { const w = (pts[i + 1] - pts[i]) * (i === 0 ? 1.4 : 1); if (w > gw) { gw = w; gi = i } }   // o comeco pesa mais (muda mais rapido)
+                knots.push((pts[gi] + pts[gi + 1]) / 2)
+                knots.sort((x, y) => x - y)
             }
             knots.push(1)
             const P = u => u >= 1 ? 1 : 1 - f.x(u * T)
@@ -87,6 +96,7 @@ Singleton {
                 curve.push(u0 + h / 3, p0 + d0 * h / 3, u1 - h / 3, p1 - d1 * h / 3, u1, p1)
                 u0 = u1; p0 = p1; d0 = d1
             }
+            if (curve.length > 60) console.warn("Motion: spline com mais de 10 trechos (" + curve.length / 6 + ")")
             r = { duration: Math.round(T * 1000), curve: curve, sample: P, overshoot: inf.overshoot, swings: inf.swings, spring: true }
         } else {
             r = { duration: a.duration ?? 300, curve: [a.x1 / 100, a.y1 / 100, a.x2 / 100, a.y2 / 100, 1, 1], sample: u => bezierY(a, u),

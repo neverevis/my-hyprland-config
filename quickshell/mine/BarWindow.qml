@@ -34,7 +34,7 @@ PanelWindow {
             easing.type: win.shown ? Easing.InQuad : Easing.OutQuad
         }
     }
-    onProgChanged: BarState.set(modelData, Math.max(0, Math.min(1.2, prog)))
+    onProgChanged: BarState.set(modelData, prog)
     Component.onCompleted: BarState.set(modelData, prog)
 
     onHoveringChanged: {

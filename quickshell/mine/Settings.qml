@@ -158,7 +158,8 @@ Singleton {
         { name: "Padrão M3", x1: 20, y1: 0, x2: 0, y2: 100, duration: 500, builtin: true },
         { name: "Mola", type: "spring", mass: 1, stiffness: 238, dampening: 24.2, builtin: true },
         { name: "Mola macia", type: "spring", mass: 1, stiffness: 170, dampening: 26, builtin: true },
-        { name: "Mola elástica", type: "spring", mass: 1, stiffness: 320, dampening: 15, builtin: true }
+        { name: "Mola elástica", type: "spring", mass: 1, stiffness: 320, dampening: 15, builtin: true },
+        { name: "Quique", type: "spring", mass: 1, stiffness: 420, dampening: 11, builtin: true }
     ]
     // group: secao na pagina Animacoes; phases: tem abrir e fechar; hypr: folhas do Hyprland [abrir, fechar]; style: chave do estilo (hyprStyle)
     readonly property var animGroups: [

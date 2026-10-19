@@ -316,15 +316,6 @@ Column {
         UiSlider { visible: page.isSpring; label: "Amortecimento (mais baixo = balança mais)"; icon: "wave"; from: 2; to: 80; value: Math.round(page.cur.dampening ?? 20); onMoved: v => page.set({ dampening: v }) }
         UiSlider { visible: page.isSpring; label: "Massa (×10)"; icon: "gauge"; from: 5; to: 40; value: Math.round((page.cur.mass ?? 1) * 10); onMoved: v => page.set({ mass: v / 10 }) }
 
-        // aviso: molas que balancam muito (mais de 30%) ja derrubaram o shell nos testes (falha do coletor de lixo do Qt
-        // enquanto a moldura e recalculada a cada quadro); o progresso na moldura e limitado, mas a causa ainda nao foi isolada
-        Rectangle {
-            visible: page.isSpring && page.comp.overshoot > 30
-            width: parent.width; height: warnT.implicitHeight + 20; radius: 10
-            color: Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.12); border.width: 1; border.color: Theme.danger
-            Text { id: warnT; anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 12 } wrapMode: Text.WordWrap; color: Theme.text; font.pixelSize: 12
-                text: "Esta mola passa " + Math.round(page.comp.overshoot) + "% do ponto. Molas tão elásticas já fizeram o shell travar nos painéis da moldura; prefira até ~30% (aumente o amortecimento)." }
-        }
         // modelos prontos (so nas suas)
         UiLabel { visible: !page.locked; text: "Começar de um modelo" }
         Flow {
@@ -346,7 +337,7 @@ Column {
             width: parent.width
             spacing: 6
             Repeater {
-                model: [["Firme", 1, 400, 40], ["Padrão do Hyprland", 1, 238, 24.2], ["Macia", 1, 170, 26], ["Elástica", 1, 320, 15], ["Pesada", 2.5, 260, 40]]
+                model: [["Firme", 1, 400, 40], ["Padrão do Hyprland", 1, 238, 24.2], ["Macia", 1, 170, 26], ["Elástica", 1, 320, 15], ["Quique", 1, 420, 11], ["Pesada", 2.5, 260, 40], ["Gelatina", 1, 120, 6]]
                 delegate: UiButton {
                     required property var modelData
                     text: modelData[0]; kind: "ghost"
