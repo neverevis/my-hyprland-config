@@ -36,13 +36,18 @@ Column {
                     width: 32; height: 32
                     Rectangle { anchors.fill: parent; anchors.margins: -3; radius: width / 2; color: "transparent"; border.width: 2; border.color: sw.on ? Theme.accent : (sm.containsMouse ? Theme.border : "transparent") }
                     Rectangle {
-                        anchors.fill: parent; radius: width / 2; clip: true
-                        color: sw.v === "auto" ? "#f4f0f7" : sw.v === "neutral" ? Theme.card : sw.v === "custom" ? ts.custom : sw.v === "global" ? Theme.card : sw.fam.cont
-                        border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.12)
-                        Rectangle {
-                            visible: sw.v !== "custom"
-                            width: parent.width / 2; height: parent.height; x: parent.width / 2
-                            color: sw.v === "auto" ? "#1b1a21" : sw.v === "neutral" ? Theme.text : sw.v === "global" ? Theme.card : sw.fam.main
+                        id: disc
+                        readonly property color c1: sw.v === "auto" ? "#f4f0f7" : sw.v === "neutral" ? Theme.card : sw.v === "custom" ? ts.custom : sw.v === "global" ? Theme.card : sw.fam.cont
+                        readonly property color c2: sw.v === "auto" ? "#1b1a21" : sw.v === "neutral" ? Theme.text : sw.v === "custom" ? ts.custom : sw.v === "global" ? Theme.card : sw.fam.main
+                        anchors.fill: parent; radius: width / 2
+                        border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.14)
+                        // metade de cada cor (parada dura no gradiente: o arredondamento e respeitado)
+                        gradient: Gradient {
+                            orientation: Gradient.Horizontal
+                            GradientStop { position: 0.0; color: disc.c1 }
+                            GradientStop { position: 0.499; color: disc.c1 }
+                            GradientStop { position: 0.501; color: disc.c2 }
+                            GradientStop { position: 1.0; color: disc.c2 }
                         }
                         UiIcon { visible: sw.v === "global"; anchors.centerIn: parent; name: "link"; size: 15; color: Theme.muted }
                     }

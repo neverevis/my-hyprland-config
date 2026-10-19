@@ -18,7 +18,8 @@ Scope {
         color: "transparent"
         WlrLayershell.layer: DeskState.peek ? WlrLayer.Top : WlrLayer.Bottom
         WlrLayershell.namespace: "mine-desktop"   // regra do Hyprland: blur atras dos cartoes, sem animacao propria
-        WlrLayershell.keyboardFocus: DeskState.editing || DeskMenu.open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        // teclado so quando precisa: editando, menu aberto ou um widget com campo de texto (notas, tarefas) sob o mouse ou em uso
+        WlrLayershell.keyboardFocus: DeskState.typingHere ? WlrKeyboardFocus.Exclusive : DeskState.editing || DeskMenu.open || DeskState.typing ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
         // com o menu ligado, a camada pega a area de trabalho inteira (ela fica abaixo das janelas: so recebe o que
         // cai no fundo); sem menu, so os widgets
         mask: DeskState.editing || Settings.desktopMenu ? null : wmask
@@ -123,7 +124,7 @@ Scope {
                             UiIcon { anchors.centerIn: parent; name: insp.info ? insp.info.icon : "dashboard"; size: 18; color: Theme.accent } }
                         Column {
                             anchors.verticalCenter: parent.verticalCenter
-                            width: parent.width - 36 - 10 - 34
+                            width: parent.width - 36 - 10 - 34 - 14
                             UiText { text: insp.info ? insp.info.name : ""; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
                             UiText { width: parent.width; elide: Text.ElideRight; text: insp.info ? insp.info.desc : ""; color: Theme.muted; font.pixelSize: 11 }
                         }

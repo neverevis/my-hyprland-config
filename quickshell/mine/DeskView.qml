@@ -167,7 +167,7 @@ Item {
                 hoverEnabled: true
                 preventStealing: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
-                cursorShape: DeskState.locked ? Qt.PointingHandCursor : (card.moving ? Qt.ClosedHandCursor : Qt.OpenHandCursor)
+                cursorShape: card.moving && !DeskState.locked ? Qt.ClosedHandCursor : Qt.ArrowCursor
                 property real sx: 0
                 property real sy: 0
                 property bool dragged: false

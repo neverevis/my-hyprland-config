@@ -32,6 +32,7 @@ Item {
         TextEdit {
             id: ed
             width: fl.width
+            height: Math.max(fl.height, contentHeight)   // o bloco inteiro aceita o clique (nao so a primeira linha)
             wrapMode: TextEdit.Wrap
             color: w.fg; font.pixelSize: w.o("size"); font.family: w.o("mono") ? Theme.mono : Theme.font
             selectionColor: Theme.accent; selectedTextColor: Theme.accentText
@@ -39,10 +40,15 @@ Item {
             // o texto so vem das opcoes ao abrir (e quando muda por fora, sem estar editando): digitar nao e interrompido
             Component.onCompleted: text = w.opts.text ?? ""
             onTextChanged: if (activeFocus) saveT.restart()
+            // a area de trabalho so recebe teclado quando um campo pede (mouse em cima ou escrevendo)
+            onActiveFocusChanged: { DeskState.wantKeys("notes-f-" + w.wid, activeFocus); if (!activeFocus && w.wid !== "") DeskState.setOpt(w.wid, "text", text) }
+            Keys.onEscapePressed: ed.focus = false
             UiText { visible: !ed.text && !ed.activeFocus; text: "Clique para escrever…"; color: w.dim; font.pixelSize: ed.font.pixelSize }
             onCursorRectangleChanged: { if (cursorRectangle.y + cursorRectangle.height > fl.contentY + fl.height) fl.contentY = cursorRectangle.y + cursorRectangle.height - fl.height }
         }
     }
+    HoverHandler { onHoveredChanged: DeskState.wantKeys("notes-h-" + w.wid, hovered) }
+    Component.onDestruction: { DeskState.wantKeys("notes-h-" + w.wid, false); DeskState.wantKeys("notes-f-" + w.wid, false) }
     onOptsChanged: if (!ed.activeFocus && (opts.text ?? "") !== ed.text) ed.text = opts.text ?? ""
     Timer { id: saveT; interval: 700; onTriggered: if (w.wid !== "") DeskState.setOpt(w.wid, "text", ed.text) }
 }

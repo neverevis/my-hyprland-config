@@ -80,6 +80,54 @@ Scope {
     signal findFor(string q)
     readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === Settings.settingsPage) ?? groups[0].pages[0]
 
+    // ---- paginas e indice de busca (fora da janela: o launcher tambem procura opcoes com ela fechada) ----
+    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC })
+    Item { id: indexHost; visible: false; width: 900; height: 10 }
+    Component { id: barsC; PageBars { geo: root.geo } }
+    Component { id: homeC; PageHome {} }
+    Component { id: notifC; PageNotifications {} }
+    Component { id: launcherC; PageLauncher {} }
+    Component { id: frameC; PageFrame {} }
+    Component { id: lookC; PageLook {} }
+    Component { id: blurC; PageBlur {} }
+    Component { id: animC; PageAnim {} }
+    Component { id: wallC; PageWallpaper {} }
+    Component { id: sessionC; PageSession {} }
+    Component { id: desktopC; PageDesktop {} }
+    Component { id: looksC; PageLooks {} }
+    function walk(o, card, out, pg) {
+        if (!o) return
+        let c = card
+        if (typeof o.title === "string" && o.title !== "" && o.subtitle !== undefined) { c = o.title; out.push({ page: pg.id, pageLabel: pg.label, card: o.title, label: "", desc: o.subtitle ?? "" }) }
+        else if (typeof o.label === "string" && o.label.length > 1 && (o.checked !== undefined || o.from !== undefined) && c !== "")
+            out.push({ page: pg.id, pageLabel: pg.label, card: c, label: o.label, desc: o.description ?? "" })
+        if (o.item) walk(o.item, c, out, pg)
+        for (const ch of o.children ?? []) walk(ch, c, out, pg)
+    }
+    function buildIndex() {
+        if (root.index.length || root.indexing) return
+        root.indexing = true
+        const pages = root.allPages.slice()
+        const out = []
+        const next = () => {
+            const pg = pages.shift()
+            if (!pg) {   // sem repetidos (o mesmo controle pode existir em grupos escondidos da pagina)
+                const seen = {}
+                root.index = out.filter(e => { const k = e.page + "|" + e.card + "|" + e.label; if (seen[k]) return false; seen[k] = true; return true })
+                root.indexing = false
+                return
+            }
+            const inc = root.comps[pg.id].incubateObject(indexHost, { width: 900 }, Qt.Asynchronous)
+            const done = () => { if (inc.object) { root.walk(inc.object, "", out, pg); inc.object.destroy() } Qt.callLater(next) }
+            if (inc.status !== Component.Loading) done()
+            else inc.onStatusChanged = st => { if (st !== Component.Loading) done() }
+        }
+        next()
+    }
+    // abrir um resultado de fora (launcher): abre a janela e vai ate o cartao
+    property var pendingOpen: null
+    function show(r) { pendingOpen = r; Settings.settingsOpen = true }
+
     LazyLoader {
         active: root.alive
 
@@ -107,7 +155,7 @@ Scope {
             // (o Hyprland nao anima esta janela: regra no_anim gerada pelo HyprSync)
             property real sp: 0   // deslize: 0 = uma tela inteira acima, 1 = no lugar
             property real fp: 0   // opacidade
-            Component.onCompleted: { contentItem.opacity = Qt.binding(() => Math.min(1, win.fp)); inAnim.start() }
+            Component.onCompleted: { contentItem.opacity = Qt.binding(() => Math.min(1, win.fp)); inAnim.start(); takePending() }
             Connections {
                 target: root
                 function onOpenChanged() { if (root.open) { outAnim.stop(); inAnim.start() } else { inAnim.stop(); outAnim.start() } }
@@ -124,42 +172,13 @@ Scope {
                 onFinished: root.alive = false
             }
 
-            readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC })
-            Item { id: indexHost; visible: false; width: 900; height: 10 }
-            Connections { target: root; function onSearchFor(q) { search.text = q; win.buildIndex() } }
-            Connections { target: root; function onFindFor(q) { win.pendingFind = q; search.text = q; win.buildIndex(); win.tryFind() } }
+            Connections { target: root; function onSearchFor(q) { search.text = q; root.buildIndex() } }
+            Connections { target: root; function onFindFor(q) { win.pendingFind = q; search.text = q; root.buildIndex(); win.tryFind() } }
             property string pendingFind: ""
+            function takePending() { if (root.pendingOpen) { const r = root.pendingOpen; root.pendingOpen = null; Qt.callLater(() => win.open(r)) } }
+            Connections { target: root; function onPendingOpenChanged() { win.takePending() } }
             function tryFind() { if (pendingFind === "" || root.indexing || !root.index.length) return; const r = root.results; pendingFind = ""; if (r.length) open(r[0]) }
             Connections { target: root; function onIndexingChanged() { if (!root.indexing) win.tryFind() } }
-            function walk(o, card, out, pg) {
-                if (!o) return
-                let c = card
-                if (typeof o.title === "string" && o.title !== "" && o.subtitle !== undefined) { c = o.title; out.push({ page: pg.id, pageLabel: pg.label, card: o.title, label: "", desc: o.subtitle ?? "" }) }
-                else if (typeof o.label === "string" && o.label.length > 1 && (o.checked !== undefined || o.from !== undefined) && c !== "")
-                    out.push({ page: pg.id, pageLabel: pg.label, card: c, label: o.label, desc: o.description ?? "" })
-                if (o.item) walk(o.item, c, out, pg)
-                for (const ch of o.children ?? []) walk(ch, c, out, pg)
-            }
-            function buildIndex() {
-                if (root.index.length || root.indexing) return
-                root.indexing = true
-                const pages = root.allPages.slice()
-                const out = []
-                const next = () => {
-                    const pg = pages.shift()
-                    if (!pg) {   // sem repetidos (o mesmo controle pode existir em grupos escondidos da pagina)
-                        const seen = {}
-                        root.index = out.filter(e => { const k = e.page + "|" + e.card + "|" + e.label; if (seen[k]) return false; seen[k] = true; return true })
-                        root.indexing = false
-                        return
-                    }
-                    const inc = comps[pg.id].incubateObject(indexHost, { width: 900 }, Qt.Asynchronous)
-                    const done = () => { if (inc.object) { win.walk(inc.object, "", out, pg); inc.object.destroy() } Qt.callLater(next) }
-                    if (inc.status !== Component.Loading) done()
-                    else inc.onStatusChanged = st => { if (st !== Component.Loading) done() }
-                }
-                next()
-            }
             // abre um resultado: vai para a pagina, rola ate o cartao e acende a borda dele
             function open(r) {
                 const pageChanged = Settings.settingsPage !== r.page
@@ -263,7 +282,7 @@ Scope {
                             placeholderText: "Buscar opção…  (Ctrl+F)"
                             leftPadding: 32
                             onTextChanged: root.query = text
-                            onActiveFocusChanged: if (activeFocus) win.buildIndex()
+                            onActiveFocusChanged: if (activeFocus) root.buildIndex()
                             Keys.onEscapePressed: { text = ""; body.forceActiveFocus() }
                             Keys.onReturnPressed: if (root.results.length) win.open(root.results[0])
                             UiIcon { anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: "search"; size: 15; color: Theme.muted }
@@ -422,18 +441,6 @@ Scope {
                     }
                     }
 
-                    Component { id: barsC; PageBars { geo: root.geo } }
-                    Component { id: homeC; PageHome {} }
-                    Component { id: notifC; PageNotifications {} }
-                    Component { id: launcherC; PageLauncher {} }
-                    Component { id: frameC; PageFrame {} }
-                    Component { id: lookC; PageLook {} }
-                    Component { id: blurC; PageBlur {} }
-                    Component { id: animC; PageAnim {} }
-                    Component { id: wallC; PageWallpaper {} }
-                    Component { id: sessionC; PageSession {} }
-                    Component { id: desktopC; PageDesktop {} }
-                    Component { id: looksC; PageLooks {} }
                 }
             }
         }

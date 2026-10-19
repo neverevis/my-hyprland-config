@@ -81,6 +81,8 @@ Item {
         height: 32; radius: 10
         color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.08)
         border.width: 1; border.color: input.activeFocus ? w.ac : "transparent"
+        HoverHandler { onHoveredChanged: DeskState.wantKeys("todo-h-" + w.wid, hovered) }
+        Component.onDestruction: { DeskState.wantKeys("todo-h-" + w.wid, false); DeskState.wantKeys("todo-f-" + w.wid, false) }
         UiIcon { id: plus; x: 9; anchors.verticalCenter: parent.verticalCenter; name: "plus"; size: 15; color: w.ac }
         TextInput {
             font.family: Theme.font
@@ -89,6 +91,8 @@ Item {
             color: w.fg; font.pixelSize: 13; clip: true
             selectByMouse: true; selectionColor: Theme.accent
             onAccepted: { w.add(text); text = "" }
+            onActiveFocusChanged: DeskState.wantKeys("todo-f-" + w.wid, activeFocus)
+            Keys.onEscapePressed: input.focus = false
             UiText { visible: !input.text && !input.activeFocus; text: "Nova tarefa…"; color: w.dim; font.pixelSize: 13 }
         }
     }

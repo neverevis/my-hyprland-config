@@ -154,6 +154,13 @@ Singleton {
         return true
     }
 
+    // widgets com campo de texto pedem o teclado (a camada da area de trabalho normalmente nao recebe teclas)
+    property var keyWant: ({})
+    readonly property bool typing: Object.keys(keyWant).some(k => keyWant[k])
+    // com o mouse em cima de um campo em uso: foco exclusivo (o Hyprland nao entrega o teclado a camada de baixo so pelo clique)
+    readonly property bool typingHere: Object.keys(keyWant).some(k => keyWant[k] && k.indexOf("-h-") > 0 && keyWant[k.replace("-h-", "-f-")])
+    function wantKeys(key, on) { if (!!keyWant[key] === on) return; const m = Object.assign({}, keyWant); m[key] = on; keyWant = m }
+
     function find(id) { return (Settings.desktopWidgets || []).find(w => w.id === id) ?? null }
     function mutate(fn) {
         const list = JSON.parse(JSON.stringify(Settings.desktopWidgets || []))
