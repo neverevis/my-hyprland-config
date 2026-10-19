@@ -38,6 +38,15 @@ Singleton {
             + '\nhl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-osd" }, blur = true, ignore_alpha = 0.3 })'
             + '\nhl.layer_rule({ match = { namespace = "mine-osd" }, no_anim = true })'
+            + floatRules()
+    }
+    // paineis soltos (fora da moldura) tem fundo proprio: ganham o blur do Hyprland so nesse modo
+    function floatRules(): string {
+        const r = []
+        if (!Settings.homeDocked) r.push("mine-home")
+        if (!Settings.wpPickerDocked) r.push("mine-wallpaper-picker")
+        if (!Settings.notifDocked) r.push("mine-notifications")
+        return r.map(n => '\nhl.layer_rule({ match = { namespace = "' + n + '" }, blur = true, ignore_alpha = 0.3 })').join("")
     }
     // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
     readonly property bool themeActive: Settings.themeOn && Settings.themeBorders
@@ -58,7 +67,7 @@ Singleton {
     }
 
     // mudancas que exigem recarregar a config (regra de camada) x mudancas ao vivo
-    readonly property string ruleSig: Settings.shellBlur + "/" + Settings.shellIgnoreAlpha + "/" + Settings.blurManaged   // desligar o controle tambem recarrega (volta aos valores do HyprMod)
+    readonly property string ruleSig: Settings.shellBlur + "/" + Settings.shellIgnoreAlpha + "/" + Settings.blurManaged + "/" + floatRules()   // desligar o controle tambem recarrega (volta aos valores do HyprMod)
     readonly property string blurSig: Settings.blurManaged + "/" + blurTable()
     property string lastRule: ""
     property bool ready: false

@@ -31,6 +31,13 @@ ShellRoot {
             if (Profile.picking || Profile.editing !== "") Profile.cancel()
             return any
         }
+        // diagnostico: estado e progresso (0..1) de cada painel
+        function status(): string {
+            return JSON.stringify({ launcher: [Settings.launcherOpen, BarState.launcherProg], home: [Settings.homeOpen, BarState.homeProg],
+                picker: [Settings.wpPickerOpen, BarState.pickerProg], notif: [BarState.notifCount, BarState.notifProg], osd: [Osd.showing, BarState.osdProg],
+                settings: Settings.settingsOpen, composition: Settings.composition,
+                geo: { launcher: shell.geo.launcher ? shell.geo.launcher.rect : null, home: shell.geo.home ? shell.geo.home.rect : null, osd: shell.geo.osd ? shell.geo.osd.rect : null } })
+        }
     }   // carrega o HyprSync (singleton) ja no inicio
 
     WallpaperWindow {}

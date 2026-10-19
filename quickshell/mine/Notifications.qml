@@ -70,20 +70,37 @@ Scope {
 
             readonly property string side: Settings.notifSide
             readonly property real e: Settings.edge
+            readonly property bool docked: Settings.notifDocked
             readonly property var pk: root.geo.notif
             readonly property real pp: BarState.notifProg
             readonly property real fullDepth: pk ? pk.t : 0
             readonly property real vis: Math.max(0, e + (fullDepth - e) * pp)
             // parte visivel do bloco (cresce da borda): recorta o conteudo
-            readonly property rect clipR: !pk ? Qt.rect(0, 0, 0, 0)
+            // solto: o bloco fica afastado da borda (e das barras daquele lado) e entra deslizando dela
+            readonly property real fGap: 14
+            readonly property real fLen: root.stackLen - 20
+            readonly property real fDepth: root.stackDepth
+            readonly property var zone: root.geo.zone ?? ({ top: e, right: e, bottom: e, left: e })
+            readonly property real fAlong: {
+                const vert = root.vert
+                const a0 = (vert ? zone.top : zone.left) + fGap, a1 = (vert ? height - zone.bottom : width - zone.right) - fGap
+                const an = Settings.notifAnchor
+                return an === "start" ? a0 : an === "end" ? a1 - fLen : (a0 + a1 - fLen) / 2
+            }
+            readonly property real fAway: (1 - Math.min(1, pp)) * 48
+            readonly property rect fRect: side === "top" ? Qt.rect(fAlong, zone.top + fGap - fAway, fLen, fDepth)
+                : side === "bottom" ? Qt.rect(fAlong, height - zone.bottom - fGap - fDepth + fAway, fLen, fDepth)
+                : side === "left" ? Qt.rect(zone.left + fGap - fAway, fAlong, fDepth, fLen)
+                : Qt.rect(width - zone.right - fGap - fDepth + fAway, fAlong, fDepth, fLen)
+            readonly property rect clipR: !docked ? fRect : !pk ? Qt.rect(0, 0, 0, 0)
                 : side === "top" ? Qt.rect(pk.rect.x, 0, pk.rect.w, vis)
                 : side === "bottom" ? Qt.rect(pk.rect.x, height - vis, pk.rect.w, vis)
                 : side === "left" ? Qt.rect(0, pk.rect.y, vis, pk.rect.h)
                 : Qt.rect(width - vis, pk.rect.y, vis, pk.rect.h)
-            readonly property real lag: fullDepth - vis
+            readonly property real lag: docked ? fullDepth - vis : 0
             // origem do primeiro cartao (tela)
-            readonly property real ox: !pk ? 0 : (side === "left" ? pk.rect.x + e + 10 : (side === "right" ? pk.rect.x + 10 : pk.rect.x + 10))
-            readonly property real oy: !pk ? 0 : (side === "top" ? pk.rect.y + e + 10 : (side === "bottom" ? pk.rect.y + 10 : pk.rect.y + 10))
+            readonly property real ox: !docked ? fRect.x : !pk ? 0 : (side === "left" ? pk.rect.x + e + 10 : (side === "right" ? pk.rect.x + 10 : pk.rect.x + 10))
+            readonly property real oy: !docked ? fRect.y : !pk ? 0 : (side === "top" ? pk.rect.y + e + 10 : (side === "bottom" ? pk.rect.y + 10 : pk.rect.y + 10))
 
             Item {
                 id: hit
@@ -95,14 +112,14 @@ Scope {
                 id: holder
                 x: win.clipR.x; y: win.clipR.y
                 width: win.clipR.width; height: win.clipR.height
-                clip: true
+                clip: win.docked
 
                 Item {
                     id: inner
                     x: -holder.x + (win.side === "left" ? -win.lag : (win.side === "right" ? win.lag : 0))
                     y: -holder.y + (win.side === "top" ? -win.lag : (win.side === "bottom" ? win.lag : 0))
                     width: win.width; height: win.height
-                    opacity: Math.max(0, Math.min(1, win.pp * 4))
+                    opacity: Math.max(0, Math.min(1, win.pp * (win.docked ? 4 : 1.6)))
 
                     Repeater {
                         model: server.trackedNotifications
@@ -139,7 +156,7 @@ Scope {
                                 id: bg
                                 anchors.fill: parent
                                 radius: Settings.notifRadius
-                                color: Qt.rgba(Theme.cardHi.r, Theme.cardHi.g, Theme.cardHi.b, 0.92)
+                                color: win.docked ? Qt.rgba(Theme.cardHi.r, Theme.cardHi.g, Theme.cardHi.b, 0.92) : Theme.gl(Settings.barColor, 1)
                                 border.width: 1
                                 border.color: card.critical ? Theme.danger : Theme.border
                                 scale: hover.hovered ? 1.015 : 1

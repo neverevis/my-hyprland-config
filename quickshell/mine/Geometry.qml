@@ -33,7 +33,7 @@ Singleton {
         // notificacoes: um bloco so (todos os cartoes) que cresce da moldura, como uma barra extra
         const npr = BarState.notifProg
         let nIdx = -1
-        if (Settings.notifOn && npr > 0.002 && BarState.notifLen > 1) {
+        if (Settings.notifOn && Settings.notifDocked && npr > 0.002 && BarState.notifLen > 1) {
             const ns = Settings.notifSide, nv = ns === "left" || ns === "right"
             const PLn = nv ? H : W, fN = Settings.notifFillet
             const avail = PLn - 2 * (Settings.edge + (Settings.outline ? Settings.cornerRadius : 0) + fN)

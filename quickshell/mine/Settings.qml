@@ -93,6 +93,7 @@ Singleton {
     // ---- notificacoes (ver Notifications.qml) ----
     property alias notifOn: adapter.notifOn                     // o Quickshell e o servidor de notificacoes
     property alias notifSide: adapter.notifSide                 // right | left | top | bottom
+    property alias notifDocked: adapter.notifDocked             // cresce da moldura (acoplado) ou cartoes soltos no canto
     property alias notifCorner: adapter.notifCorner             // encostar no canto (com o ponto da borda no inicio ou no fim)
     property alias notifAnchor: adapter.notifAnchor             // start | center | end (ao longo da borda)
     property alias notifWidth: adapter.notifWidth               // largura do cartao (px)
@@ -116,6 +117,7 @@ Singleton {
     property alias launcherOffset: adapter.launcherOffset
     property alias launcherFillet: adapter.launcherFillet       // curva onde o painel acoplado encontra a moldura
     property bool settingsOpen: false                           // janela de configuracoes aberta (nao e salvo)
+    property string settingsPage: "bars"                        // pagina aberta nas configuracoes (nao e salvo; paginas podem levar a outras)
     property bool launcherOpen: false                           // launcher aberto (nao e salvo)
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
@@ -257,6 +259,35 @@ Singleton {
         setAnimCfg({ anims: list, use: use, migrated: true })
     }
 
+    // ---- composicao: cada parte acoplada a moldura (cresce dela) ou solta (superficie propria) ----
+    readonly property var compParts: [
+        { id: "bars", label: "Barras", icon: "bars", page: "bars", hint: "Todas as barras (cada uma também pode ser ajustada na página Barras)." },
+        { id: "launcher", label: "Launcher", icon: "apps", page: "launcher" },
+        { id: "home", label: "Painel Início", icon: "dashboard", page: "home" },
+        { id: "picker", label: "Seletor de wallpaper", icon: "wallpaper", page: "wall" },
+        { id: "notifications", label: "Notificações", icon: "bell", page: "notifications" },
+        { id: "osd", label: "Indicador de volume", icon: "volume", page: "frame" }
+    ]
+    function partDocked(id: string): bool {
+        if (id === "bars") { const b = (bars || []).filter(x => !x.full); return b.length === 0 || b.some(x => !x.detached) }
+        return id === "launcher" ? launcherDocked : id === "home" ? homeDocked : id === "picker" ? wpPickerDocked
+            : id === "notifications" ? notifDocked : id === "osd" ? osdDocked : true
+    }
+    function setPartDocked(id: string, on: bool): void {
+        if (id === "bars") mutate(b => { for (const x of b) if (!x.full) x.detached = !on })
+        else if (id === "launcher") launcherDocked = on
+        else if (id === "home") homeDocked = on
+        else if (id === "picker") wpPickerDocked = on
+        else if (id === "notifications") notifDocked = on
+        else if (id === "osd") osdDocked = on
+    }
+    // integrated | independent | mixed
+    readonly property string composition: {
+        const st = compParts.map(p => partDocked(p.id))
+        return st.every(x => x) ? "integrated" : st.every(x => !x) ? "independent" : "mixed"
+    }
+    function applyComposition(mode: string): void { for (const p of compParts) setPartDocked(p.id, mode === "integrated") }
+
     // ---- barras: lista de {side, width, offset, height, full, modules:[{type, ...}]} ----
     property alias bars: adapter.bars
 
@@ -330,6 +361,7 @@ Singleton {
         adapter.notifSide = "right"
         adapter.notifAnchor = "start"
         adapter.notifCorner = false
+        adapter.notifDocked = true
         adapter.notifWidth = 360
         adapter.notifMax = 4
         adapter.notifTimeout = 6
@@ -433,12 +465,16 @@ Singleton {
     }
     function setModuleOpt(i: int, si: int, j: int, key: string, value: var): void { mutate(b => { b[i].sections[si].modules[j][key] = value }) }
 
+    // gravacao agrupada: varias mudancas seguidas (aplicar composicao, preset...) viram uma escrita so; enquanto ha
+    // mudanca local esperando para gravar, uma recarga do arquivo (vinda de uma escrita anterior) nao atropela ela
+    Timer { id: saveT; interval: 80; onTriggered: fv.writeAdapter() }
     FileView {
+        id: fv
         path: Quickshell.env("HOME") + "/.config/quickshell/mine/settings.json"
         watchChanges: true
-        onFileChanged: reload()
+        onFileChanged: if (!saveT.running) reload()
         onLoaded: root.migrateAnims()
-        onAdapterUpdated: writeAdapter()
+        onAdapterUpdated: saveT.restart()
         onLoadFailed: error => {
             if (error === FileViewError.FileNotFound)
                 writeAdapter()   // primeira vez: cria o arquivo com os padroes
@@ -507,6 +543,7 @@ Singleton {
             property string notifSide: "right"
             property string notifAnchor: "start"
             property bool notifCorner: false
+            property bool notifDocked: true
             property int notifWidth: 360
             property int notifMax: 4
             property int notifTimeout: 6

@@ -21,6 +21,11 @@ Column {
     Card {
         icon: "dock"
         title: "Posição"
+        UiSeg {
+            options: [[true, "Na moldura", "frame"], [false, "Soltas", "cards"]]
+            value: Settings.notifDocked
+            onPicked: v => Settings.notifDocked = v
+        }
         SidePick { sides: ["right", "left", "top", "bottom"]; value: Settings.notifSide; onPicked: v => Settings.notifSide = v }
         UiLabel { text: "Ponto da borda" }
         UiSeg {

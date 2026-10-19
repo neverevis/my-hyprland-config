@@ -14,7 +14,6 @@ Scope {
     readonly property bool panelOpen: Settings.launcherOpen || Settings.wpPickerOpen || Settings.homeOpen
     // painel acoplado aberto agora (retangulo dele na moldura): a janela tenta desviar dele em vez de sumir
     readonly property var busy: Settings.wpPickerOpen ? geo.picker : (Settings.launcherOpen ? geo.launcher : (Settings.homeOpen ? geo.home : null))
-    property string page: "bars"
     signal scrollTo(int y)
 
     IpcHandler {
@@ -22,8 +21,9 @@ Scope {
         function toggle(): void { Settings.settingsOpen = !Settings.settingsOpen }
         function close(): void { Settings.settingsOpen = false }
         function isopen(): bool { return root.open }
-        function go(p: string): void { root.page = p; Settings.settingsOpen = true }   // abre numa pagina (bars, look, wall...)
+        function go(p: string): void { Settings.settingsPage = p; Settings.settingsOpen = true }   // abre numa pagina (bars, look, wall...)
         function scroll(y: int): void { root.scrollTo(y) }   // rola a pagina aberta (para testes)
+        function compose(mode: string): void { Settings.applyComposition(mode) }   // integrated | independent
     }
     // abrir as configuracoes (pelo atalho ou pelo botao do Inicio) fecha os paineis que estiverem abertos
     onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; alive = true }
@@ -32,7 +32,7 @@ Scope {
     readonly property var groups: [
         { label: "Shell", pages: [
             { id: "bars", label: "Barras", icon: "bars", desc: "Onde ficam as barras e o que cada uma mostra." },
-            { id: "frame", label: "Moldura", icon: "frame", desc: "O contorno da tela e as curvas que ligam as barras a ele." },
+            { id: "frame", label: "Moldura", icon: "frame", desc: "O que nasce da moldura e o que flutua solto, o contorno, as curvas e o indicador de volume." },
             { id: "look", label: "Aparência", icon: "palette", desc: "Vidro, tema de cores e cores manuais." },
             { id: "blur", label: "Blur", icon: "blur", desc: "Desfoque do Hyprland e da moldura." }
         ] },
@@ -45,10 +45,10 @@ Scope {
             { id: "desktop", label: "Área de trabalho", icon: "dashboard", desc: "Widgets na área de trabalho e presets do visual inteiro." }
         ] },
         { label: "Avançado", pages: [
-            { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e durações usadas pelas animações do shell." }
+            { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e molas de tudo o que se move, inclusive as janelas do Hyprland." }
         ] }
     ]
-    readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === page) ?? groups[0].pages[0]
+    readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === Settings.settingsPage) ?? groups[0].pages[0]
 
     LazyLoader {
         active: root.alive
@@ -178,7 +178,7 @@ Scope {
                                     delegate: Rectangle {
                                         id: nav
                                         required property var modelData
-                                        readonly property bool on: root.page === modelData.id
+                                        readonly property bool on: Settings.settingsPage === modelData.id
                                         width: grp.width; height: 38; radius: 11
                                         color: on ? Theme.tint(0.16) : (navMouse.containsMouse ? Theme.card : "transparent")
                                         Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
@@ -195,7 +195,7 @@ Scope {
                                             color: nav.on ? Theme.text : Theme.muted
                                             font.pixelSize: 14; font.weight: nav.on ? Font.DemiBold : Font.Medium
                                         }
-                                        MouseArea { id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.page = nav.modelData.id }
+                                        MouseArea { id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.settingsPage = nav.modelData.id }
                                     }
                                 }
                             }
@@ -249,7 +249,7 @@ Scope {
                             id: pageLoader
                             x: 28
                             width: pageFlick.width - 56
-                            sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC })[root.page] ?? lookC
+                            sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC })[Settings.settingsPage] ?? lookC
                             onSourceComponentChanged: pageFlick.contentY = 0
                         }
                     }
