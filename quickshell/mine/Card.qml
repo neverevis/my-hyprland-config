@@ -13,8 +13,17 @@ Rectangle {
     height: implicitHeight
     radius: 16
     color: Theme.gl(Theme.card, 1)
-    border.width: 1
-    border.color: Theme.border
+    border.width: 1 + glow
+    border.color: glow > 0.01 ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35 + 0.65 * glow) : Theme.border
+    // acende a borda por um instante (a busca das configuracoes usa ao abrir um resultado)
+    property real glow: 0
+    function pulse() { glowAnim.restart() }
+    SequentialAnimation {
+        id: glowAnim
+        NumberAnimation { target: c; property: "glow"; to: 1; duration: 160 }
+        PauseAnimation { duration: 700 }
+        NumberAnimation { target: c; property: "glow"; to: 0; duration: 700; easing.type: Easing.InOutQuad }
+    }
 
     Column {
         id: col

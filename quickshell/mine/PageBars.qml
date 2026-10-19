@@ -17,9 +17,10 @@ Column {
     readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil" })
     function setBar(k, v) { Settings.setBar(idx, k, v) }
     // marca as secoes na propria barra enquanto esta pagina esta aberta
-    Binding { target: Settings; property: "barDebugBar"; value: page.idx }
-    Binding { target: Settings; property: "barDebugSec"; value: page.sec }
-    Component.onDestruction: { Settings.barDebugBar = -1; Settings.barDebugSec = -1 }
+    // so a pagina de verdade (a copia escondida que a busca cria para montar o indice nao mexe na depuracao)
+    Binding { target: Settings; property: "barDebugBar"; value: page.idx; when: page.visible }
+    Binding { target: Settings; property: "barDebugSec"; value: page.sec; when: page.visible }
+    Component.onDestruction: if (page.visible) { Settings.barDebugBar = -1; Settings.barDebugSec = -1 }
 
     // ---- mapa da tela + escolha da barra ----
     Card {

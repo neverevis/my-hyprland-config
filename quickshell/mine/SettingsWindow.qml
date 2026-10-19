@@ -24,30 +24,58 @@ Scope {
         function go(p: string): void { Settings.settingsPage = p; Settings.settingsOpen = true }   // abre numa pagina (bars, look, wall...)
         function scroll(y: int): void { root.scrollTo(y) }   // rola a pagina aberta (para testes)
         function compose(mode: string): void { Settings.applyComposition(mode) }   // integrated | independent
+        function search(q: string): void { Settings.settingsOpen = true; root.searchFor(q) }   // abre ja buscando
+        function find(q: string): void { Settings.settingsOpen = true; root.findFor(q) }       // abre direto no melhor resultado
     }
     // abrir as configuracoes (pelo atalho ou pelo botao do Inicio) fecha os paineis que estiverem abertos
     onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; alive = true }
     property bool alive: false   // janela existe (fica ate a animacao de saida terminar)
 
     readonly property var groups: [
-        { label: "Shell", pages: [
-            { id: "bars", label: "Barras", icon: "bars", desc: "Onde ficam as barras e o que cada uma mostra." },
+        { label: "Visual", pages: [
+            { id: "look", label: "Aparência", icon: "palette", desc: "Vidro, tema de cores a partir do wallpaper e cores manuais." },
             { id: "frame", label: "Moldura", icon: "frame", desc: "O que nasce da moldura e o que flutua solto, o contorno, as curvas e o indicador de volume." },
-            { id: "look", label: "Aparência", icon: "palette", desc: "Vidro, tema de cores e cores manuais." },
-            { id: "blur", label: "Blur", icon: "blur", desc: "Desfoque do Hyprland e da moldura." }
+            { id: "blur", label: "Blur", icon: "blur", desc: "Desfoque do Hyprland e da moldura." },
+            { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e molas de tudo o que se move, inclusive as janelas do Hyprland." }
         ] },
-        { label: "Painéis", pages: [
+        { label: "Componentes", pages: [
+            { id: "bars", label: "Barras", icon: "bars", desc: "Onde ficam as barras e o que cada uma mostra." },
             { id: "home", label: "Início", icon: "dashboard", desc: "O painel com mídia, áudio, sistema e conexões (Super)." },
             { id: "launcher", label: "Launcher", icon: "apps", desc: "O menu de aplicativos (Super + Tab)." },
-            { id: "wall", label: "Wallpaper", icon: "wallpaper", desc: "Imagem de fundo, transições e o seletor (Super + W)." },
-            { id: "notifications", label: "Notificações", icon: "bell", desc: "Os avisos que saem da moldura." },
-            { id: "session", label: "Sessão", icon: "power", desc: "Tela de bloqueio, menu de energia e foto de perfil." },
-            { id: "desktop", label: "Área de trabalho", icon: "dashboard", desc: "Widgets na área de trabalho e presets do visual inteiro." }
+            { id: "notifications", label: "Notificações", icon: "bell", desc: "Os avisos dos aplicativos." }
         ] },
-        { label: "Avançado", pages: [
-            { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e molas de tudo o que se move, inclusive as janelas do Hyprland." }
+        { label: "Área de trabalho", pages: [
+            { id: "wall", label: "Wallpaper", icon: "wallpaper", desc: "Imagem de fundo, transições e o seletor (Super + W)." },
+            { id: "desktop", label: "Widgets", icon: "view_grid", desc: "Widgets na área de trabalho e presets do visual inteiro." },
+            { id: "session", label: "Sessão", icon: "power", desc: "Tela de bloqueio, menu de energia e foto de perfil." }
         ] }
     ]
+    readonly property var allPages: groups.reduce((a, g) => a.concat(g.pages), [])
+    function pageInfo(id) { return allPages.find(p => p.id === id) ?? null }
+
+    // ---- busca: indice montado a partir das proprias paginas (titulos dos cartoes, interruptores e controles) ----
+    // cada pagina e criada uma vez escondida (assincrono), percorrida e destruida; assim o indice nunca fica desatualizado
+    property var index: []
+    property bool indexing: false
+    property string query: ""
+    function norm(t) { return String(t ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() }
+    readonly property var results: {
+        const q = norm(query).trim()
+        if (q === "") return []
+        const words = q.split(/\s+/)
+        const out = []
+        for (const e of index) {
+            const hay = norm(e.label + " " + e.card + " " + e.desc + " " + e.pageLabel)
+            if (!words.every(w => hay.includes(w))) continue
+            const l = norm(e.label || e.card)
+            const sc = (l.startsWith(q) ? 100 : l.includes(q) ? 60 : 20) + (e.label === "" ? 5 : 0)
+            out.push(Object.assign({ score: sc }, e))
+        }
+        out.sort((a, b) => b.score - a.score)
+        return out.slice(0, 40)
+    }
+    signal searchFor(string q)
+    signal findFor(string q)
     readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === Settings.settingsPage) ?? groups[0].pages[0]
 
     LazyLoader {
@@ -94,8 +122,68 @@ Scope {
                 onFinished: root.alive = false
             }
 
-            readonly property real bw: Math.min(1000, width - 40)
-            readonly property real bh: Math.min(720, height - 80)
+            readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC })
+            Item { id: indexHost; visible: false; width: 900; height: 10 }
+            Connections { target: root; function onSearchFor(q) { search.text = q; win.buildIndex() } }
+            Connections { target: root; function onFindFor(q) { win.pendingFind = q; search.text = q; win.buildIndex(); win.tryFind() } }
+            property string pendingFind: ""
+            function tryFind() { if (pendingFind === "" || root.indexing || !root.index.length) return; const r = root.results; pendingFind = ""; if (r.length) open(r[0]) }
+            Connections { target: root; function onIndexingChanged() { if (!root.indexing) win.tryFind() } }
+            function walk(o, card, out, pg) {
+                if (!o) return
+                let c = card
+                if (typeof o.title === "string" && o.title !== "" && o.subtitle !== undefined) { c = o.title; out.push({ page: pg.id, pageLabel: pg.label, card: o.title, label: "", desc: o.subtitle ?? "" }) }
+                else if (typeof o.label === "string" && o.label.length > 1 && (o.checked !== undefined || o.from !== undefined) && c !== "")
+                    out.push({ page: pg.id, pageLabel: pg.label, card: c, label: o.label, desc: o.description ?? "" })
+                if (o.item) walk(o.item, c, out, pg)
+                for (const ch of o.children ?? []) walk(ch, c, out, pg)
+            }
+            function buildIndex() {
+                if (root.index.length || root.indexing) return
+                root.indexing = true
+                const pages = root.allPages.slice()
+                const out = []
+                const next = () => {
+                    const pg = pages.shift()
+                    if (!pg) {   // sem repetidos (o mesmo controle pode existir em grupos escondidos da pagina)
+                        const seen = {}
+                        root.index = out.filter(e => { const k = e.page + "|" + e.card + "|" + e.label; if (seen[k]) return false; seen[k] = true; return true })
+                        root.indexing = false
+                        return
+                    }
+                    const inc = comps[pg.id].incubateObject(indexHost, { width: 900 }, Qt.Asynchronous)
+                    const done = () => { if (inc.object) { win.walk(inc.object, "", out, pg); inc.object.destroy() } Qt.callLater(next) }
+                    if (inc.status !== Component.Loading) done()
+                    else inc.onStatusChanged = st => { if (st !== Component.Loading) done() }
+                }
+                next()
+            }
+            // abre um resultado: vai para a pagina, rola ate o cartao e acende a borda dele
+            function open(r) {
+                const pageChanged = Settings.settingsPage !== r.page
+                search.text = ""
+                body.forceActiveFocus()
+                Settings.settingsPage = r.page
+                revealT.card = r.card
+                revealT.interval = pageChanged ? 120 : 30
+                revealT.restart()
+            }
+            Timer {
+                id: revealT
+                property string card: ""
+                onTriggered: {
+                    const page = pageLoader.item
+                    let found = null
+                    const find = o => { if (found || !o) return; if (o.title === card && o.subtitle !== undefined) { found = o; return } for (const ch of o.children ?? []) find(ch) }
+                    find(page)
+                    if (!found) return
+                    const y = found.mapToItem(page, 0, 0).y
+                    pageFlick.contentY = Math.max(0, Math.min(Math.max(0, pageFlick.contentHeight - pageFlick.height), y - 6))
+                    if (found.pulse) found.pulse()
+                }
+            }
+            readonly property real bw: Math.min(1160, width - 60)
+            readonly property real bh: Math.min(800, height - 90)
             readonly property real cx0: (width - bw) / 2
             readonly property real cy0: (height - bh) / 2
             readonly property var place: {
@@ -126,7 +214,8 @@ Scope {
                 color: Theme.gl(Theme.bg, 1)
                 clip: true
                 focus: true
-                Keys.onEscapePressed: Settings.settingsOpen = false
+                Keys.onEscapePressed: { if (root.query !== "") { root.query = ""; search.text = "" } else Settings.settingsOpen = false }
+                Keys.onPressed: e => { if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_F) { search.forceActiveFocus(); e.accepted = true } }
                 opacity: win.away ? 0 : 1
                 scale: win.away ? 0.96 : 1
                 Behavior on opacity { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
@@ -139,7 +228,7 @@ Scope {
                 Item {
                     id: side
                     anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
-                    width: 232
+                    width: 244
                     clip: true
                     // um unico retangulo com cantos arredondados so na esquerda (o da direita fica cortado): o vidro nao dobra
                     Rectangle { x: 0; y: 0; width: parent.width + 40; height: parent.height; radius: 22; color: Theme.gl(Theme.sidebar, 1) }
@@ -165,6 +254,19 @@ Scope {
                             }
                         }
 
+                        // busca
+                        UiField {
+                            id: search
+                            width: parent.width
+                            placeholderText: "Buscar opção…  (Ctrl+F)"
+                            leftPadding: 32
+                            onTextChanged: root.query = text
+                            onActiveFocusChanged: if (activeFocus) win.buildIndex()
+                            Keys.onEscapePressed: { text = ""; body.forceActiveFocus() }
+                            Keys.onReturnPressed: if (root.results.length) win.open(root.results[0])
+                            UiIcon { anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: "search"; size: 15; color: Theme.muted }
+                        }
+                        Item { width: 1; height: 6 }
                         Repeater {
                             model: root.groups
                             delegate: Column {
@@ -178,7 +280,7 @@ Scope {
                                     delegate: Rectangle {
                                         id: nav
                                         required property var modelData
-                                        readonly property bool on: Settings.settingsPage === modelData.id
+                                        readonly property bool on: root.query === "" && Settings.settingsPage === modelData.id
                                         width: grp.width; height: 38; radius: 11
                                         color: on ? Theme.tint(0.16) : (navMouse.containsMouse ? Theme.card : "transparent")
                                         Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
@@ -195,7 +297,7 @@ Scope {
                                             color: nav.on ? Theme.text : Theme.muted
                                             font.pixelSize: 14; font.weight: nav.on ? Font.DemiBold : Font.Medium
                                         }
-                                        MouseArea { id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.settingsPage = nav.modelData.id }
+                                        MouseArea { id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { search.text = ""; Settings.settingsPage = nav.modelData.id } }
                                     }
                                 }
                             }
@@ -226,8 +328,11 @@ Scope {
                         Column {
                             anchors { left: parent.left; right: closeBtn.left; verticalCenter: parent.verticalCenter }
                             spacing: 3
-                            Text { text: root.cur.label; color: Theme.text; font.pixelSize: 24; font.weight: Font.Bold }
-                            Text { text: root.cur.desc; color: Theme.muted; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width }
+                            Text { text: root.query !== "" ? "Busca" : root.cur.label; color: Theme.text; font.pixelSize: 24; font.weight: Font.Bold }
+                            Text {
+                                text: root.query === "" ? root.cur.desc : (root.indexing && !root.index.length ? "Montando o índice…" : root.results.length + (root.results.length === 1 ? " resultado" : " resultados") + " para “" + root.query + "”")
+                                color: Theme.muted; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width
+                            }
                         }
                         UiButton { id: closeBtn; anchors { right: parent.right; top: parent.top } icon: "close"; kind: "ghost"; onClicked: Settings.settingsOpen = false }
                     }
@@ -250,7 +355,16 @@ Scope {
                             x: 28
                             width: pageFlick.width - 56
                             sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC })[Settings.settingsPage] ?? lookC
-                            onSourceComponentChanged: pageFlick.contentY = 0
+                            visible: root.query === ""
+                            onSourceComponentChanged: { pageFlick.contentY = 0; pageIn.restart() }
+                            // troca de pagina: entra subindo um pouco e aparecendo
+                            property real shift: 0
+                            transform: Translate { y: pageLoader.shift }
+                            ParallelAnimation {
+                                id: pageIn
+                                NumberAnimation { target: pageLoader; property: "opacity"; from: 0; to: 1; duration: 200; easing.type: Easing.OutCubic }
+                                NumberAnimation { target: pageLoader; property: "shift"; from: 14; to: 0; duration: 260; easing.type: Easing.OutCubic }
+                            }
                         }
                     }
                     // barra de rolagem fina (so aparece se a pagina for maior que a janela)
@@ -262,6 +376,50 @@ Scope {
                         height: Math.max(30, pageFlick.height * pageFlick.height / pageFlick.contentHeight)
                         color: Theme.border
                     }
+                    // ---- resultados da busca ----
+                    Flickable {
+                        id: resFlick
+                        visible: root.query !== ""
+                        anchors { left: parent.left; right: parent.right; top: header.bottom; bottom: parent.bottom; topMargin: 18; leftMargin: 28; rightMargin: 28; bottomMargin: 14 }
+                        contentHeight: resCol.implicitHeight
+                        clip: true
+                        interactive: false
+                        boundsBehavior: Flickable.StopAtBounds
+                        WheelHandler { onWheel: e => { const f = resFlick; f.contentY = Math.max(0, Math.min(Math.max(0, f.contentHeight - f.height), f.contentY - e.angleDelta.y)) } }
+                        Connections { target: root; function onQueryChanged() { resFlick.contentY = 0 } }
+                    Column {
+                        id: resCol
+                        width: resFlick.width
+                        spacing: 6
+                        Text { visible: root.results.length === 0 && root.index.length > 0; text: "Nada encontrado. Tente outra palavra (ex.: blur, mola, relógio, bloqueio)."; color: Theme.muted; font.pixelSize: 13 }
+                        Repeater {
+                            model: root.results
+                            delegate: Rectangle {
+                                id: rr
+                                required property var modelData
+                                required property int index
+                                width: parent.width; height: 54; radius: 12
+                                color: rrm.containsMouse || (index === 0) ? Theme.cardHi : Theme.track
+                                border.width: 1; border.color: index === 0 ? Theme.tint(0.45) : Theme.border
+                                Rectangle {
+                                    id: rrIc
+                                    x: 12; anchors.verticalCenter: parent.verticalCenter
+                                    width: 32; height: 32; radius: 9
+                                    color: Theme.tint(0.16)
+                                    UiIcon { anchors.centerIn: parent; name: (root.pageInfo(rr.modelData.page) ?? {}).icon ?? "cog"; size: 16; color: Theme.accent }
+                                }
+                                Column {
+                                    anchors { left: rrIc.right; leftMargin: 12; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
+                                    spacing: 2
+                                    Text { width: parent.width; elide: Text.ElideRight; text: rr.modelData.label || rr.modelData.card; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                                    Text { width: parent.width; elide: Text.ElideRight; text: rr.modelData.pageLabel + "  ›  " + rr.modelData.card + (rr.modelData.desc ? "  ·  " + rr.modelData.desc : ""); color: Theme.muted; font.pixelSize: 11 }
+                                }
+                                MouseArea { id: rrm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.open(rr.modelData) }
+                            }
+                        }
+                    }
+                    }
+
                     Component { id: barsC; PageBars { geo: root.geo } }
                     Component { id: homeC; PageHome {} }
                     Component { id: notifC; PageNotifications {} }
