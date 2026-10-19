@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Acoes de sessao e midia do shell ativo (Quickshell "mine" ou Noctalia).
+#   session-action lock                         bloqueia a tela
+#   session-action menu                         abre o menu de energia
+#   session-action media toggle|next|previous|stop   teclas de midia (o Quickshell mostra o que esta tocando)
+if pgrep -f "^(/usr/bin/)?qs -c mine( |$)" >/dev/null; then
+    case "$1" in
+        lock) exec qs -c mine ipc call session lock ;;
+        menu) exec qs -c mine ipc call session menu ;;
+        media) exec qs -c mine ipc call media "${2:-toggle}" ;;
+    esac
+else
+    case "$1" in
+        lock) exec noctalia msg session lock ;;
+        menu) exec noctalia msg session menu ;;
+        media) exec noctalia msg media "${2:-toggle}" ;;
+    esac
+fi

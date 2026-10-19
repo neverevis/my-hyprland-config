@@ -37,7 +37,7 @@ Scope {
         if (open) { closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; alive = true }
         else closeTimer.restart()
     }
-    Timer { id: closeTimer; interval: 520; onTriggered: { root.alive = false; root.tab = "home" } }
+    Timer { id: closeTimer; interval: Motion.durationOf("home", true) + 120; onTriggered: { root.alive = false; root.tab = "home" } }
 
     function fmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2) }
     function bytes(b) {
@@ -164,13 +164,7 @@ Scope {
             readonly property real cw: BarState.homeW
             readonly property real ch: BarState.homeH
             property real fprog: root.open ? 1 : 0
-            Behavior on fprog {
-                NumberAnimation {
-                    duration: Settings.animOf("home").duration
-                    easing.type: Easing.BezierSpline
-                    easing.bezierCurve: Settings.animOf("home").curve
-                }
-            }
+            Behavior on fprog { id: fpB; MotionAnim { use: "home"; out: fpB.targetValue < 0.5 } }
             readonly property real pp: docked ? BarState.homeProg : fprog
             readonly property var pk: root.geo.home
             readonly property rect dbox: !pk ? Qt.rect(0, 0, 0, 0) : (

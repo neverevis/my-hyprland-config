@@ -14,8 +14,7 @@ Grid {
 
     readonly property string style: opts.style ?? "numbers"
     readonly property real size: opts.size ?? 22
-    readonly property int animMs: Settings.animOf("workspaces").duration
-    readonly property var animCurve: Settings.animOf("workspaces").curve
+    readonly property int animMs: Motion.durationOf("workspaces", false)
     readonly property color base: Settings.textColor
     // ativo: a cor escolhida no modulo; sem escolha, usa o destaque do tema (se ligado) ou a cor do texto
     readonly property color accentCol: opts.activeColor ? opts.activeColor : (Settings.themeOn ? ThemeColors.primary : Settings.textColor)
@@ -99,9 +98,9 @@ Grid {
                 : sty === "ring" ? (active ? s * 0.95 : s * 0.75)
                 : sty === "icons" ? (active ? s * 1.15 : s * 0.9) : 0
             property real shape: shapeTarget
-            Behavior on shape { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
-            Behavior on implicitWidth { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
-            Behavior on implicitHeight { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
+            Behavior on shape { MotionAnim { use: "workspaces" } }
+            Behavior on implicitWidth { MotionAnim { use: "workspaces" } }
+            Behavior on implicitHeight { MotionAnim { use: "workspaces" } }
 
             readonly property string label: {
                 const i = modelData
@@ -124,7 +123,7 @@ Grid {
                 border.color: root.base
                 opacity: cell.active ? 1 : (cell.occupied ? 0.85 : 0.4)
                 Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: root.animMs } }
-                Behavior on opacity { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
+                Behavior on opacity { MotionAnim { use: "workspaces" } }
             }
 
             // anel: contorno grosso no ativo, com um pontinho no centro nos ocupados
@@ -137,15 +136,15 @@ Grid {
                 border.width: cell.active ? Math.max(2, cell.s * 0.14) : Math.max(1, cell.s * 0.07)
                 border.color: cell.active ? root.accentCol : root.base
                 opacity: cell.active ? 1 : (cell.occupied ? 0.8 : 0.4)
-                Behavior on border.width { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
-                Behavior on opacity { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
+                Behavior on border.width { MotionAnim { use: "workspaces" } }
+                Behavior on opacity { MotionAnim { use: "workspaces" } }
                 Rectangle {
                     anchors.centerIn: parent
                     readonly property real d: cell.active ? parent.width * 0.38 : (cell.occupied ? parent.width * 0.26 : 0)
                     width: d; height: d; radius: d / 2
                     color: cell.active ? root.accentCol : root.base
-                    Behavior on width { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
-                    Behavior on height { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
+                    Behavior on width { MotionAnim { use: "workspaces" } }
+                    Behavior on height { MotionAnim { use: "workspaces" } }
                 }
             }
 
@@ -158,7 +157,7 @@ Grid {
                 readonly property var entry: cls !== "" ? DesktopEntries.heuristicLookup(cls) : null
                 readonly property string iconUrl: cls === "" ? "" : Quickshell.iconPath(entry && entry.icon ? entry.icon : cls.toLowerCase(), true)
                 opacity: cell.active ? 1 : 0.55
-                Behavior on opacity { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
+                Behavior on opacity { MotionAnim { use: "workspaces" } }
                 Image {
                     anchors.fill: parent
                     visible: parent.iconUrl !== ""
@@ -190,7 +189,7 @@ Grid {
                 font.bold: cell.active
                 color: cell.sty === "numbers" ? (cell.active ? root.onAccent : root.base) : (cell.active ? root.accentCol : root.base)
                 opacity: cell.active ? 1 : (cell.occupied ? 0.8 : 0.4)
-                Behavior on opacity { NumberAnimation { duration: root.animMs; easing.type: Easing.BezierSpline; easing.bezierCurve: root.animCurve } }
+                Behavior on opacity { MotionAnim { use: "workspaces" } }
             }
             // numero dentro dos quadrados
             Text {

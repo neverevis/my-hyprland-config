@@ -38,6 +38,7 @@ ShellRoot {
     SettingsWindow { geo: shell.geo }
     Launcher { geo: shell.geo }
     Notifications { geo: shell.geo }
+    OsdWindow { geo: shell.geo }
     Home { geo: shell.geo }
     PowerMenu {}
     PhotoEditor {}

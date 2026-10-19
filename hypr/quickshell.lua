@@ -9,6 +9,11 @@ hl.bind("SUPER + W", hl.dsp.exec_cmd("qs -c mine ipc call wallpaper pick"))     
 hl.bind("SUPER + TAB", hl.dsp.exec_cmd("qs -c mine ipc call launcher toggle"))  -- launcher de aplicativos
 hl.bind("SUPER + L", hl.dsp.exec_cmd("qs -c mine ipc call session lock"))      -- tela de bloqueio
 hl.bind("CTRL + ALT + Delete", hl.dsp.exec_cmd("qs -c mine ipc call session menu"))  -- menu de energia
+-- teclas de midia: o shell controla o player e mostra o indicador (OSD) com o que esta tocando
+hl.bind("XF86AudioPlay", hl.dsp.exec_cmd("qs -c mine ipc call media toggle"), { locked = true })
+hl.bind("XF86AudioPause", hl.dsp.exec_cmd("qs -c mine ipc call media toggle"), { locked = true })
+hl.bind("XF86AudioNext", hl.dsp.exec_cmd("qs -c mine ipc call media next"), { locked = true })
+hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("qs -c mine ipc call media previous"), { locked = true })
 
 -- o seletor de wallpaper faz a propria animacao: desliga a animacao de camada do Hyprland nele
 hl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })

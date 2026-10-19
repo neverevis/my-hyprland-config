@@ -1,29 +1,30 @@
-// Editor de curva de bezier (x1,y1,x2,y2 em centesimos; y de -50% a 150%).
-// Grade, area sob a curva, pinos arrastaveis (Shift: encaixa de 5 em 5) e, tocando, uma bolinha que rola pela curva
-// deixando um rastro, com a linha do tempo correndo junto. "t" (tempo, 0..1) e "e" (valor da curva) ficam expostos
-// para outras previas usarem o mesmo relogio.
+// Editor/visualizador de uma animacao: curva de bezier (x1,y1,x2,y2 em centesimos; y de -50% a 150%) ou mola.
+// Grade, area sob a curva, pinos arrastaveis so nas curvas (Shift: encaixa de 5 em 5) e, tocando, uma bolinha que
+// rola pela curva deixando rastro. Uma marca mostra quando a animacao ja "parece pronta" (a menos de 2% do fim).
+// "t" (tempo, 0..1) e "e" (valor) ficam expostos para outras previas usarem o mesmo relogio.
 import QtQuick
 
 Rectangle {
     id: graph
-    property int x1: 0
-    property int y1: 0
-    property int x2: 100
-    property int y2: 100
-    property int duration: 300
+    property var anim: ({ x1: 0, y1: 0, x2: 100, y2: 100, duration: 300 })
+    readonly property bool spring: anim && anim.type === "spring"
+    readonly property int x1: anim.x1 ?? 0
+    readonly property int y1: anim.y1 ?? 0
+    readonly property int x2: anim.x2 ?? 100
+    readonly property int y2: anim.y2 ?? 100
+    readonly property var comp: Motion.compile(anim)
+    readonly property int duration: comp.duration
     property bool editable: true
     property bool playing: true       // reproduz em loop
     property real speed: 1            // 0.25 = camera lenta
     signal edited(var vals)           // { x1, y1, x2, y2 } (so o que mudou)
 
-    // valor da curva no tempo t (resolve x(s) = t por bissecao e devolve y(s))
-    function ease(t) {
-        const a = x1 / 100, b = y1 / 100, c = x2 / 100, d = y2 / 100
-        const bx = s => 3 * (1 - s) * (1 - s) * s * a + 3 * (1 - s) * s * s * c + s * s * s
-        const by = s => 3 * (1 - s) * (1 - s) * s * b + 3 * (1 - s) * s * s * d + s * s * s
-        let lo = 0, hi = 1
-        for (let i = 0; i < 22; i++) { const m = (lo + hi) / 2; if (bx(m) < t) lo = m; else hi = m }
-        return by((lo + hi) / 2)
+    function ease(t) { return comp.sample(t) }
+    readonly property var pts: Motion.points(anim, 160)
+    // quando fica a menos de 2% do fim e nao sai mais
+    readonly property real ready: {
+        for (let i = pts.length - 1; i >= 0; i--) if (Math.abs(1 - pts[i][1]) > 0.02) return pts[Math.min(pts.length - 1, i + 1)][0]
+        return 0
     }
 
     // relogio compartilhado: t anda linear no tempo; e = curva(t)
@@ -59,7 +60,7 @@ Rectangle {
         Canvas {
             id: base
             anchors.fill: parent
-            readonly property var deps: [cv.fx1, cv.fy1, cv.fx2, cv.fy2, Theme.accent, Theme.border, width, height]
+            readonly property var deps: [graph.pts, graph.spring, Theme.accent, Theme.border, width, height]
             onDepsChanged: requestPaint()
             onPaint: {
                 const c = getContext("2d"); c.reset()
@@ -80,18 +81,20 @@ Rectangle {
                 c.strokeStyle = Qt.rgba(1, 1, 1, 0.12); c.setLineDash([5, 5])
                 c.beginPath(); c.moveTo(cv.px(0), cv.py(0)); c.lineTo(cv.px(1), cv.py(1)); c.stroke()
                 c.setLineDash([])
-                const curve = () => { c.moveTo(cv.px(0), cv.py(0)); c.bezierCurveTo(cv.px(cv.fx1), cv.py(cv.fy1), cv.px(cv.fx2), cv.py(cv.fy2), cv.px(1), cv.py(1)) }
+                const curve = () => graph.pts.forEach((p, i) => i ? c.lineTo(cv.px(p[0]), cv.py(Math.max(-0.5, Math.min(1.5, p[1])))) : c.moveTo(cv.px(p[0]), cv.py(p[1])))
                 // area sob a curva (ate o 0)
                 const g = c.createLinearGradient(0, cv.py(1.2), 0, cv.py(0))
                 g.addColorStop(0, Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.28))
                 g.addColorStop(1, Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.02))
                 c.fillStyle = g
                 c.beginPath(); curve(); c.lineTo(cv.px(1), cv.py(0)); c.closePath(); c.fill()
-                // alavancas
-                c.strokeStyle = Qt.rgba(1, 1, 1, 0.35); c.lineWidth = 1.5
-                c.beginPath(); c.moveTo(cv.px(0), cv.py(0)); c.lineTo(cv.px(cv.fx1), cv.py(cv.fy1)); c.moveTo(cv.px(1), cv.py(1)); c.lineTo(cv.px(cv.fx2), cv.py(cv.fy2)); c.stroke()
+                // alavancas (so curvas)
+                if (!graph.spring) {
+                    c.strokeStyle = Qt.rgba(1, 1, 1, 0.35); c.lineWidth = 1.5
+                    c.beginPath(); c.moveTo(cv.px(0), cv.py(0)); c.lineTo(cv.px(cv.fx1), cv.py(cv.fy1)); c.moveTo(cv.px(1), cv.py(1)); c.lineTo(cv.px(cv.fx2), cv.py(cv.fy2)); c.stroke()
+                }
                 // curva
-                c.strokeStyle = Theme.accent; c.lineWidth = 3; c.lineCap = "round"
+                c.strokeStyle = Theme.accent; c.lineWidth = 3; c.lineCap = "round"; c.lineJoin = "round"
                 c.beginPath(); curve(); c.stroke()
             }
         }
@@ -108,6 +111,18 @@ Rectangle {
         Text { anchors { left: parent.left; top: parent.bottom; topMargin: 7 } text: "0"; color: Theme.muted; font.pixelSize: 10 }
         Text { anchors { horizontalCenter: parent.horizontalCenter; top: parent.bottom; topMargin: 7 } text: "tempo"; color: Theme.muted; font.pixelSize: 10 }
 
+        // "parece pronta": a partir daqui o movimento restante e imperceptivel
+        Rectangle {
+            visible: graph.ready > 0.02 && graph.ready < 0.97
+            x: cv.px(graph.ready); width: 1; height: parent.height
+            color: Qt.rgba(1, 1, 1, 0.22)
+            Rectangle {
+                anchors { horizontalCenter: parent.horizontalCenter; top: parent.top }
+                width: rdy.implicitWidth + 10; height: 18; radius: 6
+                color: Theme.card; border.width: 1; border.color: Theme.border
+                Text { id: rdy; anchors.centerIn: parent; text: "pronta em " + Math.round(graph.ready * graph.duration) + " ms"; color: Theme.muted; font.pixelSize: 10 }
+            }
+        }
         // linha do tempo e rastro da bolinha
         Rectangle {
             visible: graph.playing && graph.t > 0
@@ -152,9 +167,9 @@ Rectangle {
             border.width: 3; border.color: Theme.accent
         }
 
-        // pinos
+        // pinos (so curvas)
         Repeater {
-            model: 2
+            model: graph.spring ? 0 : 2
             delegate: Item {
                 id: pin
                 required property int index

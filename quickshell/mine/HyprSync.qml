@@ -36,6 +36,8 @@ Singleton {
             + '\nhl.layer_rule({ match = { namespace = "mine-desktop" }, blur = true, ignore_alpha = 0.3 })'
             + '\nhl.layer_rule({ match = { namespace = "mine-desktop" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-osd" }, blur = true, ignore_alpha = 0.3 })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-osd" }, no_anim = true })'
     }
     // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
     readonly property bool themeActive: Settings.themeOn && Settings.themeBorders
@@ -50,6 +52,8 @@ Singleton {
             t += "hl.config({ decoration = { blur = " + blurTable() + " } })\n"
         t += ruleLine() + "\n"
         if (themeActive) t += themeLua() + "\n"
+        const anim = Motion.hyprLua()
+        if (anim !== "") t += "-- animacoes das janelas (pagina Animacoes: o Hyprland segue o shell)\n" + anim + "\n"
         return t
     }
 
@@ -58,6 +62,11 @@ Singleton {
     readonly property string blurSig: Settings.blurManaged + "/" + blurTable()
     property string lastRule: ""
     property bool ready: false
+
+    // animacoes: aplicadas ao vivo (hyprctl eval); desligar recarrega a config (volta ao hyprland/animations.lua)
+    readonly property string animSig: Motion.hyprLua()
+    property bool lastAnim: false
+    onAnimSigChanged: if (ready) timer.restart()
 
     readonly property string themeSig: themeActive + "/" + (themeActive ? themeLua() : "")
     property bool lastTheme: false
@@ -68,6 +77,7 @@ Singleton {
     Component.onCompleted: {
         lastRule = ruleSig
         lastTheme = themeActive
+        lastAnim = animSig !== ""
         out.setText(content())
         ready = true
     }
@@ -84,16 +94,21 @@ Singleton {
             out.setText(root.content())
             const themeOff = root.lastTheme && !root.themeActive   // desligou o tema: volta as cores do HyprMod/Hyprland
             root.lastTheme = root.themeActive
-            if (root.ruleSig !== root.lastRule || themeOff) {
+            const animOff = root.lastAnim && root.animSig === ""
+            root.lastAnim = root.animSig !== ""
+            if (root.ruleSig !== root.lastRule || themeOff || animOff) {
                 root.lastRule = root.ruleSig
                 runner.command = ["hyprctl", "reload"]
                 runner.running = true
-            } else if (root.themeActive) {
-                runner.command = ["hyprctl", "eval", root.themeLua() + (Settings.blurManaged ? "; hl.config({ decoration = { blur = " + root.blurTable() + " } })" : "")]
-                runner.running = true
-            } else if (Settings.blurManaged) {
-                runner.command = ["hyprctl", "eval", "hl.config({ decoration = { blur = " + root.blurTable() + " } })"]
-                runner.running = true
+            } else {
+                const parts = []
+                if (root.themeActive) parts.push(root.themeLua())
+                if (Settings.blurManaged) parts.push("hl.config({ decoration = { blur = " + root.blurTable() + " } })")
+                if (root.animSig !== "") parts.push(root.animSig)
+                if (parts.length) {
+                    runner.command = ["hyprctl", "eval", parts.join("\n")]
+                    runner.running = true
+                }
             }
         }
     }

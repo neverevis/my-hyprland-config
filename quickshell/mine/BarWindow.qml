@@ -20,13 +20,7 @@ PanelWindow {
     property bool armed: false      // mouse parado na borda pelo tempo de Settings.showDelay (0 = na hora)
     property bool shown: !autoHide || armed || hideTimer.running
     property real prog: shown ? 1 : 0
-    Behavior on prog {
-        NumberAnimation {
-            duration: Settings.animOf("bars").duration
-            easing.type: Easing.BezierSpline
-            easing.bezierCurve: Settings.animOf("bars").curve
-        }
-    }
+    Behavior on prog { id: progB; MotionAnim { use: "bars"; out: progB.targetValue < 0.5 } }
     // fade dos modulos: acompanha o mesmo tempo da animacao, mas com curva propria
     // (aparece no fim da subida; some logo no comeco da descida), sem depender da curva da barra
     // quando o seletor de wallpaper compete pelo mesmo espaco, a barra recolhe junto com a subida dele
@@ -36,7 +30,7 @@ PanelWindow {
     property real fade: shown ? 1 : 0
     Behavior on fade {
         NumberAnimation {
-            duration: Settings.animOf("bars").duration
+            duration: Motion.durationOf("bars", !win.shown)
             easing.type: win.shown ? Easing.InQuad : Easing.OutQuad
         }
     }

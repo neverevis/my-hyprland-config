@@ -48,6 +48,17 @@ Singleton {
             prog = Object.assign({}, prog || {})
             prog[nIdx] = npr
         }
+        // indicador de volume acoplado: outro bloco pequeno que sai da moldura (no meio do lado escolhido)
+        const opr = BarState.osdProg
+        let oIdx = -1
+        if (Settings.osdOn && Settings.osdDocked && opr > 0.002) {
+            const os = Settings.osdSide, ov = os === "left" || os === "right"
+            oIdx = bars.length
+            bars.push({ side: os, width: BarState.osdLen(ov), offset: 0, height: Settings.edge + 10 + BarState.osdDepth + 10,
+                        full: false, autoHide: true, reserve: "overlay", fillet: Settings.notifFillet, topRadius: Math.min(18, Settings.notifRadius + 4) })
+            prog = Object.assign({}, prog || {})
+            prog[oIdx] = opr
+        }
         // painel acoplado (seletor de wallpaper ou launcher): entra como uma "barra" extra, para a moldura crescer ate ele (mesmo desenho das barras)
         // o launcher tem prioridade quando aberto; os dois nunca ficam abertos juntos (um fecha o outro)
         let panel = null
@@ -325,6 +336,6 @@ Singleton {
             d += r > 0.01 ? "A" + r + " " + r + " 0 0 1 " + q + " " : "L" + q + " "
         }
         d += "Z"
-        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null, home: panel && panel.kind === "home" ? res[pIdx] : null }
+        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, osd: oIdx >= 0 ? res[oIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null, home: panel && panel.kind === "home" ? res[pIdx] : null }
     }
 }

@@ -102,7 +102,7 @@ Scope {
         // p: entrada (0 -> 1, curva escolhida em Animacoes); q: saida (0 -> 1 ao acertar a senha)
         property real p: 0
         Component.onCompleted: p = 1
-        Behavior on p { NumberAnimation { duration: v.anim.duration; easing.type: Easing.BezierSpline; easing.bezierCurve: v.anim.curve } }
+        Behavior on p { MotionAnim { use: "lock" } }
         property real q: root.leaving ? 1 : 0
         Behavior on q { NumberAnimation { duration: root.leaveMs; easing.type: Easing.InOutCubic } }
         // entrada em etapas: fundo, depois o relogio, depois a foto e o campo

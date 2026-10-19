@@ -34,7 +34,7 @@ Scope {
             else closeTimer.restart()
         }
     }
-    Timer { id: closeTimer; interval: 420; onTriggered: root.alive = false }
+    Timer { id: closeTimer; interval: Motion.durationOf("picker", true) + 80; onTriggered: root.alive = false }
 
     // a janela fica sempre carregada (so escondida quando fechada): as miniaturas continuam decodificadas na memoria
     LazyLoader {

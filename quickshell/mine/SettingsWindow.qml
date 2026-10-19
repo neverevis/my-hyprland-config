@@ -72,25 +72,25 @@ Scope {
                 width: on ? body.width : 0; height: on ? body.height : 0
             }
 
-            // ---- entrada/saida: a mesma animacao de camadas do Hyprland (hyprland/animations.lua), feita aqui ----
-            // layersIn: slide 500 ms emphasizedDecel | layersOut: slide 400 ms emphasizedAccel | fadeLayers: 500 ms standard
+            // ---- entrada/saida: animacao "Janela de configuracoes" (pagina Animacoes); por padrao a mesma das camadas do Hyprland
+            // (slide 500 ms emphasizedDecel / 400 ms emphasizedAccel). O fade usa a curva padrao, com o tempo da animacao.
             // (o Hyprland nao anima esta janela: regra no_anim gerada pelo HyprSync)
             property real sp: 0   // deslize: 0 = uma tela inteira acima, 1 = no lugar
             property real fp: 0   // opacidade
-            Component.onCompleted: { contentItem.opacity = Qt.binding(() => win.fp); inAnim.start() }
+            Component.onCompleted: { contentItem.opacity = Qt.binding(() => Math.min(1, win.fp)); inAnim.start() }
             Connections {
                 target: root
                 function onOpenChanged() { if (root.open) { outAnim.stop(); inAnim.start() } else { inAnim.stop(); outAnim.start() } }
             }
             ParallelAnimation {
                 id: inAnim
-                NumberAnimation { target: win; property: "sp"; to: 1; duration: 500; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1] }
-                NumberAnimation { target: win; property: "fp"; to: 1; duration: 500; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
+                MotionAnim { target: win; property: "sp"; to: 1; use: "settings" }
+                NumberAnimation { target: win; property: "fp"; to: 1; duration: Math.max(1, Motion.durationOf("settings", false)); easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
             }
             ParallelAnimation {
                 id: outAnim
-                NumberAnimation { target: win; property: "sp"; to: 0; duration: 400; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.3, 0, 0.8, 0.15, 1, 1] }
-                NumberAnimation { target: win; property: "fp"; to: 0; duration: 500; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
+                MotionAnim { target: win; property: "sp"; to: 0; use: "settings"; out: true }
+                NumberAnimation { target: win; property: "fp"; to: 0; duration: Math.max(1, Motion.durationOf("settings", true)); easing.type: Easing.BezierSpline; easing.bezierCurve: [0.2, 0, 0, 1, 1, 1] }
                 onFinished: root.alive = false
             }
 

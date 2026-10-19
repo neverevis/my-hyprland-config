@@ -119,10 +119,10 @@ Scope {
                 x: bx + ox; y: by + oy
                 width: tw; height: th
                 z: (Settings.desktopWidgets || []).findIndex(x => x.id === wid) + (moving ? 100 : 0)
-                Behavior on x { enabled: !card.moving; NumberAnimation { duration: win.anim.duration; easing.type: Easing.BezierSpline; easing.bezierCurve: win.anim.curve } }
-                Behavior on y { enabled: !card.moving; NumberAnimation { duration: win.anim.duration; easing.type: Easing.BezierSpline; easing.bezierCurve: win.anim.curve } }
-                Behavior on width { NumberAnimation { duration: win.anim.duration; easing.type: Easing.BezierSpline; easing.bezierCurve: win.anim.curve } }
-                Behavior on height { NumberAnimation { duration: win.anim.duration; easing.type: Easing.BezierSpline; easing.bezierCurve: win.anim.curve } }
+                Behavior on x { enabled: !card.moving; MotionAnim { use: "desktop" } }
+                Behavior on y { enabled: !card.moving; MotionAnim { use: "desktop" } }
+                Behavior on width { MotionAnim { use: "desktop" } }
+                Behavior on height { MotionAnim { use: "desktop" } }
                 // entrada: cresce e aparece
                 property real born: 0
                 Component.onCompleted: born = 1
@@ -140,7 +140,7 @@ Scope {
                     border.width: 1
                     border.color: Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.6)
                     clip: true
-                    Behavior on radius { NumberAnimation { duration: win.anim.duration } }
+                    Behavior on radius { MotionAnim { use: "desktop" } }
                     Loader {
                         id: content
                         anchors.fill: parent

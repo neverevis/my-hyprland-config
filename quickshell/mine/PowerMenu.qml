@@ -14,7 +14,7 @@ Scope {
         if (open) { closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; alive = true }
         else closeTimer.restart()
     }
-    Timer { id: closeTimer; interval: Settings.animOf("power").duration + 120; onTriggered: root.alive = false }
+    Timer { id: closeTimer; interval: Motion.durationOf("power", true) + 120; onTriggered: root.alive = false }
 
     LazyLoader {
         active: root.alive
@@ -32,7 +32,7 @@ Scope {
             readonly property var anim: Settings.animOf("power")
             property real p: 0   // 0 = fechado, 1 = aberto (segue a curva escolhida em Animacoes)
             Component.onCompleted: p = Qt.binding(() => root.open ? 1 : 0)
-            Behavior on p { NumberAnimation { duration: win.anim.duration; easing.type: Easing.BezierSpline; easing.bezierCurve: win.anim.curve } }
+            Behavior on p { id: pB; MotionAnim { use: "power"; out: pB.targetValue < 0.5 } }
 
             property int sel: 0
             property string pending: ""     // acao esperando a contagem
@@ -139,7 +139,7 @@ Scope {
 
                                 // entrada em cascata: cada botao entra um pouco depois do anterior, com a mesma curva
                                 property real k: 0
-                                Behavior on k { NumberAnimation { duration: win.anim.duration; easing.type: Easing.BezierSpline; easing.bezierCurve: win.anim.curve } }
+                                Behavior on k { id: kB; MotionAnim { use: "power"; out: kB.targetValue < 0.5 } }
                                 Timer { interval: 40 + cell.index * 45; running: root.open; onTriggered: cell.k = 1 }
                                 Connections { target: root; function onOpenChanged() { if (!root.open) cell.k = 0 } }
 

@@ -101,6 +101,11 @@ Singleton {
     property alias notifFillet: adapter.notifFillet
     property alias notifRadius: adapter.notifRadius
     property bool notifDnd: false                               // nao perturbe (nao e salvo)
+    // ---- indicador de volume / midia (ver Osd.qml e OsdWindow.qml) ----
+    property alias osdOn: adapter.osdOn
+    property alias osdDocked: adapter.osdDocked                 // sai da moldura (acoplado) ou pilula flutuante
+    property alias osdSide: adapter.osdSide                     // right | left | top | bottom
+    property alias osdTimeout: adapter.osdTimeout               // ms na tela depois da ultima mudanca
     // ---- launcher de aplicativos (ver Launcher.qml) ----
     property alias launcherWidth: adapter.launcherWidth
     property alias launcherRows: adapter.launcherRows           // linhas de resultado visiveis
@@ -120,14 +125,17 @@ Singleton {
     property alias wpCardRadius: adapter.wpCardRadius         // arredondamento das miniaturas
     property alias wpPickerGap: adapter.wpPickerGap           // distancia da borda quando flutuante (px)
     property bool wpPickerOpen: false                   // seletor aberto (nao e salvo)
-    // ---- animacoes nomeadas: lista propria + qual usar em cada lugar ----
+    // ---- animacoes nomeadas: lista propria + qual usar em cada lugar (o motor fica em Motion.qml) ----
     // tudo num so objeto salvo de uma vez (evita corrida entre gravar e recarregar o arquivo):
-    //   animCfg = { anims: [{ name, x1, y1, x2, y2, duration }], use: { bars, picker, wallpaper, workspaces } -> nome, migrated }
+    //   animCfg = { anims: [{ name, type: bezier|spring, x1, y1, x2, y2, duration, mass, stiffness, dampening }],
+    //               use: { alvo: nome } (abrir / unico), out: { alvo: nome } (fechar; sem entrada = igual a abrir),
+    //               speed: 1 (velocidade global), hypr: false (o Hyprland segue estas animacoes), hyprStyle: { windows, workspaces, layers }, migrated }
     property alias animCfg: adapter.animCfg
     readonly property var anims: (animCfg && animCfg.anims) ? animCfg.anims : []
     readonly property var animUse: (animCfg && animCfg.use) ? animCfg.use : animDefaults
+    readonly property var animOut: (animCfg && animCfg.out) ? animCfg.out : ({})
     readonly property bool animMigrated: !!(animCfg && animCfg.migrated)
-    function setAnimCfg(patch: var): void { animCfg = Object.assign({ anims: anims, use: animUse, migrated: animMigrated }, patch) }
+    function setAnimCfg(patch: var): void { animCfg = Object.assign({}, animCfg ?? {}, { anims: anims, use: animUse, migrated: animMigrated }, patch) }
 
     readonly property var builtinAnims: [
         { name: "Padrão", x1: 5, y1: 70, x2: 10, y2: 100, duration: 260, builtin: true },
@@ -136,30 +144,60 @@ Singleton {
         { name: "Rápida", x1: 20, y1: 80, x2: 40, y2: 100, duration: 160, builtin: true },
         { name: "Linear", x1: 0, y1: 0, x2: 100, y2: 100, duration: 300, builtin: true },
         { name: "Elástica", x1: 30, y1: 150, x2: 60, y2: 100, duration: 600, builtin: true },
-        { name: "Wallpaper", x1: 40, y1: 0, x2: 20, y2: 100, duration: 900, builtin: true }
+        { name: "Wallpaper", x1: 40, y1: 0, x2: 20, y2: 100, duration: 900, builtin: true },
+        { name: "Ênfase (entrada)", x1: 5, y1: 70, x2: 10, y2: 100, duration: 500, builtin: true },
+        { name: "Ênfase (saída)", x1: 30, y1: 0, x2: 80, y2: 15, duration: 400, builtin: true },
+        { name: "Saída rápida", x1: 30, y1: 0, x2: 80, y2: 15, duration: 220, builtin: true },
+        { name: "Padrão M3", x1: 20, y1: 0, x2: 0, y2: 100, duration: 500, builtin: true },
+        { name: "Mola", type: "spring", mass: 1, stiffness: 238, dampening: 24.2, builtin: true },
+        { name: "Mola macia", type: "spring", mass: 1, stiffness: 170, dampening: 26, builtin: true },
+        { name: "Mola elástica", type: "spring", mass: 1, stiffness: 320, dampening: 15, builtin: true },
+        { name: "Quique", type: "spring", mass: 1, stiffness: 420, dampening: 11, builtin: true }
+    ]
+    // group: secao na pagina Animacoes; phases: tem abrir e fechar; hypr: folhas do Hyprland [abrir, fechar]; style: chave do estilo (hyprStyle)
+    readonly property var animGroups: [
+        { id: "panels", label: "Painéis", icon: "dashboard" },
+        { id: "shell", label: "Barras e moldura", icon: "bars" },
+        { id: "desk", label: "Área de trabalho e sessão", icon: "image" },
+        { id: "hypr", label: "Janelas (Hyprland)", icon: "window" }
     ]
     readonly property var animTargets: [
-        { id: "bars", label: "Barras (mostrar / esconder)" },
-        { id: "picker", label: "Seletor de wallpaper" },
-        { id: "wallpaper", label: "Transição de wallpaper" },
-        { id: "workspaces", label: "Workspaces" },
-        { id: "launcher", label: "Launcher de aplicativos" },
-        { id: "notifications", label: "Notificações" },
-        { id: "home", label: "Painel Início" },
-        { id: "power", label: "Menu de energia" },
-        { id: "lock", label: "Tela de bloqueio" },
-        { id: "desktop", label: "Widgets da área de trabalho" }
+        { id: "launcher", label: "Launcher de aplicativos", group: "panels", phases: true, page: "launcher" },
+        { id: "home", label: "Painel Início", group: "panels", phases: true, page: "home" },
+        { id: "picker", label: "Seletor de wallpaper", group: "panels", phases: true, page: "wallpaper" },
+        { id: "notifications", label: "Notificações", group: "panels", phases: true, page: "notifications" },
+        { id: "osd", label: "Indicador de volume", group: "panels", phases: true, page: "frame" },
+        { id: "settings", label: "Janela de configurações", group: "panels", phases: true },
+        { id: "power", label: "Menu de energia", group: "panels", phases: true, page: "session" },
+        { id: "bars", label: "Barras (mostrar / esconder)", group: "shell", phases: true, page: "bars" },
+        { id: "workspaces", label: "Workspaces na barra", group: "shell" },
+        { id: "wallpaper", label: "Transição de wallpaper", group: "desk", page: "wallpaper" },
+        { id: "desktop", label: "Widgets da área de trabalho", group: "desk", page: "desktop" },
+        { id: "lock", label: "Tela de bloqueio", group: "desk", page: "session" },
+        { id: "hyprWindows", label: "Abrir e fechar janelas", group: "hypr", phases: true, hypr: ["windowsIn", "windowsOut"], style: "windows" },
+        { id: "hyprMove", label: "Mover e redimensionar", group: "hypr", hypr: ["windowsMove"] },
+        { id: "hyprWorkspaces", label: "Trocar de workspace", group: "hypr", hypr: ["workspaces"], style: "workspaces" },
+        { id: "hyprLayers", label: "Camadas flutuantes (launcher solto, menus)", group: "hypr", phases: true, hypr: ["layersIn", "layersOut"], style: "layers" }
     ]
-    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera", power: "Desacelera", lock: "Desacelera", desktop: "Suave" })
+    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera", power: "Desacelera", lock: "Desacelera", desktop: "Suave",
+        osd: "Desacelera", settings: "Ênfase (entrada)", hyprWindows: "Ênfase (entrada)", hyprMove: "Padrão M3", hyprWorkspaces: "Padrão M3", hyprLayers: "Ênfase (entrada)" })
+    // saida: so onde a fechada sempre foi diferente (o resto fecha igual abre, como antes)
+    readonly property var animOutDefaults: ({ settings: "Ênfase (saída)", hyprWindows: "Saída rápida", hyprLayers: "Ênfase (saída)" })
+    readonly property var hyprStyleDefaults: ({ windows: "popin 85%", workspaces: "slide", layers: "slide" })
+    readonly property var hyprStyleOptions: ({
+        windows: [["popin 85%", "Surgir"], ["slide", "Deslizar"], ["gnomed", "GNOME"]],
+        workspaces: [["slide", "Deslizar"], ["slidevert", "Vertical"], ["slidefade 20%", "Deslizar + fade"], ["fade", "Fade"]],
+        layers: [["slide", "Deslizar"], ["popin 90%", "Surgir"], ["fade", "Fade"]]
+    })
+    function targetInfo(id: string): var { return animTargets.find(t => t.id === id) ?? null }
 
     function allAnims(): var { return builtinAnims.concat(anims) }
     function findAnim(name: string): var { return allAnims().find(a => a.name === name) ?? null }
-    // animacao em uso num lugar: { duration (ms), curve (para easing.bezierCurve) }
-    function animOf(target: string): var {
-        const a = findAnim(animUse[target] ?? animDefaults[target]) ?? findAnim(animDefaults[target]) ?? builtinAnims[0]
-        return { duration: a.duration, curve: [a.x1 / 100, a.y1 / 100, a.x2 / 100, a.y2 / 100, 1, 1] }
-    }
+    // compatibilidade: animacao de abrir/unica de um lugar (ver Motion.of)
+    function animOf(target: string): var { return Motion.of(target, false) }
     function setUse(target: string, name: string): void { const u = Object.assign({}, animUse); u[target] = name; setAnimCfg({ use: u }) }
+    // fechar: name vazio = igual a abrir
+    function setOut(target: string, name: string): void { const o = Object.assign({}, animOut); o[target] = name; setAnimCfg({ out: o }) }
     function uniqueAnimName(base: string): string {
         let n = base, i = 2
         while (findAnim(n)) n = base + " " + i++
@@ -193,15 +231,17 @@ Singleton {
         const a = list.find(x => x.name === oldName)
         if (!a) return oldName
         a.name = newName
-        const u = Object.assign({}, animUse)
+        const u = Object.assign({}, animUse), o = Object.assign({}, animOut)
         for (const k in u) if (u[k] === oldName) u[k] = newName
-        setAnimCfg({ anims: list, use: u })
+        for (const k in o) if (o[k] === oldName) o[k] = newName
+        setAnimCfg({ anims: list, use: u, out: o })
         return newName
     }
     function removeAnim(name: string): void {
-        const u = Object.assign({}, animUse)
+        const u = Object.assign({}, animUse), o = Object.assign({}, animOut)
         for (const k in u) if (u[k] === name) u[k] = animDefaults[k] ?? "Padrão"
-        setAnimCfg({ anims: anims.filter(a => a.name !== name), use: u })
+        for (const k in o) if (o[k] === name) delete o[k]
+        setAnimCfg({ anims: anims.filter(a => a.name !== name), use: u, out: o })
     }
 
     // uma vez: leva a animacao global antiga (curva/duracao unicas) para uma animacao nomeada
@@ -295,6 +335,10 @@ Singleton {
         adapter.notifTimeout = 6
         adapter.notifFillet = 12
         adapter.notifRadius = 14
+        adapter.osdOn = true
+        adapter.osdDocked = true
+        adapter.osdSide = "right"
+        adapter.osdTimeout = 1400
         adapter.launcherWidth = 640
         adapter.launcherRows = 7
         adapter.launcherIcon = 32
@@ -316,7 +360,7 @@ Singleton {
         adapter.themeBrave = true
         adapter.themeVariant = "tonalspot"
         adapter.themeBorders = true
-        adapter.animCfg = { anims: [], use: animDefaults, migrated: true }
+        adapter.animCfg = { anims: [], use: animDefaults, out: {}, speed: 1, hypr: false, migrated: true }
         adapter.bars = [defaultBar("bottom")]
     }
 
@@ -468,6 +512,10 @@ Singleton {
             property int notifTimeout: 6
             property int notifFillet: 12
             property int notifRadius: 14
+            property bool osdOn: true
+            property bool osdDocked: true
+            property string osdSide: "right"
+            property int osdTimeout: 1400
             property int launcherWidth: 640
             property int launcherRows: 7
             property int launcherIcon: 32

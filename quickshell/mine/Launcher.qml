@@ -25,7 +25,7 @@ Scope {
         else if (Settings.launcherDocked) closeTimer.restart()   // acoplado: espera a moldura recolher
         else alive = false                                        // flutuante: quem anima a saida e o Hyprland
     }
-    Timer { id: closeTimer; interval: 480; onTriggered: root.alive = false }
+    Timer { id: closeTimer; interval: Motion.durationOf("launcher", true) + 80; onTriggered: root.alive = false }
 
     // ---- tamanho do conteudo (compartilhado: a moldura acoplada cresce ate ele) ----
     readonly property var list: root.results(root.query)
