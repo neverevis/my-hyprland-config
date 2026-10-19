@@ -77,8 +77,19 @@ Singleton {
         if (hc !== "") t += "-- opcoes do Hyprland (pagina Hyprland)\n" + hc + "\n"
         const anim = Motion.hyprLua()
         if (anim !== "") t += "-- animacoes das janelas (pagina Animacoes: o Hyprland segue o shell)\n" + anim + "\n"
+        if (cursorLua() !== "") t += "-- cursor (pagina Sistema)\n" + cursorLua() + "\n"
         return t
     }
+    // cursor escolhido na pagina Sistema: variaveis para os apps que abrirem e o setcursor ao entrar (depois dos seus)
+    function cursorLua(): string {
+        const c = Settings.sysCursor, n = Settings.sysCursorSize
+        if (c === "" || !/^[A-Za-z0-9._+-]+$/.test(c)) return ""
+        return ["XCURSOR_THEME", "HYPRCURSOR_THEME"].map(k => 'hl.env("' + k + '", "' + c + '")').join("\n") + "\n"
+            + ["XCURSOR_SIZE", "HYPRCURSOR_SIZE"].map(k => 'hl.env("' + k + '", "' + n + '")').join("\n") + "\n"
+            + 'hl.on("hyprland.start", function() hl.exec_cmd("hyprctl setcursor ' + c + ' ' + n + '") end)'
+    }
+    readonly property string cursorSig: cursorLua()
+    onCursorSigChanged: if (ready) timer.restart()
 
     // mudancas que exigem recarregar a config (regra de camada) x mudancas ao vivo
     readonly property string ruleSig: Settings.shellBlur + "/" + Settings.shellIgnoreAlpha + "/" + Settings.blurManaged + "/" + floatRules() + "/" + Settings.desktopBlur   // desligar o controle tambem recarrega (volta aos valores do HyprMod)

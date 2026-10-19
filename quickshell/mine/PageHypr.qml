@@ -13,7 +13,8 @@ Column {
     function formSchema(gid) {
         return HyprConf.options.filter(o => o.group === gid).map(o => {
             const d = Object.assign({}, o)
-            if (o.pct) { d.from = o.from * 100; d.to = o.to * 100; d.step = 1; d.suffix = " %" }
+            // fracoes (opacidade, velocidade do mouse): o controle trabalha em inteiros, entao vai em % (x100)
+            if (o.pct || o.float) { d.from = o.from * 100; d.to = o.to * 100; d.step = o.float ? Math.max(1, (o.step ?? 0.01) * 100) : 1; d.suffix = " %" }
             if (o.type === "text") d.enterOnly = true
             return d
         })
@@ -44,8 +45,8 @@ Column {
             OptionsForm {
                 width: parent.width
                 schema: page.formSchema(grpCard.modelData.id)
-                get: k => { const o = HyprConf.opt(k), v = HyprConf.value(k); return o && o.pct && v !== undefined ? Math.round(v * 100) : v }
-                set: (k, v) => { const o = HyprConf.opt(k); HyprConf.set(k, o && o.pct ? v / 100 : v) }
+                get: k => { const o = HyprConf.opt(k), v = HyprConf.value(k); return o && (o.pct || o.float) && v !== undefined ? Math.round(v * 100) : v }
+                set: (k, v) => { const o = HyprConf.opt(k); HyprConf.set(k, o && (o.pct || o.float) ? v / 100 : v) }
                 isShown: d => !d.when || !!HyprConf.value(d.when)
             }
             UiButton { visible: page.count(grpCard.modelData.id) > 0; icon: "restore"; text: "Restaurar " + grpCard.modelData.label.toLowerCase(); kind: "ghost"

@@ -308,5 +308,7 @@ Singleton {
         function lock(): void { root.locked = !root.locked }
         function select(id: string): void { root.editing = true; root.selected = id }   // abre as opcoes de um widget
         function menu(x: int, y: int): void { DeskMenu.show(x, y, "") }                   // menu de clique direito nesse ponto
+        function state(): string { return JSON.stringify({ editing: root.editing, selected: root.selected, locked: root.locked, peek: root.peek }) }
+        function stop(): void { root.editing = false; root.selected = ""; root.peek = false }   // sai da edicao (testes)
     }
 }

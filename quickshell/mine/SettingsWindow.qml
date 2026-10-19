@@ -35,6 +35,7 @@ Scope {
 
     readonly property var groups: [
         { label: "Visual", pages: [
+            { id: "overview", label: "Geral", icon: "sparkle", desc: "O visual de agora, a paleta, claro ou escuro, ajustes rápidos e atalhos para todas as páginas." },
             { id: "looks", label: "Visuais", icon: "layers", desc: "Presets do shell inteiro: salvar o visual de agora, aplicar com desfazer, exportar e importar." },
             { id: "look", label: "Aparência", icon: "palette", desc: "Vidro, tema de cores a partir do wallpaper, bordas das janelas, fontes e cores manuais." },
             { id: "frame", label: "Moldura", icon: "frame", desc: "O que nasce da moldura e o que flutua solto, o contorno, as curvas e o indicador de volume." },
@@ -53,6 +54,9 @@ Scope {
             { id: "wall", label: "Wallpaper", icon: "wallpaper", desc: "Imagem de fundo, transições e o seletor (Super + W)." },
             { id: "desktop", label: "Widgets", icon: "view_grid", desc: "Widgets na área de trabalho, a cor deles e os layouts prontos." },
             { id: "session", label: "Sessão", icon: "power", desc: "Tela de bloqueio, menu de energia e foto de perfil." }
+        ] },
+        { label: "Sistema", pages: [
+            { id: "system", label: "Sistema", icon: "desktop", desc: "Ícones dos aplicativos, cursor, mouse e fontes do sistema, com prévia e para baixar mais." }
         ] }
     ]
     readonly property var allPages: groups.reduce((a, g) => a.concat(g.pages), [])
@@ -84,7 +88,7 @@ Scope {
     readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === Settings.settingsPage) ?? groups[0].pages[0]
 
     // ---- paginas e indice de busca (fora da janela: o launcher tambem procura opcoes com ela fechada) ----
-    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC })
+    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC, system: systemC, overview: overviewC })
     Item { id: indexHost; visible: false; width: 900; height: 10 }
     Component { id: barsC; PageBars { geo: root.geo } }
     Component { id: homeC; PageHome {} }
@@ -100,6 +104,8 @@ Scope {
     Component { id: looksC; PageLooks {} }
     Component { id: hyprC; PageHypr {} }
     Component { id: toolsC; PageTools {} }
+    Component { id: systemC; PageSystem {} }
+    Component { id: overviewC; PageOverview { pages: root.groups } }
     function walk(o, card, out, pg) {
         if (!o) return
         let c = card
@@ -295,9 +301,16 @@ Scope {
             Item {
                 id: header
                 anchors { left: parent.left; right: parent.right; top: parent.top; leftMargin: 28; rightMargin: 20; topMargin: 20 }
-                height: 52
+                height: 52 + (jumps.visible ? 44 : 0)
+                Rectangle {
+                    id: pageIc
+                    visible: root.query === ""
+                    width: 48; height: 48; radius: 15
+                    color: Theme.tint(0.16)
+                    UiIcon { anchors.centerIn: parent; name: root.cur.icon; size: 24; color: Theme.accent }
+                }
                 Column {
-                    anchors { left: parent.left; right: closeBtn.left; verticalCenter: parent.verticalCenter }
+                    anchors { left: pageIc.visible ? pageIc.right : parent.left; leftMargin: pageIc.visible ? 14 : 0; right: closeBtn.left; rightMargin: 10; top: parent.top; topMargin: 1 }
                     spacing: 3
                     UiText { text: root.query !== "" ? "Busca" : root.cur.label; color: Theme.text; font.pixelSize: 24; font.weight: Font.Bold }
                     UiText {
@@ -306,6 +319,50 @@ Scope {
                     }
                 }
                 UiButton { id: closeBtn; anchors { right: parent.right; top: parent.top } icon: "close"; kind: "ghost"; onClicked: Settings.settingsOpen = false }
+                // "Nesta pagina": um atalho para cada cartao (rola ate ele e acende a borda)
+                Flickable {
+                    id: jumps
+                    property var cards: []
+                    visible: root.query === "" && cards.length >= 3
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
+                    height: 32
+                    contentWidth: jumpRow.implicitWidth
+                    clip: true
+                    interactive: false
+                    WheelHandler { onWheel: e => { const f = jumps; f.contentX = Math.max(0, Math.min(Math.max(0, f.contentWidth - f.width), f.contentX - e.angleDelta.y - e.angleDelta.x)) } }
+                    Row {
+                        id: jumpRow
+                        spacing: 6
+                        Repeater {
+                            model: jumps.cards
+                            delegate: Rectangle {
+                                required property var modelData
+                                height: 30; width: jr.implicitWidth + 22; radius: 15
+                                color: jm.containsMouse ? Theme.tint(0.16) : Theme.track
+                                border.width: 1; border.color: jm.containsMouse ? Theme.tint(0.5) : Theme.border
+                                Row {
+                                    id: jr
+                                    anchors.centerIn: parent
+                                    spacing: 6
+                                    UiIcon { visible: !!modelData.icon; name: modelData.icon; size: 13; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                                    UiText { text: modelData.title; color: Theme.text; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+                                }
+                                MouseArea { id: jm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { revealT.card = modelData.title; revealT.interval = 10; revealT.restart() } }
+                            }
+                        }
+                    }
+                }
+                Timer {
+                    id: jumpT
+                    interval: 250
+                    onTriggered: {
+                        const out = [], page = pageLoader.item
+                        const find = o => { if (!o) return; if (typeof o.title === "string" && o.title !== "" && o.subtitle !== undefined && o.visible) { out.push({ title: o.title, icon: o.icon ?? "" }); return } for (const ch of o.children ?? []) find(ch) }
+                        find(page)
+                        jumps.cards = out
+                        jumps.contentX = 0
+                    }
+                }
             }
 
             Flickable {
@@ -325,9 +382,10 @@ Scope {
                     id: pageLoader
                     x: 28
                     width: pageFlick.width - 56
-                    sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC })[Settings.settingsPage] ?? lookC
+                    sourceComponent: root.comps[Settings.settingsPage] ?? overviewC
                     visible: root.query === ""
-                    onSourceComponentChanged: { pageFlick.contentY = 0; pageIn.restart() }
+                    onSourceComponentChanged: { pageFlick.contentY = 0; pageIn.restart(); jumpT.restart() }
+                    onLoaded: jumpT.restart()
                     // troca de pagina: entra subindo um pouco e aparecendo
                     property real shift: 0
                     transform: Translate { y: pageLoader.shift }

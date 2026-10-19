@@ -13,7 +13,8 @@ Meu shell em **Quickshell** para o **Hyprland**: uma moldura fina na tela com ba
 - **Launcher** com prefixos: apps, comandos, área de transferência com imagens, emojis e símbolos, atalhos do Hyprland, tradutor, calculadora, busca na web (buscador configurável) e nas opções do shell.
 - **Notificações** que crescem da moldura, **OSD**, **tela de bloqueio** (relógio flor, senha em formas, chaveiro), **menu de energia** que avisa se houver atualização do pacman rodando.
 - **Ferramentas**: captura de área, OCR, traduzir a tela, anotar, Google Lens, gravar tela/área com som, prateleira de arquivos, painel de jogo (mira, notas, volume por app), luz noturna com horário, proteção contra clarão, cantos ativos, equalizador (EasyEffects), proteção de volume.
-- **Configurações** numa janela normal: páginas para tudo, incluindo as opções do Hyprland (espaçamentos, bordas, monitor, teclado, apps ao iniciar) e uma biblioteca de **animações** com editor de curvas e molas.
+- **Sistema**: tema de ícones e de cursor com prévia (e para instalar mais pelo pacman/yay), mouse e fontes do sistema, com download direto do Google Fonts.
+- **Configurações** numa janela normal, com página Geral (prévia do visual, ajustes rápidos) e atalhos para cada cartão: páginas para tudo, incluindo as opções do Hyprland (espaçamentos, bordas, monitor, teclado, apps ao iniciar) e uma biblioteca de **animações** com editor de curvas e molas.
 
 ## Requisitos
 

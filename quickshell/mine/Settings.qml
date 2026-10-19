@@ -85,6 +85,8 @@ Singleton {
     property alias desktopMenu: adapter.desktopMenu         // menu de clique direito na area de trabalho
     property alias desktopMenuHidden: adapter.desktopMenuHidden // tipos que nao aparecem em "Adicionar widget" do menu
     property alias desktopBlur: adapter.desktopBlur         // desfoque do Hyprland atras dos cartoes
+    property alias sysCursor: adapter.sysCursor             // tema do cursor escolhido no shell ("" = o shell nao mexe)
+    property alias sysCursorSize: adapter.sysCursorSize
     property alias weatherCity: adapter.weatherCity         // "" = descobrir pela internet (IP)
     property alias weatherUnits: adapter.weatherUnits       // metric | imperial
     property alias weatherInterval: adapter.weatherInterval // minutos
@@ -217,7 +219,7 @@ Singleton {
     property alias launcherOffset: adapter.launcherOffset
     property alias launcherFillet: adapter.launcherFillet       // curva onde o painel acoplado encontra a moldura
     property bool settingsOpen: false                           // janela de configuracoes aberta (nao e salvo)
-    property string settingsPage: "bars"                        // pagina aberta nas configuracoes (nao e salvo; paginas podem levar a outras)
+    property string settingsPage: "overview"                        // pagina aberta nas configuracoes (nao e salvo; paginas podem levar a outras)
     property bool launcherOpen: false                           // launcher aberto (nao e salvo)
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
@@ -686,6 +688,8 @@ Singleton {
             property bool desktopMenu: true
             property var desktopMenuHidden: []
             property bool desktopBlur: true
+            property string sysCursor: ""
+            property int sysCursorSize: 24
             property string weatherCity: ""
             property string weatherUnits: "metric"
             property int weatherInterval: 20
