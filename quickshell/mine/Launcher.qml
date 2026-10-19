@@ -1,4 +1,6 @@
-// Launcher de aplicativos: painel de vidro no centro (ou no topo) com busca; apps ordenados por uso.
+// Launcher de aplicativos: painel de vidro no centro (ou no topo) com busca; apps ordenados por uso (favoritos primeiro).
+// Modos por prefixo (configuraveis): acoes, area de transferencia (com miniaturas), emoji, simbolos, conta, comando,
+// web, atalhos do Hyprland, so apps. Sem prefixo tambem acha opcoes do shell (indice da janela de configuracoes).
 // Abra/feche com:  qs -c mine ipc call launcher toggle     (Super + Space no Hyprland)
 // Setas / Ctrl+N / Ctrl+P escolhem, Enter abre, Esc fecha. Configuracoes: pagina "Launcher".
 import Quickshell
@@ -49,7 +51,7 @@ Scope {
         else if (n.startsWith(q)) s = 800 - n.length
         else if (n.includes(" " + q)) s = 600 - n.length
         else if (n.includes(q)) s = 500 - n.indexOf(q)
-        else {
+        else if (Settings.launcherFuzzy) {
             let i = 0, gaps = 0, last = -1
             for (const ch of q) {   // subsequencia (ex.: "ffx" -> Firefox)
                 const j = n.indexOf(ch, i)
@@ -58,31 +60,47 @@ Scope {
                 last = j; i = j + 1
             }
             if (i >= 0) s = 300 - gaps
-            else {
-                const extra = ((e.genericName ?? "") + " " + (e.comment ?? "") + " " + (e.keywords ?? []).join(" ")).toLowerCase()
-                if (extra.includes(q)) s = 150
-            }
+        }
+        if (s === 0) {
+            const extra = ((e.genericName ?? "") + " " + (e.comment ?? "") + " " + (e.keywords ?? []).join(" ")).toLowerCase()
+            if (extra.includes(q)) s = 150
         }
         return s
     }
-    // ---- resultados: apps e, com prefixo, outras coisas (item = { name, desc, icon (tema) | glyph (Ico) | big (emoji), act }) ----
-    //   /acoes   ;area de transferencia   :emoji   =conta   $comando   ?web   >so apps
-    // sem prefixo: conta (se parecer uma), apps, acoes parecidas e buscar na web
-    readonly property var prefixes: [["/", "ações"], [";", "área de transferência"], [":", "emoji"], ["=", "conta"], ["$", "comando"], ["?", "web"]]
-    readonly property string mode: { const c = query.trim().charAt(0); return ["/", ";", ":", "=", "$", "?", ">"].indexOf(c) >= 0 ? c : "" }
+    // ---- resultados: apps e, com prefixo, outras coisas ----
+    // item = { name, desc, icon (tema) | glyph (Ico) | big (emoji/simbolo) | thumb (imagem), keys (atalho), act, alt (clique direito), fav }
+    // prefixos configuraveis na pagina Launcher (Settings.launcherPrefixes guarda so os trocados)
+    readonly property var prefixDefaults: ({ actions: "/", clipboard: ";", emoji: ":", symbols: ".", math: "=", cmd: "$", web: "?", keys: "<", apps: ">" })
+    readonly property var prefixLabels: [["actions", "ações"], ["clipboard", "área de transferência"], ["emoji", "emoji"], ["symbols", "símbolos"],
+        ["math", "conta"], ["cmd", "comando"], ["web", "web"], ["keys", "atalhos"], ["apps", "só apps"]]
+    readonly property var pfx: Object.assign({}, prefixDefaults, Settings.launcherPrefixes || {})
+    readonly property var prefixes: prefixLabels.filter(x => pfx[x[0]]).map(x => [pfx[x[0]], x[1]])
+    // o que aparece sem prefixo
+    readonly property var dflt: Object.assign({ math: true, actions: true, settings: true, web: true }, Settings.launcherDefaults || {})
+    readonly property string mode: {
+        const t = query.replace(/^\s+/, "")
+        let best = "", len = 0
+        for (const k in pfx) { const p = pfx[k]; if (p && t.startsWith(p) && p.length > len) { best = k; len = p.length } }
+        return best
+    }
+    readonly property string rest: mode ? query.replace(/^\s+/, "").slice(pfx[mode].length) : query
     function appItems(q) {
         q = q.trim().toLowerCase()
-        const usage = Settings.launcherUsage ?? {}
-        const apps = DesktopEntries.applications.values.filter(e => !e.noDisplay)
+        const usage = Settings.launcherUsage ?? {}, favs = root.arr(Settings.launcherFavs), hidden = root.arr(Settings.launcherHidden)
+        const apps = DesktopEntries.applications.values.filter(e => !e.noDisplay && hidden.indexOf(e.id) < 0)
         const scored = []
         for (const e of apps) {
-            const boost = Math.min(usage[e.id] ?? 0, 30) * 4
-            if (q === "") scored.push({ e: e, s: boost })
-            else { const r = rank(e, q); if (r > 0) scored.push({ e: e, s: r + boost }) }
+            const fav = favs.indexOf(e.id) >= 0
+            const boost = Math.min(usage[e.id] ?? 0, 30) * 4 + (fav ? (q === "" ? 10000 - favs.indexOf(e.id) : 200) : 0)
+            if (q === "") scored.push({ e: e, s: boost, fav: fav })
+            else { const r = rank(e, q); if (r > 0) scored.push({ e: e, s: r + boost, fav: fav }) }
         }
         scored.sort((a, b) => b.s - a.s || (a.e.name ?? "").localeCompare(b.e.name ?? ""))
-        return scored.map(x => ({ name: x.e.name, desc: x.e.comment || x.e.genericName || "", icon: x.e.icon, act: () => root.launch(x.e) }))
+        return scored.map(x => ({ name: x.e.name, desc: x.e.comment || x.e.genericName || "", icon: x.e.icon, fav: x.fav,
+                                  act: () => root.launch(x.e), alt: () => root.toggleFav(x.e.id), altHint: x.fav ? "tirar dos favoritos" : "favoritar" }))
     }
+    function arr(v) { return Array.isArray(v) ? v : [] }
+    function toggleFav(id) { const l = arr(Settings.launcherFavs).slice(), i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else l.push(id); Settings.launcherFavs = l }
     function norm(t) { return String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase() }
     function actionItems(q) {
         const w = norm(q).trim().split(/\s+/).filter(x => x)
@@ -102,45 +120,112 @@ Scope {
         const out = Math.abs(v) >= 1e15 || (Math.abs(v) < 1e-6 && v !== 0) ? v.toExponential(6) : String(Math.round(v * 1e10) / 1e10)
         return [{ name: "= " + out.replace(".", ","), desc: t + "  ·  Enter copia o resultado", glyph: "calc", act: () => { Quickshell.clipboardText = out } }]
     }
+    // area de transferencia (scripts/clip.py: imagens viram miniaturas); textos fixados ficam no topo
+    readonly property string clipScript: Qt.resolvedUrl("scripts/clip.py").toString().replace("file://", "")
     property var clips: []
     Process {
         id: clipProc
-        command: ["cliphist", "list"]
-        stdout: StdioCollector { onStreamFinished: root.clips = text.split("\n").filter(l => l).slice(0, 300) }
+        command: ["python3", root.clipScript, "list", "300"]
+        stdout: StdioCollector { onStreamFinished: { try { root.clips = JSON.parse(text) } catch (e) { root.clips = [] } } }
     }
-    onModeChanged: if (mode === ";") { clipProc.running = false; clipProc.running = true }
+    onModeChanged: {
+        if (mode === "clipboard") { clipProc.running = false; clipProc.running = true }
+        if (mode === "keys" && !keysLoaded) { keysProc.running = false; keysProc.running = true }
+    }
+    function pinClip(t) { const l = arr(Settings.launcherClipPins).slice(), i = l.indexOf(t); if (i >= 0) l.splice(i, 1); else l.unshift(t); Settings.launcherClipPins = l }
     function clipItems(q) {
-        const w = norm(q).trim()
-        return clips.filter(l => w === "" || norm(l).includes(w)).slice(0, 60).map(l => {
-            const txt = l.split("\t").slice(1).join("\t"), img = /^\[\[ binary data/.test(txt)
-            return { name: img ? "Imagem" : txt.replace(/\s+/g, " ").slice(0, 160), desc: img ? txt.replace(/^\[\[ binary data |\]\]$/g, "") : "Enter copia de novo", glyph: img ? "image" : "cards",
-                     act: () => Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | cliphist decode | wl-copy', "sh", l]) }
+        const w = norm(q).trim(), pins = arr(Settings.launcherClipPins)
+        const pinned = pins.filter(t => w === "" || norm(t).includes(w)).map(t => ({ name: t.replace(/\s+/g, " ").slice(0, 160), desc: "Fixado · clique direito solta", glyph: "tag",
+            act: () => { Quickshell.clipboardText = t }, alt: () => root.pinClip(t), altHint: "soltar" }))
+        const hist = clips.filter(c => w === "" || norm(c.text).includes(w)).slice(0, 80).map(c => {
+            const img = c.img !== "" || /^\[\[ binary data/.test(c.text)
+            const txt = c.text
+            return { name: img ? "Imagem" : txt.replace(/\s+/g, " ").slice(0, 160), desc: img ? txt.replace(/^\[\[ binary data |\]\]$/g, "") : "Enter copia · clique direito fixa · Delete apaga",
+                     glyph: img ? "image" : "cards", thumb: c.img,
+                     act: () => Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | cliphist decode | wl-copy', "sh", c.line]),
+                     alt: img ? null : () => root.pinClip(txt), altHint: "fixar",
+                     del: () => { Quickshell.execDetached(["python3", root.clipScript, "delete", c.line]); root.clips = root.clips.filter(x => x.line !== c.line) } }
         })
+        return pinned.concat(hist)
     }
+    // emoji e simbolos: copiar ou digitar no app (wtype, depois que o launcher fecha)
+    function pick(text) {
+        Quickshell.clipboardText = text
+        if (Settings.launcherPick === "type") Quickshell.execDetached(["sh", "-c", 'sleep 0.25; wtype -- "$1"', "sh", text])
+    }
+    readonly property string pickHint: Settings.launcherPick === "type" ? "Enter digita no app" : "Enter copia"
     property var emojis: []
     FileView { id: emojiFile; path: Qt.resolvedUrl("assets/emoji.tsv").toString().replace("file://", ""); onLoaded: root.emojis = text().split("\n").map(l => l.split("\t")) }
     function emojiItems(q) {
         const w = norm(q).trim().split(/\s+/).filter(x => x)
         return emojis.filter(e => w.every(x => (e[1] ?? "").includes(x))).slice(0, 80)
-            .map(e => ({ name: e[1], desc: "Enter copia", big: e[0], act: () => { Quickshell.clipboardText = e[0] } }))
+            .map(e => ({ name: e[1], desc: root.pickHint, big: e[0], act: () => root.pick(e[0]) }))
     }
-    function webItem(q) { return { name: "Buscar na web: " + q.trim(), desc: Settings.launcherEngine.replace(/https?:\/\//, "").split("/")[0], glyph: "web", act: () => Qt.openUrlExternally(Settings.launcherEngine + encodeURIComponent(q.trim())) } }
-    function cmdItem(q) { return { name: q.trim() === "" ? "Digite um comando" : "Executar: " + q.trim(), desc: "Roda em segundo plano (sem terminal)", glyph: "send", act: () => { if (q.trim()) Quickshell.execDetached(["sh", "-c", q.trim()]) } } }
+    property var symbols: []
+    FileView { path: Qt.resolvedUrl("assets/symbols.tsv").toString().replace("file://", ""); onLoaded: root.symbols = text().split("\n").filter(l => l).map(l => l.split("\t")) }
+    function symbolItems(q) {
+        const w = norm(q).trim().split(/\s+/).filter(x => x)
+        return symbols.filter(e => w.every(x => norm(e[1] ?? "").includes(x) || e[0] === x)).slice(0, 120)
+            .map(e => ({ name: e[1].charAt(0).toUpperCase() + e[1].slice(1), desc: root.pickHint, big: e[0], act: () => root.pick(e[0]) }))
+    }
+    // atalhos do Hyprland (scripts/keybinds.py le a config em Lua)
+    property var keybinds: []
+    property bool keysLoaded: false
+    Process {
+        id: keysProc
+        command: ["python3", Qt.resolvedUrl("scripts/keybinds.py").toString().replace("file://", "")]
+        stdout: StdioCollector { onStreamFinished: { try { root.keybinds = JSON.parse(text); root.keysLoaded = true } catch (e) {} } }
+    }
+    function keyItems(q) {
+        const w = norm(q).trim().split(/\s+/).filter(x => x)
+        return keybinds.filter(k => w.every(x => norm(k.label + " " + k.keys + " " + k.section).includes(x)))
+            .map(k => ({ name: k.label, desc: k.section, glyph: "keyboard", keys: k.keys, act: () => { Quickshell.clipboardText = k.keys } }))
+    }
+    // busca na web: %s no endereco vira o texto (senao vai no fim); sites excluidos viram -site:
+    function webUrl(q) {
+        const ex = (Settings.launcherExclude || []).filter(x => x).map(x => " -site:" + x).join("")
+        const term = encodeURIComponent(q.trim() + ex), e = Settings.launcherEngine
+        return e.indexOf("%s") >= 0 ? e.replace("%s", term) : e + term
+    }
+    function webItem(q) { return { name: "Buscar na web: " + q.trim(), desc: Settings.launcherEngine.replace(/https?:\/\//, "").split("/")[0], glyph: "web", act: () => Qt.openUrlExternally(root.webUrl(q)) } }
+    function cmdItems(q) {
+        const c = q.trim()
+        if (c === "") return [{ name: "Digite um comando", desc: "Enter roda em segundo plano; a segunda opção abre no terminal", glyph: "send", act: () => {} }]
+        return [{ name: "Executar: " + c, desc: "Em segundo plano (sem terminal)", glyph: "send", act: () => Quickshell.execDetached(["sh", "-c", c]) },
+                { name: "Executar no terminal: " + c, desc: (Settings.launcherTerminal || "kitty") + " (fica aberto no fim)", glyph: "desktop",
+                  act: () => Quickshell.execDetached([Settings.launcherTerminal || "kitty", "sh", "-c", c + '; echo; read -rp "[Enter fecha] " _']) }]
+    }
+    // opcoes do shell (indice da janela de configuracoes): abre direto no cartao
+    property var settingsRef: null
+    function settingItems(q) {
+        if (!settingsRef) return []
+        if (!settingsRef.index.length) return []   // o indice e montado ao abrir o launcher (onAliveChanged)
+        const w = norm(q).trim().split(/\s+/).filter(x => x)
+        if (!w.length) return []
+        return settingsRef.index.filter(e => w.every(x => norm(e.label + " " + e.card + " " + e.desc + " " + e.pageLabel).includes(x))).slice(0, 4)
+            .map(e => ({ name: e.label || e.card, desc: "Configurações › " + e.pageLabel + (e.label ? " › " + e.card : ""), glyph: "cog", act: () => root.settingsRef.show(e) }))
+    }
     function results(query) {
-        const t = query.trim(), rest = t.slice(1)
+        const t = query.trim(), r = rest
         switch (mode) {
-        case "/": return actionItems(rest)
-        case ";": return clipItems(rest)
-        case ":": return emojiItems(rest)
-        case "=": return mathItems(rest, true)
-        case "$": return [cmdItem(rest)]
-        case "?": return [webItem(rest)]
-        case ">": return appItems(rest)
+        case "actions": return actionItems(r)
+        case "clipboard": return clipItems(r)
+        case "emoji": return emojiItems(r)
+        case "symbols": return symbolItems(r)
+        case "math": return mathItems(r, true)
+        case "cmd": return cmdItems(r)
+        case "web": return [webItem(r)]
+        case "keys": return keyItems(r)
+        case "apps": return appItems(r)
         }
         const apps = appItems(t)
         if (t === "") return apps
-        return mathItems(t, false).concat(apps, t.length >= 3 ? actionItems(t).slice(0, 3) : [], [webItem(t)])
+        return (dflt.math ? mathItems(t, false) : []).concat(apps,
+            dflt.actions && t.length >= 3 ? actionItems(t).slice(0, 3) : [],
+            dflt.settings && t.length >= 3 ? settingItems(t) : [],
+            dflt.web ? [webItem(t)] : [])
     }
+    onAliveChanged: if (alive && dflt.settings && settingsRef && !settingsRef.index.length) settingsRef.buildIndex()
     function run(it) { if (!it) return; Settings.launcherOpen = false; it.act() }
     function launch(e) {
         if (!e) return
@@ -264,6 +349,9 @@ Scope {
                                 UiText { visible: input.text === ""; anchors.verticalCenter: parent.verticalCenter; text: "Buscar…"; color: Theme.muted; font.pixelSize: 16 }
                                 // dicas dos prefixos (some ao digitar)
                                 Row {
+                                    id: chips
+                                    // sem espaco para os nomes: so o caractere (o nome aparece ao passar o mouse)
+                                    readonly property bool compact: parent.width < 820
                                     visible: input.text === "" && parent.width > 420
                                     anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                                     spacing: 4
@@ -273,7 +361,7 @@ Scope {
                                             required property var modelData
                                             height: 22; width: pt.implicitWidth + 12; radius: 6
                                             color: pm.containsMouse ? Theme.tint(0.2) : Theme.tint(0.08)
-                                            UiText { id: pt; anchors.centerIn: parent; text: modelData[0] + " " + modelData[1]; color: Theme.muted; font.pixelSize: 10 }
+                                            UiText { id: pt; anchors.centerIn: parent; text: chips.compact && !pm.containsMouse ? modelData[0] : modelData[0] + " " + modelData[1]; color: pm.containsMouse ? Theme.text : Theme.muted; font.pixelSize: 10 }
                                             MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { input.text = modelData[0]; input.forceActiveFocus() } }
                                         }
                                     }
@@ -286,6 +374,9 @@ Scope {
                                 Keys.onReturnPressed: root.run(root.list[view.currentIndex])
                                 Keys.onEnterPressed: root.run(root.list[view.currentIndex])
                                 Keys.onPressed: e => {
+                                    const it = root.list[view.currentIndex]
+                                    if (e.key === Qt.Key_Delete && it && it.del) { it.del(); e.accepted = true; return }
+                                    if ((e.key === Qt.Key_Menu || (e.key === Qt.Key_F10 && (e.modifiers & Qt.ShiftModifier))) && it && it.alt) { it.alt(); e.accepted = true; return }
                                     if (e.modifiers & Qt.ControlModifier) {
                                         if (e.key === Qt.Key_N || e.key === Qt.Key_J) { view.currentIndex = Math.min(view.count - 1, view.currentIndex + 1); e.accepted = true }
                                         else if (e.key === Qt.Key_P || e.key === Qt.Key_K) { view.currentIndex = Math.max(0, view.currentIndex - 1); e.accepted = true }
@@ -342,10 +433,33 @@ Scope {
                                         color: Theme.tint(0.16)
                                         UiIcon { anchors.centerIn: parent; name: row.modelData.glyph ?? ""; size: parent.width * 0.55; color: Theme.accent }
                                     }
-                                    UiText { anchors.centerIn: parent; visible: !!row.modelData.big; text: row.modelData.big ?? ""; font.pixelSize: parent.width * 0.85 }
+                                    UiText { anchors.centerIn: parent; visible: !!row.modelData.big; text: row.modelData.big ?? ""; font.pixelSize: parent.width * 0.85; color: Theme.text }
+                                    RoundImage {
+                                        visible: !!row.modelData.thumb
+                                        anchors.centerIn: parent
+                                        width: parent.width * 1.6; height: parent.height; radius: 6
+                                        source: row.modelData.thumb ? "file://" + row.modelData.thumb : ""
+                                        sourceSize: Qt.size(160, 100)
+                                    }
+                                }
+                                // favorito / atalho (teclas) no canto direito
+                                Row {
+                                    id: tail
+                                    anchors { right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
+                                    spacing: 4
+                                    UiIcon { visible: !!row.modelData.fav; name: "sparkle"; size: 14; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                                    Repeater {
+                                        model: row.modelData.keys ? row.modelData.keys.split(" + ") : []
+                                        delegate: Rectangle {
+                                            required property string modelData
+                                            height: 22; width: Math.max(22, kt.implicitWidth + 12); radius: 6
+                                            color: Theme.track; border.width: 1; border.color: Theme.border
+                                            UiText { id: kt; anchors.centerIn: parent; text: modelData; color: Theme.text; font.pixelSize: 11; font.weight: Font.DemiBold }
+                                        }
+                                    }
                                 }
                                 Column {
-                                    anchors { left: ico.right; leftMargin: 14; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
+                                    anchors { left: ico.right; leftMargin: row.modelData.thumb ? 14 + ico.width * 0.3 : 14; right: tail.left; rightMargin: 10; verticalCenter: parent.verticalCenter }
                                     spacing: 1
                                     UiText { width: parent.width; text: row.modelData.name; color: Theme.text; font.pixelSize: 15; font.weight: Font.Medium; elide: Text.ElideRight }
                                     UiText {
@@ -358,8 +472,9 @@ Scope {
                                 MouseArea {
                                     anchors.fill: parent
                                     hoverEnabled: true
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
                                     onEntered: view.currentIndex = row.index
-                                    onClicked: root.run(row.modelData)
+                                    onClicked: m => { if (m.button === Qt.RightButton) { if (row.modelData.alt) row.modelData.alt() } else root.run(row.modelData) }
                                 }
                             }
                         }

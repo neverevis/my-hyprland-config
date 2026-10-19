@@ -64,8 +64,8 @@ ShellRoot {
 
     WallpaperWindow {}
     WallpaperPicker { geo: shell.geo }
-    SettingsWindow { geo: shell.geo }
-    Launcher { geo: shell.geo }
+    SettingsWindow { id: settingsWin; geo: shell.geo }
+    Launcher { geo: shell.geo; settingsRef: settingsWin }
     Notifications { geo: shell.geo }
     OsdWindow { geo: shell.geo }
     Home { geo: shell.geo }

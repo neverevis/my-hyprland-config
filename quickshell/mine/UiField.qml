@@ -10,6 +10,7 @@ TextField {
     selectionColor: Theme.accent
     selectedTextColor: Theme.accentText
     font.pixelSize: 13
+    font.family: Theme.font
     leftPadding: 10
     selectByMouse: true
     background: Rectangle {

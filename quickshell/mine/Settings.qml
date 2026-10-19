@@ -160,6 +160,15 @@ Singleton {
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
     property alias launcherEngine: adapter.launcherEngine       // busca na web (prefixo "?"): a busca vai no fim
+    property alias launcherExclude: adapter.launcherExclude     // sites fora da busca na web (vira -site:x)
+    property alias launcherPrefixes: adapter.launcherPrefixes   // prefixo de cada modo (so os trocados; ver Launcher.prefixDefaults)
+    property alias launcherDefaults: adapter.launcherDefaults   // o que aparece sem prefixo: math, actions, settings, web
+    property alias launcherFuzzy: adapter.launcherFuzzy         // busca aproximada (letras na ordem, ex.: "ffx" acha Firefox)
+    property alias launcherFavs: adapter.launcherFavs           // apps favoritos (ids): primeiro na lista
+    property alias launcherHidden: adapter.launcherHidden       // apps escondidos (ids)
+    property alias launcherTerminal: adapter.launcherTerminal   // terminal do modo comando
+    property alias launcherClipPins: adapter.launcherClipPins   // textos fixados na area de transferencia
+    property alias launcherPick: adapter.launcherPick           // emoji e simbolo: copy (copiar) | type (digitar no app)
     property alias wpPickerCount: adapter.wpPickerCount       // quantos wallpapers aparecem no seletor (1, 3 ou 5)
     property alias wpPickerRadius: adapter.wpPickerRadius     // arredondamento dos cantos do painel (topo)
     property alias wpPickerFillet: adapter.wpPickerFillet     // curva onde o painel encontra a moldura
@@ -666,6 +675,15 @@ Singleton {
             property int launcherFillet: 13
             property var launcherUsage: ({})
             property string launcherEngine: "https://www.google.com/search?q="
+            property var launcherExclude: []
+            property var launcherPrefixes: ({})
+            property var launcherDefaults: ({})
+            property bool launcherFuzzy: true
+            property var launcherFavs: []
+            property var launcherHidden: []
+            property string launcherTerminal: "kitty"
+            property var launcherClipPins: []
+            property string launcherPick: "copy"
             property int wpPickerRadius: 11
             property int wpPickerFillet: 13
             property int wpCardRadius: 14
