@@ -38,7 +38,7 @@ Column {
                 : Settings.desktopTone === "custom" ? "Uma cor só para todos os widgets." : "Cartões no tom suave dessa cor da paleta, texto e destaques nela. Muda junto com o tema." }
         ColorField { visible: Settings.desktopTone === "custom"; label: "Minha cor"; value: Settings.desktopToneColor; onPicked: c => Settings.desktopToneColor = c.toString() }
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Cada widget pode ter a própria cor nas opções dele (ou seguir esta, em \"Padrão\")." }
-        UiSwitch { label: "Sombra nos widgets sem fundo"; description: "Deixa o texto legível em cima de qualquer wallpaper."; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }
+        UiSwitch { label: "Sombra nos widgets"; icon: "layers"; description: "Deixa o texto legível em cima de qualquer wallpaper. Estilo, intensidade e tamanho: Aparência › Sombras e brilhos."; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }
         UiSwitch { label: "Encaixar na grade ao arrastar"; description: "Grade de 24 px e guias no centro da tela."; checked: Settings.desktopSnap; onToggled: on => Settings.desktopSnap = on }
         UiSwitch { label: "Desfoque atrás dos widgets"; icon: "blur"; description: "O desfoque do Hyprland por trás dos cartões e do vidro. A intensidade é a da página Blur."; checked: Settings.desktopBlur; onToggled: on => Settings.desktopBlur = on }
         UiSwitch { label: "Menu de clique direito na área de trabalho"; icon: "menu"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }

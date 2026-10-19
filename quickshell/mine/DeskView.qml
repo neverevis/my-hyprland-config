@@ -110,6 +110,16 @@ Item {
             // fundo do cartao: no tom escolhido usa a versao suave da familia
             readonly property color cardBase: fam ? pal.cont : tone === "custom" ? contT : Theme.bg
 
+            // cartao e vidro: sombra opcional por baixo (pagina Aparencia > Sombras e brilhos)
+            RectangularShadow {
+                anchors.fill: bg
+                visible: Settings.desktopShadow && Settings.desktopShadowCards && !card.bare
+                radius: bg.radius
+                blur: 6 + Settings.desktopShadowSize * 0.4
+                spread: 0
+                offset.y: DeskState.shadowOffset(card.light) * 2
+                color: DeskState.shadowColor(card.light)
+            }
             Rectangle {
                 id: bg
                 anchors.fill: parent
@@ -131,7 +141,7 @@ Item {
                     // sem fundo: sombra suave para ler em cima de qualquer wallpaper
                     // (menos nos que tem fundo proprio, como o relogio flor: a sombra virava uma copia da forma por baixo)
                     layer.enabled: card.bare && Settings.desktopShadow && !(content.item && content.item.ownBackground)
-                    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: card.light ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.65); shadowBlur: card.light ? 0.3 : 0.6; shadowVerticalOffset: card.light ? 0 : 1; blurMax: 24 }
+                    layer.effect: MultiEffect { shadowEnabled: true; shadowColor: DeskState.shadowColor(card.light); shadowBlur: DeskState.shadowBlur(card.light); shadowVerticalOffset: DeskState.shadowOffset(card.light); blurMax: 32 }
                 }
             }
             function feed() {

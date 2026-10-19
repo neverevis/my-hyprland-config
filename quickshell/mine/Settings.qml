@@ -86,6 +86,18 @@ Singleton {
     property alias desktopMenuHidden: adapter.desktopMenuHidden // tipos que nao aparecem em "Adicionar widget" do menu
     property alias desktopBlur: adapter.desktopBlur         // desfoque do Hyprland atras dos cartoes
     property alias sysCursor: adapter.sysCursor             // tema do cursor escolhido no shell ("" = o shell nao mexe)
+    // sombras: janelas (cor do Hyprland: "" = a da sua config, dark, theme = uma cor do tema, custom) e widgets
+    property alias winShadowMode: adapter.winShadowMode
+    property alias winShadowRole: adapter.winShadowRole
+    property alias winShadowColor: adapter.winShadowColor
+    property alias winShadowAlpha: adapter.winShadowAlpha
+    property alias winShadowFocusOnly: adapter.winShadowFocusOnly
+    property alias winShadowOffset: adapter.winShadowOffset
+    property alias desktopShadowMode: adapter.desktopShadowMode       // auto (pelo wallpaper) | dark | light | accent
+    property alias desktopShadowStrength: adapter.desktopShadowStrength
+    property alias desktopShadowSize: adapter.desktopShadowSize
+    property alias desktopShadowOffset: adapter.desktopShadowOffset
+    property alias desktopShadowCards: adapter.desktopShadowCards     // sombra tambem nos widgets com cartao/vidro
     property alias sysCursorSize: adapter.sysCursorSize
     property alias weatherCity: adapter.weatherCity         // "" = descobrir pela internet (IP)
     property alias weatherUnits: adapter.weatherUnits       // metric | imperial
@@ -689,6 +701,17 @@ Singleton {
             property var desktopMenuHidden: []
             property bool desktopBlur: true
             property string sysCursor: ""
+            property string winShadowMode: ""
+            property string winShadowRole: "primary"
+            property string winShadowColor: "#000000"
+            property int winShadowAlpha: 35
+            property bool winShadowFocusOnly: false
+            property int winShadowOffset: 0
+            property string desktopShadowMode: "auto"
+            property int desktopShadowStrength: 65
+            property int desktopShadowSize: 60
+            property int desktopShadowOffset: 1
+            property bool desktopShadowCards: false
             property int sysCursorSize: 24
             property string weatherCity: ""
             property string weatherUnits: "metric"

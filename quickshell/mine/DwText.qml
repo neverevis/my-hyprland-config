@@ -31,7 +31,7 @@ Item {
         wrapMode: Text.WordWrap
         horizontalAlignment: ({ left: Text.AlignLeft, center: Text.AlignHCenter, right: Text.AlignRight })[w.o("align")]
         verticalAlignment: Text.AlignVCenter
-        layer.enabled: w.o("shadow") && !w.bare   // sem fundo, a sombra ja vem do DeskView
-        layer.effect: MultiEffect { shadowEnabled: true; shadowColor: Qt.rgba(0, 0, 0, 0.6); shadowBlur: 0.5; shadowVerticalOffset: 2 }
+        layer.enabled: w.o("shadow") && !w.bare && Settings.desktopShadow   // sem fundo, a sombra ja vem do DeskView
+        layer.effect: MultiEffect { shadowEnabled: true; shadowColor: DeskState.shadowColor(false); shadowBlur: DeskState.shadowBlur(false); shadowVerticalOffset: DeskState.shadowOffset(false) + 1 }
     }
 }

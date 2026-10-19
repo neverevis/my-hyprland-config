@@ -115,7 +115,7 @@ Item {
             visible: w.o("outline") > 0 && stk.status === Image.Ready
             colorization: 1; colorizationColor: "white"; brightness: 1
             blurEnabled: true; blur: 0.2; blurMax: Math.max(1, w.o("outline") * 2)
-            shadowEnabled: true; shadowColor: Qt.rgba(0, 0, 0, 0.45); shadowBlur: 0.6; shadowVerticalOffset: 4
+            shadowEnabled: Settings.desktopShadow; shadowColor: DeskState.shadowColor(false); shadowBlur: DeskState.shadowBlur(false); shadowVerticalOffset: DeskState.shadowOffset(false) + 3
         }
         MultiEffect { anchors.fill: parent; source: stk; visible: stk.status === Image.Ready }
     }

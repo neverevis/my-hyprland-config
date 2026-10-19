@@ -13,6 +13,8 @@ Column {
         UiSlider { visible: Settings.glass && !Settings.glassAuto; label: "Opacidade"; from: 10; to: 100; value: Settings.glassOpacity; suffix: " %"; onMoved: v => Settings.glassOpacity = v }
     }
 
+    ShadowCard {}
+
     Card {
         icon: "palette"
         title: "Tema de cores"

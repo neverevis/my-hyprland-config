@@ -78,6 +78,7 @@ Singleton {
         const anim = Motion.hyprLua()
         if (anim !== "") t += "-- animacoes das janelas (pagina Animacoes: o Hyprland segue o shell)\n" + anim + "\n"
         if (cursorLua() !== "") t += "-- cursor (pagina Sistema)\n" + cursorLua() + "\n"
+        if (shadowLua() !== "") t += "-- sombra das janelas (pagina Aparencia)\n" + shadowLua() + "\n"
         return t
     }
     // cursor escolhido na pagina Sistema: variaveis para os apps que abrirem e o setcursor ao entrar (depois dos seus)
@@ -88,6 +89,18 @@ Singleton {
             + ["XCURSOR_SIZE", "HYPRCURSOR_SIZE"].map(k => 'hl.env("' + k + '", "' + n + '")').join("\n") + "\n"
             + 'hl.on("hyprland.start", function() hl.exec_cmd("hyprctl setcursor ' + c + ' ' + n + '") end)'
     }
+    // sombra/brilho das janelas: cor (preta, do tema ou escolhida) com transparencia, so na janela em foco, deslocamento
+    function shadowLua(): string {
+        const m = Settings.winShadowMode
+        if (m === "") return ""
+        const hex = (m === "theme" ? ThemeColors.hexOf(Settings.winShadowRole) : m === "custom" ? Settings.winShadowColor : "#000000").replace("#", "").slice(-6)
+        const a = ("0" + Math.round(Math.max(0, Math.min(100, Settings.winShadowAlpha)) * 2.55).toString(16)).slice(-2)
+        const c = "rgba(" + hex + a + ")"
+        return 'hl.config({ decoration = { shadow = { color = "' + c + '", color_inactive = "' + (Settings.winShadowFocusOnly ? "rgba(00000000)" : c) + '", offset = "0 ' + Settings.winShadowOffset + '" } } })'
+    }
+    readonly property string shadowSig: shadowLua()
+    property bool lastShadow: false
+    onShadowSigChanged: if (ready) timer.restart()
     readonly property string cursorSig: cursorLua()
     onCursorSigChanged: if (ready) timer.restart()
 
@@ -116,6 +129,7 @@ Singleton {
         lastRule = ruleSig
         lastTheme = themeActive
         lastAnim = animSig !== ""
+        lastShadow = shadowSig !== ""
         lastHypr = { cfg: Object.assign({}, Settings.hyprCfg || {}), mon: JSON.stringify(Settings.hyprMonitor || {}) }
         out.setText(content())
         ready = true
@@ -133,12 +147,14 @@ Singleton {
             out.setText(root.content())
             const themeOff = root.lastTheme && !root.themeActive   // desligou o tema: volta as cores do HyprMod/Hyprland
             root.lastTheme = root.themeActive
+            const shadowOff = root.lastShadow && root.shadowSig === ""   // voltou para a cor da sua config: recarrega
+            root.lastShadow = root.shadowSig !== ""
             const animOff = root.lastAnim && root.animSig === ""
             root.lastAnim = root.animSig !== ""
             const prevCfg = root.lastHypr.cfg, nowCfg = Settings.hyprCfg || {}
             const hyprRemoved = Object.keys(prevCfg).some(k => nowCfg[k] === undefined) || (root.lastHypr.mon !== "{}" && JSON.stringify(Settings.hyprMonitor || {}) === "{}")
             root.lastHypr = { cfg: Object.assign({}, nowCfg), mon: JSON.stringify(Settings.hyprMonitor || {}) }
-            if (root.ruleSig !== root.lastRule || themeOff || animOff || hyprRemoved) {
+            if (root.ruleSig !== root.lastRule || themeOff || animOff || hyprRemoved || shadowOff) {
                 root.lastRule = root.ruleSig
                 runner.command = ["hyprctl", "reload"]
                 runner.running = true
@@ -147,6 +163,7 @@ Singleton {
                 if (root.themeActive) parts.push(root.themeLua())
                 if (Settings.blurManaged) parts.push("hl.config({ decoration = { blur = " + root.blurTable() + " } })")
                 if (root.animSig !== "") parts.push(root.animSig)
+                if (root.shadowSig !== "") parts.push(root.shadowSig)
                 const hc = HyprConf.configLua(), hm = HyprConf.monitorLua()
                 if (hc !== "") parts.push(hc)
                 if (hm !== "") parts.push(hm)

@@ -182,6 +182,16 @@ Singleton {
         return true
     }
 
+    // sombra dos widgets (pagina Aparencia > Sombras e brilhos): "light" = wallpaper claro embaixo (no automatico vira brilho)
+    function shadowGlow(light) { const m = Settings.desktopShadowMode; return m === "light" || m === "accent" || (m === "auto" && light) }
+    function shadowColor(light) {
+        const k = Settings.desktopShadowStrength / 100, m = Settings.desktopShadowMode
+        if (m === "accent") return Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, Math.min(1, k * 0.9))
+        return shadowGlow(light) ? Qt.rgba(1, 1, 1, k * 0.4) : Qt.rgba(0, 0, 0, k)
+    }
+    function shadowBlur(light) { return Settings.desktopShadowSize / 100 * (shadowGlow(light) ? 0.6 : 1) }
+    function shadowOffset(light) { return shadowGlow(light) ? 0 : Settings.desktopShadowOffset }
+
     // widgets com campo de texto pedem o teclado (a camada da area de trabalho normalmente nao recebe teclas)
     property var keyWant: ({})
     readonly property bool typing: Object.keys(keyWant).some(k => keyWant[k])
