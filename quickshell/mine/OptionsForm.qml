@@ -60,7 +60,7 @@ Column {
         UiSlider {
             label: parent.def.label
             from: parent.def.from; to: parent.def.to
-            value: parent.val ?? parent.def.def
+            value: parent.val ?? parent.def.def ?? parent.def.from
             suffix: parent.def.suffix ?? ""
             onMoved: v => { const st = parent.def.step ?? 1; form.set(parent.def.key, Math.round(v / st) * st) }
         }
@@ -85,7 +85,7 @@ Column {
                     clip: true
                     Keys.onReturnPressed: e => { if (!parent.parent.parent.def.multiline || (e.modifiers & Qt.ControlModifier)) { focus = false; e.accepted = true } else e.accepted = false }
                     onActiveFocusChanged: if (!activeFocus) form.set(parent.parent.parent.def.key, text)
-                    onTextChanged: if (activeFocus) saveT.restart()
+                    onTextChanged: if (activeFocus && !parent.parent.parent.def.enterOnly) saveT.restart()
                     Timer { id: saveT; interval: 600; onTriggered: form.set(te.parent.parent.parent.def.key, te.text) }
                 }
             }

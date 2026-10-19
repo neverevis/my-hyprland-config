@@ -69,6 +69,8 @@ Singleton {
             t += "hl.config({ decoration = { blur = " + blurTable() + " } })\n"
         t += ruleLine() + "\n"
         if (themeActive) t += themeLua() + "\n"
+        const hc = HyprConf.lua()
+        if (hc !== "") t += "-- opcoes do Hyprland (pagina Hyprland)\n" + hc + "\n"
         const anim = Motion.hyprLua()
         if (anim !== "") t += "-- animacoes das janelas (pagina Animacoes: o Hyprland segue o shell)\n" + anim + "\n"
         return t
@@ -86,6 +88,10 @@ Singleton {
     onAnimSigChanged: if (ready) timer.restart()
 
     readonly property string themeSig: themeActive + "/" + (themeActive ? themeLua() : "")
+    // opcoes do Hyprland: mudar aplica ao vivo; tirar um override (restaurar) recarrega a config
+    readonly property string hyprSig: JSON.stringify(Settings.hyprCfg || {}) + JSON.stringify(Settings.hyprMonitor || {}) + JSON.stringify(Settings.hyprAutostart || [])
+    property var lastHypr: ({ cfg: {}, mon: "" })
+    onHyprSigChanged: if (ready) timer.restart()
     property bool lastTheme: false
     onThemeSigChanged: if (ready) timer.restart()
     onRuleSigChanged: if (ready) timer.restart()
@@ -95,6 +101,7 @@ Singleton {
         lastRule = ruleSig
         lastTheme = themeActive
         lastAnim = animSig !== ""
+        lastHypr = { cfg: Object.assign({}, Settings.hyprCfg || {}), mon: JSON.stringify(Settings.hyprMonitor || {}) }
         out.setText(content())
         ready = true
     }
@@ -113,7 +120,10 @@ Singleton {
             root.lastTheme = root.themeActive
             const animOff = root.lastAnim && root.animSig === ""
             root.lastAnim = root.animSig !== ""
-            if (root.ruleSig !== root.lastRule || themeOff || animOff) {
+            const prevCfg = root.lastHypr.cfg, nowCfg = Settings.hyprCfg || {}
+            const hyprRemoved = Object.keys(prevCfg).some(k => nowCfg[k] === undefined) || (root.lastHypr.mon !== "{}" && JSON.stringify(Settings.hyprMonitor || {}) === "{}")
+            root.lastHypr = { cfg: Object.assign({}, nowCfg), mon: JSON.stringify(Settings.hyprMonitor || {}) }
+            if (root.ruleSig !== root.lastRule || themeOff || animOff || hyprRemoved) {
                 root.lastRule = root.ruleSig
                 runner.command = ["hyprctl", "reload"]
                 runner.running = true
@@ -122,6 +132,9 @@ Singleton {
                 if (root.themeActive) parts.push(root.themeLua())
                 if (Settings.blurManaged) parts.push("hl.config({ decoration = { blur = " + root.blurTable() + " } })")
                 if (root.animSig !== "") parts.push(root.animSig)
+                const hc = HyprConf.configLua(), hm = HyprConf.monitorLua()
+                if (hc !== "") parts.push(hc)
+                if (hm !== "") parts.push(hm)
                 if (parts.length) {
                     runner.command = ["hyprctl", "eval", parts.join("\n")]
                     runner.running = true

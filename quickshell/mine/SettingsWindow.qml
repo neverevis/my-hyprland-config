@@ -39,6 +39,7 @@ Scope {
             { id: "look", label: "Aparência", icon: "palette", desc: "Vidro, tema de cores a partir do wallpaper, bordas das janelas, fontes e cores manuais." },
             { id: "frame", label: "Moldura", icon: "frame", desc: "O que nasce da moldura e o que flutua solto, o contorno, as curvas e o indicador de volume." },
             { id: "blur", label: "Blur", icon: "blur", desc: "Desfoque do Hyprland e da moldura." },
+            { id: "hypr", label: "Hyprland", icon: "window", desc: "Espaços, bordas, cantos, opacidade, sombra, layout, teclado, mouse, monitor, apps ao iniciar e atalhos." },
             { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e molas de tudo o que se move, inclusive as janelas do Hyprland." }
         ] },
         { label: "Componentes", pages: [
@@ -82,7 +83,7 @@ Scope {
     readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === Settings.settingsPage) ?? groups[0].pages[0]
 
     // ---- paginas e indice de busca (fora da janela: o launcher tambem procura opcoes com ela fechada) ----
-    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC })
+    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC })
     Item { id: indexHost; visible: false; width: 900; height: 10 }
     Component { id: barsC; PageBars { geo: root.geo } }
     Component { id: homeC; PageHome {} }
@@ -96,6 +97,7 @@ Scope {
     Component { id: sessionC; PageSession {} }
     Component { id: desktopC; PageDesktop {} }
     Component { id: looksC; PageLooks {} }
+    Component { id: hyprC; PageHypr {} }
     function walk(o, card, out, pg) {
         if (!o) return
         let c = card
@@ -308,7 +310,7 @@ Scope {
                     id: pageLoader
                     x: 28
                     width: pageFlick.width - 56
-                    sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC })[Settings.settingsPage] ?? lookC
+                    sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC })[Settings.settingsPage] ?? lookC
                     visible: root.query === ""
                     onSourceComponentChanged: { pageFlick.contentY = 0; pageIn.restart() }
                     // troca de pagina: entra subindo um pouco e aparecendo
