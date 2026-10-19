@@ -16,7 +16,7 @@ Item {
     implicitWidth: loader.item ? loader.item.implicitWidth : 0
     implicitHeight: loader.item ? loader.item.implicitHeight : 0
 
-    component Label: Text {
+    component Label: UiText {
         color: Settings.textColor
         font.pixelSize: 14
         horizontalAlignment: Text.AlignHCenter

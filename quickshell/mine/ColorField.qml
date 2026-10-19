@@ -14,11 +14,11 @@ Column {
     Item {
         width: parent.width
         height: 30
-        Text { anchors.verticalCenter: parent.verticalCenter; text: cr.label; color: Theme.text; font.pixelSize: 13 }
+        UiText { anchors.verticalCenter: parent.verticalCenter; text: cr.label; color: Theme.text; font.pixelSize: 13 }
         Row {
             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
             spacing: 8
-            Text { anchors.verticalCenter: parent.verticalCenter; text: cr.value.toString(); color: Theme.muted; font.pixelSize: 12 }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: cr.value.toString(); color: Theme.muted; font.pixelSize: 12 }
             Rectangle {
                 width: 44; height: 24; radius: 7
                 color: cr.value

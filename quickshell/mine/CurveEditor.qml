@@ -101,15 +101,15 @@ Rectangle {
         // rotulos dos eixos
         Repeater {
             model: [[-0.5, "-50%"], [0, "0"], [0.5, "50%"], [1, "100%"], [1.5, "150%"]]
-            delegate: Text {
+            delegate: UiText {
                 required property var modelData
                 x: -width - 8; y: cv.py(modelData[0]) - height / 2
                 text: modelData[1]; color: Theme.muted; font.pixelSize: 10
             }
         }
-        Text { anchors { right: parent.right; top: parent.bottom; topMargin: 7 } text: graph.duration + " ms"; color: Theme.muted; font.pixelSize: 10 }
-        Text { anchors { left: parent.left; top: parent.bottom; topMargin: 7 } text: "0"; color: Theme.muted; font.pixelSize: 10 }
-        Text { anchors { horizontalCenter: parent.horizontalCenter; top: parent.bottom; topMargin: 7 } text: "tempo"; color: Theme.muted; font.pixelSize: 10 }
+        UiText { anchors { right: parent.right; top: parent.bottom; topMargin: 7 } text: graph.duration + " ms"; color: Theme.muted; font.pixelSize: 10 }
+        UiText { anchors { left: parent.left; top: parent.bottom; topMargin: 7 } text: "0"; color: Theme.muted; font.pixelSize: 10 }
+        UiText { anchors { horizontalCenter: parent.horizontalCenter; top: parent.bottom; topMargin: 7 } text: "tempo"; color: Theme.muted; font.pixelSize: 10 }
 
         // "parece pronta": a partir daqui o movimento restante e imperceptivel
         Rectangle {
@@ -120,7 +120,7 @@ Rectangle {
                 anchors { horizontalCenter: parent.horizontalCenter; top: parent.top }
                 width: rdy.implicitWidth + 10; height: 18; radius: 6
                 color: Theme.card; border.width: 1; border.color: Theme.border
-                Text { id: rdy; anchors.centerIn: parent; text: "pronta em " + Math.round(graph.ready * graph.duration) + " ms"; color: Theme.muted; font.pixelSize: 10 }
+                UiText { id: rdy; anchors.centerIn: parent; text: "pronta em " + Math.round(graph.ready * graph.duration) + " ms"; color: Theme.muted; font.pixelSize: 10 }
             }
         }
         // linha do tempo e rastro da bolinha
@@ -192,7 +192,7 @@ Rectangle {
                     anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.top; bottomMargin: 6 }
                     width: tip.implicitWidth + 12; height: 20; radius: 6
                     color: Theme.card; border.width: 1; border.color: Theme.border
-                    Text { id: tip; anchors.centerIn: parent; text: (pin.vx / 100).toFixed(2) + ", " + (pin.vy / 100).toFixed(2); color: Theme.text; font.pixelSize: 10; font.family: "monospace" }
+                    UiText { id: tip; anchors.centerIn: parent; text: (pin.vx / 100).toFixed(2) + ", " + (pin.vy / 100).toFixed(2); color: Theme.text; font.pixelSize: 10; font.family: "monospace" }
                 }
                 MouseArea {
                     id: pinMouse

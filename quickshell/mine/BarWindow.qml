@@ -170,7 +170,7 @@ PanelWindow {
                             anchors { left: parent.left; bottom: parent.top; bottomMargin: -height / 2 }
                             width: dl.implicitWidth + 8; height: 13; radius: 4
                             color: Settings.accent
-                            Text { id: dl; anchors.centerIn: parent; text: sec.cfg.name || ("Seção " + (sec.index + 1)); color: Theme.accentText; font.pixelSize: 8; font.weight: Font.Bold }
+                            UiText { id: dl; anchors.centerIn: parent; text: sec.cfg.name || ("Seção " + (sec.index + 1)); color: Theme.accentText; font.pixelSize: 8; font.weight: Font.Bold }
                         }
                     }
 

@@ -12,6 +12,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "world", opts: w.opts }, k) }
 
@@ -58,7 +61,7 @@ Item {
                 Column {
                     anchors { horizontalCenter: parent.horizontalCenter; bottom: w.analog ? parent.bottom : undefined; verticalCenter: w.analog ? undefined : parent.verticalCenter }
                     spacing: 0
-                    Text { visible: !w.analog; anchors.horizontalCenter: parent.horizontalCenter
+                    UiText { visible: !w.analog; anchors.horizontalCenter: parent.horizontalCenter
                         text: String(modelData.hh).padStart(2, "0") + ":" + String(modelData.mm).padStart(2, "0")
                         color: w.fg; font.pixelSize: Math.min(parent.parent.height * 0.42, parent.parent.width * 0.3); font.weight: Font.Bold; font.features: { "tnum": 1 } }
                     Row {
@@ -66,9 +69,9 @@ Item {
                         spacing: 4
                         readonly property bool narrow: parent.parent.width < 100
                         UiIcon { visible: !parent.narrow; name: parent.parent.parent.night ? "wNight" : "wSun"; size: 11; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: modelData.city; color: w.fg; font.pixelSize: parent.narrow ? 10 : 12; font.weight: Font.DemiBold; elide: Text.ElideRight; width: Math.min(implicitWidth, parent.parent.parent.width - (parent.narrow ? 4 : 22)) }
+                        UiText { text: modelData.city; color: w.fg; font.pixelSize: parent.narrow ? 10 : 12; font.weight: Font.DemiBold; elide: Text.ElideRight; width: Math.min(implicitWidth, parent.parent.parent.width - (parent.narrow ? 4 : 22)) }
                     }
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.diff === 0 ? "aqui" : (modelData.diff > 0 ? "+" : "") + modelData.diff + " h"; color: w.dim; font.pixelSize: 10 }
+                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.diff === 0 ? "aqui" : (modelData.diff > 0 ? "+" : "") + modelData.diff + " h"; color: w.dim; font.pixelSize: 10 }
                 }
             }
         }

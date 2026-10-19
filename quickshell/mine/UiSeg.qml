@@ -55,7 +55,7 @@ Rectangle {
                         size: 16
                         color: opt.on ? Theme.accentText : (ma.containsMouse ? Theme.text : Theme.muted)
                     }
-                    Text {
+                    UiText {
                         visible: String(opt.modelData[1]) !== ""
                         anchors.verticalCenter: parent.verticalCenter
                         text: opt.modelData[1]

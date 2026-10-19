@@ -108,7 +108,7 @@ Scope {
                             size: 104; ring: 3
                             scale: 0.85 + 0.15 * win.p
                         }
-                        Text {
+                        UiText {
                             anchors.horizontalCenter: parent.horizontalCenter
                             text: win.greet + ", " + Profile.name
                             color: "white"; font.pixelSize: 26; font.weight: Font.Bold
@@ -117,7 +117,7 @@ Scope {
                             anchors.horizontalCenter: parent.horizontalCenter
                             spacing: 6
                             UiIcon { name: "clock"; size: 14; color: Qt.rgba(1, 1, 1, 0.7); anchors.verticalCenter: parent.verticalCenter }
-                            Text { text: "Ligado há " + win.uptime; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                            UiText { text: "Ligado há " + win.uptime; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }
 
@@ -188,7 +188,7 @@ Scope {
                                             }
                                         }
                                     }
-                                    Text {
+                                    UiText {
                                         anchors { horizontalCenter: parent.horizontalCenter; top: ic.bottom; topMargin: 12 }
                                         text: cell.waiting ? Math.max(1, Math.ceil(Settings.powerConfirm * (1 - win.count))) + " s" : cell.modelData.label
                                         color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold
@@ -197,7 +197,7 @@ Scope {
                                         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 10 }
                                         width: 20; height: 18; radius: 5
                                         color: Qt.rgba(1, 1, 1, 0.08)
-                                        Text { anchors.centerIn: parent; text: cell.modelData.key; color: Qt.rgba(1, 1, 1, 0.55); font.pixelSize: 10; font.weight: Font.Bold }
+                                        UiText { anchors.centerIn: parent; text: cell.modelData.key; color: Qt.rgba(1, 1, 1, 0.55); font.pixelSize: 10; font.weight: Font.Bold }
                                     }
                                     MouseArea {
                                         id: cm
@@ -213,7 +213,7 @@ Scope {
                     }
 
                     // dica / confirmacao
-                    Text {
+                    UiText {
                         anchors.horizontalCenter: parent.horizontalCenter
                         readonly property var pa: Power.actions.find(a => a.id === win.pending)
                         text: pa ? pa.verb + "… clique de novo para agora · Esc cancela" : "← → escolhe · Enter confirma · Esc fecha"

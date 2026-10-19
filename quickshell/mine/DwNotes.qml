@@ -11,6 +11,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "notes", opts: w.opts }, k) }
 
@@ -18,7 +21,7 @@ Item {
         id: head
         spacing: 8
         UiIcon { name: "pencil"; size: 16; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
-        Text { text: w.o("title"); color: w.fg; font.pixelSize: 15; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+        UiText { text: w.o("title"); color: w.fg; font.pixelSize: 15; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
     }
     Flickable {
         id: fl
@@ -30,13 +33,13 @@ Item {
             id: ed
             width: fl.width
             wrapMode: TextEdit.Wrap
-            color: w.fg; font.pixelSize: w.o("size"); font.family: w.o("mono") ? "monospace" : Qt.application.font.family
+            color: w.fg; font.pixelSize: w.o("size"); font.family: w.o("mono") ? Theme.mono : Theme.font
             selectionColor: Theme.accent; selectedTextColor: Theme.accentText
             selectByMouse: true
             // o texto so vem das opcoes ao abrir (e quando muda por fora, sem estar editando): digitar nao e interrompido
             Component.onCompleted: text = w.opts.text ?? ""
             onTextChanged: if (activeFocus) saveT.restart()
-            Text { visible: !ed.text && !ed.activeFocus; text: "Clique para escrever…"; color: w.dim; font.pixelSize: ed.font.pixelSize }
+            UiText { visible: !ed.text && !ed.activeFocus; text: "Clique para escrever…"; color: w.dim; font.pixelSize: ed.font.pixelSize }
             onCursorRectangleChanged: { if (cursorRectangle.y + cursorRectangle.height > fl.contentY + fl.height) fl.contentY = cursorRectangle.y + cursorRectangle.height - fl.height }
         }
     }

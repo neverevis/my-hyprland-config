@@ -17,7 +17,7 @@ Item {
     HomeScroll {
         anchors { top: top.bottom; topMargin: 10; left: parent.left; right: parent.right; bottom: parent.bottom }
         spacing: 6
-        Text { visible: NotifHistory.items.length === 0; text: "Nenhuma notificação por enquanto."; color: Theme.muted; font.pixelSize: 13; topPadding: 20 }
+        UiText { visible: NotifHistory.items.length === 0; text: "Nenhuma notificação por enquanto."; color: Theme.muted; font.pixelSize: 13; topPadding: 20 }
         Repeater {
             model: NotifHistory.items
             delegate: Rectangle {
@@ -43,11 +43,11 @@ Item {
                     spacing: 2
                     Row {
                         width: parent.width
-                        Text { width: parent.width - when.width; text: modelData.app; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
-                        Text { id: when; text: NotifHistory.ago(modelData.time); color: Theme.muted; font.pixelSize: 11 }
+                        UiText { width: parent.width - when.width; text: modelData.app; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
+                        UiText { id: when; text: NotifHistory.ago(modelData.time); color: Theme.muted; font.pixelSize: 11 }
                     }
-                    Text { width: parent.width; text: modelData.summary; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
-                    Text { visible: text !== ""; width: parent.width; text: modelData.body; textFormat: Text.StyledText; color: Theme.muted; font.pixelSize: 12; wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight }
+                    UiText { width: parent.width; text: modelData.summary; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                    UiText { visible: text !== ""; width: parent.width; text: modelData.body; textFormat: Text.StyledText; color: Theme.muted; font.pixelSize: 12; wrapMode: Text.Wrap; maximumLineCount: 3; elide: Text.ElideRight }
                 }
                 MouseArea { id: nm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: NotifHistory.remove(modelData.id) }
             }

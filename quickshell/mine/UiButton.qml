@@ -30,7 +30,7 @@ Rectangle {
         anchors.centerIn: parent
         spacing: 7
         UiIcon { visible: b.icon !== ""; anchors.verticalCenter: parent.verticalCenter; name: b.icon; size: 16; color: b.fg }
-        Text {
+        UiText {
             visible: b.text !== ""
             anchors.verticalCenter: parent.verticalCenter
             text: b.text

@@ -22,7 +22,7 @@ Singleton {
         { id: "dnd", label: "Não perturbe", icon: "bellSleep", sub: () => Settings.notifDnd ? "Ligado" : "Desligado", on: () => Settings.notifDnd, click: () => Settings.notifDnd = !Settings.notifDnd },
         { id: "profile", label: "Energia", icon: "balance", builtin: true },
         { id: "dark", label: "Modo escuro", icon: "night", sub: () => Settings.themeMode === "auto" ? "Automático" : (Settings.themeModeEff === "dark" ? "Ligado" : "Desligado"), on: () => Settings.themeModeEff === "dark", click: () => Settings.themeMode = Settings.themeModeEff === "dark" ? "light" : "dark" },
-        { id: "glass", label: "Vidro", icon: "glass", sub: () => Settings.glass ? Settings.glassOpacity + "% de opacidade" : "Desligado", on: () => Settings.glass, click: () => Settings.glass = !Settings.glass },
+        { id: "glass", label: "Vidro", icon: "glass", sub: () => Settings.glass ? Settings.glassOpacityEff + "% de opacidade" : "Desligado", on: () => Settings.glass, click: () => Settings.glass = !Settings.glass },
         { id: "caffeine", label: "Manter acordado", icon: "coffee", sub: () => Idle.paused ? "Sem bloqueio automático" : "Normal", on: () => Idle.paused, click: () => Idle.paused = !Idle.paused },
         { id: "mic", label: "Microfone", icon: "mic", sub: () => Osd.micMuted ? "Mudo" : "Ligado", on: () => !Osd.micMuted, click: () => { if (Osd.source && Osd.source.audio) Osd.source.audio.muted = !Osd.source.audio.muted } },
         { id: "record", label: "Gravar tela", icon: "monitor", sub: () => Recorder.active ? "Gravando " + Recorder.elapsed : "Parado", on: () => Recorder.active, click: () => { Settings.homeOpen = false; Recorder.toggle(false) } },

@@ -61,17 +61,18 @@ LazyLoader {
                         Avatar { size: 56; anchors.verticalCenter: parent.verticalCenter }
                         Column {
                             anchors.verticalCenter: parent.verticalCenter
-                            Text { text: "Autenticação necessária"; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
-                            Text { text: win.f && win.f.selectedIdentity ? "Como " + (win.f.selectedIdentity.displayName || Profile.user) : Profile.user; color: Theme.muted; font.pixelSize: 12 }
+                            UiText { text: "Autenticação necessária"; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
+                            UiText { text: win.f && win.f.selectedIdentity ? "Como " + (win.f.selectedIdentity.displayName || Profile.user) : Profile.user; color: Theme.muted; font.pixelSize: 12 }
                         }
                     }
-                    Text { width: parent.width; wrapMode: Text.WordWrap; text: win.f ? win.f.message : ""; color: Theme.text; font.pixelSize: 13 }
-                    Text { visible: text !== ""; width: parent.width; wrapMode: Text.WordWrap; text: win.f ? win.f.supplementaryMessage : ""; color: win.f && win.f.supplementaryIsError ? Theme.danger : Theme.muted; font.pixelSize: 12 }
+                    UiText { width: parent.width; wrapMode: Text.WordWrap; text: win.f ? win.f.message : ""; color: Theme.text; font.pixelSize: 13 }
+                    UiText { visible: text !== ""; width: parent.width; wrapMode: Text.WordWrap; text: win.f ? win.f.supplementaryMessage : ""; color: win.f && win.f.supplementaryIsError ? Theme.danger : Theme.muted; font.pixelSize: 12 }
                     Rectangle {
                         width: parent.width; height: 44; radius: 14
                         color: Theme.track; border.width: 1; border.color: pass.activeFocus ? Theme.accent : Theme.border
                         UiIcon { id: li; x: 14; anchors.verticalCenter: parent.verticalCenter; name: "lock"; size: 16; color: Theme.muted }
                         TextInput {
+                            font.family: Theme.font
                             id: pass
                             anchors { left: li.right; leftMargin: 10; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
                             echoMode: win.f && win.f.responseVisible ? TextInput.Normal : TextInput.Password
@@ -80,7 +81,7 @@ LazyLoader {
                             Component.onCompleted: forceActiveFocus()
                             onAccepted: if (win.f) win.f.submit(text)
                             Keys.onEscapePressed: if (win.f) win.f.cancelAuthenticationRequest()
-                            Text { visible: !pass.text; anchors.verticalCenter: parent.verticalCenter; text: win.f && win.f.inputPrompt ? win.f.inputPrompt.replace(/:\s*$/, "") : "Senha"; color: Theme.muted; font.pixelSize: 15 }
+                            UiText { visible: !pass.text; anchors.verticalCenter: parent.verticalCenter; text: win.f && win.f.inputPrompt ? win.f.inputPrompt.replace(/:\s*$/, "") : "Senha"; color: Theme.muted; font.pixelSize: 15 }
                         }
                     }
                     Row {

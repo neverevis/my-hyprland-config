@@ -36,10 +36,24 @@ Singleton {
     property alias themeKitty: adapter.themeKitty        // gera o tema do kitty
     property alias themeGtk: adapter.themeGtk            // cores nos apps GTK3/GTK4
     property alias themeBrave: adapter.themeBrave        // cor do tema do Brave (politica gerenciada)
+    property alias fontUi: adapter.fontUi                // fonte da interface ("" = a do sistema)
+    property alias fontMono: adapter.fontMono            // fonte monoespacada ("" = monospace)
     property alias themeBorders: adapter.themeBorders    // aplica as cores nas bordas das janelas do Hyprland
+    // cores da borda (ids da paleta, ver ThemeColors.roles): ativa = A (+ B em gradiente; "" = cor unica), inativa; opacidades em %
+    property alias themeBorderA: adapter.themeBorderA
+    property alias themeBorderB: adapter.themeBorderB
+    property alias themeBorderIn: adapter.themeBorderIn
+    property alias themeBorderAngle: adapter.themeBorderAngle
+    property alias themeBorderAlpha: adapter.themeBorderAlpha
+    property alias themeBorderInAlpha: adapter.themeBorderInAlpha
     property alias outline: adapter.outline             // contorno fino em todas as bordas
     property alias glass: adapter.glass
     property alias glassOpacity: adapter.glassOpacity
+    property alias glassAuto: adapter.glassAuto          // opacidade pelo wallpaper (como no end4): calmo = mais transparente
+    // wallpaper vivo (saturado e claro) pede mais opacidade para o texto continuar legivel; curva do end4 (0..22% de transparencia)
+    readonly property real wallVibrancy: { const c = Qt.color(ThemeColors.m && ThemeColors.m._source ? ThemeColors.m._source : ThemeColors.primary); return (c.hslSaturation + c.hslLightness) / 2 }
+    readonly property int glassOpacityAuto: { const x = wallVibrancy, y = Math.max(0, Math.min(0.22, 0.5768 * x * x - 0.759 * x + 0.2896)); return Math.round(Math.max(45, Math.min(95, 100 - y * 250))) }
+    readonly property int glassOpacityEff: glassAuto ? glassOpacityAuto : glassOpacity
     // ---- blur (ver HyprSync.qml): parte global do Hyprland e parte so da moldura do Quickshell ----
     property alias blurManaged: adapter.blurManaged     // o Quickshell controla o blur global do Hyprland
     property alias blurEnabled: adapter.blurEnabled
@@ -65,6 +79,8 @@ Singleton {
     property alias desktopCard: adapter.desktopCard         // opacidade do fundo dos cartoes (0..100)
     property alias desktopCardStyle: adapter.desktopCardStyle // fundo padrao: card | glass | none
     property alias desktopShadow: adapter.desktopShadow     // sombra nos widgets sem fundo
+    property alias desktopTone: adapter.desktopTone         // tom padrao dos widgets: auto | primary | secondary | tertiary | neutral | custom
+    property alias desktopToneColor: adapter.desktopToneColor
     property alias desktopSnap: adapter.desktopSnap         // encaixar na grade ao arrastar
     property alias desktopMenu: adapter.desktopMenu         // menu de clique direito na area de trabalho
     property alias weatherCity: adapter.weatherCity         // "" = descobrir pela internet (IP)
@@ -557,6 +573,7 @@ Singleton {
             property bool outline: true
             property bool glass: false
             property int glassOpacity: 60
+            property bool glassAuto: false
             property bool blurManaged: false
             property bool blurEnabled: true
             property int blurSize: 3
@@ -580,6 +597,8 @@ Singleton {
             property int desktopCard: 72
             property string desktopCardStyle: "card"
             property bool desktopShadow: true
+            property string desktopTone: "auto"
+            property string desktopToneColor: "#ffffff"
             property bool desktopSnap: true
             property bool desktopMenu: true
             property string weatherCity: ""
@@ -659,6 +678,14 @@ Singleton {
             property string themePreset: "mocha"
             property string themeVariant: "tonalspot"
             property bool themeBorders: true
+            property string fontUi: ""
+            property string fontMono: ""
+            property string themeBorderA: "primary"
+            property string themeBorderB: "secondary"
+            property string themeBorderIn: "outline"
+            property int themeBorderAngle: 45
+            property int themeBorderAlpha: 100
+            property int themeBorderInAlpha: 100
             property var animCfg: ({ anims: [], use: { bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida" }, migrated: false })
             property var bars: [{ side: "bottom", width: 520, offset: 0, height: 34, full: false, autoHide: false, modules: [{ type: "clock", format: "ddd dd MMM   HH:mm" }] }]
         }

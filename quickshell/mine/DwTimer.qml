@@ -11,6 +11,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     readonly property var me: ({ id: wid, type: "timer", opts: opts })
     function o(k) { return DeskState.opt(me, k) }
@@ -25,7 +28,7 @@ Item {
         return (h > 0 ? h + ":" + String(m).padStart(2, "0") : String(m).padStart(2, "0")) + ":" + String(sec).padStart(2, "0") }
     readonly property string phaseLabel: o("mode") === "stopwatch" ? "Cronômetro" : o("mode") === "countdown" ? "Regressivo"
         : (s.phase === "focus" ? "Foco" : s.phase === "long" ? "Pausa longa" : "Pausa") + " · ciclo " + s.cycle
-    readonly property color phaseCol: o("mode") === "pomodoro" && s.phase !== "focus" ? Qt.tint(w.ac, Qt.rgba(0.3, 0.9, 0.6, 0.55)) : w.ac
+    readonly property color phaseCol: o("mode") === "pomodoro" && s.phase !== "focus" ? w.ac2 : w.ac
 
     readonly property bool tiny: cols === 1 && rows === 1
     readonly property real ringS: tiny ? Math.min(width, height) : (rows > 1 ? Math.min(width, height * 0.66) : height)
@@ -51,7 +54,7 @@ Item {
         Column {
             anchors.centerIn: parent
             UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: w.o("mode") === "pomodoro" ? (w.s.phase === "focus" ? "target" : "coffee") : (w.o("mode") === "stopwatch" ? "stopwatch" : "timer"); size: ring.width * 0.14; color: w.phaseCol }
-            Text { anchors.horizontalCenter: parent.horizontalCenter; visible: w.tiny || w.rows > 1; text: w.fmt(w.remain); color: w.fg; font.pixelSize: ring.width * 0.2; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+            UiText { anchors.horizontalCenter: parent.horizontalCenter; visible: w.tiny || w.rows > 1; text: w.fmt(w.remain); color: w.fg; font.pixelSize: ring.width * 0.2; font.weight: Font.Bold; font.features: { "tnum": 1 } }
         }
         MouseArea { anchors.fill: parent; visible: w.tiny; cursorShape: Qt.PointingHandCursor; onClicked: w.s.running ? Timers.pause(w.wid) : Timers.start(w.wid) }
     }
@@ -60,8 +63,8 @@ Item {
         anchors { left: w.rows > 1 ? parent.left : ring.right; leftMargin: w.rows > 1 ? 0 : 16; right: parent.right
                   top: w.rows > 1 ? ring.bottom : undefined; topMargin: 8; verticalCenter: w.rows > 1 ? undefined : ring.verticalCenter }
         spacing: 4
-        Text { visible: w.rows === 1; text: w.fmt(w.remain); color: w.fg; font.pixelSize: Math.min(40, w.height * 0.36); font.weight: Font.Bold; font.features: { "tnum": 1 } }
-        Text { width: parent.width; horizontalAlignment: w.rows > 1 ? Text.AlignHCenter : Text.AlignLeft; text: w.phaseLabel; color: w.dim; font.pixelSize: 12 }
+        UiText { visible: w.rows === 1; text: w.fmt(w.remain); color: w.fg; font.pixelSize: Math.min(40, w.height * 0.36); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+        UiText { width: parent.width; horizontalAlignment: w.rows > 1 ? Text.AlignHCenter : Text.AlignLeft; text: w.phaseLabel; color: w.dim; font.pixelSize: 12 }
         Row {
             anchors.horizontalCenter: w.rows > 1 ? parent.horizontalCenter : undefined
             spacing: 6

@@ -11,15 +11,18 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "text", opts: w.opts }, k) }
 
-    Text {
+    UiText {
         id: t
         anchors.fill: parent
         text: w.o("text")
         color: w.fg
-        font.family: w.o("font") || Qt.application.font.family
+        font.family: w.o("font") || Theme.font
         font.pixelSize: w.o("size")
         font.weight: w.o("weight")
         font.italic: w.o("italic")

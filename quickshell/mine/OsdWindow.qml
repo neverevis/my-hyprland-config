@@ -120,7 +120,7 @@ Scope {
                 x: c.vertical ? (parent.width - width) / 2 : 0
                 y: c.vertical ? parent.height - height : (parent.height - height) / 2
             }
-            Text {
+            UiText {
                 id: val
                 text: c.label; color: c.fg; font.pixelSize: 12; font.weight: Font.DemiBold
                 horizontalAlignment: Text.AlignHCenter
@@ -161,7 +161,7 @@ Scope {
                 x: c.vertical ? (parent.width - width) / 2 : 0
                 y: c.vertical ? 0 : (parent.height - height) / 2
             }
-            Text {
+            UiText {
                 text: Osd.mediaText; color: c.fg; font.pixelSize: 12; font.weight: Font.Medium
                 elide: Text.ElideRight
                 width: c.vertical ? parent.height - mic.height - 14 : parent.width - mic.width - 12

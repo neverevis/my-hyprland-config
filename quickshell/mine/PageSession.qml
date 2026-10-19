@@ -15,8 +15,8 @@ Column {
             Column {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 6
-                Text { text: Profile.name; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
-                Text { text: "Clique na foto para trocar (fica salva em ~/.face)"; color: Theme.muted; font.pixelSize: 12 }
+                UiText { text: Profile.name; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
+                UiText { text: "Clique na foto para trocar (fica salva em ~/.face)"; color: Theme.muted; font.pixelSize: 12 }
             }
         }
     }
@@ -44,7 +44,7 @@ Column {
         UiSlider { label: "Apagar a tela depois de"; icon: "monitor"; from: 0; to: 90; value: Settings.idleScreenOff; suffix: " min"; onMoved: v => Settings.idleScreenOff = v }
         UiSlider { label: "Suspender depois de"; icon: "sleep"; from: 0; to: 240; value: Settings.idleSuspend; suffix: " min"; onMoved: v => Settings.idleSuspend = Math.round(v / 5) * 5 }
         UiSwitch { label: "Não contar enquanto toca música"; description: "Com algo tocando (Spotify, navegador…), nada disso acontece."; icon: "music"; checked: Settings.idleMedia; onToggled: on => Settings.idleMedia = on }
-        Text {
+        UiText {
             width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
             text: Settings.idleLock === 0 && Settings.idleScreenOff === 0 && Settings.idleSuspend === 0 ? "Tudo desligado." :
                   "Pausar por um tempo:  qs -c mine ipc call idle hold   (de novo para voltar)."
@@ -56,7 +56,7 @@ Column {
         title: "Senha de administrador (polkit)"
         subtitle: "Quando um programa pede permissão de administrador (montar disco, instalar, mudar o sistema), o pedido aparece num cartão do shell."
         UiSwitch { label: "Usar o shell para os pedidos de senha"; checked: Settings.polkitOn; onToggled: on => Settings.polkitOn = on }
-        Text {
+        UiText {
             visible: Settings.polkitOn
             width: parent.width; wrapMode: Text.WordWrap; font.pixelSize: 12
             color: Settings.polkitRegistered ? Theme.accent : Theme.danger
@@ -70,7 +70,7 @@ Column {
         subtitle: "Ctrl + Alt + Del, o botão no Início ou o módulo \"Energia\" nas barras."
         UiButton { icon: "play"; text: "Abrir o menu"; kind: "accent"; onClicked: { Settings.settingsOpen = false; Power.menuOpen = true } }
         UiSlider { label: "Confirmação antes de sair, reiniciar ou desligar"; icon: "timer"; from: 0; to: 10; value: Settings.powerConfirm; suffix: " s"; onMoved: v => Settings.powerConfirm = v }
-        Text { width: parent.width; wrapMode: Text.WordWrap; text: Settings.powerConfirm > 0 ? "Uma contagem aparece no botão; clique de novo para fazer na hora ou Esc para cancelar." : "Sem contagem: a ação acontece no primeiro clique."; color: Theme.muted; font.pixelSize: 12 }
+        UiText { width: parent.width; wrapMode: Text.WordWrap; text: Settings.powerConfirm > 0 ? "Uma contagem aparece no botão; clique de novo para fazer na hora ou Esc para cancelar." : "Sem contagem: a ação acontece no primeiro clique."; color: Theme.muted; font.pixelSize: 12 }
         UiLabel { text: "Animação" }
         AnimPicker { target: "power" }
     }

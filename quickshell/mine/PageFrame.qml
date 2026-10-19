@@ -36,8 +36,8 @@ Column {
                     Column {
                         anchors { left: parent.left; leftMargin: 14; top: pv.bottom; topMargin: 10 }
                         spacing: 2
-                        Text { text: tile.modelData.label; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold }
-                        Text { text: tile.modelData.id === "mixed" && tile.on ? "Em uso (personalizado)" : tile.modelData.desc; color: tile.on ? Theme.accent : Theme.muted; font.pixelSize: 11 }
+                        UiText { text: tile.modelData.label; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold }
+                        UiText { text: tile.modelData.id === "mixed" && tile.on ? "Em uso (personalizado)" : tile.modelData.desc; color: tile.on ? Theme.accent : Theme.muted; font.pixelSize: 11 }
                     }
                     UiIcon { visible: tile.on; anchors { right: parent.right; rightMargin: 14; bottom: parent.bottom; bottomMargin: 16 } name: "check"; size: 18; color: Theme.accent }
                     MouseArea {
@@ -63,8 +63,8 @@ Column {
                     UiIcon { id: pic; anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter } name: pr.modelData.icon; size: 17; color: pr.docked ? Theme.accent : Theme.muted }
                     Column {
                         anchors { left: pic.right; leftMargin: 12; right: seg.left; rightMargin: 10; verticalCenter: parent.verticalCenter }
-                        Text { text: pr.modelData.label; color: Theme.text; font.pixelSize: 13 }
-                        Text { visible: !!pr.modelData.hint; width: parent.width; elide: Text.ElideRight; text: pr.modelData.hint ?? ""; color: Theme.muted; font.pixelSize: 11 }
+                        UiText { text: pr.modelData.label; color: Theme.text; font.pixelSize: 13 }
+                        UiText { visible: !!pr.modelData.hint; width: parent.width; elide: Text.ElideRight; text: pr.modelData.hint ?? ""; color: Theme.muted; font.pixelSize: 11 }
                     }
                     UiSeg {
                         id: seg
@@ -108,7 +108,7 @@ Column {
         UiSwitch { label: "Mostrar o indicador"; icon: "eye"; checked: Settings.osdOn; onToggled: on => Settings.osdOn = on }
         Row {
             spacing: 10
-            Text { text: "Lado"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; width: 90 }
+            UiText { text: "Lado"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; width: 90 }
             UiSeg {
                 options: [["left", "Esquerda"], ["top", "Topo"], ["bottom", "Base"], ["right", "Direita"]]
                 value: Settings.osdSide

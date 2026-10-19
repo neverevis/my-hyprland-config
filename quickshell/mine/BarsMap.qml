@@ -73,7 +73,7 @@ Item {
                     anchors.centerIn: parent
                     width: 15; height: 15; radius: 7.5
                     color: bi.on ? Theme.accentText : Theme.bg
-                    Text { anchors.centerIn: parent; text: bi.index + 1; color: bi.on ? Theme.accent : Theme.muted; font.pixelSize: 9; font.weight: Font.Bold }
+                    UiText { anchors.centerIn: parent; text: bi.index + 1; color: bi.on ? Theme.accent : Theme.muted; font.pixelSize: 9; font.weight: Font.Bold }
                 }
                 MouseArea { id: bm; anchors.fill: parent; anchors.margins: -3; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: map.picked(bi.index) }
             }

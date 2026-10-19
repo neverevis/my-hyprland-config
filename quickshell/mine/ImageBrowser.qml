@@ -81,7 +81,7 @@ Item {
                     anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter }
                     spacing: 10
                     UiIcon { name: modelData.icon; size: 17; color: on ? Theme.accent : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-                    Text { text: modelData.label; color: on ? Theme.text : Theme.muted; font.pixelSize: 13; font.weight: on ? Font.DemiBold : Font.Normal; anchors.verticalCenter: parent.verticalCenter }
+                    UiText { text: modelData.label; color: on ? Theme.text : Theme.muted; font.pixelSize: 13; font.weight: on ? Font.DemiBold : Font.Normal; anchors.verticalCenter: parent.verticalCenter }
                 }
                 MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: br.go(modelData.path) }
             }
@@ -127,7 +127,7 @@ Item {
                             anchors.verticalCenter: parent.verticalCenter
                             width: ct.implicitWidth + 14; height: 26; radius: 8
                             color: cm.containsMouse ? Theme.cardHi : "transparent"
-                            Text { id: ct; anchors.centerIn: parent; text: modelData.label; color: modelData.path === br.dir ? Theme.text : Theme.muted; font.pixelSize: 13; font.weight: modelData.path === br.dir ? Font.DemiBold : Font.Normal }
+                            UiText { id: ct; anchors.centerIn: parent; text: modelData.label; color: modelData.path === br.dir ? Theme.text : Theme.muted; font.pixelSize: 13; font.weight: modelData.path === br.dir ? Font.DemiBold : Font.Normal }
                             MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: br.go(modelData.path) }
                         }
                     }
@@ -142,6 +142,7 @@ Item {
             border.width: 1; border.color: search.activeFocus ? Theme.accent : Theme.border
             UiIcon { id: sIco; anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: "search"; size: 16; color: Theme.muted }
             TextInput {
+                font.family: Theme.font
                 id: search
                 anchors { left: sIco.right; leftMargin: 8; right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
                 color: Theme.text; font.pixelSize: 13
@@ -151,7 +152,7 @@ Item {
                 Keys.onDownPressed: br.focusGrid()
                 Keys.onReturnPressed: { br.focusGrid(); br.open(grid.currentIndex) }
                 Keys.onEscapePressed: { if (text !== "") text = ""; else br.focusGrid() }
-                Text { visible: !search.text; anchors.verticalCenter: parent.verticalCenter; text: "Buscar nesta pasta"; color: Theme.muted; font.pixelSize: 13 }
+                UiText { visible: !search.text; anchors.verticalCenter: parent.verticalCenter; text: "Buscar nesta pasta"; color: Theme.muted; font.pixelSize: 13 }
             }
         }
         UiButton { id: sortBtn; anchors { right: parent.right; verticalCenter: parent.verticalCenter } icon: br.byTime ? "sortTime" : "sortName"; text: br.byTime ? "Recentes" : "Nome"; kind: "ghost"; onClicked: br.byTime = !br.byTime }
@@ -227,7 +228,7 @@ Item {
                     Connections { target: br; function onThumbReady(path) { if (path === cell.filePath && !thumb.cached) thumb.cached = true } }
                 }
             }
-            Text {
+            UiText {
                 anchors { top: tile.bottom; topMargin: 5; horizontalCenter: parent.horizontalCenter }
                 width: tile.width
                 horizontalAlignment: Text.AlignHCenter
@@ -251,7 +252,7 @@ Item {
             visible: fm.status === FolderListModel.Ready && fm.count === 0
             spacing: 8
             UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "images"; size: 40; color: Theme.muted }
-            Text { anchors.horizontalCenter: parent.horizontalCenter; text: br.query !== "" ? "Nenhuma imagem com “" + br.query + "”" : "Nenhuma imagem nesta pasta"; color: Theme.muted; font.pixelSize: 13 }
+            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: br.query !== "" ? "Nenhuma imagem com “" + br.query + "”" : "Nenhuma imagem nesta pasta"; color: Theme.muted; font.pixelSize: 13 }
         }
     }
 }

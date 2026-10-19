@@ -39,7 +39,7 @@ Row {
                     color: t.on ? Theme.accent : Theme.muted
                 }
             }
-            Text {
+            UiText {
                 anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 8 }
                 text: sp.names[t.modelData] ?? t.modelData
                 font.pixelSize: 12

@@ -51,9 +51,14 @@ Singleton {
     // bordas das janelas com as cores do tema do wallpaper (so quando ligado)
     readonly property bool themeActive: Settings.themeOn && Settings.themeBorders
     function rgb(id: string): string { return "rgb(" + ThemeColors.hexOf(id).replace("#", "") + ")" }
+    function rgba(id: string, pct: int): string {
+        if (pct >= 100) return rgb(id)
+        return "rgba(" + ThemeColors.hexOf(id).replace("#", "") + ("0" + Math.round(Math.max(0, pct) * 2.55).toString(16)).slice(-2) + ")"
+    }
     function themeLua(): string {
-        return 'hl.config({ general = { col = { active_border = { colors = { "' + rgb("primary") + '", "' + rgb("secondary")
-            + '" }, angle = 45 }, inactive_border = "' + rgb("outline") + '" } } })'
+        const a = rgba(Settings.themeBorderA, Settings.themeBorderAlpha)
+        const act = Settings.themeBorderB !== "" ? '{ colors = { "' + a + '", "' + rgba(Settings.themeBorderB, Settings.themeBorderAlpha) + '" }, angle = ' + Settings.themeBorderAngle + ' }' : '"' + a + '"'
+        return 'hl.config({ general = { col = { active_border = ' + act + ', inactive_border = "' + rgba(Settings.themeBorderIn, Settings.themeBorderInAlpha) + '" } } })'
     }
     function content(): string {
         let t = "-- Gerado pelo Quickshell (pagina Blur da janela de configuracoes). Nao edite a mao.\n"

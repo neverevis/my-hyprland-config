@@ -53,7 +53,9 @@ Item {
             primary: m.primary, onPrimary: m.onPrimary, secondary: m.secondary, tertiary: m.tertiary,
             primaryContainer: m.primaryContainer, secondaryContainer: m.secondaryContainer, tertiaryContainer: m.tertiaryContainer,
             background: m.background, surface: m.surfaceContainer, surfaceHigh: m.surfaceContainerHigh,
-            outline: m.outline, text: m.onSurface, muted: m.onSurfaceVariant, error: m.error
+            outline: m.outline, text: m.onSurface, muted: m.onSurfaceVariant, error: m.error,
+            onPrimaryContainer: m.onPrimaryContainer, onSecondaryContainer: m.onSecondaryContainer, onTertiaryContainer: m.onTertiaryContainer,
+            onSecondary: m.onSecondary, onTertiary: m.onTertiary, surfaceLow: m.surfaceContainerLow, surfaceHighest: m.surfaceContainerHighest
         })
     }
 
@@ -182,7 +184,13 @@ Item {
             outline: hsl(a.h1, dark ? 0.14 : 0.18, dark ? 0.32 : 0.72),
             text: hsl(a.h1, 0.2, dark ? 0.92 : 0.12),
             muted: hsl(a.h1, 0.1, dark ? 0.66 : 0.38),
-            error: dark ? "#ff8a9a" : "#ba1a3a"
+            error: dark ? "#ff8a9a" : "#ba1a3a",
+            // containers e o texto sobre eles (mesma ideia do Material: tom escuro saturado + tom bem claro da mesma cor)
+            primaryContainer: hsl(a.h1, s1 * 0.55, dark ? 0.27 : 0.86), onPrimaryContainer: hsl(a.h1, s1, dark ? 0.9 : 0.16),
+            secondaryContainer: hsl(a.h2, s2 * 0.6, dark ? 0.26 : 0.86), onSecondaryContainer: hsl(a.h2, s2, dark ? 0.9 : 0.16),
+            tertiaryContainer: hsl(a.h3, s3 * 0.6, dark ? 0.27 : 0.86), onTertiaryContainer: hsl(a.h3, s3, dark ? 0.9 : 0.16),
+            onSecondary: hsl(a.h2, 0.35, dark ? 0.13 : 0.97), onTertiary: hsl(a.h3, 0.35, dark ? 0.13 : 0.97),
+            surfaceLow: hsl(a.h1, dark ? 0.2 : 0.25, dark ? 0.095 : 0.945), surfaceHighest: hsl(a.h1, dark ? 0.16 : 0.2, dark ? 0.21 : 0.85)
         })
     }
 

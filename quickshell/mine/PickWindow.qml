@@ -35,7 +35,7 @@ LazyLoader {
                 spacing: 12
                 Rectangle { width: 36; height: 36; radius: 11; color: Theme.tint(0.18)
                     UiIcon { anchors.centerIn: parent; name: "images"; size: 20; color: Theme.accent } }
-                Text { anchors.verticalCenter: parent.verticalCenter; text: Pick.title; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: Pick.title; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
             }
             UiButton { anchors { right: parent.right; rightMargin: 16; top: parent.top; topMargin: 18 } icon: "close"; kind: "ghost"; onClicked: Pick.cancel() }
             ImageBrowser {

@@ -129,8 +129,8 @@ Singleton {
     // opcoes que todo widget tem
     readonly property var commonOptions: [
         { key: "card", label: "Fundo", type: "seg", def: "auto", options: [["auto", "Padrão"], ["card", "Cartão"], ["glass", "Vidro"], ["none", "Sem fundo"]] },
-        { key: "fg", label: "Cor do texto", type: "seg", def: "auto", options: [["auto", "Automática"], ["theme", "Do tema"], ["custom", "Escolher"]] },
-        { key: "fgColor", label: "Cor", type: "color", def: "#ffffff", when: { fg: "custom" } },
+        { key: "tone", label: "Cor", type: "tone", def: "global" },
+        { key: "fgColor", label: "Minha cor", type: "color", def: "#ffffff", when: { tone: "custom" } },
         { key: "place", label: "Posição", type: "seg", def: "free", options: [["free", "Onde eu deixar"], ["calm", "Área calma do wallpaper"], ["busy", "Área movimentada"]] },
         { key: "lock", label: "Mostrar também na tela de bloqueio", type: "switch", def: false }
     ]
@@ -142,6 +142,8 @@ Singleton {
     function opt(w, key) {
         const o = (w && w.opts) || {}
         if (o[key] !== undefined) return o[key]
+        // tom: widgets antigos guardavam "fg" (auto | theme | custom)
+        if (key === "tone" && o.fg !== undefined) return ({ theme: "primary", custom: "custom" })[o.fg] ?? "global"
         if (key === "card") return cardDefaults[w ? w.type : ""] ?? "auto"
         const d = optionsOf(w ? w.type : "").find(x => x.key === key)
         return d ? d.def : undefined

@@ -62,28 +62,54 @@ Item {
             Behavior on scale { enabled: card.born >= 1; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
             // ---- cores do conteudo ----
+            // tom (opcao "Cor"): global = o padrao da pagina Widgets; auto = claro/escuro pelo brilho do wallpaper embaixo;
+            // primary/secondary/tertiary = uma familia da paleta (cartao no tom suave, texto e destaques na cor); neutral = so o
+            // texto do tema; custom = a cor escolhida. Cada widget recebe fg, dim, ac (destaque), ac2 (cor companheira, ex.:
+            // ponteiro dos minutos), cont (versao suave, ex.: a flor) e contInk (texto/marcas em cima da versao suave).
             readonly property real lum: { const a = DeskState.auto[wid]; return a && a.lum !== undefined ? a.lum : 0.3 }
-            readonly property string fgMode: w ? DeskState.opt(w, "fg") : "auto"
+            readonly property string tone: { const t = w ? DeskState.opt(w, "tone") : "global"; return t === "global" ? Settings.desktopTone : t }
+            readonly property color custom: tone === "custom" ? (w && w.opts && w.opts.fgColor ? w.opts.fgColor : Settings.desktopToneColor) : "white"
+            readonly property bool fam: tone === "primary" || tone === "secondary" || tone === "tertiary"
+            readonly property var pal: Theme.family(fam ? tone : "primary")
             readonly property bool bare: cardStyle === "none"
             readonly property bool light: lum > 0.62 && !view.darkBg   // wallpaper claro embaixo: texto escuro
-            readonly property color fgT: fgMode === "custom" ? (w ? DeskState.opt(w, "fgColor") : "white")
-                : fgMode === "theme" ? Theme.text
-                : bare ? (lum > 0.62 && !view.darkBg ? "#16151b" : "#f6f3fa") : Theme.text
+            readonly property color ink: light ? "#16151b" : "#f6f3fa"
+            // sobre wallpaper claro (sem fundo) as cores da paleta escurecem para continuar legiveis
+            function wallSafe(c) { return bare && light ? Qt.darker(c, 1.9) : c }
+            readonly property color fgT: tone === "custom" ? custom
+                : fam ? (bare ? (light ? Qt.darker(pal.main, 2.4) : pal.contInk) : pal.contInk)
+                : tone === "neutral" ? (bare ? ink : Theme.text)
+                : bare ? ink : Theme.text
+            readonly property color acT: tone === "custom" ? custom
+                : tone === "neutral" ? fgT
+                : fam ? wallSafe(pal.main)
+                : bare ? (light ? Qt.darker(Theme.accent, 1.8) : Qt.lighter(Theme.accent, 1.1)) : Theme.accent
+            readonly property color ac2T: tone === "custom" ? Qt.tint(custom, Qt.rgba(0, 0, 0, 0.25)) : tone === "neutral" ? Qt.rgba(fgT.r, fgT.g, fgT.b, 0.7) : wallSafe(pal.pair)
+            readonly property color contT: tone === "custom" ? Qt.tint(Theme.bg, Qt.rgba(custom.r, custom.g, custom.b, 0.35))
+                : tone === "neutral" ? Theme.card : (bare && light ? Qt.lighter(pal.cont, 1.6) : pal.cont)
+            readonly property color contInkT: tone === "custom" ? Qt.lighter(custom, 1.25) : tone === "neutral" ? Theme.text : (bare && light ? Qt.darker(pal.main, 2.2) : pal.contInk)
             // cores que o conteudo usa: animadas (o tema troca passo a passo; a cor pelo brilho do wallpaper chega um pouco
             // depois da troca de wallpaper e antes pulava de uma vez entre claro e escuro)
             property color fg: fgT
             property color ac: acT
+            property color ac2: ac2T
+            property color cont: contT
+            property color contInk: contInkT
             Behavior on fg { ColorAnimation { duration: 700; easing.type: Easing.OutCubic } }
             Behavior on ac { ColorAnimation { duration: 700; easing.type: Easing.OutCubic } }
+            Behavior on ac2 { ColorAnimation { duration: 700; easing.type: Easing.OutCubic } }
+            Behavior on cont { ColorAnimation { duration: 700; easing.type: Easing.OutCubic } }
+            Behavior on contInk { ColorAnimation { duration: 700; easing.type: Easing.OutCubic } }
             readonly property color dim: Qt.rgba(fg.r, fg.g, fg.b, 0.68)
-            readonly property color acT: bare && fgMode === "auto" ? (lum > 0.62 && !view.darkBg ? Qt.darker(Theme.accent, 1.8) : Qt.lighter(Theme.accent, 1.1)) : Theme.accent
+            // fundo do cartao: no tom escolhido usa a versao suave da familia
+            readonly property color cardBase: fam ? pal.cont : tone === "custom" ? contT : Theme.bg
 
             Rectangle {
                 id: bg
                 anchors.fill: parent
                 radius: Math.min(30, Math.min(width, height) * 0.2)
-                color: card.cardStyle === "card" ? Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.desktopCard / 100)
-                    : card.cardStyle === "glass" ? Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Math.max(0.32, Settings.desktopCard / 100 * 0.55))
+                color: card.cardStyle === "card" ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Settings.desktopCard / 100)
+                    : card.cardStyle === "glass" ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.32, Settings.desktopCard / 100 * 0.55))
                     : "transparent"
                 border.width: card.bare ? 0 : 1
                 border.color: card.cardStyle === "glass" ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.6)
@@ -108,6 +134,8 @@ Item {
                 it.cols = w.cols; it.rows = w.rows; it.opts = w.opts || {}
                 if (it.wid !== undefined) it.wid = wid
                 if (it.fg !== undefined) { it.fg = Qt.binding(() => card.fg); it.dim = Qt.binding(() => card.dim); it.ac = Qt.binding(() => card.ac) }
+                if (it.ac2 !== undefined) it.ac2 = Qt.binding(() => card.ac2)
+                if (it.cont !== undefined) { it.cont = Qt.binding(() => card.cont); it.contInk = Qt.binding(() => card.contInk) }
                 if (it.bare !== undefined) it.bare = Qt.binding(() => card.bare)
             }
             onWChanged: feed()
@@ -192,7 +220,7 @@ Item {
                         anchors.centerIn: parent
                         spacing: 5
                         UiIcon { name: "fullscreen"; size: 14; color: szm.containsMouse ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter }
-                        Text { id: sz; text: card.w ? card.w.cols + "×" + card.w.rows : ""; color: szm.containsMouse ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+                        UiText { id: sz; text: card.w ? card.w.cols + "×" + card.w.rows : ""; color: szm.containsMouse ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
                     }
                     MouseArea { id: szm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.cycleSize(card.wid) }
                 }

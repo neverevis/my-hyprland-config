@@ -250,8 +250,8 @@ Scope {
                             }
                             Column {
                                 anchors.verticalCenter: parent.verticalCenter
-                                Text { text: "Quickshell"; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
-                                Text { text: "Configurações"; color: Theme.muted; font.pixelSize: 12 }
+                                UiText { text: "Quickshell"; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
+                                UiText { text: "Configurações"; color: Theme.muted; font.pixelSize: 12 }
                             }
                         }
 
@@ -292,7 +292,7 @@ Scope {
                                             name: nav.modelData.icon; size: 18
                                             color: nav.on ? Theme.accent : Theme.muted
                                         }
-                                        Text {
+                                        UiText {
                                             anchors { left: navIc.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
                                             text: nav.modelData.label
                                             color: nav.on ? Theme.text : Theme.muted
@@ -329,8 +329,8 @@ Scope {
                         Column {
                             anchors { left: parent.left; right: closeBtn.left; verticalCenter: parent.verticalCenter }
                             spacing: 3
-                            Text { text: root.query !== "" ? "Busca" : root.cur.label; color: Theme.text; font.pixelSize: 24; font.weight: Font.Bold }
-                            Text {
+                            UiText { text: root.query !== "" ? "Busca" : root.cur.label; color: Theme.text; font.pixelSize: 24; font.weight: Font.Bold }
+                            UiText {
                                 text: root.query === "" ? root.cur.desc : (root.indexing && !root.index.length ? "Montando o índice…" : root.results.length + (root.results.length === 1 ? " resultado" : " resultados") + " para “" + root.query + "”")
                                 color: Theme.muted; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width
                             }
@@ -392,7 +392,7 @@ Scope {
                         id: resCol
                         width: resFlick.width
                         spacing: 6
-                        Text { visible: root.results.length === 0 && root.index.length > 0; text: "Nada encontrado. Tente outra palavra (ex.: blur, mola, relógio, bloqueio)."; color: Theme.muted; font.pixelSize: 13 }
+                        UiText { visible: root.results.length === 0 && root.index.length > 0; text: "Nada encontrado. Tente outra palavra (ex.: blur, mola, relógio, bloqueio)."; color: Theme.muted; font.pixelSize: 13 }
                         Repeater {
                             model: root.results
                             delegate: Rectangle {
@@ -412,8 +412,8 @@ Scope {
                                 Column {
                                     anchors { left: rrIc.right; leftMargin: 12; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
                                     spacing: 2
-                                    Text { width: parent.width; elide: Text.ElideRight; text: rr.modelData.label || rr.modelData.card; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                                    Text { width: parent.width; elide: Text.ElideRight; text: rr.modelData.pageLabel + "  ›  " + rr.modelData.card + (rr.modelData.desc ? "  ·  " + rr.modelData.desc : ""); color: Theme.muted; font.pixelSize: 11 }
+                                    UiText { width: parent.width; elide: Text.ElideRight; text: rr.modelData.label || rr.modelData.card; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                                    UiText { width: parent.width; elide: Text.ElideRight; text: rr.modelData.pageLabel + "  ›  " + rr.modelData.card + (rr.modelData.desc ? "  ·  " + rr.modelData.desc : ""); color: Theme.muted; font.pixelSize: 11 }
                                 }
                                 MouseArea { id: rrm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: win.open(rr.modelData) }
                             }

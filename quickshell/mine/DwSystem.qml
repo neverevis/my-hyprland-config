@@ -11,13 +11,16 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "system", opts: w.opts }, k) }
     Component.onCompleted: SysInfo.use()
     Component.onDestruction: SysInfo.release()
 
-    readonly property color c2: Settings.themeOn ? ThemeColors.secondary : Qt.tint(w.ac, Qt.rgba(0.4, 0.8, 1, 0.45))
-    readonly property color c3: Settings.themeOn ? ThemeColors.tertiary : Qt.tint(w.ac, Qt.rgba(1, 0.8, 0.4, 0.45))
+    readonly property color c2: w.ac2
+    readonly property color c3: Qt.tint(w.ac, Qt.rgba(w.ac2.r, w.ac2.g, w.ac2.b, 0.5))
     readonly property var all: ({
         cpu: { label: "CPU", icon: "chip", v: SysInfo.cpu, t: Math.round(SysInfo.cpu * 100) + "%", h: SysInfo.hist.cpu, col: w.ac },
         mem: { label: "RAM", icon: "memory", v: SysInfo.mem, t: Math.round(SysInfo.mem * 100) + "%", h: SysInfo.hist.mem, col: w.c2 },
@@ -60,8 +63,8 @@ Item {
                 Column {
                     anchors.centerIn: parent
                     UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: modelData.icon; size: Math.max(11, parent.parent.width * 0.15); color: w.dim }
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.t; color: w.fg; font.pixelSize: Math.max(11, parent.parent.width * (modelData.t.length > 5 ? 0.13 : 0.2)); font.weight: Font.Bold; font.features: { "tnum": 1 } }
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: w.dim; font.pixelSize: Math.max(9, parent.parent.width * 0.1); font.weight: Font.DemiBold }
+                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.t; color: w.fg; font.pixelSize: Math.max(11, parent.parent.width * (modelData.t.length > 5 ? 0.13 : 0.2)); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: w.dim; font.pixelSize: Math.max(9, parent.parent.width * 0.1); font.weight: Font.DemiBold }
                 }
             }
         }
@@ -82,8 +85,8 @@ Item {
                     width: parent.width; height: 16
                     Row { spacing: 6
                         UiIcon { name: modelData.icon; size: 13; color: modelData.col; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: modelData.label; color: w.fg; font.pixelSize: 12; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
-                    Text { anchors.right: parent.right; text: modelData.t; color: w.dim; font.pixelSize: 12; font.features: { "tnum": 1 } }
+                        UiText { text: modelData.label; color: w.fg; font.pixelSize: 12; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
+                    UiText { anchors.right: parent.right; text: modelData.t; color: w.dim; font.pixelSize: 12; font.features: { "tnum": 1 } }
                 }
                 Rectangle {
                     width: parent.width; height: 6; radius: 3; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12)
@@ -108,7 +111,7 @@ Item {
                 height: (w.height - (parent.nr - 1) * 8) / parent.nr
                 Row { spacing: 5; z: 2
                     UiIcon { name: modelData.icon; size: 12; color: modelData.col; anchors.verticalCenter: parent.verticalCenter }
-                    Text { text: modelData.label + "  " + modelData.t; color: w.fg; font.pixelSize: 11; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
+                    UiText { text: modelData.label + "  " + modelData.t; color: w.fg; font.pixelSize: 11; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
                 Canvas {
                     anchors { fill: parent; topMargin: 16 }
                     readonly property var deps: [modelData.h, modelData.col, width, height]

@@ -12,6 +12,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "visualizer", opts: w.opts }, k) }
     Component.onCompleted: Cava.use()
@@ -29,7 +32,7 @@ Item {
     readonly property var player: Mpris.players.values.find(p => p.isPlaying) ?? null
     property color coverCol: w.ac
     readonly property color c1: o("colors") === "mono" ? w.fg : o("colors") === "cover" ? coverCol : w.ac
-    readonly property color c2: o("colors") === "mono" ? w.fg : Settings.themeOn ? ThemeColors.tertiary : Qt.tint(w.ac, Qt.rgba(1, 1, 1, 0.4))
+    readonly property color c2: o("colors") === "mono" ? w.fg : w.ac2
     opacity: o("idleHide") && Cava.level < 0.005 && !DeskState.editing ? 0 : 1
     Behavior on opacity { NumberAnimation { duration: 600 } }
 
@@ -52,8 +55,8 @@ Item {
         anchors.centerIn: parent
         spacing: 6
         UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "pulse"; size: 26; color: w.dim }
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Precisa do cava:"; color: w.fg; font.pixelSize: 13 }
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: "sudo pacman -S cava"; color: w.ac; font.pixelSize: 13; font.family: "monospace" }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Precisa do cava:"; color: w.fg; font.pixelSize: 13 }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "sudo pacman -S cava"; color: w.ac; font.pixelSize: 13; font.family: Theme.mono }
     }
 
     Canvas {

@@ -37,7 +37,11 @@ Singleton {
         const m = {
             primary: p.primary, onPrimary: p.bg, secondary: p.secondary, tertiary: p.tertiary,
             primaryContainer: mix(p.primary, p.bg, 0.72), secondaryContainer: mix(p.secondary, p.bg, 0.72), tertiaryContainer: mix(p.tertiary, p.bg, 0.72),
-            onPrimaryContainer: p.text,
+            onPrimaryContainer: mix(p.primary, p.dark ? "#ffffff" : "#000000", 0.55),
+            onSecondaryContainer: mix(p.secondary, p.dark ? "#ffffff" : "#000000", 0.55),
+            onTertiaryContainer: mix(p.tertiary, p.dark ? "#ffffff" : "#000000", 0.55),
+            onSecondary: p.bg, onTertiary: p.bg,
+            surfaceContainerHighest: mix(p.s2, p.text, 0.08),
             background: p.bg, surface: p.bg,
             surfaceContainerLowest: p.lowest, surfaceContainerLow: p.low, surfaceContainer: p.s1, surfaceContainerHigh: p.s2,
             outline: p.outline, outlineVariant: mix(p.outline, p.bg, 0.55),

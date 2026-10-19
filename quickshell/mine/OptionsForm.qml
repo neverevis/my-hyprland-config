@@ -21,7 +21,7 @@ Column {
             width: form.width
             active: form.isShown(modelData)
             visible: active
-            sourceComponent: ({ seg: segC, switch: switchC, slider: sliderC, text: textC, font: fontC, color: colorC, image: imageC, list: listC })[modelData.type] ?? null
+            sourceComponent: ({ seg: segC, switch: switchC, slider: sliderC, text: textC, font: fontC, color: colorC, image: imageC, list: listC, tone: toneC })[modelData.type] ?? null
             property var def: modelData
             property var val: form.get(modelData.key)
         }
@@ -31,7 +31,7 @@ Column {
         id: segC
         Column {
             spacing: 6
-            Text { text: parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
+            UiText { text: parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
             Flow {
                 width: parent.parent.width
                 spacing: 4
@@ -44,7 +44,7 @@ Column {
                         height: 28; width: cl.implicitWidth + 20; radius: 8
                         color: on ? Theme.accent : (cm.containsMouse ? Theme.cardHi : Theme.track)
                         border.width: 1; border.color: on ? Theme.accent : Theme.border
-                        Text { id: cl; anchors.centerIn: parent; text: modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: parent.on ? Font.DemiBold : Font.Normal }
+                        UiText { id: cl; anchors.centerIn: parent; text: modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: parent.on ? Font.DemiBold : Font.Normal }
                         MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: form.set(ld.def.key, modelData[0]) }
                     }
                 }
@@ -69,11 +69,12 @@ Column {
         id: textC
         Column {
             spacing: 6
-            Text { text: parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
+            UiText { text: parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
             Rectangle {
                 width: parent.parent.width; height: parent.parent.def.multiline ? 84 : 34; radius: 10
                 color: Theme.track; border.width: 1; border.color: te.activeFocus ? Theme.accent : Theme.border
                 TextEdit {
+                    font.family: Theme.font
                     id: te
                     anchors { fill: parent; margins: 9 }
                     text: parent.parent.parent.val ?? ""
@@ -94,7 +95,7 @@ Column {
         id: listC
         Column {
             spacing: 6
-            Text { text: parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
+            UiText { text: parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
             Rectangle {
                 width: parent.parent.width; height: Math.max(60, le.contentHeight + 18); radius: 10
                 color: Theme.track; border.width: 1; border.color: le.activeFocus ? Theme.accent : Theme.border
@@ -102,7 +103,7 @@ Column {
                     id: le
                     anchors { fill: parent; margins: 9 }
                     text: (parent.parent.parent.val ?? []).join("\n")
-                    color: Theme.text; font.pixelSize: 13; font.family: "monospace"
+                    color: Theme.text; font.pixelSize: 13; font.family: Theme.mono
                     selectByMouse: true
                     onActiveFocusChanged: if (!activeFocus) form.set(parent.parent.parent.def.key, text.split("\n").map(s => s.trim()).filter(s => s !== ""))
                 }
@@ -119,8 +120,8 @@ Column {
             readonly property var matches: { const q = ff.text.toLowerCase(); return families.filter(f => q === "" || f.toLowerCase().includes(q)).slice(0, 8) }
             Row {
                 spacing: 8
-                Text { text: fc.parent.def.label; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
-                Text { text: fc.parent.val ? "" : "(a do shell)"; color: Theme.muted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: fc.parent.def.label; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: fc.parent.val ? "" : "(a do shell)"; color: Theme.muted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
             }
             UiField {
                 id: ff
@@ -141,13 +142,24 @@ Column {
                         required property var modelData
                         width: fc.width; height: 30; radius: 8
                         color: fm.containsMouse ? Theme.cardHi : "transparent"
-                        Text { anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } text: modelData === "" ? "Usar a fonte do shell" : modelData
-                            font.family: modelData === "" ? Qt.application.font.family : modelData; font.pixelSize: 14; color: modelData === "" ? Theme.muted : Theme.text }
+                        UiText { anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } text: modelData === "" ? "Usar a fonte do shell" : modelData
+                            font.family: modelData === "" ? Theme.font : modelData; font.pixelSize: 14; color: modelData === "" ? Theme.muted : Theme.text }
                         MouseArea { id: fm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                             onClicked: { ff.text = modelData; fc.openList = false; form.set(fc.parent.def.key, modelData) } }
                     }
                 }
             }
+        }
+    }
+    Component {
+        id: toneC
+        ToneSwatches {
+            width: parent.width
+            label: parent.def.label
+            value: parent.val ?? "global"
+            allowGlobal: true
+            custom: form.get("fgColor") || "#ffffff"
+            onPicked: v => form.set(parent.def.key, v)
         }
     }
     Component {
@@ -167,8 +179,8 @@ Column {
             Column {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 4
-                Text { text: parent.parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
-                Text { width: 220; elide: Text.ElideMiddle; text: parent.parent.parent.val || "nenhuma"; color: Theme.muted; font.pixelSize: 11 }
+                UiText { text: parent.parent.parent.def.label; color: Theme.text; font.pixelSize: 13 }
+                UiText { width: 220; elide: Text.ElideMiddle; text: parent.parent.parent.val || "nenhuma"; color: Theme.muted; font.pixelSize: 11 }
             }
             UiButton {
                 anchors.verticalCenter: parent.verticalCenter

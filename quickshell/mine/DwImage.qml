@@ -12,6 +12,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "image", opts: w.opts }, k) }
     readonly property string path: o("path")
@@ -47,7 +50,7 @@ Item {
             source: w.path !== "" ? "file://" + w.path : ""
             sourceSize: Qt.size(Math.max(256, width * 1.5), Math.max(256, height * 1.5))
         }
-        Text {
+        UiText {
             visible: parent.cap
             anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
             height: 28; verticalAlignment: Text.AlignVCenter; horizontalAlignment: Text.AlignHCenter

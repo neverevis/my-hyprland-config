@@ -13,7 +13,7 @@ Item {
     height: label !== "" ? 54 : 36
     width: parent ? parent.width : 300
 
-    Text { id: lbl; visible: s.label !== ""; text: s.label; color: Theme.muted; font.pixelSize: 12; elide: Text.ElideRight; width: parent.width - 50 }
+    UiText { id: lbl; visible: s.label !== ""; text: s.label; color: Theme.muted; font.pixelSize: 12; elide: Text.ElideRight; width: parent.width - 50 }
     Item {
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         height: 36
@@ -51,7 +51,7 @@ Item {
             }
             WheelHandler { onWheel: e => s.moved(Math.max(0, Math.min(1, s.value + (e.angleDelta.y > 0 ? 0.05 : -0.05)))) }
         }
-        Text {
+        UiText {
             id: pct
             anchors { right: parent.right; verticalCenter: parent.verticalCenter }
             width: 40

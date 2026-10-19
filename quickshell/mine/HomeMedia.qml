@@ -28,7 +28,7 @@ Item {
             anchors.centerIn: parent
             spacing: 10
             UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "music"; size: 46; color: Theme.muted }
-            Text { anchors.horizontalCenter: parent.horizontalCenter; text: "Nada tocando"; color: Theme.muted; font.pixelSize: 14 }
+            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Nada tocando"; color: Theme.muted; font.pixelSize: 14 }
         }
 
         Item {
@@ -50,8 +50,8 @@ Item {
                 id: info
                 anchors { top: art.bottom; topMargin: 16; left: parent.left; right: parent.right }
                 spacing: 3
-                Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: pg.pl ? pg.pl.trackTitle : ""; color: "white"; font.pixelSize: 17; font.weight: Font.Bold; elide: Text.ElideRight }
-                Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: pg.pl ? [pg.pl.trackArtist, pg.pl.trackAlbum].filter(x => !!x).join(" · ") : ""; color: Qt.rgba(1, 1, 1, 0.72); font.pixelSize: 13; elide: Text.ElideRight }
+                UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: pg.pl ? pg.pl.trackTitle : ""; color: "white"; font.pixelSize: 17; font.weight: Font.Bold; elide: Text.ElideRight }
+                UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: pg.pl ? [pg.pl.trackArtist, pg.pl.trackAlbum].filter(x => !!x).join(" · ") : ""; color: Qt.rgba(1, 1, 1, 0.72); font.pixelSize: 13; elide: Text.ElideRight }
             }
 
             // ---- progresso ----
@@ -78,8 +78,8 @@ Item {
                         onReleased: { pg.pl.position = prog.dragV * pg.pl.length; prog.dragV = -1 }
                     }
                 }
-                Text { anchors { left: parent.left; bottom: parent.bottom } text: pg.home.fmt(prog.r * (pg.pl ? pg.pl.length : 0)); color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11 }
-                Text { anchors { right: parent.right; bottom: parent.bottom } text: pg.pl ? pg.home.fmt(pg.pl.length) : ""; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11 }
+                UiText { anchors { left: parent.left; bottom: parent.bottom } text: pg.home.fmt(prog.r * (pg.pl ? pg.pl.length : 0)); color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11 }
+                UiText { anchors { right: parent.right; bottom: parent.bottom } text: pg.pl ? pg.home.fmt(pg.pl.length) : ""; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11 }
             }
 
             // ---- controles ----

@@ -227,7 +227,7 @@ Scope {
                         x: win.box.x; y: win.box.y
                         width: win.box.width; height: win.box.height
                         radius: win.docked ? 0 : Settings.launcherRadius
-                        color: win.docked ? "transparent" : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.glass ? Math.min(1, Settings.glassOpacity / 100 + 0.08) : 1)
+                        color: win.docked ? "transparent" : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.glass ? Math.min(1, Settings.glassOpacityEff / 100 + 0.08) : 1)
                         border.width: win.docked ? 0 : 1; border.color: Theme.border
                                                 clip: true
                         MouseArea { anchors.fill: parent }
@@ -242,12 +242,13 @@ Scope {
                                 radius: Math.max(8, Settings.launcherRadius - 8)
                                 color: Settings.glass ? Qt.rgba(Theme.card.r, Theme.card.g, Theme.card.b, 0.7) : Theme.card
                             }
-                            Text {
+                            UiText {
                                 id: glyph
                                 anchors { left: parent.left; leftMargin: 28; verticalCenter: parent.verticalCenter }
                                 text: "⌕"; color: Theme.accent; font.pixelSize: 22
                             }
                             TextInput {
+                                font.family: Theme.font
                                 id: input
                                 anchors { left: glyph.right; leftMargin: 12; right: parent.right; rightMargin: 24; verticalCenter: parent.verticalCenter }
                                 color: Theme.text; font.pixelSize: 16
@@ -260,7 +261,7 @@ Scope {
                                     function onSearchFor(q) { if (root.alive) { input.text = q; root.pending = "" } }
                                 }
                                 onTextChanged: { root.query = text; view.currentIndex = 0 }
-                                Text { visible: input.text === ""; anchors.verticalCenter: parent.verticalCenter; text: "Buscar…"; color: Theme.muted; font.pixelSize: 16 }
+                                UiText { visible: input.text === ""; anchors.verticalCenter: parent.verticalCenter; text: "Buscar…"; color: Theme.muted; font.pixelSize: 16 }
                                 // dicas dos prefixos (some ao digitar)
                                 Row {
                                     visible: input.text === "" && parent.width > 420
@@ -272,7 +273,7 @@ Scope {
                                             required property var modelData
                                             height: 22; width: pt.implicitWidth + 12; radius: 6
                                             color: pm.containsMouse ? Theme.tint(0.2) : Theme.tint(0.08)
-                                            Text { id: pt; anchors.centerIn: parent; text: modelData[0] + " " + modelData[1]; color: Theme.muted; font.pixelSize: 10 }
+                                            UiText { id: pt; anchors.centerIn: parent; text: modelData[0] + " " + modelData[1]; color: Theme.muted; font.pixelSize: 10 }
                                             MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { input.text = modelData[0]; input.forceActiveFocus() } }
                                         }
                                     }
@@ -341,13 +342,13 @@ Scope {
                                         color: Theme.tint(0.16)
                                         UiIcon { anchors.centerIn: parent; name: row.modelData.glyph ?? ""; size: parent.width * 0.55; color: Theme.accent }
                                     }
-                                    Text { anchors.centerIn: parent; visible: !!row.modelData.big; text: row.modelData.big ?? ""; font.pixelSize: parent.width * 0.85 }
+                                    UiText { anchors.centerIn: parent; visible: !!row.modelData.big; text: row.modelData.big ?? ""; font.pixelSize: parent.width * 0.85 }
                                 }
                                 Column {
                                     anchors { left: ico.right; leftMargin: 14; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
                                     spacing: 1
-                                    Text { width: parent.width; text: row.modelData.name; color: Theme.text; font.pixelSize: 15; font.weight: Font.Medium; elide: Text.ElideRight }
-                                    Text {
+                                    UiText { width: parent.width; text: row.modelData.name; color: Theme.text; font.pixelSize: 15; font.weight: Font.Medium; elide: Text.ElideRight }
+                                    UiText {
                                         visible: text !== ""
                                         width: parent.width
                                         text: row.modelData.desc ?? ""
@@ -363,7 +364,7 @@ Scope {
                             }
                         }
 
-                        Text {
+                        UiText {
                             visible: root.list.length === 0 && input.text !== ""
                             anchors { horizontalCenter: parent.horizontalCenter; top: bar.bottom; topMargin: 6 }
                             text: "Nada encontrado"; color: Theme.muted; font.pixelSize: 13

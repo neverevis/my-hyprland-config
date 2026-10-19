@@ -93,13 +93,13 @@ Scope {
             readonly property var w: { Settings.desktopWidgets; return DeskState.find(DeskState.selected) }
             readonly property var info: w ? DeskState.info(w.type) : null
             readonly property Item target: { for (let i = 0; i < view.count; i++) { const it = view.itemAt(i); if (it && it.wid === DeskState.selected) return it } return null }
-            readonly property bool onRight: !target || target.x + target.width / 2 < win.width / 2
+            readonly property bool rightHalf: !target || target.x + target.width / 2 < win.width / 2
             visible: opacity > 0
             opacity: DeskState.editing && !!w ? 1 : 0
             Behavior on opacity { NumberAnimation { duration: 180 } }
             width: 380
             height: Math.min(win.area.height, inspCol.implicitHeight + 32)
-            x: onRight ? win.area.x + win.area.width - width : win.area.x
+            x: rightHalf ? win.area.x + win.area.width - width : win.area.x
             y: win.area.y + (win.area.height - height) / 2
             Behavior on x { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
             radius: 20
@@ -124,8 +124,8 @@ Scope {
                         Column {
                             anchors.verticalCenter: parent.verticalCenter
                             width: parent.width - 36 - 10 - 34
-                            Text { text: insp.info ? insp.info.name : ""; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
-                            Text { width: parent.width; elide: Text.ElideRight; text: insp.info ? insp.info.desc : ""; color: Theme.muted; font.pixelSize: 11 }
+                            UiText { text: insp.info ? insp.info.name : ""; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
+                            UiText { width: parent.width; elide: Text.ElideRight; text: insp.info ? insp.info.desc : ""; color: Theme.muted; font.pixelSize: 11 }
                         }
                         UiButton { icon: "close"; kind: "ghost"; onClicked: DeskState.selected = "" }
                     }
@@ -133,7 +133,7 @@ Scope {
                     Column {
                         width: parent.width
                         spacing: 6
-                        Text { text: "Tamanho"; color: Theme.text; font.pixelSize: 13 }
+                        UiText { text: "Tamanho"; color: Theme.text; font.pixelSize: 13 }
                         Flow {
                             width: parent.width
                             spacing: 4
@@ -145,7 +145,7 @@ Scope {
                                     height: 28; width: 46; radius: 8
                                     color: on ? Theme.accent : (sm.containsMouse ? Theme.cardHi : Theme.track)
                                     border.width: 1; border.color: on ? Theme.accent : Theme.border
-                                    Text { anchors.centerIn: parent; text: modelData[0] + "×" + modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
+                                    UiText { anchors.centerIn: parent; text: modelData[0] + "×" + modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
                                     MouseArea { id: sm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.setSize(insp.w.id, modelData[0], modelData[1]) }
                                 }
                             }
@@ -155,7 +155,7 @@ Scope {
                                 delegate: Row {
                                     required property var modelData
                                     spacing: 2
-                                    Text { text: modelData[1]; color: Theme.muted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter; rightPadding: 2; leftPadding: 6 }
+                                    UiText { text: modelData[1]; color: Theme.muted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter; rightPadding: 2; leftPadding: 6 }
                                     Repeater {
                                         model: [-1, 1]
                                         delegate: Rectangle {
@@ -249,13 +249,13 @@ Scope {
                             width: mcol.width
                             height: modelData.sep ? 9 : modelData.head ? 26 : 32
                             Rectangle { visible: !!modelData.sep; anchors.centerIn: parent; width: parent.width - 16; height: 1; color: Theme.border }
-                            Text { visible: !!modelData.head; x: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData.head ?? ""; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                            UiText { visible: !!modelData.head; x: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData.head ?? ""; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
                             Rectangle {
                                 visible: !modelData.sep && !modelData.head
                                 anchors.fill: parent; radius: 9
                                 color: im.containsMouse || (modelData.sub && DeskMenu.sub === modelData.sub) ? (modelData.danger ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.cardHi) : "transparent"
                                 UiIcon { id: mi; x: 10; anchors.verticalCenter: parent.verticalCenter; name: modelData.icon ?? ""; size: 16; color: modelData.danger ? Theme.danger : (modelData.checked ? Theme.accent : Theme.muted) }
-                                Text { anchors { left: mi.right; leftMargin: 10; verticalCenter: parent.verticalCenter; right: parent.right; rightMargin: 24 } elide: Text.ElideRight
+                                UiText { anchors { left: mi.right; leftMargin: 10; verticalCenter: parent.verticalCenter; right: parent.right; rightMargin: 24 } elide: Text.ElideRight
                                     text: modelData.label ?? ""; color: modelData.danger ? Theme.danger : Theme.text; font.pixelSize: 13; font.weight: modelData.checked ? Font.DemiBold : Font.Normal }
                                 UiIcon { visible: !!modelData.sub || !!modelData.checked; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter } name: modelData.sub ? "chevRight" : "check"; size: 14; color: Theme.muted }
                                 MouseArea {
@@ -302,7 +302,7 @@ Scope {
                 anchors { left: parent.left; leftMargin: 18; verticalCenter: parent.verticalCenter }
                 spacing: 10
                 UiIcon { name: "dashboard"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                Text { id: tip; text: DeskState.locked ? "Posições travadas: clique num widget para as opções." : "Arraste para mover, clique para as opções."; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                UiText { id: tip; text: DeskState.locked ? "Posições travadas: clique num widget para as opções." : "Arraste para mover, clique para as opções."; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
             }
             Row {
                 anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }

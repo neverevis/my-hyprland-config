@@ -267,13 +267,13 @@ Scope {
                                         GradientStop { position: 1; color: Qt.rgba(0, 0, 0, 0.62) }
                                     }
                                 }
-                                Text {
+                                UiText {
                                     anchors { left: parent.left; leftMargin: 10; right: count.left; rightMargin: 6; bottom: parent.bottom; bottomMargin: 7 }
                                     text: card.modelData.path.split("/").pop().replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")
                                     color: "white"; font.pixelSize: 11; font.weight: Font.DemiBold
                                     elide: Text.ElideRight
                                 }
-                                Text {
+                                UiText {
                                     id: count
                                     anchors { right: parent.right; rightMargin: 10; bottom: parent.bottom; bottomMargin: 7 }
                                     text: (card.index + 1) + " / " + Wallpaper.files.length
@@ -299,7 +299,7 @@ Scope {
                     }
                 }
 
-                Text {
+                UiText {
                     visible: Wallpaper.files.length === 0
                     x: win.box.x; y: win.box.y + win.box.height / 2 - height / 2; width: win.box.width
                     horizontalAlignment: Text.AlignHCenter

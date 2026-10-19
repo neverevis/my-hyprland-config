@@ -14,7 +14,7 @@ HomeScroll {
         width: parent ? parent.width : 100; height: 38; radius: 10
         color: current ? Theme.tint(0.16) : (drm.containsMouse ? Theme.cardHi : "transparent")
         UiIcon { id: di; anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: dr.icon; size: 17; color: dr.current ? Theme.accent : Theme.muted }
-        Text { anchors { left: di.right; leftMargin: 10; right: ck.left; rightMargin: 8; verticalCenter: parent.verticalCenter } text: pg.home.nodeName(dr.node); color: Theme.text; font.pixelSize: 13; elide: Text.ElideRight }
+        UiText { anchors { left: di.right; leftMargin: 10; right: ck.left; rightMargin: 8; verticalCenter: parent.verticalCenter } text: pg.home.nodeName(dr.node); color: Theme.text; font.pixelSize: 13; elide: Text.ElideRight }
         UiIcon { id: ck; visible: dr.current; anchors { right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter } name: "check"; size: 16; color: Theme.accent }
         MouseArea { id: drm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: dr.clicked() }
         signal clicked()
@@ -89,7 +89,7 @@ HomeScroll {
             id: appCol
             width: parent.width
             spacing: 8
-            Text { visible: pg.home.streams.length === 0; text: "Nenhum app tocando som agora."; color: Theme.muted; font.pixelSize: 13; height: 24; verticalAlignment: Text.AlignVCenter }
+            UiText { visible: pg.home.streams.length === 0; text: "Nenhum app tocando som agora."; color: Theme.muted; font.pixelSize: 13; height: 24; verticalAlignment: Text.AlignVCenter }
             Repeater {
                 model: pg.home.streams
                 delegate: HomeSlider {

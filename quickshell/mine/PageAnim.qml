@@ -74,7 +74,7 @@ Column {
                                 delegate: Column {
                                     required property var modelData
                                     spacing: 4
-                                    Text { text: modelData[1]; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                                    UiText { text: modelData[1]; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
                                     UiSeg {
                                         options: Settings.hyprStyleOptions[modelData[0]]
                                         value: (Settings.animCfg.hyprStyle ?? {})[modelData[0]] ?? Settings.hyprStyleDefaults[modelData[0]]
@@ -104,7 +104,7 @@ Column {
                             id: rowHead
                             width: parent.width; height: 48
                             MouseArea { id: rm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: page.openRow = row.open ? "" : row.modelData.id }
-                            Text {
+                            UiText {
                                 anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter; right: chips.left; rightMargin: 10 }
                                 elide: Text.ElideRight
                                 text: row.modelData.label; color: Theme.text; font.pixelSize: 13
@@ -186,7 +186,7 @@ Column {
             spacing: 10
             visible: !page.locked
             UiIcon { name: "pencil"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-            Text { text: "Nome"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+            UiText { text: "Nome"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
             UiField { width: 240; text: page.cur.name; onEditingFinished: page.sel = Settings.renameAnim(page.cur.name, text) }
             UiSeg {
                 options: [["bezier", "Curva", "curve"], ["spring", "Mola", "wave"]]
@@ -200,14 +200,14 @@ Column {
         Flow {
             width: parent.width
             spacing: 6
-            Text { text: page.usedIn.length ? "Em uso em:" : "Ainda não está em uso"; color: Theme.muted; font.pixelSize: 12; height: 24; verticalAlignment: Text.AlignVCenter }
+            UiText { text: page.usedIn.length ? "Em uso em:" : "Ainda não está em uso"; color: Theme.muted; font.pixelSize: 12; height: 24; verticalAlignment: Text.AlignVCenter }
             Repeater {
                 model: page.usedIn
                 delegate: Rectangle {
                     required property var modelData
                     height: 24; width: ul.implicitWidth + 16; radius: 12
                     color: Theme.tint(0.14); border.width: 1; border.color: Theme.tint(0.4)
-                    Text { id: ul; anchors.centerIn: parent; text: modelData.label; color: Theme.text; font.pixelSize: 11 }
+                    UiText { id: ul; anchors.centerIn: parent; text: modelData.label; color: Theme.text; font.pixelSize: 11 }
                 }
             }
         }
@@ -224,8 +224,8 @@ Column {
                 anchors { right: parent.right; top: parent.top; margins: 10 }
                 width: cssT.implicitWidth + 16; height: 24; radius: 8
                 color: Theme.card; border.width: 1; border.color: Theme.border
-                Text {
-                    id: cssT; anchors.centerIn: parent; color: Theme.muted; font.pixelSize: 11; font.family: "monospace"
+                UiText {
+                    id: cssT; anchors.centerIn: parent; color: Theme.muted; font.pixelSize: 11; font.family: Theme.mono
                     text: page.isSpring ? "massa " + (page.cur.mass ?? 1) + " · rigidez " + (page.cur.stiffness ?? 0) + " · amortecimento " + (page.cur.dampening ?? 0) : page.css
                 }
             }
@@ -254,8 +254,8 @@ Column {
                         UiIcon { name: modelData[0]; size: 14; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
                         Column {
                             anchors.verticalCenter: parent.verticalCenter
-                            Text { text: modelData[1]; color: Theme.muted; font.pixelSize: 10 }
-                            Text { text: modelData[2]; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                            UiText { text: modelData[1]; color: Theme.muted; font.pixelSize: 10 }
+                            UiText { text: modelData[2]; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
                         }
                     }
                 }
@@ -281,7 +281,7 @@ Column {
                     page.say("Curva colada")
                 }
             }
-            Text { visible: page.toast !== ""; text: page.toast; color: Theme.accent; font.pixelSize: 12; height: 36; verticalAlignment: Text.AlignVCenter }
+            UiText { visible: page.toast !== ""; text: page.toast; color: Theme.accent; font.pixelSize: 12; height: 36; verticalAlignment: Text.AlignVCenter }
         }
 
         // ---- curva: valores exatos e duracao ----
@@ -293,7 +293,7 @@ Column {
                 delegate: Row {
                     required property var modelData
                     spacing: 5
-                    Text { text: modelData[1]; color: Theme.muted; font.pixelSize: 12; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
+                    UiText { text: modelData[1]; color: Theme.muted; font.pixelSize: 12; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
                     UiField {
                         width: 66
                         enabled: !page.locked
@@ -371,7 +371,7 @@ Column {
                 width: demos.dw; height: 150; radius: 12
                 color: Theme.track; border.width: 1; border.color: Theme.border
                 clip: true
-                Text { x: 12; y: 10; text: "Deslizar"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                UiText { x: 12; y: 10; text: "Deslizar"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
                 Rectangle { x: 16; width: parent.width - 32; y: parent.height / 2 + 2; height: 4; radius: 2; color: Theme.cardHi }
                 Rectangle {
                     width: 30; height: 30; radius: 9
@@ -390,7 +390,7 @@ Column {
                 width: demos.dw; height: 150; radius: 12
                 color: Theme.track; border.width: 1; border.color: Theme.border
                 clip: true
-                Text { x: 12; y: 10; text: "Crescer"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                UiText { x: 12; y: 10; text: "Crescer"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
                 Rectangle {
                     anchors.centerIn: parent; anchors.verticalCenterOffset: 8
                     width: 70; height: 70; radius: 18
@@ -410,7 +410,7 @@ Column {
                 width: demos.dw; height: 150; radius: 12
                 color: Theme.track; border.width: 1; border.color: Theme.border
                 clip: true
-                Text { x: 12; y: 10; text: "Painel"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                UiText { x: 12; y: 10; text: "Painel"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
                 Item {
                     id: scr
                     anchors { fill: parent; margins: 14; topMargin: 30 }
@@ -448,8 +448,8 @@ Column {
             anchors.centerIn: parent
             spacing: 6
             CurveThumb { width: 20; height: 20; pad: 2; anim: ch.a; stroke: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-            Text { visible: ch.phase !== ""; text: ch.phase; color: Theme.muted; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
-            Text { text: ch.name; color: Theme.text; font.pixelSize: 11; font.weight: Font.Medium; anchors.verticalCenter: parent.verticalCenter }
+            UiText { visible: ch.phase !== ""; text: ch.phase; color: Theme.muted; font.pixelSize: 10; anchors.verticalCenter: parent.verticalCenter }
+            UiText { text: ch.name; color: Theme.text; font.pixelSize: 11; font.weight: Font.Medium; anchors.verticalCenter: parent.verticalCenter }
         }
         MouseArea { id: chm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: page.sel = ch.name }
     }

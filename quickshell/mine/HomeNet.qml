@@ -31,11 +31,11 @@ HomeScroll {
         Column {
             anchors { left: ci.right; leftMargin: 12; verticalCenter: ci.verticalCenter }
             spacing: 2
-            Text {
+            UiText {
                 text: !cur.dev ? "Sem conexão" : (cur.viaWired ? "Cabo · " + cur.dev.name : pg.home.wifiCur.name)
                 color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
             }
-            Text {
+            UiText {
                 text: !cur.dev ? "Conecte um cabo ou escolha uma rede abaixo" : ((pg.home.ips[cur.dev.name] ?? "sem IP") + (cur.viaWired && cur.dev.linkSpeed ? " · " + cur.dev.linkSpeed + " Mb/s" : "") + (!cur.viaWired && pg.home.wifiCur ? " · sinal " + Math.round(pg.home.wifiCur.signalStrength * 100) + "%" : ""))
                 color: Theme.muted; font.pixelSize: 12
             }
@@ -64,7 +64,7 @@ HomeScroll {
             id: wcol
             width: parent.width
             spacing: 4
-            Text {
+            UiText {
                 visible: !pg.wifi || !Networking.wifiEnabled || pg.nets.length === 0
                 height: 30; verticalAlignment: Text.AlignVCenter
                 text: !pg.wifi ? "Nenhuma placa Wi-Fi neste computador." : (!Networking.wifiEnabled ? "O Wi-Fi está desligado." : "Procurando redes…")
@@ -85,8 +85,8 @@ HomeScroll {
                         UiIcon { id: si; anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: pg.sigIcon(nr.modelData.signalStrength); size: 18; color: nr.modelData.connected ? Theme.accent : Theme.text }
                         Column {
                             anchors { left: si.right; leftMargin: 10; right: act.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
-                            Text { width: parent.width; text: nr.modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
-                            Text {
+                            UiText { width: parent.width; text: nr.modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
+                            UiText {
                                 width: parent.width
                                 text: (nr.modelData.connected ? "Conectado" : (nr.modelData.stateChanging ? "Conectando…" : (nr.modelData.known ? "Salva" : (nr.secure ? "Protegida" : "Aberta")))) + " · " + Math.round(nr.modelData.signalStrength * 100) + "%"
                                 color: Theme.muted; font.pixelSize: 11

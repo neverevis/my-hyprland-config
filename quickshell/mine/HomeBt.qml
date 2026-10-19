@@ -27,8 +27,8 @@ HomeScroll {
         UiIcon { id: di; anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: pg.devIcon(dr.dev ? dr.dev.icon : ""); size: 18; color: dr.dev && dr.dev.connected ? Theme.accent : Theme.text }
         Column {
             anchors { left: di.right; leftMargin: 10; right: ab.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
-            Text { width: parent.width; text: dr.dev ? (dr.dev.name || dr.dev.address) : ""; color: Theme.text; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
-            Text {
+            UiText { width: parent.width; text: dr.dev ? (dr.dev.name || dr.dev.address) : ""; color: Theme.text; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
+            UiText {
                 width: parent.width
                 text: !dr.dev ? "" : (dr.dev.pairing ? "Pareando…" : (dr.dev.connected ? "Conectado" : (dr.dev.paired ? "Pareado" : dr.dev.address)))
                     + (dr.dev && dr.dev.batteryAvailable ? " · bateria " + Math.round(dr.dev.battery * 100) + "%" : "")
@@ -55,7 +55,7 @@ HomeScroll {
             id: pcol
             width: parent.width
             spacing: 4
-            Text {
+            UiText {
                 visible: !pg.bt || !pg.bt.enabled || pg.paired.length === 0
                 width: parent.width; wrapMode: Text.WordWrap
                 topPadding: 6; bottomPadding: 6
@@ -91,7 +91,7 @@ HomeScroll {
             id: fcol
             width: parent.width
             spacing: 4
-            Text {
+            UiText {
                 visible: pg.found.length === 0
                 height: 30; verticalAlignment: Text.AlignVCenter
                 text: pg.bt && pg.bt.discovering ? "Procurando dispositivos por perto…" : "Clique em Procurar para achar dispositivos novos."

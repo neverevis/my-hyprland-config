@@ -11,6 +11,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "weather", opts: w.opts }, k) }
     Component.onCompleted: Weather.use()
@@ -28,7 +31,7 @@ Item {
         spacing: 6
         UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: Weather.error ? "wCloudy" : "refresh"; size: 26; color: w.dim
             RotationAnimation on rotation { running: Weather.busy; from: 0; to: 360; duration: 1200; loops: Animation.Infinite } }
-        Text { visible: w.cols > 1; anchors.horizontalCenter: parent.horizontalCenter; width: w.width; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
+        UiText { visible: w.cols > 1; anchors.horizontalCenter: parent.horizontalCenter; width: w.width; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
             text: Weather.error || "Buscando o clima…"; color: w.dim; font.pixelSize: 12 }
     }
 
@@ -47,8 +50,8 @@ Item {
                 anchors.centerIn: parent
                 spacing: 2
                 UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: Weather.icon(w.n.code, w.n.day); size: 46; color: w.ac }
-                Text { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold }
-                Text { anchors.horizontalCenter: parent.horizontalCenter; text: Weather.place; color: w.dim; font.pixelSize: 11; width: w.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight }
+                UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold }
+                UiText { anchors.horizontalCenter: parent.horizontalCenter; text: Weather.place; color: w.dim; font.pixelSize: 11; width: w.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight }
             }
             Row {
                 visible: !parent.parent.tiny
@@ -60,18 +63,18 @@ Item {
                     spacing: 0
                     Row {
                         spacing: 8
-                        Text { text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.min(nowBox.height * 0.42, 52); font.weight: Font.Bold }
+                        UiText { text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.min(nowBox.height * 0.42, 52); font.weight: Font.Bold }
                         Column {
                             anchors.bottom: parent.bottom; anchors.bottomMargin: 6
-                            Text { text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) : ""; color: w.dim; font.pixelSize: 12 }
-                            Text { text: Weather.days.length ? "↓ " + w.t(Weather.days[0].min) : ""; color: w.dim; font.pixelSize: 12 }
+                            UiText { text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) : ""; color: w.dim; font.pixelSize: 12 }
+                            UiText { text: Weather.days.length ? "↓ " + w.t(Weather.days[0].min) : ""; color: w.dim; font.pixelSize: 12 }
                         }
                     }
-                    Text { text: Weather.describe(w.n.code); color: w.fg; font.pixelSize: 14; font.weight: Font.Medium }
+                    UiText { text: Weather.describe(w.n.code); color: w.fg; font.pixelSize: 14; font.weight: Font.Medium }
                     Row {
                         spacing: 4
                         UiIcon { name: "mapMarker"; size: 12; color: w.dim; anchors.verticalCenter: parent.verticalCenter }
-                        Text { text: Weather.place; color: w.dim; font.pixelSize: 12 }
+                        UiText { text: Weather.place; color: w.dim; font.pixelSize: 12 }
                     }
                 }
             }
@@ -87,7 +90,7 @@ Item {
                         required property var modelData
                         anchors.right: parent.right
                         spacing: 6
-                        Text { text: modelData[1]; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+                        UiText { text: modelData[1]; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
                         UiIcon { name: modelData[0]; size: 13; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
                     }
                 }
@@ -114,13 +117,13 @@ Item {
                     width: fc.width / Math.max(1, fc.count)
                     spacing: 4
                     anchors.verticalCenter: parent.verticalCenter
-                    Text { anchors.horizontalCenter: parent.horizontalCenter
+                    UiText { anchors.horizontalCenter: parent.horizontalCenter
                         text: w.show === "days" ? (index === 0 ? "Hoje" : w.loc.dayName(modelData.date.getDay(), Locale.ShortFormat).replace(".", "")) : Qt.formatDateTime(modelData.time, "HH'h'")
                         color: w.dim; font.pixelSize: 11; font.weight: Font.DemiBold }
                     UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: Weather.icon(modelData.code, w.show === "days" ? true : modelData.day); size: 22; color: w.ac }
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: w.show === "days" ? w.t(modelData.max) : w.t(modelData.temp); color: w.fg; font.pixelSize: 13; font.weight: Font.Bold }
-                    Text { visible: w.show === "days" && !fc.side; anchors.horizontalCenter: parent.horizontalCenter; text: w.t(modelData.min); color: w.dim; font.pixelSize: 11 }
-                    Text { visible: !fc.side && (modelData.rain ?? 0) > 10; anchors.horizontalCenter: parent.horizontalCenter; text: modelData.rain + "%"; color: w.ac; font.pixelSize: 10 }
+                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.show === "days" ? w.t(modelData.max) : w.t(modelData.temp); color: w.fg; font.pixelSize: 13; font.weight: Font.Bold }
+                    UiText { visible: w.show === "days" && !fc.side; anchors.horizontalCenter: parent.horizontalCenter; text: w.t(modelData.min); color: w.dim; font.pixelSize: 11 }
+                    UiText { visible: !fc.side && (modelData.rain ?? 0) > 10; anchors.horizontalCenter: parent.horizontalCenter; text: modelData.rain + "%"; color: w.ac2; font.pixelSize: 10 }
                 }
             }
         }

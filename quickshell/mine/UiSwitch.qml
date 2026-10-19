@@ -17,8 +17,8 @@ Item {
         id: txt
         anchors { left: ic.visible ? ic.right : parent.left; leftMargin: ic.visible ? 10 : 0; right: track.left; rightMargin: 14; verticalCenter: parent.verticalCenter }
         spacing: 2
-        Text { width: parent.width; text: r.label; color: Theme.text; font.pixelSize: 13; wrapMode: Text.WordWrap }
-        Text { visible: r.description !== ""; width: parent.width; text: r.description; color: Theme.muted; font.pixelSize: 12; wrapMode: Text.WordWrap }
+        UiText { width: parent.width; text: r.label; color: Theme.text; font.pixelSize: 13; wrapMode: Text.WordWrap }
+        UiText { visible: r.description !== ""; width: parent.width; text: r.description; color: Theme.muted; font.pixelSize: 12; wrapMode: Text.WordWrap }
     }
     Rectangle {
         id: track

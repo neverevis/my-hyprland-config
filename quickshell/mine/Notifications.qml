@@ -195,20 +195,20 @@ Scope {
                                 Column {
                                     anchors { left: iconBox.right; leftMargin: 12; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
                                     spacing: 2
-                                    Text {
+                                    UiText {
                                         width: parent.width
                                         text: card.n.appName
                                         visible: text !== ""
                                         color: Theme.muted; font.pixelSize: 11; font.weight: Font.Medium
                                         elide: Text.ElideRight
                                     }
-                                    Text {
+                                    UiText {
                                         width: parent.width
                                         text: card.n.summary
                                         color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
                                         elide: Text.ElideRight
                                     }
-                                    Text {
+                                    UiText {
                                         width: parent.width
                                         text: card.n.body
                                         visible: text !== ""

@@ -28,8 +28,8 @@ Rectangle {
     Column {
         anchors { left: dot.right; leftMargin: 10; right: moreBtn.visible ? moreBtn.left : parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
         spacing: 1
-        Text { width: parent.width; text: t.label; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
-        Text { width: parent.width; visible: t.sub !== ""; text: t.sub; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
+        UiText { width: parent.width; text: t.label; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
+        UiText { width: parent.width; visible: t.sub !== ""; text: t.sub; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
     }
     MouseArea { id: ma; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: t.clicked() }
     Rectangle {

@@ -20,11 +20,24 @@ Column {
             spacing: 8
             UiButton { icon: DeskState.editing ? "check" : "pencil"; text: DeskState.editing ? "Terminar edição" : "Editar na tela"; kind: "accent"; onClicked: { DeskState.editing = !DeskState.editing; if (DeskState.editing) Settings.settingsOpen = false } }
             UiButton { icon: DeskState.locked ? "lockOpen" : "lock"; text: DeskState.locked ? "Destravar posições" : "Travar posições"; kind: "ghost"; onClicked: DeskState.locked = !DeskState.locked }
-            Text { anchors.verticalCenter: parent.verticalCenter; text: (Settings.desktopWidgets || []).length + " widget(s) na tela"; color: Theme.muted; font.pixelSize: 12 }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: (Settings.desktopWidgets || []).length + " widget(s) na tela"; color: Theme.muted; font.pixelSize: 12 }
         }
         UiLabel { text: "Fundo padrão dos widgets" }
         UiSeg { options: [["card", "Cartão", "cards"], ["glass", "Vidro", "glass"], ["none", "Sem fundo", "image"]]; value: Settings.desktopCardStyle; onPicked: v => Settings.desktopCardStyle = v }
         UiSlider { label: "Opacidade do cartão"; icon: "glass"; from: 0; to: 100; value: Settings.desktopCard; suffix: " %"; onMoved: v => Settings.desktopCard = v }
+        ToneSwatches {
+            width: parent.width
+            label: "Cor dos widgets"
+            value: Settings.desktopTone
+            custom: Settings.desktopToneColor
+            onPicked: v => Settings.desktopTone = v
+        }
+        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+            text: Settings.desktopTone === "auto" ? "Automática: texto claro ou escuro conforme o wallpaper embaixo de cada widget, destaques na cor do tema."
+                : Settings.desktopTone === "neutral" ? "Neutra: só o texto do tema, sem cor de destaque."
+                : Settings.desktopTone === "custom" ? "Uma cor só para todos os widgets." : "Cartões no tom suave dessa cor da paleta, texto e destaques nela. Muda junto com o tema." }
+        ColorField { visible: Settings.desktopTone === "custom"; label: "Minha cor"; value: Settings.desktopToneColor; onPicked: c => Settings.desktopToneColor = c.toString() }
+        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Cada widget pode ter a própria cor nas opções dele (ou seguir esta, em \"Padrão\")." }
         UiSwitch { label: "Sombra nos widgets sem fundo"; description: "Deixa o texto legível em cima de qualquer wallpaper."; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }
         UiSwitch { label: "Encaixar na grade ao arrastar"; description: "Grade de 24 px e guias no centro da tela."; checked: Settings.desktopSnap; onToggled: on => Settings.desktopSnap = on }
         UiSwitch { label: "Menu de clique direito na área de trabalho"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }
@@ -63,8 +76,8 @@ Column {
                             Column {
                                 anchors { left: ic.right; leftMargin: 10; right: plus.left; rightMargin: 6; verticalCenter: parent.verticalCenter }
                                 spacing: 2
-                                Text { text: modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                                Text { width: parent.width; elide: Text.ElideRight; text: modelData.desc; color: Theme.muted; font.pixelSize: 11 }
+                                UiText { text: modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                                UiText { width: parent.width; elide: Text.ElideRight; text: modelData.desc; color: Theme.muted; font.pixelSize: 11 }
                             }
                             UiIcon { id: plus; anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter } name: "plus"; size: 18; color: cm.containsMouse ? Theme.accent : Theme.muted }
                             MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -74,14 +87,14 @@ Column {
                 }
             }
         }
-        Text { visible: page.toast !== ""; text: page.toast; color: Theme.accent; font.pixelSize: 12 }
+        UiText { visible: page.toast !== ""; text: page.toast; color: Theme.accent; font.pixelSize: 12 }
     }
 
     Card {
         icon: "tune"
         title: "Na tela"
         subtitle: "Clique num widget para ver todas as opções dele (as mesmas do inspetor na área de trabalho)."
-        Text { visible: !(Settings.desktopWidgets || []).length; text: "Nenhum widget ainda."; color: Theme.muted; font.pixelSize: 13 }
+        UiText { visible: !(Settings.desktopWidgets || []).length; text: "Nenhum widget ainda."; color: Theme.muted; font.pixelSize: 13 }
         Repeater {
             model: (Settings.desktopWidgets || []).map(w => w.id)
             delegate: Rectangle {
@@ -105,8 +118,8 @@ Column {
                         UiIcon { anchors.centerIn: parent; name: row.info ? row.info.icon : "dashboard"; size: 16; color: Theme.accent } }
                     Column {
                         anchors { left: hic.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
-                        Text { text: row.info ? row.info.name : ""; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                        Text { text: row.w ? row.w.cols + "×" + row.w.rows + "  ·  " + ({ auto: "fundo padrão", card: "cartão", glass: "vidro", none: "sem fundo" })[DeskState.opt(row.w, "card")] + (DeskState.opt(row.w, "lock") ? "  ·  na tela de bloqueio" : "") + (DeskState.opt(row.w, "place") !== "free" ? "  ·  posição automática" : "") : ""
+                        UiText { text: row.info ? row.info.name : ""; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                        UiText { text: row.w ? row.w.cols + "×" + row.w.rows + "  ·  " + ({ auto: "fundo padrão", card: "cartão", glass: "vidro", none: "sem fundo" })[DeskState.opt(row.w, "card")] + (DeskState.opt(row.w, "lock") ? "  ·  na tela de bloqueio" : "") + (DeskState.opt(row.w, "place") !== "free" ? "  ·  posição automática" : "") : ""
                             color: Theme.muted; font.pixelSize: 11 }
                     }
                     Row {
@@ -126,7 +139,7 @@ Column {
                     Flow {
                         width: parent.width
                         spacing: 4
-                        Text { text: "Tamanho  "; color: Theme.text; font.pixelSize: 13; height: 28; verticalAlignment: Text.AlignVCenter }
+                        UiText { text: "Tamanho  "; color: Theme.text; font.pixelSize: 13; height: 28; verticalAlignment: Text.AlignVCenter }
                         Repeater {
                             model: row.info ? row.info.sizes : []
                             delegate: Rectangle {
@@ -135,7 +148,7 @@ Column {
                                 height: 28; width: 46; radius: 8
                                 color: on ? Theme.accent : (szm.containsMouse ? Theme.cardHi : Theme.track)
                                 border.width: 1; border.color: on ? Theme.accent : Theme.border
-                                Text { anchors.centerIn: parent; text: modelData[0] + "×" + modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
+                                UiText { anchors.centerIn: parent; text: modelData[0] + "×" + modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
                                 MouseArea { id: szm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.setSize(row.modelData, modelData[0], modelData[1]) }
                             }
                         }
@@ -158,17 +171,17 @@ Column {
         subtitle: "Para o widget de clima. Os dados vêm do Open-Meteo (gratuito, sem conta)."
         Row {
             spacing: 10
-            Text { text: "Cidade"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; width: 90 }
+            UiText { text: "Cidade"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; width: 90 }
             UiField { width: 280; text: Settings.weatherCity; placeholderText: "Vazio = descobrir pela internet"; onEditingFinished: Settings.weatherCity = text.trim() }
             UiButton { icon: "refresh"; text: "Atualizar"; kind: "ghost"; onClicked: Weather.refresh() }
         }
-        Text {
+        UiText {
             text: Weather.busy ? "Buscando…" : Weather.error !== "" ? Weather.error : Weather.ready ? Weather.place + ": " + Math.round(Weather.now.temp) + Weather.unit + ", " + Weather.describe(Weather.now.code).toLowerCase() + " (atualizado às " + Qt.formatTime(Weather.updated, "HH:mm") + ")" : "Ainda não consultado (adicione um widget de clima)."
             color: Weather.error !== "" ? Theme.danger : Theme.muted; font.pixelSize: 12
         }
         Row {
             spacing: 10
-            Text { text: "Unidades"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; width: 90 }
+            UiText { text: "Unidades"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; width: 90 }
             UiSeg { options: [["metric", "°C, km/h"], ["imperial", "°F, mph"]]; value: Settings.weatherUnits; onPicked: v => Settings.weatherUnits = v }
         }
         UiSlider { label: "Atualizar a cada"; icon: "timer"; from: 5; to: 120; value: Settings.weatherInterval; suffix: " min"; onMoved: v => Settings.weatherInterval = Math.round(v / 5) * 5 }
@@ -230,11 +243,11 @@ Column {
                             anchors { left: parent.left; top: parent.top; margins: 6 }
                             width: bt.implicitWidth + 12; height: 18; radius: 9
                             color: Qt.rgba(0, 0, 0, 0.55)
-                            Text { id: bt; anchors.centerIn: parent; text: "Layout pronto"; color: "white"; font.pixelSize: 9; font.weight: Font.DemiBold }
+                            UiText { id: bt; anchors.centerIn: parent; text: "Layout pronto"; color: "white"; font.pixelSize: 9; font.weight: Font.DemiBold }
                         }
                     }
                     // nome (renomear com duplo clique nos seus)
-                    Text {
+                    UiText {
                         visible: !pc.renaming
                         anchors { left: parent.left; leftMargin: 12; right: acts.left; rightMargin: 6; top: thumb.bottom; topMargin: 10 }
                         elide: Text.ElideRight
@@ -247,7 +260,7 @@ Column {
                         onVisibleChanged: if (visible) { forceActiveFocus(); selectAll() }
                         onEditingFinished: { DeskState.rename(pc.modelData.name, text); pc.renaming = false }
                     }
-                    Text {
+                    UiText {
                         anchors { left: parent.left; leftMargin: 12; bottom: parent.bottom; bottomMargin: 10 }
                         text: pc.cur ? "Em uso" : (pc.modelData.builtin ? "Só os widgets" : new Date(pc.modelData.created).toLocaleDateString(Qt.locale("pt_BR"), "d MMM yyyy"))
                         color: pc.cur ? Theme.accent : Theme.muted; font.pixelSize: 11; font.weight: pc.cur ? Font.DemiBold : Font.Normal
@@ -277,7 +290,7 @@ Column {
                 }
             }
         }
-        Text { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
             text: "Clique num preset para aplicar. Nos seus: duplo clique (ou o lápis) renomeia, a seta atualiza com o visual de agora e a lixeira exclui." }
     }
 

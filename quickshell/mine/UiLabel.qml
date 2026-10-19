@@ -1,7 +1,7 @@
 // Rotulo pequeno de grupo dentro de um cartao.
 import QtQuick
 
-Text {
+UiText {
     color: Theme.muted
     font.pixelSize: 12
     font.weight: Font.DemiBold

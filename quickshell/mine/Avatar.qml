@@ -22,7 +22,7 @@ Item {
         radius: width / 2
         color: img.ready ? "transparent" : Theme.tint(0.3)
         border.width: av.ring; border.color: av.ringColor
-        Text { anchors.centerIn: parent; visible: !img.ready; text: Profile.initial; color: "white"; font.pixelSize: Math.round(av.size * 0.44); font.weight: Font.Bold }
+        UiText { anchors.centerIn: parent; visible: !img.ready; text: Profile.initial; color: "white"; font.pixelSize: Math.round(av.size * 0.44); font.weight: Font.Bold }
     }
     // trocar a foto
     Rectangle {
@@ -36,7 +36,7 @@ Item {
             anchors.centerIn: parent
             spacing: 1
             UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: Profile.busy ? "refresh" : "camera"; size: Math.round(av.size * 0.3); color: "white" }
-            Text { visible: av.size >= 60; anchors.horizontalCenter: parent.horizontalCenter; text: "Trocar"; color: "white"; font.pixelSize: 10; font.weight: Font.Medium }
+            UiText { visible: av.size >= 60; anchors.horizontalCenter: parent.horizontalCenter; text: "Trocar"; color: "white"; font.pixelSize: 10; font.weight: Font.Medium }
         }
     }
     scale: em.pressed ? 0.95 : 1

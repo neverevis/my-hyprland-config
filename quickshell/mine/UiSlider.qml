@@ -17,7 +17,7 @@ Item {
     Row {
         spacing: 8
         UiIcon { visible: r.icon !== ""; name: r.icon; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-        Text { text: r.label; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+        UiText { text: r.label; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
     }
     // valor: clique para digitar (Enter aplica, Esc cancela; fica entre "from" e "to")
     Rectangle {
@@ -29,7 +29,7 @@ Item {
         color: editing ? Theme.bg : (pm.containsMouse ? Theme.cardHi : Theme.track)
         border.width: 1; border.color: editing ? Theme.accent : Theme.border
         Behavior on width { NumberAnimation { duration: 90 } }
-        Text { id: valText; visible: !pill.editing; anchors.centerIn: parent; text: r.value + r.suffix; color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium }
+        UiText { id: valText; visible: !pill.editing; anchors.centerIn: parent; text: r.value + r.suffix; color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium }
         MouseArea {
             id: pm
             anchors.fill: parent
@@ -43,6 +43,7 @@ Item {
             anchors.centerIn: parent
             spacing: 2
             TextInput {
+                font.family: Theme.font
                 id: input
                 color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium
                 selectionColor: Theme.accent; selectedTextColor: Theme.accentText
@@ -59,7 +60,7 @@ Item {
                 Keys.onUpPressed: text = String(Math.min(r.to, (parseInt(text) || 0) + 1))
                 Keys.onDownPressed: text = String(Math.max(r.from, (parseInt(text) || 0) - 1))
             }
-            Text { id: unit; text: r.suffix.trim(); color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+            UiText { id: unit; text: r.suffix.trim(); color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
         }
     }
 

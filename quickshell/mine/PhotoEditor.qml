@@ -83,8 +83,8 @@ Scope {
                         }
                         Column {
                             anchors.verticalCenter: parent.verticalCenter
-                            Text { text: "Escolha uma imagem"; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
-                            Text { text: "Clique numa imagem para ajustar o recorte"; color: Theme.muted; font.pixelSize: 12 }
+                            UiText { text: "Escolha uma imagem"; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
+                            UiText { text: "Clique numa imagem para ajustar o recorte"; color: Theme.muted; font.pixelSize: 12 }
                         }
                     }
                     UiButton { anchors { right: parent.right; rightMargin: 16; top: parent.top; topMargin: 18 } icon: "close"; kind: "ghost"; onClicked: Profile.cancel() }
@@ -114,8 +114,8 @@ Scope {
                     }
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        Text { text: "Ajustar foto de perfil"; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
-                        Text { text: "Arraste para posicionar · roda do mouse para o zoom"; color: Theme.muted; font.pixelSize: 12 }
+                        UiText { text: "Ajustar foto de perfil"; color: Theme.text; font.pixelSize: 17; font.weight: Font.Bold }
+                        UiText { text: "Arraste para posicionar · roda do mouse para o zoom"; color: Theme.muted; font.pixelSize: 12 }
                     }
                 }
                 UiButton { anchors { right: parent.right; rightMargin: 16; top: parent.top; topMargin: 18 } icon: "close"; kind: "ghost"; onClicked: Profile.cancel() }
@@ -184,7 +184,7 @@ Scope {
                             c.beginPath(); c.arc(width / 2, height / 2, width / 2 - 2, 0, Math.PI * 2); c.stroke()
                         }
                     }
-                    Text {
+                    UiText {
                         anchors.centerIn: parent
                         visible: img.status === Image.Loading
                         text: "Carregando…"; color: Theme.muted; font.pixelSize: 14
@@ -261,7 +261,7 @@ Scope {
                     UiButton { text: "Cancelar"; kind: "ghost"; onClicked: Profile.cancel() }
                     UiButton { icon: "check"; text: "Salvar foto"; kind: "accent"; onClicked: ed.save() }
                 }
-                Text {
+                UiText {
                     anchors { left: parent.left; leftMargin: 24; bottom: parent.bottom; bottomMargin: 28 }
                     text: "Duplo clique recomeça · R gira · Enter salva"
                     color: Theme.muted; font.pixelSize: 11

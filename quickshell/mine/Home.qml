@@ -208,7 +208,7 @@ Scope {
                         x: win.box.x; y: win.box.y
                         width: win.box.width; height: win.box.height
                         radius: win.docked ? 0 : Settings.homeRadius + 6
-                        color: win.docked ? "transparent" : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.glass ? Math.min(1, Settings.glassOpacity / 100 + 0.08) : 1)
+                        color: win.docked ? "transparent" : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.glass ? Math.min(1, Settings.glassOpacityEff / 100 + 0.08) : 1)
                         border.width: win.docked ? 0 : 1; border.color: Theme.border
                         scale: win.docked ? 1 : 0.94 + 0.06 * win.pp
                         transformOrigin: Item.Top
@@ -263,7 +263,7 @@ Scope {
                             id: header
                             anchors { left: rail.right; leftMargin: 14; right: parent.right; rightMargin: 12; top: parent.top; topMargin: 12 }
                             height: 36
-                            Text {
+                            UiText {
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: (root.tabs.find(t => t.id === root.tab) ?? root.tabs[0]).label
                                 color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold

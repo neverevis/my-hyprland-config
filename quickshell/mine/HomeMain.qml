@@ -30,21 +30,21 @@ Item {
         Column {
             anchors { left: avatar.right; leftMargin: 18; verticalCenter: parent.verticalCenter }
             spacing: 3
-            Text { text: Quickshell.env("USER"); color: "white"; font.pixelSize: 19; font.weight: Font.Bold }
-            Text { text: Quickshell.env("USER") + "@" + (pg.home.st.host || "linux"); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12 }
+            UiText { text: Quickshell.env("USER"); color: "white"; font.pixelSize: 19; font.weight: Font.Bold }
+            UiText { text: Quickshell.env("USER") + "@" + (pg.home.st.host || "linux"); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12 }
             Row {
                 spacing: 5
                 visible: !!pg.home.sys.uptime
                 UiIcon { name: "clock"; size: 13; color: Qt.rgba(1, 1, 1, 0.75); anchors.verticalCenter: parent.verticalCenter }
-                Text { text: "Ativo há " + pg.home.dur(pg.home.sys.uptime); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12 }
+                UiText { text: "Ativo há " + pg.home.dur(pg.home.sys.uptime); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12 }
             }
         }
         SystemClock { id: clk; precision: SystemClock.Minutes }
         Column {
             anchors { right: parent.right; rightMargin: 22; verticalCenter: parent.verticalCenter }
             spacing: 0
-            Text { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: "white"; font.pixelSize: 36; font.weight: Font.Bold }
-            Text {
+            UiText { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: "white"; font.pixelSize: 36; font.weight: Font.Bold }
+            UiText {
                 anchors.right: parent.right
                 text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "dddd, d 'de' MMMM"); return s.charAt(0).toUpperCase() + s.slice(1) }
                 color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12
@@ -131,7 +131,7 @@ Item {
             sourceSize: Qt.size(200, 200)
             blur: 1; dim: 0.55
         }
-        Text { visible: !media.pl; anchors.centerIn: parent; text: "Nada tocando"; color: Theme.muted; font.pixelSize: 13 }
+        UiText { visible: !media.pl; anchors.centerIn: parent; text: "Nada tocando"; color: Theme.muted; font.pixelSize: 13 }
         Item {
             visible: !!media.pl
             anchors.fill: parent
@@ -145,8 +145,8 @@ Item {
             Column {
                 anchors { left: art.right; leftMargin: 12; right: parent.right; top: parent.top; topMargin: 2 }
                 spacing: 2
-                Text { width: parent.width; text: media.pl ? media.pl.trackTitle : ""; color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
-                Text { width: parent.width; text: media.pl ? (media.pl.trackArtist || media.pl.identity) : ""; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 12; elide: Text.ElideRight }
+                UiText { width: parent.width; text: media.pl ? media.pl.trackTitle : ""; color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                UiText { width: parent.width; text: media.pl ? (media.pl.trackArtist || media.pl.identity) : ""; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 12; elide: Text.ElideRight }
             }
             Row {
                 anchors { left: art.right; leftMargin: 6; bottom: parent.bottom; bottomMargin: 0 }
@@ -187,13 +187,13 @@ Item {
                 property string value
                 width: parent.width; height: 16
                 UiIcon { id: mi; name: me.icon; size: 14; color: Theme.muted; width: 18; anchors.verticalCenter: parent.verticalCenter }
-                Text { id: ml; anchors { left: mi.right; leftMargin: 6; verticalCenter: parent.verticalCenter } text: me.label; color: Theme.text; font.pixelSize: 12; width: 44 }
+                UiText { id: ml; anchors { left: mi.right; leftMargin: 6; verticalCenter: parent.verticalCenter } text: me.label; color: Theme.text; font.pixelSize: 12; width: 44 }
                 Rectangle {
                     anchors { left: ml.right; right: mv.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
                     height: 6; radius: 3; color: Theme.cardHi
                     Rectangle { width: parent.width * Math.max(0, Math.min(1, me.ratio)); height: parent.height; radius: 3; color: me.ratio > 0.85 ? Theme.danger : Theme.accent; Behavior on width { NumberAnimation { duration: 400 } } }
                 }
-                Text { id: mv; anchors { right: parent.right; verticalCenter: parent.verticalCenter } text: me.value; color: Theme.muted; font.pixelSize: 12; width: 42; horizontalAlignment: Text.AlignRight }
+                UiText { id: mv; anchors { right: parent.right; verticalCenter: parent.verticalCenter } text: me.value; color: Theme.muted; font.pixelSize: 12; width: 42; horizontalAlignment: Text.AlignRight }
             }
             Meter { icon: "chip"; label: "CPU"; ratio: (sysCard.s.cpu ?? 0) / 100; value: Math.round(sysCard.s.cpu ?? 0) + "%" }
             Meter { icon: "memory"; label: "RAM"; ratio: sysCard.s.memTotal ? sysCard.s.memUsed / sysCard.s.memTotal : 0; value: sysCard.s.memTotal ? Math.round(sysCard.s.memUsed / sysCard.s.memTotal * 100) + "%" : "–" }

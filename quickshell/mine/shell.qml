@@ -19,7 +19,7 @@ ShellRoot {
     settings.watchFiles: false
 
     readonly property color baseColor: Settings.barColor
-    readonly property color fillColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, Settings.glass ? Settings.glassOpacity / 100 : 1)
+    readonly property color fillColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, Settings.glass ? Settings.glassOpacityEff / 100 : 1)
 
     Component.onCompleted: { HyprSync.ready; AppThemes.ready; Idle.ready }
 
@@ -56,6 +56,7 @@ ShellRoot {
             if (f.length > 0) return "erro: " + fn + " precisa de argumentos"
             try { const r = f(); return r === undefined ? "ok" : JSON.stringify(r) } catch (e) { return "erro: " + e }
         }
+        function color(id: string): string { return "theme " + Theme.role(id) + " · paleta " + ThemeColors.of(id) + " · t " + ThemeColors.t[id] + " · fam " + JSON.stringify(Theme.family(id)) }
         function bars(): string {
             return JSON.stringify((shell.geo.bars || []).map((b, i) => b ? { i: i, side: b.side, hidden: !!b.hidden, det: !!b.detached, full: !!b.full, t: b.t, rect: b.rect } : null))
         }

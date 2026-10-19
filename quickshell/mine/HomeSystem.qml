@@ -15,12 +15,12 @@ Item {
         property var values2: []
         property real max: 100
         property color color2: Theme.muted
-        Text { anchors { right: parent.right; top: parent.top; topMargin: -34 } text: sc.value; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
+        UiText { anchors { right: parent.right; top: parent.top; topMargin: -34 } text: sc.value; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
         MiniGraph {
             anchors { left: parent.left; right: parent.right; top: parent.top; bottom: dt.top; bottomMargin: 6 }
             values: sc.values; values2: sc.values2; max: sc.max; color2: sc.color2
         }
-        Text { id: dt; anchors { left: parent.left; right: parent.right; bottom: parent.bottom } text: sc.detail; color: Theme.muted; font.pixelSize: 12; elide: Text.ElideRight }
+        UiText { id: dt; anchors { left: parent.left; right: parent.right; bottom: parent.bottom } text: sc.detail; color: Theme.muted; font.pixelSize: 12; elide: Text.ElideRight }
     }
 
     Grid {
@@ -72,8 +72,8 @@ Item {
             property string value
             width: parent ? parent.width : 100; height: 19
             UiIcon { id: ii; name: ir.icon; size: 13; color: Theme.muted; width: 16; anchors.verticalCenter: parent.verticalCenter }
-            Text { anchors { left: ii.right; leftMargin: 7; verticalCenter: parent.verticalCenter } text: ir.label; color: Theme.muted; font.pixelSize: 12; width: 56 }
-            Text { anchors { left: ii.right; leftMargin: 66; right: parent.right; verticalCenter: parent.verticalCenter } text: ir.value; color: Theme.text; font.pixelSize: 12; elide: Text.ElideRight; horizontalAlignment: Text.AlignRight }
+            UiText { anchors { left: ii.right; leftMargin: 7; verticalCenter: parent.verticalCenter } text: ir.label; color: Theme.muted; font.pixelSize: 12; width: 56 }
+            UiText { anchors { left: ii.right; leftMargin: 66; right: parent.right; verticalCenter: parent.verticalCenter } text: ir.value; color: Theme.text; font.pixelSize: 12; elide: Text.ElideRight; horizontalAlignment: Text.AlignRight }
         }
 
         HomeCard {
@@ -105,8 +105,8 @@ Item {
                         readonly property real r: modelData.total ? modelData.used / modelData.total : 0
                         Item {
                             width: parent.width; height: 15
-                            Text { text: modelData.mount; color: Theme.text; font.pixelSize: 12 }
-                            Text { anchors.right: parent.right; text: (modelData.used / 1073741824).toFixed(0) + " / " + (modelData.total / 1073741824).toFixed(0) + " GiB"; color: Theme.muted; font.pixelSize: 12 }
+                            UiText { text: modelData.mount; color: Theme.text; font.pixelSize: 12 }
+                            UiText { anchors.right: parent.right; text: (modelData.used / 1073741824).toFixed(0) + " / " + (modelData.total / 1073741824).toFixed(0) + " GiB"; color: Theme.muted; font.pixelSize: 12 }
                         }
                         Rectangle {
                             width: parent.width; height: 6; radius: 3; color: Theme.cardHi

@@ -36,7 +36,7 @@ Item {
         horizontalItemAlignment: Grid.AlignHCenter
         verticalItemAlignment: Grid.AlignVCenter
 
-        Text {
+        UiText {
             visible: m.label !== ""
             text: m.label
             color: Settings.textColor; font.pixelSize: m.vertical ? 9 : 14
@@ -118,7 +118,7 @@ Item {
         }
         }
 
-        Text {
+        UiText {
             visible: m.showValue
             text: m.valueText
             color: m.graphic ? Settings.textColor : m.col; font.pixelSize: m.vertical ? 11 : 14

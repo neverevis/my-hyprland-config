@@ -166,14 +166,14 @@ Scope {
             Column {
                 id: clockCol
                 spacing: 0
-                Text {
+                UiText {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: Qt.formatDateTime(clk.date, Settings.lockSeconds ? "HH:mm:ss" : "HH:mm")
                     font.features: { "tnum": 1 }   // digitos de largura fixa: o relogio nao "pula" quando os numeros mudam
                     font.pixelSize: 140; font.weight: Font.DemiBold; font.letterSpacing: -3
                     color: "white"
                 }
-                Text {
+                UiText {
                     anchors.horizontalCenter: parent.horizontalCenter
                     text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "dddd, d 'de' MMMM"); return s.charAt(0).toUpperCase() + s.slice(1) }
                     color: Qt.rgba(1, 1, 1, 0.88); font.pixelSize: 21; font.weight: Font.Medium; font.letterSpacing: 0.4
@@ -213,7 +213,7 @@ Scope {
                     Behavior on scale { enabled: root.leaving; NumberAnimation { duration: 260; easing.type: Easing.OutBack } }
                 }
             }
-            Text {
+            UiText {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Profile.name
                 color: "white"; font.pixelSize: 22; font.weight: Font.Bold
@@ -266,6 +266,7 @@ Scope {
 
                     // a senha nunca aparece: so bolinhas
                     TextInput {
+                        font.family: Theme.font
                         id: input
                         anchors { left: lockIco.right; leftMargin: 14; right: go.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
                         height: parent.height
@@ -280,7 +281,7 @@ Scope {
                         Keys.onEscapePressed: { if (v.isPreview && root.pw === "") root.preview = false; root.pw = ""; text = "" }
                     }
                     Connections { target: root; function onPwChanged() { if (input.text !== root.pw) input.text = root.pw } }
-                    Text {
+                    UiText {
                         anchors { left: input.left; verticalCenter: parent.verticalCenter }
                         opacity: root.pw === "" ? 1 : 0
                         Behavior on opacity { NumberAnimation { duration: 120 } }
@@ -344,7 +345,7 @@ Scope {
                     opacity: msg.text !== "" ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: 160 } }
                     UiIcon { visible: root.error === "" && root.caps; name: "caps"; size: 15; color: Qt.rgba(1, 1, 1, 0.8); anchors.verticalCenter: parent.verticalCenter }
-                    Text {
+                    UiText {
                         id: msg
                         width: Math.min(implicitWidth, 420)
                         wrapMode: Text.WordWrap
@@ -377,8 +378,8 @@ Scope {
             Column {
                 anchors { left: art.right; leftMargin: 12; right: ctl.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
                 spacing: 2
-                Text { width: parent.width; elide: Text.ElideRight; text: v.player ? (v.player.trackTitle || "Tocando") : ""; color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold }
-                Text { width: parent.width; elide: Text.ElideRight; text: v.player ? (v.player.trackArtist || v.player.identity) : ""; color: Qt.rgba(1, 1, 1, 0.65); font.pixelSize: 12 }
+                UiText { width: parent.width; elide: Text.ElideRight; text: v.player ? (v.player.trackTitle || "Tocando") : ""; color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold }
+                UiText { width: parent.width; elide: Text.ElideRight; text: v.player ? (v.player.trackArtist || v.player.identity) : ""; color: Qt.rgba(1, 1, 1, 0.65); font.pixelSize: 12 }
             }
             Row {
                 id: ctl
@@ -419,7 +420,7 @@ Scope {
                         anchors.centerIn: parent
                         spacing: 8
                         UiIcon { name: pb.modelData[0]; size: 20; color: "white"; anchors.verticalCenter: parent.verticalCenter }
-                        Text { visible: pb.armed; text: pb.modelData[2] + "?"; color: "white"; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
+                        UiText { visible: pb.armed; text: pb.modelData[2] + "?"; color: "white"; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
                     }
                     Timer { id: disarm; interval: 3500; onTriggered: pb.armed = false }
                     MouseArea {

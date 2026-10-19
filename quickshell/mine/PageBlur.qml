@@ -31,7 +31,7 @@ Column {
         UiSwitch { label: "Desfocar o fundo da moldura"; checked: Settings.shellBlur; onToggled: on => Settings.shellBlur = on }
         UiSlider { label: "Limite de transparência"; from: 0; to: 90; value: Settings.shellIgnoreAlpha; suffix: " %"; onMoved: v => Settings.shellIgnoreAlpha = v }
         UiSlider { label: "Grão próprio"; from: 0; to: 20; value: Settings.shellGrain; suffix: " %"; onMoved: v => Settings.shellGrain = v }
-        Text {
+        UiText {
             width: parent.width
             wrapMode: Text.WordWrap
             color: Theme.muted; font.pixelSize: 12

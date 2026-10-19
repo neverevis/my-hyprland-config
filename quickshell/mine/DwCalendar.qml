@@ -12,6 +12,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "calendar", opts: w.opts }, k) }
     SystemClock { id: clk; precision: SystemClock.Minutes }
@@ -24,15 +27,15 @@ Item {
     readonly property var wd: { const n = ["D", "S", "T", "Q", "Q", "S", "S"]; return n.slice(ws).concat(n.slice(0, ws)) }
     function weekend(d) { return d.getDay() === 0 || d.getDay() === 6 }
     function isoWeek(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 86400000 + 1) / 7) }
-    function dayCol(d, inMonth) { const base = w.o("weekends") && weekend(d) ? Qt.tint(w.fg, Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.6)) : w.fg; return inMonth ? base : Qt.rgba(base.r, base.g, base.b, 0.35) }
+    function dayCol(d, inMonth) { const base = w.o("weekends") && weekend(d) ? Qt.tint(w.fg, Qt.rgba(w.ac2.r, w.ac2.g, w.ac2.b, 0.7)) : w.fg; return inMonth ? base : Qt.rgba(base.r, base.g, base.b, 0.35) }
 
     // 1x1
     Column {
         visible: w.cols === 1
         anchors.centerIn: parent
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.ac; font.pixelSize: 14; font.weight: Font.DemiBold }
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: w.today.getDate(); color: w.fg; font.pixelSize: 64; font.weight: Font.Bold; lineHeight: 0.9 }
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM")); color: w.dim; font.pixelSize: 13 }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.ac; font.pixelSize: 14; font.weight: Font.DemiBold }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.today.getDate(); color: w.fg; font.pixelSize: 64; font.weight: Font.Bold; lineHeight: 0.9 }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM")); color: w.dim; font.pixelSize: 13 }
     }
 
     // 2x1: semana
@@ -40,7 +43,7 @@ Item {
         visible: w.cols > 1 && w.rows === 1
         anchors.fill: parent
         spacing: 10
-        Text { text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM 'de' yyyy")) + (w.o("weekNumbers") ? "  ·  semana " + w.isoWeek(w.today) : ""); color: w.fg; font.pixelSize: 16; font.weight: Font.Bold }
+        UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM 'de' yyyy")) + (w.o("weekNumbers") ? "  ·  semana " + w.isoWeek(w.today) : ""); color: w.fg; font.pixelSize: 16; font.weight: Font.Bold }
         Row {
             width: parent.width
             readonly property real cw: width / 7
@@ -52,12 +55,12 @@ Item {
                     readonly property bool isToday: d.toDateString() === w.today.toDateString()
                     width: parent.cw
                     spacing: 6
-                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: w.wd[index]; color: w.dim; font.pixelSize: 11; font.weight: Font.DemiBold }
+                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.wd[index]; color: w.dim; font.pixelSize: 11; font.weight: Font.DemiBold }
                     Rectangle {
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 32; height: 32; radius: 16
                         color: parent.isToday ? w.ac : "transparent"
-                        Text { anchors.centerIn: parent; text: parent.parent.d.getDate(); color: parent.parent.isToday ? Theme.accentText : w.dayCol(parent.parent.d, true); font.pixelSize: 14; font.weight: parent.parent.isToday ? Font.Bold : Font.Medium }
+                        UiText { anchors.centerIn: parent; text: parent.parent.d.getDate(); color: parent.parent.isToday ? Theme.accentText : w.dayCol(parent.parent.d, true); font.pixelSize: 14; font.weight: parent.parent.isToday ? Font.Bold : Font.Medium }
                     }
                 }
             }
@@ -71,7 +74,7 @@ Item {
         Item {
             id: head
             width: parent.width; height: 30
-            Text { anchors.verticalCenter: parent.verticalCenter; text: w.cap(w.month.toLocaleDateString(w.loc, "MMMM")) + (w.month.getFullYear() !== w.today.getFullYear() ? " " + w.month.getFullYear() : ""); color: w.fg; font.pixelSize: 17; font.weight: Font.Bold }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: w.cap(w.month.toLocaleDateString(w.loc, "MMMM")) + (w.month.getFullYear() !== w.today.getFullYear() ? " " + w.month.getFullYear() : ""); color: w.fg; font.pixelSize: 17; font.weight: Font.Bold }
             Row {
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                 spacing: 2
@@ -99,7 +102,7 @@ Item {
             Repeater {
                 model: grid.columns
                 delegate: Item { required property int index; width: grid.cw; height: grid.ch
-                    Text { anchors.centerIn: parent; text: grid.wn ? (index === 0 ? "#" : w.wd[index - 1]) : w.wd[index]; color: w.dim; font.pixelSize: 11; font.weight: Font.DemiBold } }
+                    UiText { anchors.centerIn: parent; text: grid.wn ? (index === 0 ? "#" : w.wd[index - 1]) : w.wd[index]; color: w.dim; font.pixelSize: 11; font.weight: Font.DemiBold } }
             }
             Repeater {
                 model: 6 * grid.columns
@@ -119,7 +122,7 @@ Item {
                         width: Math.min(parent.width, parent.height) - 4; height: width; radius: width / 2
                         color: parent.isToday ? w.ac : "transparent"
                     }
-                    Text {
+                    UiText {
                         anchors.centerIn: parent
                         text: parent.isWn ? w.isoWeek(new Date(w.month.getFullYear(), w.month.getMonth(), parent.row * 7 - grid.lead + 4)) : parent.d.getDate()
                         font.pixelSize: parent.isWn ? 10 : 12; font.weight: parent.isToday ? Font.Bold : Font.Normal

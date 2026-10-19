@@ -90,7 +90,7 @@ Scope {
                             dim: 0.35
                             opacity: 0.85
                         }
-                        Text { anchors { left: parent.left; top: parent.top; margins: 8 } text: ws.wsId; color: ws.cur ? Theme.accent : Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 13; font.weight: Font.Bold; z: 5 }
+                        UiText { anchors { left: parent.left; top: parent.top; margins: 8 } text: ws.wsId; color: ws.cur ? Theme.accent : Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 13; font.weight: Font.Bold; z: 5 }
                         MouseArea { anchors.fill: parent; onClicked: root.goWs(ws.wsId) }
                         Repeater {
                             model: ws.mine
@@ -139,7 +139,7 @@ Scope {
                     }
                 }
             }
-            Text {
+            UiText {
                 anchors { horizontalCenter: parent.horizontalCenter; top: grid.bottom; topMargin: 18 }
                 opacity: Math.min(1, win.k)
                 text: "Clique para ir · arraste uma janela para outro workspace · 1–9 escolhem · Esc fecha"

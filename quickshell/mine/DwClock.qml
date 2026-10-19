@@ -12,6 +12,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (ponteiro dos minutos)
+    property color cont: Theme.primaryContainer   // versao suave do tom (a flor)
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "clock", opts: w.opts }, k) }
     readonly property bool ownBackground: style === "analog"   // a flor ja e o fundo (o DeskView nao poe sombra)
@@ -20,7 +23,7 @@ Item {
     readonly property bool secs: o("seconds")
     readonly property bool h12: o("h12")
     readonly property real sc: o("scale") / 100
-    readonly property string fontFam: o("font") || Qt.application.font.family
+    readonly property string fontFam: o("font") || Theme.font
     readonly property string quote: o("quote")
     readonly property real quoteH: quote !== "" ? Math.min(34, height * 0.18) : 0
     SystemClock { id: clk; precision: w.secs || w.style === "analog" ? SystemClock.Seconds : SystemClock.Minutes }
@@ -58,7 +61,7 @@ Item {
                     model: dig.line1.split("")
                     delegate: Roll { required property var modelData; ch: modelData; size: dig.fs }
                 }
-                Text { visible: w.h12; text: " " + w.ampm; color: w.dim; font.family: w.fontFam; font.pixelSize: dig.fs * 0.3; font.weight: Font.DemiBold; anchors.baseline: parent.bottom; anchors.baselineOffset: -dig.fs * 0.18 }
+                UiText { visible: w.h12; text: " " + w.ampm; color: w.dim; font.family: w.fontFam; font.pixelSize: dig.fs * 0.3; font.weight: Font.DemiBold; anchors.baseline: parent.bottom; anchors.baselineOffset: -dig.fs * 0.18 }
             }
             Row {
                 visible: dig.vert
@@ -66,7 +69,7 @@ Item {
                 anchors.right: dig.al === Text.AlignRight ? parent.right : undefined
                 Repeater { model: w.mm.split(""); delegate: Roll { required property var modelData; ch: modelData; size: dig.fs; tint: w.ac } }
             }
-            Text {
+            UiText {
                 visible: dig.dateH > 0
                 width: parent.width
                 horizontalAlignment: dig.al
@@ -89,8 +92,8 @@ Item {
         clip: true
         onChChanged: { if (w.o("animate") && w.style !== "pixel") { prev = old.text; k = 0; rollA.restart() } else old.text = ch }
         NumberAnimation { id: rollA; target: rl; property: "k"; from: 0; to: 1; duration: 420; easing.type: Easing.OutCubic; onFinished: old.text = rl.ch }
-        Text { id: old; text: rl.ch; y: -rl.k * rl.height * 0.9; opacity: 1 - rl.k; color: rl.tint; font.family: w.fontFam; font.pixelSize: rl.size; font.weight: w.o("weight"); font.features: { "tnum": 1 }; visible: rl.k < 1 }
-        Text { id: cur; text: rl.ch; y: (1 - rl.k) * rl.height * 0.9; opacity: rl.k; color: rl.tint; font.family: w.fontFam; font.pixelSize: rl.size; font.weight: w.o("weight"); font.features: { "tnum": 1 } }
+        UiText { id: old; text: rl.ch; y: -rl.k * rl.height * 0.9; opacity: 1 - rl.k; color: rl.tint; font.family: w.fontFam; font.pixelSize: rl.size; font.weight: w.o("weight"); font.features: { "tnum": 1 }; visible: rl.k < 1 }
+        UiText { id: cur; text: rl.ch; y: (1 - rl.k) * rl.height * 0.9; opacity: rl.k; color: rl.tint; font.family: w.fontFam; font.pixelSize: rl.size; font.weight: w.o("weight"); font.features: { "tnum": 1 } }
     }
 
     // ================= flor (analogico) =================
@@ -99,8 +102,9 @@ Item {
         visible: w.style === "analog"
         width: parent.width; height: w.bodyH
         readonly property real d: Math.min(width, height) * Math.min(1, 0.9 * w.sc + 0.1)
-        readonly property color body: w.bare ? Qt.tint(Theme.bg, Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.32)) : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.14)
-        readonly property color ink: Qt.tint(w.ac, Qt.rgba(1, 1, 1, 0.35))
+        // como no relogio do end4: a flor no tom suave, marcas no texto sobre ele, horas no destaque, minutos na companheira
+        readonly property color body: w.bare ? w.cont : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.14)
+        readonly property color ink: w.bare ? w.contInk : Qt.tint(w.ac, Qt.rgba(1, 1, 1, 0.35))
         Item {
             id: face
             width: an.d; height: an.d
@@ -157,7 +161,7 @@ Item {
                 color: ds === "border" ? "transparent" : (ds === "rect" ? w.ac : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.28))
                 border.width: ds === "border" ? Math.max(1.5, face.width * 0.012) : 0
                 border.color: an.ink
-                Text {
+                UiText {
                     id: dtx
                     anchors.centerIn: parent
                     text: parent.ds === "bubble" ? String(clk.date.getDate()) : w.cap(clk.date.toLocaleDateString(w.loc, "ddd")).replace(".", "") + " " + clk.date.getDate()
@@ -195,7 +199,7 @@ Item {
                 visible: st !== "hide"
                 angle: face.mA; len: 0.72
                 thick: ({ classic: 0.025, thin: 0.018, medium: 0.045, bold: 0.07 })[st] * face.width
-                col: st === "classic" ? w.fg : an.ink
+                col: st === "classic" ? w.fg : w.ac2
             }
             Hand {
                 readonly property string st: w.o("secondHand")
@@ -235,15 +239,15 @@ Item {
                 anchors.right: dl.al === Text.AlignRight ? parent.right : undefined
                 height: dl.fs * 0.34; width: bt.implicitWidth + height; radius: height / 2
                 color: w.ac
-                Text { id: bt; anchors.centerIn: parent; text: w.cap(clk.date.toLocaleDateString(w.loc, "dddd")); color: Theme.accentText; font.family: w.fontFam; font.pixelSize: parent.height * 0.55; font.weight: Font.Bold }
+                UiText { id: bt; anchors.centerIn: parent; text: w.cap(clk.date.toLocaleDateString(w.loc, "dddd")); color: Theme.accentText; font.family: w.fontFam; font.pixelSize: parent.height * 0.55; font.weight: Font.Bold }
             }
-            Text {
+            UiText {
                 visible: dl.v === "morning"
                 width: parent.width; horizontalAlignment: dl.al
                 text: w.greet + ", " + Profile.name.split(" ")[0]
                 color: w.dim; font.family: w.fontFam; font.pixelSize: dl.fs * 0.26; font.weight: Font.Medium; elide: Text.ElideRight
             }
-            Text {
+            UiText {
                 visible: dl.v === "bold"
                 width: parent.width; horizontalAlignment: dl.al
                 text: clk.date.toLocaleDateString(w.loc, "dddd").toUpperCase()
@@ -251,7 +255,7 @@ Item {
                 font.family: w.fontFam; font.pixelSize: dl.fs * 0.55; font.weight: Font.Black; font.letterSpacing: dl.fs * 0.02
                 fontSizeMode: Text.HorizontalFit; minimumPixelSize: 10
             }
-            Text {
+            UiText {
                 width: parent.width; horizontalAlignment: dl.al
                 text: w.hh + ":" + w.mm + (w.h12 ? " " + w.ampm : "")
                 color: w.fg
@@ -259,7 +263,7 @@ Item {
                 font.pixelSize: dl.v === "script" ? dl.fs * 1.15 : dl.fs; font.weight: dl.v === "script" ? Font.Normal : w.o("weight")
                 font.features: { "tnum": 1 }
             }
-            Text {
+            UiText {
                 visible: w.o("date")
                 width: parent.width; horizontalAlignment: dl.al
                 text: dl.v === "script" ? clk.date.toLocaleDateString(w.loc, "d 'de' MMMM") : w.dateText
@@ -321,14 +325,14 @@ Item {
     }
 
     // ================= frase =================
-    Text {
+    UiText {
         visible: w.quote !== ""
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         height: w.quoteH
         horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter
         text: w.quote
         color: w.dim
-        font.family: w.o("quoteFont") ? w.fontFam : Qt.application.font.family
+        font.family: w.o("quoteFont") ? w.fontFam : Theme.font
         font.pixelSize: Math.max(11, w.quoteH * 0.5); font.italic: true
         elide: Text.ElideRight
     }

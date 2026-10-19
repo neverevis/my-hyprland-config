@@ -23,7 +23,7 @@ Rectangle {
         height: visible ? 24 : 0
         spacing: 8
         UiIcon { visible: c.icon !== ""; name: c.icon; size: 16; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-        Text { text: c.title; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
+        UiText { text: c.title; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
     }
     Row { id: hr; anchors { right: parent.right; rightMargin: c.pad - 4; verticalCenter: head.verticalCenter } spacing: 6 }
     Item {

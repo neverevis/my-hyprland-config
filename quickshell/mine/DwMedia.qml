@@ -13,6 +13,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "media", opts: w.opts }, k) }
     readonly property bool lyr: o("lyrics")
@@ -25,12 +28,12 @@ Item {
     readonly property real prog: p && p.length > 0 ? Math.max(0, Math.min(1, p.position / p.length)) : 0
     Timer { interval: 1000; repeat: true; running: !!w.p && w.p.isPlaying; onTriggered: if (w.p) w.p.positionChanged() }
     // com a capa desfocada no fundo, o texto e claro
-    readonly property bool onArt: o("blurBg") && !bare && art !== ""
-    readonly property color tfg: onArt ? "white" : w.fg
-    readonly property color tdim: onArt ? Qt.rgba(1, 1, 1, 0.7) : w.dim
+    readonly property bool overArt: o("blurBg") && !bare && art !== ""
+    readonly property color tfg: overArt ? "white" : w.fg
+    readonly property color tdim: overArt ? Qt.rgba(1, 1, 1, 0.7) : w.dim
 
     RoundImage {
-        visible: w.onArt
+        visible: w.overArt
         x: -18; y: -18; width: parent.width + 36; height: parent.height + 36
         radius: Math.min(30, Math.min(width, height) * 0.2)
         source: w.art; sourceSize: Qt.size(128, 128)
@@ -43,7 +46,7 @@ Item {
         anchors.centerIn: parent
         spacing: 6
         UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "music"; size: 30; color: w.dim }
-        Text { visible: w.cols > 1; anchors.horizontalCenter: parent.horizontalCenter; text: "Nada tocando"; color: w.dim; font.pixelSize: 13 }
+        UiText { visible: w.cols > 1; anchors.horizontalCenter: parent.horizontalCenter; text: "Nada tocando"; color: w.dim; font.pixelSize: 13 }
     }
     Item {
         id: body
@@ -63,7 +66,7 @@ Item {
             Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
             Behavior on height { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
             NumberAnimation on spin { running: w.o("spin") && !!w.p && w.p.isPlaying; from: 0; to: 360; duration: 14000; loops: Animation.Infinite }
-            Flower { anchors.fill: parent; visible: !parent.ready; shape: parent.shape; color: Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.2)
+            Flower { anchors.fill: parent; visible: !parent.ready; shape: parent.shape; color: w.bare ? w.cont : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.2)
                 UiIcon { anchors.centerIn: parent; name: "music"; size: parent.width * 0.35; color: w.ac } }
         }
         Rectangle {
@@ -85,9 +88,9 @@ Item {
                 verticalCenter: body.tall && !body.lyrBox ? undefined : cover.verticalCenter
             }
             spacing: 4
-            Text { visible: w.o("titles"); width: parent.width; elide: Text.ElideRight; horizontalAlignment: info.center ? Text.AlignHCenter : Text.AlignLeft
+            UiText { visible: w.o("titles"); width: parent.width; elide: Text.ElideRight; horizontalAlignment: info.center ? Text.AlignHCenter : Text.AlignLeft
                 text: w.p ? (w.p.trackTitle || w.p.identity) : ""; color: w.tfg; font.pixelSize: w.cols >= 3 ? 18 : 16; font.weight: Font.Bold }
-            Text { visible: w.o("titles"); width: parent.width; elide: Text.ElideRight; horizontalAlignment: info.center ? Text.AlignHCenter : Text.AlignLeft
+            UiText { visible: w.o("titles"); width: parent.width; elide: Text.ElideRight; horizontalAlignment: info.center ? Text.AlignHCenter : Text.AlignLeft
                 // 3x1 com letra: a linha atual no lugar do artista
                 text: w.lyr && !body.tall && Lyrics.index >= 0 && !Lyrics.plain ? "♪ " + Lyrics.lines[Lyrics.index].text : (w.p ? (w.p.trackArtist || "") : "")
                 color: w.lyr && !body.tall && Lyrics.index >= 0 ? w.ac : w.tdim; font.pixelSize: 13 }
@@ -129,7 +132,7 @@ Item {
             highlightRangeMode: ListView.ApplyRange
             preferredHighlightBegin: height * 0.3; preferredHighlightEnd: height * 0.5
             highlightMoveDuration: 400
-            delegate: Text {
+            delegate: UiText {
                 required property var modelData
                 required property int index
                 width: lyrics.width; wrapMode: Text.WordWrap
@@ -138,7 +141,7 @@ Item {
                 font.pixelSize: index === Lyrics.index ? 15 : 13; font.weight: index === Lyrics.index ? Font.Bold : Font.Normal
                 Behavior on color { ColorAnimation { duration: 250 } }
             }
-            Text { visible: lyrics.count === 0; anchors.centerIn: parent; text: Lyrics.status === "buscando" ? "Buscando a letra…" : "Sem letra para esta música"; color: w.tdim; font.pixelSize: 12 }
+            UiText { visible: lyrics.count === 0; anchors.centerIn: parent; text: Lyrics.status === "buscando" ? "Buscando a letra…" : "Sem letra para esta música"; color: w.tdim; font.pixelSize: 12 }
         }
     }
 }

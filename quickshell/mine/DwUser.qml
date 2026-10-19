@@ -12,6 +12,9 @@ Item {
     property color fg: Theme.text
     property color dim: Theme.muted
     property color ac: Theme.accent
+    property color ac2: Theme.tertiary            // cor companheira (o DeskView passa a do tom escolhido)
+    property color cont: Theme.primaryContainer
+    property color contInk: Theme.primaryContainerInk
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "user", opts: w.opts }, k) }
     SystemClock { id: clk; precision: SystemClock.Minutes }
@@ -45,14 +48,14 @@ Item {
         anchors.centerIn: parent
         spacing: 8
         Face { anchors.horizontalCenter: parent.horizontalCenter; s: Math.min(w.width * 0.7, w.height * (w.rows > 1 ? 0.45 : 0.6)) }
-        Text { visible: w.o("greeting"); anchors.horizontalCenter: parent.horizontalCenter; text: w.greet + (w.rows > 1 ? "," : ""); color: w.rows > 1 ? w.dim : w.fg; font.pixelSize: 14; font.weight: Font.Bold }
-        Text { visible: w.rows > 1; anchors.horizontalCenter: parent.horizontalCenter; text: Profile.name; color: w.fg; font.pixelSize: 22; font.weight: Font.Bold }
+        UiText { visible: w.o("greeting"); anchors.horizontalCenter: parent.horizontalCenter; text: w.greet + (w.rows > 1 ? "," : ""); color: w.rows > 1 ? w.dim : w.fg; font.pixelSize: 14; font.weight: Font.Bold }
+        UiText { visible: w.rows > 1; anchors.horizontalCenter: parent.horizontalCenter; text: Profile.name; color: w.fg; font.pixelSize: 22; font.weight: Font.Bold }
         Row {
             visible: w.rows > 1 && w.infoText !== ""
             anchors.horizontalCenter: parent.horizontalCenter
             spacing: 6
             UiIcon { name: w.infoIcon; size: 13; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
-            Text { text: w.infoText; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+            UiText { text: w.infoText; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
         }
     }
     Row {
@@ -63,20 +66,20 @@ Item {
         Column {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 3
-            Text { visible: w.o("greeting"); text: w.greet + ","; color: w.dim; font.pixelSize: 14 }
-            Text { text: Profile.name; color: w.fg; font.pixelSize: 24; font.weight: Font.Bold }
+            UiText { visible: w.o("greeting"); text: w.greet + ","; color: w.dim; font.pixelSize: 14 }
+            UiText { text: Profile.name; color: w.fg; font.pixelSize: 24; font.weight: Font.Bold }
             Row {
                 visible: w.infoText !== ""
                 spacing: 6
                 UiIcon { name: w.infoIcon; size: 13; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
-                Text { text: w.infoText; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: w.infoText; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
             }
         }
     }
     Column {
         visible: w.cols >= 3 && w.rows === 1
         anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-        Text { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold }
-        Text { anchors.right: parent.right; text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "ddd, d MMM"); return s.charAt(0).toUpperCase() + s.slice(1) } color: w.ac; font.pixelSize: 13 }
+        UiText { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold }
+        UiText { anchors.right: parent.right; text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "ddd, d MMM"); return s.charAt(0).toUpperCase() + s.slice(1) } color: w.ac; font.pixelSize: 13 }
     }
 }

@@ -53,13 +53,13 @@ Column {
                         x: 10; anchors.verticalCenter: parent.verticalCenter
                         width: 26; height: 26; radius: 13
                         color: item.on ? Theme.accent : Theme.track
-                        Text { anchors.centerIn: parent; text: item.index + 1; color: item.on ? Theme.accentText : Theme.muted; font.pixelSize: 12; font.weight: Font.Bold }
+                        UiText { anchors.centerIn: parent; text: item.index + 1; color: item.on ? Theme.accentText : Theme.muted; font.pixelSize: 12; font.weight: Font.Bold }
                     }
                     Column {
                         anchors { left: prio.right; leftMargin: 10; right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
                         spacing: 1
-                        Text { width: parent.width; elide: Text.ElideRight; text: item.modelData.name || ("Barra " + (item.index + 1)); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                        Text {
+                        UiText { width: parent.width; elide: Text.ElideRight; text: item.modelData.name || ("Barra " + (item.index + 1)); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                        UiText {
                             width: parent.width; elide: Text.ElideRight
                             text: item.info && item.info.hidden ? "Sem espaço: escondida"
                                 : (page.sideNames[item.modelData.side] ?? "?") + (item.modelData.detached ? " · solta" : "") + " · " + Settings.sectionsOf(item.modelData).reduce((n, x) => n + x.modules.length, 0) + " módulos"
@@ -77,7 +77,7 @@ Column {
                     anchors.centerIn: parent
                     spacing: 6
                     UiIcon { name: "plus"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                    Text { text: "Nova barra"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                    UiText { text: "Nova barra"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
                 }
                 MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addBar("top"); page.cur = Settings.bars.length - 1 } }
             }
@@ -89,7 +89,7 @@ Column {
                     anchors.centerIn: parent
                     spacing: 6
                     UiIcon { name: "dock"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                    Text { text: "Adicionar dock"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                    UiText { text: "Adicionar dock"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
                 }
                 MouseArea { id: dkm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addDock(); page.cur = Settings.bars.length - 1 } }
             }
@@ -99,11 +99,11 @@ Column {
             visible: Settings.bars.length > 1 && !!page.bar
             spacing: 8
             UiIcon { name: "layers"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-            Text { anchors.verticalCenter: parent.verticalCenter; text: "Prioridade " + (page.idx + 1) + " de " + Settings.bars.length; color: Theme.text; font.pixelSize: 13 }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Prioridade " + (page.idx + 1) + " de " + Settings.bars.length; color: Theme.text; font.pixelSize: 13 }
             UiButton { icon: "arrowUp"; text: "Subir"; kind: "ghost"; enabled: page.idx > 0; onClicked: { Settings.moveBar(page.idx, -1); page.cur = page.idx - 1 } }
             UiButton { icon: "arrowDown"; text: "Descer"; kind: "ghost"; enabled: page.idx < Settings.bars.length - 1; onClicked: { Settings.moveBar(page.idx, 1); page.cur = page.idx + 1 } }
         }
-        Text {
+        UiText {
             visible: Settings.bars.length > 1
             width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
             text: "Quando duas barras do mesmo lado querem o mesmo lugar, a de maior prioridade fica onde você colocou; a outra vai para o espaço livre mais perto, encolhe se precisar e, sem espaço nenhum, fica escondida."
@@ -120,7 +120,7 @@ Column {
             width: parent.width
             spacing: 10
             UiIcon { name: "pencil"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-            Text { text: "Nome"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+            UiText { text: "Nome"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
             UiField {
                 width: Math.min(280, parent.width - 80)
                 text: page.bar ? (page.bar.name ?? "") : ""
@@ -135,7 +135,7 @@ Column {
             value: page.bar && page.bar.detached ? "detached" : "frame"
             onPicked: v => page.setBar("detached", v === "detached")
         }
-        Text {
+        UiText {
             width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
             text: page.bar && page.bar.detached ? "A barra flutua afastada da moldura, como uma ilha, com os cantos arredondados." : "A barra sai da moldura, emendada nela pelas curvas."
         }
@@ -163,7 +163,7 @@ Column {
                     visible: msg !== ""
                     width: st.implicitWidth + 18; height: 26; radius: 13
                     color: parent.info && parent.info.hidden ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.tint(0.18)
-                    Text { id: st; anchors.centerIn: parent; text: parent.msg; color: parent.parent.info && parent.parent.info.hidden ? Theme.danger : Theme.accent; font.pixelSize: 11; font.weight: Font.DemiBold }
+                    UiText { id: st; anchors.centerIn: parent; text: parent.msg; color: parent.parent.info && parent.parent.info.hidden ? Theme.danger : Theme.accent; font.pixelSize: 11; font.weight: Font.DemiBold }
                 }
             }
         }
@@ -189,7 +189,7 @@ Column {
                 value: page.bar ? (page.bar.reserve ?? "overlay") : "overlay"
                 onPicked: v => page.setBar("reserve", v)
             }
-            Text {
+            UiText {
                 width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
                 text: ({ overlay: "A barra aparece por cima das janelas.", always: "As janelas sempre deixam o espaço da barra livre.", follow: "As janelas abrem espaço só enquanto a barra está visível." })[page.bar ? (page.bar.reserve ?? "overlay") : "overlay"]
             }
@@ -210,7 +210,7 @@ Column {
             value: Settings.barsPanelMode
             onPicked: v => Settings.barsPanelMode = v
         }
-        Text {
+        UiText {
             width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
             text: ({ push: "As barras deslizam só até encostar no painel e continuam visíveis. Se não houver espaço, saem pela borda.",
                      out: "As barras deslizam pela borda até sair da tela e voltam quando o painel fecha.",
@@ -305,7 +305,7 @@ Column {
                         color: Theme.tint(0.14)
                         UiIcon { anchors.centerIn: parent; name: page.modIcons[mrow.mtype] ?? "apps"; size: 17; color: Theme.accent }
                     }
-                    Text {
+                    UiText {
                         id: mname
                         anchors { left: mic.right; leftMargin: 10; verticalCenter: parent.verticalCenter }
                         width: 96
@@ -372,7 +372,7 @@ Column {
                         Row {
                             visible: mrow.isMeter
                             spacing: 10
-                            Text { anchors.verticalCenter: parent.verticalCenter; text: "Rótulo"; color: Theme.text; font.pixelSize: 13; width: 90 }
+                            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Rótulo"; color: Theme.text; font.pixelSize: 13; width: 90 }
                             UiField {
                                 width: 180
                                 text: mrow.mod.label ?? (mrow.mtype === "cpu" ? "CPU" : (mrow.mtype === "memory" ? "RAM" : "VOL"))
