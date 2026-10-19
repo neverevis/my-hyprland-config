@@ -83,7 +83,7 @@ ShellRoot {
     DropShelf {}
     GameOverlay {}
     // servicos que precisam existir desde o inicio (singletons so nascem quando alguem os usa)
-    readonly property var services: [HotCorners.actions.length, NightLight.active]
+    readonly property var services: [HotCorners.actions.length, NightLight.active, SystemGuard.updates]
     Home { geo: shell.geo }
     PowerMenu {}
     PhotoEditor {}

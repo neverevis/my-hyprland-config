@@ -33,7 +33,7 @@ Singleton {
     property int bump: 0
     property string bumpKind: "volume"
     function show(k) {
-        if (armed) { bumpKind = k; bump++ }
+        if (armed) { bumpKind = k; bump++; if (k === "volume" && Settings.soundVolChange) SystemGuard.sound("volume") }
         if (!Settings.osdOn || !armed) return
         if (k !== "media" && (Settings.homeOpen || Power.locked)) return
         kind = k

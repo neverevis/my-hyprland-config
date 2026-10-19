@@ -130,6 +130,18 @@ Singleton {
     property alias wpVideos: adapter.wpVideos   // videos da pasta entram na lista
     property alias lockWallpaper: adapter.lockWallpaper
     property alias shelfFiles: adapter.shelfFiles       // prateleira de arquivos
+    // sistema (SystemGuard.qml): volume, atualizacoes, conflitos, sons, aviso ao desligar, relogio 24 h
+    property alias volGuard: adapter.volGuard
+    property alias volMax: adapter.volMax
+    property alias volJump: adapter.volJump
+    property alias updWarn: adapter.updWarn
+    property alias updHours: adapter.updHours
+    property alias killConflicts: adapter.killConflicts
+    property alias sounds: adapter.sounds
+    property alias soundVolume: adapter.soundVolume
+    property alias soundVolChange: adapter.soundVolChange
+    property alias sessionGuard: adapter.sessionGuard
+    property alias clock24: adapter.clock24
     // luz noturna, protecao contra clarao (NightLight.qml), colunas do Inicio, cantos ativos (HotCorners.qml)
     property alias nightAuto: adapter.nightAuto
     property alias nightFrom: adapter.nightFrom
@@ -716,6 +728,17 @@ Singleton {
             property string lockClock: "big"
             property string recAudio: "none"
             property var shelfFiles: []
+            property bool volGuard: false
+            property int volMax: 100
+            property int volJump: 0
+            property int updWarn: 0
+            property int updHours: 2
+            property bool killConflicts: false
+            property bool sounds: false
+            property int soundVolume: 60
+            property bool soundVolChange: false
+            property bool sessionGuard: true
+            property bool clock24: true
             property bool nightAuto: false
             property string nightFrom: "19:00"
             property string nightTo: "06:30"

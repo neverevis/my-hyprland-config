@@ -82,13 +82,10 @@ Item {
     } }
     // atualizacoes (checkupdates a cada 2 h): clique abre o pacman num terminal
     Component { id: updC; Chip {
-        id: up
-        property int count: -1
+        readonly property int count: SystemGuard.updates   // checkupdates fica no SystemGuard (uma vez so para todo o shell)
         visible: count !== 0
         icon: "download"; text: count < 0 ? "…" : String(count)
-        hot: count > 50
-        Process { id: cu; command: ["checkupdates"]; stdout: StdioCollector { onStreamFinished: up.count = text.split("\n").filter(l => l.trim()).length } }
-        Timer { interval: 2 * 3600 * 1000; repeat: true; running: true; triggeredOnStart: true; onTriggered: { cu.running = false; cu.running = true } }
+        hot: Settings.updWarn > 0 ? count >= Settings.updWarn : count > 50
         onClicked: Quickshell.execDetached(["kitty", "--hold", "sh", "-c", "sudo pacman -Syu"])
     } }
     // layout do teclado: clique troca para o proximo

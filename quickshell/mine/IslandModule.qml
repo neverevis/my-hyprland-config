@@ -113,7 +113,7 @@ Item {
                 visible: root.idleKind !== "dot"
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.vertical ? Qt.formatDateTime(clk.date, "HH\nmm")
-                    : root.idleKind === "window" ? (parent.tl ? parent.tl.title : "").slice(0, 48) : Qt.formatDateTime(clk.date, root.opts.format || "HH:mm")
+                    : root.idleKind === "window" ? (parent.tl ? parent.tl.title : "").slice(0, 48) : Qt.formatDateTime(clk.date, root.opts.format || (Settings.clock24 ? "HH:mm" : "h:mm AP"))
                 color: root.fg; font.pixelSize: 13; font.weight: Font.DemiBold; font.features: { "tnum": 1 }
             }
         }

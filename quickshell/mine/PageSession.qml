@@ -81,4 +81,34 @@ Column {
         UiLabel { text: "Animação" }
         AnimPicker { target: "power" }
     }
+
+    Card {
+        icon: "cog"
+        title: "Sistema"
+        subtitle: "Cuidados com o volume, as atualizações, a hora e os sons do shell."
+        UiSwitch { label: "Relógio de 24 horas"; icon: "clock"; description: "Barra, ilha, tela de bloqueio e detalhes (os widgets têm a opção própria)."; checked: Settings.clock24; onToggled: on => Settings.clock24 = on }
+        UiSwitch { label: "Avisar antes de desligar durante uma atualização"; icon: "power"; description: "Com o pacman (ou yay/paru) rodando, desligar, reiniciar ou sair pede confirmação."; checked: Settings.sessionGuard; onToggled: on => Settings.sessionGuard = on }
+        UiLabel { text: "Proteção do volume" }
+        UiSwitch { label: "Limitar o volume"; icon: "volume"; description: "Nunca passa do teto, e um salto grande de uma vez (um app que aumenta sozinho, a roda do mouse) fica limitado."; checked: Settings.volGuard; onToggled: on => Settings.volGuard = on }
+        UiSlider { visible: Settings.volGuard; label: "Teto"; from: 30; to: 150; value: Settings.volMax; suffix: " %"; onMoved: v => Settings.volMax = Math.round(v) }
+        UiSlider { visible: Settings.volGuard; label: "Maior aumento de uma vez (0 = sem limite)"; from: 0; to: 50; value: Settings.volJump; suffix: " %"; onMoved: v => Settings.volJump = Math.round(v) }
+        UiLabel { text: "Atualizações" }
+        UiText { text: SystemGuard.updates < 0 ? "Verificando…" : SystemGuard.updates === 0 ? "Sistema em dia." : SystemGuard.updates + " atualização(ões) disponível(is)."; color: Theme.muted; font.pixelSize: 12 }
+        UiSlider { label: "Verificar a cada"; from: 1; to: 24; value: Settings.updHours; suffix: " h"; onMoved: v => Settings.updHours = Math.round(v) }
+        UiSlider { label: "Avisar a partir de (0 = nunca)"; from: 0; to: 200; value: Settings.updWarn; suffix: " pacotes"; onMoved: v => Settings.updWarn = Math.round(v / 5) * 5 }
+        UiButton { icon: "refresh"; text: "Verificar agora"; kind: "ghost"; onClicked: SystemGuard.checkUpdates() }
+        UiLabel { text: "Outros daemons de notificação" }
+        UiText { width: parent.width; wrapMode: Text.WordWrap; color: SystemGuard.conflicts.length ? Theme.danger : Theme.muted; font.pixelSize: 12
+            text: SystemGuard.conflicts.length ? "Rodando junto com o shell: " + SystemGuard.conflicts.join(", ") + " (as notificações podem ir para ele)." : "Nenhum conflito." }
+        Row {
+            spacing: 8
+            UiButton { visible: SystemGuard.conflicts.length > 0; icon: "close"; text: "Encerrar agora"; kind: "danger"; onClicked: { Quickshell.execDetached(["pkill", "-x", SystemGuard.conflicts.join("|")]); SystemGuard.conflicts = [] } }
+            UiButton { icon: "refresh"; text: "Procurar"; kind: "ghost"; onClicked: SystemGuard.scan() }
+        }
+        UiSwitch { label: "Encerrar sozinho ao iniciar"; checked: Settings.killConflicts; onToggled: on => Settings.killConflicts = on }
+        UiLabel { text: "Sons do shell" }
+        UiSwitch { label: "Sons"; icon: "speaker"; description: "Notificação nova, captura de tela e erro (sons do sistema)."; checked: Settings.sounds; onToggled: on => Settings.sounds = on }
+        UiSwitch { visible: Settings.sounds; label: "Clique ao mudar o volume"; checked: Settings.soundVolChange; onToggled: on => Settings.soundVolChange = on }
+        UiSlider { visible: Settings.sounds; label: "Volume dos sons"; from: 10; to: 100; value: Settings.soundVolume; suffix: " %"; onMoved: v => Settings.soundVolume = Math.round(v) }
+    }
 }

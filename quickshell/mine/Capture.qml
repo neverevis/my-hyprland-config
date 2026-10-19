@@ -18,6 +18,7 @@ Singleton {
     property string busy: ""
     property string lastMsg: ""
     property string lastText: ""
+    property string lastAction: ""
     readonly property string file: Quickshell.env("HOME") + "/.cache/quickshell-mine/frozen.png"
     readonly property string script: Qt.resolvedUrl("scripts/capture.py").toString().replace("file://", "")
     readonly property var actions: [
@@ -53,6 +54,7 @@ Singleton {
             return
         }
         busy = action
+        lastAction = action
         proc.command = ["python3", script, action, frozen, String(x), String(y), String(w), String(h)].concat(shape === "circle" ? ["circle"] : ["rect"])
         proc.running = true
     }
@@ -61,7 +63,7 @@ Singleton {
         stdout: StdioCollector { id: out }
         onExited: {
             root.busy = ""
-            try { const r = JSON.parse(out.text); root.lastMsg = r.msg; root.lastText = r.text ?? "" } catch (e) { root.lastMsg = "Falhou" }
+            try { const r = JSON.parse(out.text); root.lastMsg = r.msg; root.lastText = r.text ?? ""; SystemGuard.sound(r.ok ? (root.lastAction === "copy" ? "shot" : "") : "error") } catch (e) { root.lastMsg = "Falhou" }
         }
     }
     IpcHandler {

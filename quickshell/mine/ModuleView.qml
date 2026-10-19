@@ -48,7 +48,7 @@ Item {
         id: clockC
         Label {
             SystemClock { id: clk; precision: SystemClock.Minutes }
-            text: root.vertical ? Qt.formatDateTime(clk.date, "HH\nmm") : Qt.formatDateTime(clk.date, root.opts.format || "ddd dd MMM   HH:mm")
+            text: root.vertical ? Qt.formatDateTime(clk.date, Settings.clock24 ? "HH\nmm" : "h\nmm") : Qt.formatDateTime(clk.date, root.opts.format || (Settings.clock24 ? "ddd dd MMM   HH:mm" : "ddd dd MMM   h:mm AP"))
             opacity: cm.containsMouse ? 0.75 : 1
             Behavior on opacity { NumberAnimation { duration: 120 } }
             MouseArea {   // clique no relogio abre o painel Inicio

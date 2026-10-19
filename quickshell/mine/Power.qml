@@ -19,8 +19,19 @@ Singleton {
         { id: "poweroff", label: "Desligar", icon: "power", key: "D", confirm: true, verb: "Desligando" }
     ]
 
+    // desligar/reiniciar/sair com o pacman rodando: avisa e so faz se pedir de novo em 15 s
+    property real forceUntil: 0
     function run(id: string): void {
         menuOpen = false
+        if (Settings.sessionGuard && (id === "logout" || id === "reboot" || id === "poweroff") && Date.now() > forceUntil) {
+            SystemGuard.busy(b => {
+                if (b) {
+                    root.forceUntil = Date.now() + 15000
+                    Quickshell.execDetached(["notify-send", "-u", "critical", "-a", "Sessão", "-i", "dialog-warning", "Uma atualização está rodando", "Espere o pacman terminar. Para " + (id === "poweroff" ? "desligar" : id === "reboot" ? "reiniciar" : "sair") + " mesmo assim, peça de novo em 15 segundos."])
+                } else { root.forceUntil = Date.now() + 2000; root.run(id) }
+            })
+            return
+        }
         if (id === "lock") lock()
         else if (id === "suspend") { lock(); suspendTimer.restart() }   // bloqueia antes de dormir
         else if (id === "logout") Quickshell.execDetached(["uwsm", "stop"])

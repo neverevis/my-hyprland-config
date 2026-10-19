@@ -34,7 +34,7 @@ Scope {
         bodyMarkupSupported: true
         actionsSupported: true
         imageSupported: true
-        onNotification: n => { n.tracked = true; NotifHistory.add(n) }
+        onNotification: n => { n.tracked = true; NotifHistory.add(n); if (!Settings.notifDnd) SystemGuard.sound("notif") }
     }
 
     // ---- tamanho do bloco (a moldura acoplada cresce ate ele) ----
