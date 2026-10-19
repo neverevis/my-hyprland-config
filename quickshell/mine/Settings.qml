@@ -314,7 +314,20 @@ Singleton {
         { type: "tray", label: "Bandeja" },
         { type: "palette", label: "Cores do tema" },
         { type: "power", label: "Energia" },
-        { type: "text", label: "Texto" }
+        { type: "text", label: "Texto" },
+        { type: "media", label: "Música tocando" },
+        { type: "weather", label: "Clima" },
+        { type: "netspeed", label: "Velocidade da rede" },
+        { type: "gpu", label: "GPU" },
+        { type: "temp", label: "Temperatura da CPU" },
+        { type: "updates", label: "Atualizações (pacman)" },
+        { type: "keyboard", label: "Layout do teclado" },
+        { type: "notifs", label: "Notificações / não perturbe" },
+        { type: "recorder", label: "Gravando a tela" },
+        { type: "utils", label: "Captura, cor e microfone" },
+        { type: "caffeine", label: "Manter acordado" },
+        { type: "launcher", label: "Botão do launcher" },
+        { type: "visualizer", label: "Mini visualizador" }
     ]
 
     function reset(): void {

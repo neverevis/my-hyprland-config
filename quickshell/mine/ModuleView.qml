@@ -27,7 +27,7 @@ Item {
         sourceComponent: ({
             clock: clockC, workspaces: workspacesC, window: windowC,
             cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC, power: powerC
-        })[root.type]
+        })[root.type] ?? extraC
     }
 
     Component {
@@ -80,6 +80,11 @@ Item {
                 rotation: root.vertical ? (root.side === "right" ? 90 : -90) : 0
             }
         }
+    }
+
+    Component {
+        id: extraC
+        ExtraModule { type: root.type; opts: root.opts; vertical: root.vertical; side: root.side }
     }
 
     Component {
