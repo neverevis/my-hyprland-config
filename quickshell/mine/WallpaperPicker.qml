@@ -20,6 +20,7 @@ Scope {
         function next(): void { Wallpaper.step(1) }
         function prev(): void { Wallpaper.step(-1) }
         function random(): void { Wallpaper.random() }
+        function peek(): void { Wallpaper.peek = !Wallpaper.peek }   // traz o wallpaper para a frente (conferir transicoes)
     }
 
     // mantem a janela ate a animacao de saida terminar

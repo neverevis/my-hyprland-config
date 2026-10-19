@@ -66,11 +66,17 @@ Item {
             readonly property string fgMode: w ? DeskState.opt(w, "fg") : "auto"
             readonly property bool bare: cardStyle === "none"
             readonly property bool light: lum > 0.62 && !view.darkBg   // wallpaper claro embaixo: texto escuro
-            readonly property color fg: fgMode === "custom" ? (w ? DeskState.opt(w, "fgColor") : "white")
+            readonly property color fgT: fgMode === "custom" ? (w ? DeskState.opt(w, "fgColor") : "white")
                 : fgMode === "theme" ? Theme.text
                 : bare ? (lum > 0.62 && !view.darkBg ? "#16151b" : "#f6f3fa") : Theme.text
+            // cores que o conteudo usa: animadas (o tema troca passo a passo; a cor pelo brilho do wallpaper chega um pouco
+            // depois da troca de wallpaper e antes pulava de uma vez entre claro e escuro)
+            property color fg: fgT
+            property color ac: acT
+            Behavior on fg { ColorAnimation { duration: 700; easing.type: Easing.OutCubic } }
+            Behavior on ac { ColorAnimation { duration: 700; easing.type: Easing.OutCubic } }
             readonly property color dim: Qt.rgba(fg.r, fg.g, fg.b, 0.68)
-            readonly property color ac: bare && fgMode === "auto" ? (lum > 0.62 && !view.darkBg ? Qt.darker(Theme.accent, 1.8) : Qt.lighter(Theme.accent, 1.1)) : Theme.accent
+            readonly property color acT: bare && fgMode === "auto" ? (lum > 0.62 && !view.darkBg ? Qt.darker(Theme.accent, 1.8) : Qt.lighter(Theme.accent, 1.1)) : Theme.accent
 
             Rectangle {
                 id: bg
@@ -83,7 +89,7 @@ Item {
                 border.color: card.cardStyle === "glass" ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.6)
                 clip: !card.bare
                 Behavior on radius { MotionAnim { use: "desktop" } }
-                Behavior on color { ColorAnimation { duration: 220 } }
+                Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 220 } }
                 Loader {
                     id: content
                     anchors.fill: parent
@@ -91,7 +97,8 @@ Item {
                     sourceComponent: DeskWidgets.component(card.w ? card.w.type : "")
                     onLoaded: card.feed()
                     // sem fundo: sombra suave para ler em cima de qualquer wallpaper
-                    layer.enabled: card.bare && Settings.desktopShadow
+                    // (menos nos que tem fundo proprio, como o relogio flor: a sombra virava uma copia da forma por baixo)
+                    layer.enabled: card.bare && Settings.desktopShadow && !(content.item && content.item.ownBackground)
                     layer.effect: MultiEffect { shadowEnabled: true; shadowColor: card.light ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.65); shadowBlur: card.light ? 0.3 : 0.6; shadowVerticalOffset: card.light ? 0 : 1; blurMax: 24 }
                 }
             }

@@ -23,11 +23,11 @@ void main() {
     vec2 d = (uv - 0.5) * vec2(aspect, 1.0);
     float r = length(d);
     float k = sin(progress * 3.14159265);
-    float ang = k * 1.7 * exp(-r * 2.2);
+    // gira forte no centro e nada perto das bordas (senao a imagem girada sai da tela e estica faixas)
+    float ang = k * 2.2 * smoothstep(0.62, 0.0, r);
     float s = sin(ang), co = cos(ang);
     vec2 rd = vec2(d.x * co - d.y * s, d.x * s + d.y * co);
-    vec2 q = rd / vec2(aspect, 1.0) + 0.5;
+    vec2 q = clamp(rd / vec2(aspect, 1.0) + 0.5, 0.0, 1.0);
     float t = smoothstep(0.3, 0.7, progress);
-    vec4 c = mix(texture(src1, q), texture(src2, q), t);
-    fragColor = c * qt_Opacity;
+    fragColor = mix(texture(src1, q), texture(src2, q), t) * qt_Opacity;
 }

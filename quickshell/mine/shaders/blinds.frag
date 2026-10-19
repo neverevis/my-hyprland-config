@@ -24,11 +24,12 @@ void main() {
     float n = 14.0;
     float idx = floor(diag * n), f = fract(diag * n);
     float delay = idx / n * 0.55;
+    // passa um pouco do fim (1.08): a ultima lasca da faixa fecha de verdade, sem deixar fios da imagem antiga
     float lp = clamp((progress - delay) / 0.45, 0.0, 1.0);
-    lp = lp * lp * (3.0 - 2.0 * lp);
-    float m = step(f, lp);                           // a faixa vai sendo preenchida pela nova
-    float front = (lp > 0.0 && lp < 1.0) ? 1.0 - smoothstep(0.0, 0.05, abs(f - lp)) : 0.0;
+    lp = lp * lp * (3.0 - 2.0 * lp) * 1.08;
+    float m = 1.0 - smoothstep(lp - 0.012, lp, f);
+    float front = (lp > 0.0 && lp < 1.0) ? (1.0 - smoothstep(0.0, 0.05, abs(f - lp))) * (1.0 - smoothstep(0.85, 1.0, lp)) : 0.0;
     vec4 c = mix(texture(src1, uv), texture(src2, uv), m);
-    c.rgb += glow.rgb * 0.35 * glow.a * front;
+    c.rgb += glow.rgb * 0.3 * glow.a * front;
     fragColor = c * qt_Opacity;
 }

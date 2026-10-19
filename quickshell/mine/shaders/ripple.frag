@@ -22,13 +22,13 @@ void main() {
     vec2 uv = qt_TexCoord0;
     vec2 d = (uv - 0.5) * vec2(aspect, 1.0);
     float r = length(d);
-    float front = progress * (0.5 * length(vec2(aspect, 1.0)) + 0.25);
-    float w = sin((r - front) * 38.0) * exp(-abs(r - front) * 9.0);
+    float front = progress * (0.5 * length(vec2(aspect, 1.0)) + 0.2);
+    float w = sin((r - front) * 34.0) * exp(-abs(r - front) * 11.0);
     vec2 dir = r > 0.0001 ? d / r : vec2(0.0);
-    vec2 off = dir * w * 0.022 * (1.0 - progress * 0.6) / vec2(aspect, 1.0);
-    float m = smoothstep(front - 0.05, front + 0.05, r);     // 1 = fora da frente (antiga)
-    vec4 a = texture(src1, uv + off), b = texture(src2, uv + off * 0.6);
+    vec2 off = dir * w * 0.014 * (1.0 - progress * 0.7) / vec2(aspect, 1.0);
+    float m = smoothstep(front - 0.035, front + 0.035, r);     // 1 = fora da frente (antiga)
+    vec4 a = texture(src1, clamp(uv + off, 0.0, 1.0)), b = texture(src2, clamp(uv + off * 0.6, 0.0, 1.0));
     vec4 c = mix(b, a, m);
-    c.rgb += glow.rgb * max(0.0, w) * 0.25 * glow.a * (1.0 - progress);
+    c.rgb += glow.rgb * max(0.0, w) * 0.18 * glow.a * (1.0 - progress);
     fragColor = c * qt_Opacity;
 }

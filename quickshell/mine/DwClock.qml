@@ -14,6 +14,7 @@ Item {
     property color ac: Theme.accent
     property bool bare: false
     function o(k) { return DeskState.opt({ type: "clock", opts: w.opts }, k) }
+    readonly property bool ownBackground: style === "analog"   // a flor ja e o fundo (o DeskView nao poe sombra)
 
     readonly property string style: { const s = o("style"); return s === "auto" ? (cols === rows ? "analog" : "digital") : s }
     readonly property bool secs: o("seconds")

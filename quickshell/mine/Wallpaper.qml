@@ -32,6 +32,7 @@ Singleton {
     }
 
     // pre-carrega (decodifica) a proxima imagem provavel, para a transicao comecar sem atraso
+    property bool peek: false          // wallpaper na frente de tudo (so para conferir; nao e salvo)
     property bool busy: false          // transicao de wallpaper em andamento (exportacoes do tema esperam ela acabar)
     property string pickerFocus: ""    // item destacado no seletor (se aberto)
     property string upcoming: ""

@@ -21,9 +21,11 @@ float fbm(vec2 p) { float v = 0.0, a = 0.5; for (int i = 0; i < 5; i++) { v += a
 void main() {
     vec2 uv = qt_TexCoord0;
     float k = 1.0 - abs(progress * 2.0 - 1.0);       // 0 -> 1 -> 0
-    float cells = mix(900.0, 14.0, pow(k, 0.6));
+    // blocos em degraus (cada degrau dobra o tamanho): fica claramente pixelado, nao serrilhado
+    float level = floor(pow(k, 0.7) * 5.0);           // 0..5
+    float cells = 220.0 / pow(2.0, level);            // 220, 110, 55, 27, 14, 7 blocos na altura
     vec2 grid = vec2(cells * aspect, cells);
-    vec2 q = k > 0.002 ? (floor(uv * grid) + 0.5) / grid : uv;
-    float t = smoothstep(0.38, 0.62, progress);
+    vec2 q = level > 0.0 ? (floor(uv * grid) + 0.5) / grid : uv;
+    float t = smoothstep(0.42, 0.58, progress);
     fragColor = mix(texture(src1, q), texture(src2, q), t) * qt_Opacity;
 }

@@ -1,7 +1,7 @@
 // Wallpaper por tras de tudo (uma janela por tela, camada Background) com transicoes em QML:
 // fade, slide (deslizar), wipe (cortina), circle (circulo que cresce do centro), zoom, none e, com shader (shaders/*.frag),
 // dissolve (dissolver com borda acesa), pixelate, ripple (ondas), blinds (persianas) e swirl (redemoinho).
-// Os shaders recebem as duas imagens como texturas fixas (ShaderEffectSource sem "live": tiradas uma vez por troca).
+// Os shaders recebem as duas imagens como texturas (ShaderEffectSource, atualizadas so durante a troca).
 import Quickshell
 import Quickshell.Wayland
 import QtQuick
@@ -18,7 +18,7 @@ Variants {
         exclusionMode: ExclusionMode.Ignore
         color: "black"
         mask: Region {}
-        WlrLayershell.layer: WlrLayer.Background
+        WlrLayershell.layer: Wallpaper.peek ? WlrLayer.Overlay : WlrLayer.Background
         WlrLayershell.namespace: "mine-wallpaper"
 
         property string shown: ""       // imagem totalmente visivel
@@ -68,7 +68,7 @@ Variants {
             easing.type: Easing.BezierSpline
             easing.bezierCurve: Wallpaper.curve
             onRunningChanged: Wallpaper.busy = running
-            onStarted: if (win.isShader) { fromTex.scheduleUpdate(); toTex.scheduleUpdate(); fx.seed = Math.random() * 10 }
+            onStarted: if (win.isShader) fx.seed = Math.random() * 10
             // a de baixo carrega em segundo plano; a camada nova so some quando ela estiver pronta (sem decodificar na hora e travar)
             onFinished: { win.shown = win.incoming; win.settle() }
         }
@@ -142,7 +142,9 @@ Variants {
             // slide: entra pela direita
             width: win.width
             x: win.trans === "slide" ? (1 - win.progress) * win.width : 0
-            opacity: win.isShader ? 0 : (win.trans === "fade" || win.trans === "zoom" ? win.progress : 1)
+            // com shader a camada nova fica opaca por baixo do efeito (que cobre a tela): com opacidade 0 o Qt deixa de
+            // desenhar esse ramo e o shader recebia uma textura vazia (flash escuro)
+            opacity: win.isShader ? 1 : (win.trans === "fade" || win.trans === "zoom" ? win.progress : 1)
             scale: win.trans === "zoom" ? 1.1 - 0.1 * win.progress : 1
 
             Item { id: plainNew; width: win.width; height: win.height; visible: win.trans !== "circle" && win.trans !== "wipe" }
@@ -190,8 +192,10 @@ Variants {
         }
 
         // ---- transicoes com shader: as duas imagens viram texturas e o shader mistura ----
-        ShaderEffectSource { id: fromTex; sourceItem: baseImg; live: false; hideSource: false; x: -4; width: 1; height: 1 }
-        ShaderEffectSource { id: toTex; sourceItem: newImg; live: false; hideSource: false; x: -4; width: 1; height: 1 }
+        // texturas vivas so durante a troca (tirar uma copia so, de forma assincrona, deixava o primeiro quadro com a
+        // textura da troca anterior: piscava o wallpaper velho)
+        ShaderEffectSource { id: fromTex; sourceItem: baseImg; live: win.isShader && win.incoming !== ""; hideSource: false; x: -4; width: 1; height: 1 }
+        ShaderEffectSource { id: toTex; sourceItem: newImg; live: win.isShader && win.incoming !== ""; hideSource: false; x: -4; width: 1; height: 1 }
         ShaderEffect {
             id: fx
             visible: win.isShader && win.incoming !== ""
