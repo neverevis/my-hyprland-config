@@ -32,7 +32,7 @@ Item {
                     color: Theme.tint(0.16)
                     Image {
                         anchors.fill: parent; anchors.margins: modelData.image ? 0 : 6
-                        source: modelData.image ? modelData.image : Quickshell.iconPath(modelData.icon || "dialog-information", "dialog-information")
+                        source: modelData.image ? modelData.image : Icons.path(modelData.icon, "dialog-information")
                         fillMode: modelData.image ? Image.PreserveAspectCrop : Image.PreserveAspectFit
                         sourceSize: Qt.size(76, 76); asynchronous: true
                     }

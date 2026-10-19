@@ -137,7 +137,7 @@ Item {
             readonly property var tl: Hyprland.activeToplevel
             readonly property string cls: tl && tl.lastIpcObject ? (tl.lastIpcObject.class ?? "") : ""
             readonly property var entry: cls !== "" ? DesktopEntries.heuristicLookup(cls) : null
-            readonly property string iconUrl: cls === "" ? "" : Quickshell.iconPath(entry && entry.icon ? entry.icon : cls.toLowerCase(), true)
+            readonly property string iconUrl: cls === "" ? "" : Icons.path(entry && entry.icon ? entry.icon : cls, "")
             Image {
                 visible: winRow.iconUrl !== ""
                 anchors.verticalCenter: parent.verticalCenter

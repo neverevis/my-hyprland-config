@@ -6,6 +6,12 @@ import QtQuick
 
 Singleton {
     property var p: ({})
+    // barras com "fit" (largura do conteudo, ex.: o dock): comprimento que os modulos pedem, por indice da barra
+    property var fitLen: ({})
+    function setFit(i, v) {
+        if (Math.abs((fitLen[i] ?? -1) - v) < 0.5) return
+        const m = Object.assign({}, fitLen); m[i] = v; fitLen = m
+    }
 
     // progresso do seletor de wallpaper (0..1), animado com a mesma curva/duracao das barras
     // paineis acoplados (seletor de wallpaper, launcher e Inicio) nao dividem a moldura: um espera o outro terminar de recolher (sem corte seco)

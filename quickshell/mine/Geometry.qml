@@ -217,7 +217,8 @@ Singleton {
                 if (full) { bw = shi - slo; lo = slo }
                 else if (i < nUser) {
                     const a0 = det ? lineLo + gapOf(i) : lineLo, a1 = det ? lineHi - gapOf(i) : lineHi
-                    bw = Math.max(60, Math.min(a1 - a0, Settings.barSize(b, L) / 100 * L))
+                    const fit = b.fit && BarState.fitLen[i] > 1 ? BarState.fitLen[i] : 0   // largura do conteudo (dock)
+                    bw = Math.max(60, Math.min(a1 - a0, fit || Settings.barSize(b, L) / 100 * L))
                     lo = a0 + Settings.barPos(b, L) / 100 * (a1 - a0 - bw)
                 } else {
                     const avail = Math.max(0, shi - slo - 2 * f)
@@ -231,7 +232,7 @@ Singleton {
                 const sc = (f + g) > 0 ? Math.min(1, dr / (f + g)) : 1
                 const pri = i >= nUser ? -1000 + i : i   // menor = mais importante
                 items.push({ i: i, f: f, g: g, t: t, fe: f * sc, ge: g * sc, te: te, p: p, sep: !!sepSet[i], det: det, full: full,
-                             lo: lo, hi: lo + bw, bw: bw, zero: zero, att: 0, attU: 0, pri: pri, hidden: false })
+                             lo: lo, hi: lo + bw, bw: bw, zero: zero, att: 0, attU: 0, pri: pri, hidden: false, lift: 0 })
             }
             // disputa de espaco (so as que ficam na faixa principal; as afastadas pelo painel ja tem caminho proprio)
             const main = items.filter(it => !it.sep)
@@ -240,7 +241,8 @@ Singleton {
                 if (it.full) { placed.push(it); continue }
                 const pad = it.det ? 8 : 0
                 // trechos livres entre as ja colocadas (com espaco para as curvas das duas)
-                const occ = placed.filter(o => !(it.det && o.full)).sort((a, b) => a.lo - b.lo)   // solta nao disputa com a barra de ponta a ponta
+                // solta so disputa espaco com outras soltas: em cima de uma barra presa ela sobe (ver "lift" abaixo)
+                const occ = placed.filter(o => it.det ? o.det : true).sort((a, b) => a.lo - b.lo)
                 const gaps = []
                 let a = lineLo
                 for (const o of occ) {
@@ -271,6 +273,15 @@ Singleton {
                 }
                 placed.push(it)
             }
+            // barra solta sobre uma barra presa (ex.: dock acima da barra de baixo): flutua acima do topo dela
+            for (const it of main) {
+                if (!it.det || it.hidden) continue
+                const under = main.filter(o => !o.det && !o.full && !o.hidden && o.hi > it.lo && o.lo < it.hi)
+                it.lift = under.reduce((m, o) => Math.max(m, o.te - inset[s]), 0)
+                it.t += it.lift
+                const b = bars[it.i]
+                if (!b.autoHide || b.reserve === "always") zone[s] = Math.max(zone[s], tOf(it.i) + under.reduce((m, o) => Math.max(m, o.t - edge), 0))
+            }
             const hole = main.filter(it => !it.hidden && !it.det)
             const aS = hole.find(it => it.attU < 0), aE = hole.find(it => it.attU > 0)
             SIDE[s] = { L: L, rev: rev, items: items, main: hole, dets: items.filter(it => !it.hidden && it.det), startDepth: aS ? aS.te : null, endDepth: aE ? aE.te : null }
@@ -293,7 +304,7 @@ Singleton {
                     : s === "bottom" ? { x: it.lo, y: H - t, w: it.hi - it.lo, h: t }
                     : { x: 0, y: it.lo, w: t, h: it.hi - it.lo }
                 res[it.i] = { side: s, rect: rect, lo: it.lo, hi: it.hi, zero: it.zero, vertical: !(s === "top" || s === "bottom"), t: t, cover: cover[it.i], fade: exitSet[it.i] ? Math.min(1, qv * 2.2) : 0, corner: it.att,
-                              hidden: it.hidden, detached: it.det, v0: it.det ? base + gapOf(it.i) : 0, th: it.det ? thOf(it.i) : 0, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
+                              hidden: it.hidden, detached: it.det, v0: it.det ? base + it.lift + gapOf(it.i) : 0, th: it.det ? thOf(it.i) : 0, overlap: (pRange && s === pSide && it.sep) ? Math.max(0, Math.min(1, (Math.min(it.hi, pRange[1]) - Math.max(it.lo, pRange[0])) / Math.max(1, it.hi - it.lo))) : 0 }
             }
 
             const ul = main.map(it => ({ it: it, a: rev ? L - it.hi : it.lo, b: rev ? L - it.lo : it.hi }))
@@ -322,7 +333,7 @@ Singleton {
             // barras soltas: retangulos arredondados afastados da moldura (entram/saem deslizando pela borda)
             for (const it of S.dets) {
                 const a = rev ? L - it.hi : it.lo, b = rev ? L - it.lo : it.hi
-                const th = thOf(it.i), v1f = base + gapOf(it.i) + th
+                const th = thOf(it.i), v1f = base + it.lift + gapOf(it.i) + th
                 const v1 = v1f - (1 - it.p) * (v1f + 6)   // p > 1 (curva elastica) passa um pouco do lugar
                 const v0 = v1 - th
                 const rr = Math.min(th / 2, bars[it.i].radius ?? 14)

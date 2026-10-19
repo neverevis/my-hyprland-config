@@ -93,7 +93,7 @@ PanelWindow {
             // solta = so o retangulo dela, que entra deslizando pela borda
             readonly property bool det: !!(win.info && win.info.detached)
             readonly property real d1: det ? win.full - (1 - win.eff) * (win.full + 6) : vis
-            readonly property real d0: det ? Math.max(0, d1 - win.info.th) : 0
+            readonly property real d0: det && win.info ? Math.max(0, d1 - win.info.th) : 0
             readonly property real dl: Math.max(0, d1 - d0)
             clip: true
             x: win.side === "right" ? win.width - d1 : (win.side === "left" ? d0 : 0)
@@ -106,8 +106,21 @@ PanelWindow {
             readonly property real cx: vert ? (win.side === "right" ? win.width - dm : dm) : win.width / 2
             readonly property real cy: vert ? win.height / 2 : (win.side === "bottom" ? win.height - dm : dm)
 
+            // largura pelo conteudo (opcao "fit"): soma das secoes + respiro; animada, a barra cresce/encolhe com os apps
+            readonly property real fitNeed: {
+                let s = 0, n = 0
+                for (let k = 0; k < secRep.count; k++) { const it = secRep.itemAt(k); if (it && it.contentLen > 0) { s += it.contentLen; n++ } }
+                return s + Math.max(0, n - 1) * 24 + 2 * 14
+            }
+            property real fitAnim: fitNeed
+            Behavior on fitAnim { enabled: clipper.fitAnim > 1; NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+            readonly property real fitOut: win.bar && win.bar.fit ? fitAnim : 0
+            onFitOutChanged: BarState.setFit(win.modelData, fitOut)
+            Component.onCompleted: BarState.setFit(win.modelData, fitOut)
+
             // ---- secoes: cada uma e posicionada ao longo da barra (inicio / centro / fim + deslocamento + largura) ----
             Repeater {
+                id: secRep
                 model: win.sections.length
                 delegate: Item {
                     id: sec

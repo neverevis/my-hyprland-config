@@ -183,7 +183,7 @@ Scope {
                                     Image {
                                         anchors.fill: parent
                                         anchors.margins: card.n.image !== "" ? 0 : 8
-                                        source: card.n.image !== "" ? card.n.image : (card.n.appIcon !== "" ? Quickshell.iconPath(card.n.appIcon, "dialog-information") : Quickshell.iconPath("dialog-information"))
+                                        source: card.n.image !== "" ? card.n.image : Icons.path(card.n.appIcon, "dialog-information")
                                         fillMode: card.n.image !== "" ? Image.PreserveAspectCrop : Image.PreserveAspectFit
                                         sourceSize: Qt.size(104, 104)
                                         asynchronous: true

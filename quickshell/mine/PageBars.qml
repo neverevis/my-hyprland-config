@@ -148,7 +148,8 @@ Column {
             readonly property real size: page.bar ? Settings.barSize(page.bar, sideLen) : 30
             readonly property real pos: page.bar ? Settings.barPos(page.bar, sideLen) : 50
             readonly property bool vert: page.bar ? (page.bar.side === "left" || page.bar.side === "right") : false
-            UiSlider { label: "Largura"; icon: "swap_horizontal"; from: 3; to: 100; value: Math.round(parent.size); suffix: " %"; onMoved: v => page.setBar("size", v) }
+            UiSwitch { label: "Largura do conteúdo"; description: "A barra cresce e encolhe com os módulos (bom para o dock)."; checked: page.bar ? !!page.bar.fit : false; onToggled: on => page.setBar("fit", on) }
+            UiSlider { visible: page.bar ? !page.bar.fit : true; label: "Largura"; icon: "swap_horizontal"; from: 3; to: 100; value: Math.round(parent.size); suffix: " %"; onMoved: v => page.setBar("size", v) }
             UiSlider { label: "Posição"; icon: "arrow_right"; from: 0; to: 100; value: Math.round(parent.pos); suffix: " %"; onMoved: v => { page.setBar("pos", v); page.setBar("corner", "") } }
             Row {
                 spacing: 6

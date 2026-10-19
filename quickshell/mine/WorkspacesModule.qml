@@ -155,7 +155,7 @@ Grid {
                 visible: cell.sty === "icons"
                 readonly property string cls: cell.st.cls
                 readonly property var entry: cls !== "" ? DesktopEntries.heuristicLookup(cls) : null
-                readonly property string iconUrl: cls === "" ? "" : Quickshell.iconPath(entry && entry.icon ? entry.icon : cls.toLowerCase(), true)
+                readonly property string iconUrl: cls === "" ? "" : Icons.path(entry && entry.icon ? entry.icon : cls, "")
                 opacity: cell.active ? 1 : 0.55
                 Behavior on opacity { MotionAnim { use: "workspaces" } }
                 Image {

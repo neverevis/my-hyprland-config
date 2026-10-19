@@ -59,7 +59,7 @@ Item {
                     anchors.centerIn: parent
                     width: root.isz; height: root.isz
                     sourceSize: Qt.size(root.isz * 2, root.isz * 2)
-                    source: Quickshell.iconPath(app.e && app.e.icon ? app.e.icon : (app.modelData.cls ?? app.modelData.id).toLowerCase(), "application-x-executable")
+                    source: Icons.path(app.e && app.e.icon ? app.e.icon : (app.modelData.cls ?? app.modelData.id), "application-x-executable")
                     scale: am.pressed ? 0.88 : (am.containsMouse ? 1.14 : 1)
                     Behavior on scale { NumberAnimation { duration: 160; easing.type: Easing.OutBack } }
                     opacity: app.modelData.wins.length || am.containsMouse ? 1 : 0.75

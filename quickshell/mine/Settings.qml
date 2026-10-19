@@ -1,5 +1,8 @@
 // Configuracoes do seu shell, num lugar so (singleton: qualquer arquivo usa "Settings.edge" etc.).
 // Salvas em settings.json (nesta pasta) e recarregadas sozinhas quando o arquivo muda.
+// Versao do arquivo (schema): quando uma opcao muda de nome ou de formato, sobe a versao e um passo em migrate()
+// converte os arquivos antigos (uma vez, ao carregar). Opcao nova com padrao nao precisa de passo.
+// Regra da casa: aqui ficam so os valores salvos e funcoes simples; catalogos e logica ficam no servico de cada area.
 pragma Singleton
 
 import Quickshell
@@ -266,6 +269,23 @@ Singleton {
         setAnimCfg({ anims: anims.filter(a => a.name !== name), use: u, out: o })
     }
 
+    readonly property int schemaNow: 2
+    function migrate(): void {
+        migrateAnims()
+        let v = adapter.schema
+        if (v >= schemaNow) return
+        if (v < 2) {
+            // presets guardavam as cores calculadas (accent/barColor/textColor, so leitura): passam para as do usuario
+            const map = { accent: "userAccent", barColor: "userBarColor", textColor: "userTextColor" }
+            adapter.presets = (adapter.presets || []).map(p => {
+                const d = {}
+                for (const k of Object.keys(p.data || {})) d[map[k] ?? k] = p.data[k]
+                return Object.assign({}, p, { data: d })
+            })
+        }
+        adapter.schema = schemaNow
+    }
+
     // uma vez: leva a animacao global antiga (curva/duracao unicas) para uma animacao nomeada
     function migrateAnims(): void {
         if (animMigrated) return
@@ -471,7 +491,7 @@ Singleton {
     function addDock(): void {
         mutate(b => {
             const sec = defaultSection("Apps"); sec.modules = [{ type: "taskbar", iconSize: 30 }]
-            b.push({ name: "Dock", side: "bottom", size: 30, pos: 50, height: 58, full: false, autoHide: true, detached: true, gap: 10, radius: 18, sections: [sec] })
+            b.push({ name: "Dock", side: "bottom", size: 30, fit: true, pos: 50, height: 58, full: false, autoHide: false, detached: true, gap: 10, radius: 18, sections: [sec] })
         })
     }
     function removeBar(i: int): void { mutate(b => b.splice(i, 1)) }
@@ -518,7 +538,7 @@ Singleton {
         path: Quickshell.env("HOME") + "/.config/quickshell/mine/settings.json"
         watchChanges: true
         onFileChanged: if (!saveT.running) reload()
-        onLoaded: root.migrateAnims()
+        onLoaded: root.migrate()
         onAdapterUpdated: saveT.restart()
         onLoadFailed: error => {
             if (error === FileViewError.FileNotFound)
@@ -566,6 +586,7 @@ Singleton {
             property string weatherUnits: "metric"
             property int weatherInterval: 20
             property var presets: []
+            property int schema: 1
             property int lockBlur: 100
             property int lockDim: 32
             property bool lockMedia: true

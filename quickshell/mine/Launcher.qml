@@ -331,7 +331,7 @@ Scope {
                                         anchors.fill: parent
                                         visible: !!row.modelData.icon
                                         sourceSize: Qt.size(width * 2, height * 2)
-                                        source: row.modelData.icon ? Quickshell.iconPath(row.modelData.icon, "application-x-executable") : ""
+                                        source: row.modelData.icon ? Icons.path(row.modelData.icon, "application-x-executable") : ""
                                         asynchronous: true
                                         smooth: true
                                     }

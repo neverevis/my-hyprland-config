@@ -26,6 +26,7 @@ Scope {
         function compose(mode: string): void { Settings.applyComposition(mode) }   // integrated | independent
         function search(q: string): void { Settings.settingsOpen = true; root.searchFor(q) }   // abre ja buscando
         function find(q: string): void { Settings.settingsOpen = true; root.findFor(q) }       // abre direto no melhor resultado
+        function pages(): string { return root.allPages.map(p => p.id).join(" ") }                  // ids das paginas (teste rapido)
     }
     // abrir as configuracoes (pelo atalho ou pelo botao do Inicio) fecha os paineis que estiverem abertos
     onOpenChanged: if (open) { Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; alive = true }

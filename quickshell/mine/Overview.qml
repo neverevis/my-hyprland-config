@@ -115,7 +115,7 @@ Scope {
                                 Image {
                                     anchors.centerIn: parent
                                     width: Math.min(36, parent.width * 0.4, parent.height * 0.6); height: width
-                                    source: { const e = DesktopEntries.heuristicLookup(wr.o.class || ""); return Quickshell.iconPath(e && e.icon ? e.icon : (wr.o.class || "").toLowerCase(), "application-x-executable") }
+                                    source: Icons.app(wr.o.class || "")
                                     sourceSize: Qt.size(72, 72)
                                     opacity: 0.9
                                 }

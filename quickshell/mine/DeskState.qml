@@ -228,7 +228,7 @@ Singleton {
     // ---------------- presets ----------------
     // o que um preset guarda (o "visual" do shell); o resto das configuracoes fica como esta
     readonly property var presetKeys: ["desktopWidgets", "desktopCard", "bars", "edge", "cornerRadius", "fillet", "topRadius", "outline",
-        "glass", "glassOpacity", "shellBlur", "shellGrain", "accent", "barColor", "textColor",
+        "glass", "glassOpacity", "shellBlur", "shellGrain", "userAccent", "userBarColor", "userTextColor", "desktopCardStyle", "desktopShadow",
         "themeOn", "themeMode", "themeSource", "themePreset", "themeVariant", "wallpaper"]
     // layouts prontos (so mudam os widgets): bons pontos de partida
     readonly property var builtins: [
@@ -305,8 +305,10 @@ Singleton {
         // widgets que existem nos dois lados (mesmo id) deslizam ate o novo lugar; os outros entram/saem com fade
         for (const k of Object.keys(d)) {
             if (k === "wallpaper") { if (d[k] && d[k] !== Settings.wallpaper) Settings.wallpaper = d[k]; continue }
-            if (Settings[k] === undefined) continue
-            Settings[k] = JSON.parse(JSON.stringify(d[k]))
+            // presets antigos guardavam as cores calculadas (so leitura); a escolha do usuario fica em user*
+            const key = ({ accent: "userAccent", barColor: "userBarColor", textColor: "userTextColor" })[k] ?? k
+            if (Settings[key] === undefined) continue
+            Settings[key] = JSON.parse(JSON.stringify(d[k]))
         }
         lastApplied = name
     }

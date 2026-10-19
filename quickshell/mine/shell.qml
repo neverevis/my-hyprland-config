@@ -41,6 +41,24 @@ ShellRoot {
                 settings: Settings.settingsOpen, composition: Settings.composition,
                 geo: { launcher: shell.geo.launcher ? shell.geo.launcher.rect : null, home: shell.geo.home ? shell.geo.home.rect : null, osd: shell.geo.osd ? shell.geo.osd.rect : null } })
         }
+        // diagnostico: ler / mudar uma configuracao (valor em JSON) e ver onde cada barra ficou
+        function get(key: string): string { return JSON.stringify(Settings[key]) }
+        function set(key: string, json: string): string {
+            try { Settings[key] = JSON.parse(json); return JSON.stringify(Settings[key]) } catch (e) { return "erro: " + e }
+        }
+        function barset(i: int, key: string, json: string): string {
+            try { const v = JSON.parse(json); Settings.mutate(b => { b[i][key] = v }); return JSON.stringify(Settings.bars[i][key]) } catch (e) { return "erro: " + e }
+        }
+        // so funcoes sem argumentos (uma chamada sem o indice ja apagou a barra errada)
+        function call(fn: string): string {
+            const f = Settings[fn]
+            if (typeof f !== "function") return "erro: " + fn + " nao existe"
+            if (f.length > 0) return "erro: " + fn + " precisa de argumentos"
+            try { const r = f(); return r === undefined ? "ok" : JSON.stringify(r) } catch (e) { return "erro: " + e }
+        }
+        function bars(): string {
+            return JSON.stringify((shell.geo.bars || []).map((b, i) => b ? { i: i, side: b.side, hidden: !!b.hidden, det: !!b.detached, full: !!b.full, t: b.t, rect: b.rect } : null))
+        }
     }   // carrega o HyprSync (singleton) ja no inicio
 
     WallpaperWindow {}
