@@ -2,6 +2,7 @@
 # Instala o Quickshell "mine" (moldura + barras + seletor de wallpaper) e a integracao com o Hyprland.
 #   ./install.sh                instala tudo (instala dependencias com pacman e cria o venv do tema)
 #   ./install.sh --no-deps      nao tenta instalar dependencias
+#   ./install.sh --minimal      instala so as dependencias essenciais (sem OCR, tradutor, luz noturna...)
 #   ./install.sh --no-autostart nao inicia o shell no login (so os atalhos)
 #   ./install.sh --reset        sobrescreve o seu settings.json com o padrao deste repositorio
 # Faz backup do que ja existir em ~/.config/quickshell/mine e em ~/.config/hypr.
@@ -11,33 +12,68 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 QS_DIR="$HOME/.config/quickshell/mine"
 HYPR_DIR="$HOME/.config/hypr"
 STAMP="$(date +%Y%m%d-%H%M%S)"
-DEPS=1; AUTOSTART=1; RESET=0
+DEPS=1; OPTIONAL_DEPS=1; AUTOSTART=1; RESET=0
 for a in "$@"; do
     case "$a" in
         --no-deps) DEPS=0 ;;
+        --minimal) OPTIONAL_DEPS=0 ;;
         --no-autostart) AUTOSTART=0 ;;
         --reset) RESET=1 ;;
-        -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
+        -h|--help) sed -n '2,9p' "$0"; exit 0 ;;
         *) echo "opcao desconhecida: $a"; exit 1 ;;
     esac
 done
 
 say() { printf '\033[1;35m==>\033[0m %s\n' "$*"; }
 
-# ---- dependencias ----
+# ---- dependencias (Arch: pacman, so as que faltam) ----
+# essenciais: sem elas partes do shell nao abrem (icones, video, capturas, area de transferencia, tema, sons)
+REQUIRED=(
+    quickshell hyprland pipewire pipewire-audio wireplumber    # shell, compositor, audio (pw-play)
+    qt6-multimedia qt6-multimedia-ffmpeg ffmpeg                # wallpaper em video e quadros dele
+    python python-pillow                                       # scripts (posicao dos widgets, capturas, miniaturas)
+    ttf-jetbrains-mono-nerd                                    # fonte dos icones da interface
+    libnotify curl glib2 xdg-utils procps-ng                   # avisos, clima/letras, tema GTK, abrir arquivos
+    wl-clipboard cliphist grim slurp hyprpicker                # area de transferencia, capturas, conta-gotas
+    pacman-contrib sound-theme-freedesktop                     # aviso de atualizacoes (checkupdates), sons
+)
+# extras: cada um liga um recurso (o shell funciona sem eles e avisa o que falta)
+OPTIONAL=(
+    cava                                                       # visualizador de musica (widget e ilha)
+    hyprsunset                                                 # luz noturna
+    tesseract tesseract-data-por tesseract-data-eng            # copiar texto da tela (OCR)
+    translate-shell                                            # tradutor (launcher "!" e traduzir a tela)
+    satty                                                      # anotar capturas
+    wf-recorder                                                # gravar a tela
+    easyeffects                                                # equalizador
+    power-profiles-daemon                                      # perfis de energia
+    gnome-keyring                                              # destravar o chaveiro junto com a tela de bloqueio
+    networkmanager bluez bluez-utils                           # paginas de Wi-Fi e Bluetooth
+    kitty                                                      # terminal padrao do launcher (tema ao vivo)
+)
 if [ "$DEPS" = 1 ]; then
-    missing=()
-    command -v qs >/dev/null || missing+=(quickshell)
-    command -v hyprctl >/dev/null || missing+=(hyprland)
-    command -v pipewire >/dev/null || missing+=(pipewire)
-    if [ "${#missing[@]}" -gt 0 ]; then
-        if command -v pacman >/dev/null; then
-            say "Faltam: ${missing[*]} -> instalando com pacman (pede sudo)"
+    if command -v pacman >/dev/null; then
+        want=("${REQUIRED[@]}"); [ "$OPTIONAL_DEPS" = 1 ] && want+=("${OPTIONAL[@]}")
+        missing=()
+        for p in "${want[@]}"; do pacman -Q "$p" >/dev/null 2>&1 || missing+=("$p"); done
+        if [ "${#missing[@]}" -gt 0 ]; then
+            say "Faltam ${#missing[@]} pacotes: ${missing[*]}"
+            say "Instalando com pacman (pede a sua senha do sudo)"
             sudo pacman -S --needed "${missing[@]}"
         else
-            echo "Instale manualmente: ${missing[*]} (Quickshell >= 0.2, Hyprland com configuracao em Lua)"; exit 1
+            say "Dependencias ja instaladas"
         fi
+    else
+        echo "Sem pacman: instale manualmente (nomes do Arch):"
+        echo "  essenciais: ${REQUIRED[*]}"
+        echo "  extras:     ${OPTIONAL[*]}"
+        command -v qs >/dev/null && command -v hyprctl >/dev/null || exit 1
     fi
+fi
+# a configuracao do Hyprland em Lua: testado na 0.56
+if command -v hyprctl >/dev/null; then
+    hv="$(hyprctl version -j 2>/dev/null | python3 -c 'import json,sys;print(json.load(sys.stdin).get("tag",""))' 2>/dev/null || true)"
+    case "$hv" in v0.[0-4]*|v0.5[0-5]*) say "Aviso: Hyprland $hv. Este shell usa a configuracao em Lua (testado na 0.56)." ;; esac
 fi
 
 # ---- Quickshell ----
@@ -118,4 +154,4 @@ mkdir -p "$WPDIR"
 say "Pasta de wallpapers: $WPDIR (coloque as suas imagens la, ou mude em Configuracoes > Wallpaper)"
 
 say "Pronto. Inicie com:  qs -c mine   (ou faca logout/login)"
-say "Atalhos: Super+C configuracoes, Super+W seletor de wallpaper"
+say "Atalhos: Super+C configuracoes, Super+W wallpaper, Super+Tab launcher, Print captura, Super+G painel de jogo"

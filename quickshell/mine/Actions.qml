@@ -8,7 +8,6 @@ import QtQuick
 Singleton {
     id: root
     function sh(cmd) { Quickshell.execDetached(["sh", "-c", cmd]) }
-    readonly property string bin: Quickshell.env("HOME") + "/.local/bin/"
 
     readonly property var list: [
         { id: "lock", name: "Bloquear a tela", icon: "lock", keys: "lock bloquear", run: () => Power.lock() },
@@ -24,7 +23,7 @@ Singleton {
         { id: "overlay", name: "Painel de jogo", desc: "Mira, notas, imagem, gravação, volume por app e sistema por cima de tudo", icon: "gamepad", keys: "jogo game overlay mira crosshair", run: () => Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "overlay", "toggle"]) },
         { id: "shelf", name: "Prateleira de arquivos", desc: "Solte arquivos e arraste de volta para outro lugar", icon: "layers", keys: "prateleira dropover arquivos shelf", run: () => Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "shelf", "toggle"]) },
         { id: "lens", name: "Buscar imagem da tela (Google Lens)", desc: "Envia a área para o litterbox.catbox.moe (apaga em 1 h)", icon: "search", keys: "lens google buscar imagem", run: () => Capture.start("lens") },
-        { id: "shotFull", name: "Capturar a tela inteira", icon: "fullscreen", keys: "print screenshot captura tela", run: () => sh("sleep 0.4; " + root.bin + "screenshot-area --full") },
+        { id: "shotFull", name: "Capturar a tela inteira", icon: "fullscreen", keys: "print screenshot captura tela", run: () => sh('sleep 0.4; d="$HOME/Imagens/Screenshots"; mkdir -p "$d"; f="$d/captura-$(date +%Y%m%d-%H%M%S).png"; grim "$f" && wl-copy < "$f" && notify-send -a Captura -i "$f" "Tela capturada" "Copiada e salva em $f"') },
         { id: "picker", name: "Pegar uma cor da tela", desc: "Copia o código da cor", icon: "palette", keys: "color picker cor conta-gotas hyprpicker", run: () => sh("sleep 0.3; hyprpicker -a") },
         { id: "record", name: "Gravar a tela", desc: "De novo para parar", icon: "monitor", keys: "record gravar video", toggle: true, on: () => Recorder.active, run: () => Recorder.toggle(false) },
         { id: "recordArea", name: "Gravar uma área", icon: "frame", keys: "record gravar area", run: () => Recorder.active ? Recorder.stop() : Capture.start("record") },
