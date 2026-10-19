@@ -99,7 +99,7 @@ Scope {
         return scored.map(x => ({ name: x.e.name, desc: x.e.comment || x.e.genericName || "", icon: x.e.icon, fav: x.fav,
                                   act: () => root.launch(x.e), alt: () => root.toggleFav(x.e.id), altHint: x.fav ? "tirar dos favoritos" : "favoritar" }))
     }
-    function arr(v) { return Array.isArray(v) ? v : [] }
+    function arr(v) { return Settings.list(v) }
     function toggleFav(id) { const l = arr(Settings.launcherFavs).slice(), i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else l.push(id); Settings.launcherFavs = l }
     function norm(t) { return String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase() }
     function actionItems(q) {

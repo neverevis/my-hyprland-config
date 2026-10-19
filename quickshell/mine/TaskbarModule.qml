@@ -31,7 +31,7 @@ Item {
     readonly property var wins: Hyprland.toplevels.values.filter(t => t.lastIpcObject && t.lastIpcObject.class && !ignored(t.lastIpcObject.class))
     function entryOf(cls) { return DesktopEntries.heuristicLookup(cls) }
     function keyOf(cls) { const e = entryOf(cls); return e ? e.id : cls.toLowerCase() }
-    function pinnedList() { return Array.isArray(Settings.dockPinned) ? Settings.dockPinned : [] }
+    function pinnedList() { return Settings.list(Settings.dockPinned) }
     readonly property var apps: {
         const out = pinnedList().map(id => ({ id: id, pinned: true, wins: [] }))
         for (const t of wins) {

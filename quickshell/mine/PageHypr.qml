@@ -113,20 +113,20 @@ Column {
         title: "Apps ao iniciar"
         subtitle: "Comandos que o Hyprland roda ao entrar na sessão (além dos que já estão nos seus arquivos)."
         Repeater {
-            model: Array.isArray(Settings.hyprAutostart) ? Settings.hyprAutostart : []
+            model: Settings.list(Settings.hyprAutostart)
             delegate: Rectangle {
                 required property string modelData
                 required property int index
                 width: parent.width; height: 40; radius: 10; color: Theme.track
                 UiText { x: 12; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 60; elide: Text.ElideRight; text: modelData; color: Theme.text; font.pixelSize: 12; font.family: Theme.mono }
                 UiButton { anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter } icon: "trash"; kind: "danger"
-                    onClicked: { const l = Settings.hyprAutostart.slice(); l.splice(index, 1); Settings.hyprAutostart = l } }
+                    onClicked: { const l = Settings.list(Settings.hyprAutostart); l.splice(index, 1); Settings.hyprAutostart = l } }
             }
         }
         Row {
             spacing: 8
             UiField { id: asF; width: 420; placeholderText: "Comando (ex.: discord --start-minimized)"; onAccepted: asB.clicked() }
-            UiButton { id: asB; icon: "plus"; text: "Adicionar"; onClicked: { const c = asF.text.trim(); if (!c) return; Settings.hyprAutostart = (Array.isArray(Settings.hyprAutostart) ? Settings.hyprAutostart : []).concat([c]); asF.text = "" } }
+            UiButton { id: asB; icon: "plus"; text: "Adicionar"; onClicked: { const c = asF.text.trim(); if (!c) return; Settings.hyprAutostart = (Settings.list(Settings.hyprAutostart)).concat([c]); asF.text = "" } }
         }
     }
 

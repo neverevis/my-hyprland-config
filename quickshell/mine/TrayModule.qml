@@ -16,7 +16,7 @@ Grid {
     spacing: opts.spacing ?? 8
     columns: vertical ? 1 : 99
 
-    readonly property var hiddenIds: Array.isArray(opts.hidden) ? opts.hidden : []
+    readonly property var hiddenIds: Settings.list(opts.hidden)
     Repeater {
         model: SystemTray.items
         delegate: Item {

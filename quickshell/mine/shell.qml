@@ -81,6 +81,7 @@ ShellRoot {
     BarPopup {}
     RegionSelector {}
     DropShelf {}
+    GameOverlay {}
     Home { geo: shell.geo }
     PowerMenu {}
     PhotoEditor {}

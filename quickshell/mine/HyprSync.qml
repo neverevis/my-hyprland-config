@@ -41,6 +41,7 @@ Singleton {
             + '\nhl.layer_rule({ match = { namespace = "mine-popup" }, blur = true, ignore_alpha = 0.3 })'
             + '\nhl.layer_rule({ match = { namespace = "mine-popup" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-region" }, no_anim = true })'
+            + '\nhl.layer_rule({ match = { namespace = "mine-overlay" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-shelf" }, blur = true, ignore_alpha = 0.3 })'
             + '\nhl.window_rule({ match = { title = "^Configurações do shell$" }, float = true, size = "1160 800", center = true })'
             + floatRules()

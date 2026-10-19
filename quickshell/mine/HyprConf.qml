@@ -87,7 +87,7 @@ Singleton {
             + ', position = ' + luaVal(cur.x !== undefined ? cur.x + "x" + cur.y : "auto") + ', scale = ' + luaVal(m.scale || cur.scale || 1) + ' })'
     }
     function autostartLua() {
-        const l = (Array.isArray(Settings.hyprAutostart) ? Settings.hyprAutostart : []).filter(x => x && x.trim())
+        const l = (Settings.list(Settings.hyprAutostart)).filter(x => x && x.trim())
         if (!l.length) return ""
         return 'hl.on("hyprland.start", function()\n' + l.map(c => '    hl.exec_cmd(' + luaVal(c.trim()) + ')').join("\n") + '\nend)'
     }

@@ -130,6 +130,15 @@ Singleton {
     property alias wpVideos: adapter.wpVideos   // videos da pasta entram na lista
     property alias lockWallpaper: adapter.lockWallpaper
     property alias shelfFiles: adapter.shelfFiles       // prateleira de arquivos
+    // painel de jogo (GameOverlay.qml)
+    property alias overlayItems: adapter.overlayItems
+    property alias overlayPinnedOpacity: adapter.overlayPinnedOpacity
+    property alias overlayCrossColor: adapter.overlayCrossColor
+    property alias overlayCrossSize: adapter.overlayCrossSize
+    property alias overlayCrossStyle: adapter.overlayCrossStyle
+    property alias overlayNotes: adapter.overlayNotes
+    property alias overlayImage: adapter.overlayImage
+    property alias overlayImageScale: adapter.overlayImageScale
     property alias recAudio: adapter.recAudio           // gravacao: none | system | mic
     property alias recDir: adapter.recDir
     property alias recFps: adapter.recFps               // 0 = do monitor
@@ -331,6 +340,8 @@ Singleton {
         setAnimCfg({ anims: anims.filter(a => a.name !== name), use: u, out: o })
     }
 
+    // listas vindas do settings.json chegam como objetos parecidos com array (Array.isArray da falso): use Settings.list(x)
+    function list(v: var): var { if (!v || typeof v === "string") return []; try { return Array.from(v) } catch (e) { return [] } }
     readonly property int schemaNow: 2
     function migrate(): void {
         migrateAnims()
@@ -695,6 +706,14 @@ Singleton {
             property string lockClock: "big"
             property string recAudio: "none"
             property var shelfFiles: []
+            property var overlayItems: []
+            property int overlayPinnedOpacity: 85
+            property string overlayCrossColor: "#ff4f7a"
+            property int overlayCrossSize: 22
+            property string overlayCrossStyle: "cross"
+            property string overlayNotes: ""
+            property string overlayImage: ""
+            property int overlayImageScale: 50
             property string recDir: "~/Vídeos/Gravações"
             property int recFps: 0
             property string lockClockPos: "top"

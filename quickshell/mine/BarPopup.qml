@@ -81,10 +81,11 @@ Scope {
     Component {
         id: volC
         Column {
+            id: volCol
             spacing: 12
             readonly property var sink: Pipewire.defaultAudioSink
             readonly property var src: Pipewire.defaultAudioSource
-            PwObjectTracker { objects: [parent.sink, parent.src] }
+            PwObjectTracker { objects: [volCol.sink, volCol.src] }
             Row {
                 spacing: 10
                 UiIcon { name: "speaker"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
@@ -105,9 +106,10 @@ Scope {
     Component {
         id: privC
         Column {
+            id: privCol
             spacing: 8
             readonly property var streams: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioInStream || n.type === PwNodeType.VideoSource)
-            PwObjectTracker { objects: parent.streams }
+            PwObjectTracker { objects: privCol.streams }
             function appOf(n) { const p = n.properties || {}; return p["application.name"] || p["node.name"] || n.name || "?" }
             UiText { text: "Em uso agora"; color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold }
             Repeater {

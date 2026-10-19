@@ -47,6 +47,19 @@ Column {
         title: "Prateleira de arquivos"
         subtitle: "Um cartão na lateral onde você solta arquivos e depois arrasta para outro lugar (como o dropover). Também pelo launcher: \"/prateleira\"."
         UiButton { icon: "layers"; text: "Abrir / fechar a prateleira"; onClicked: Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "shelf", "toggle"]) }
-        UiText { text: (Array.isArray(Settings.shelfFiles) ? Settings.shelfFiles.length : 0) + " arquivo(s) guardado(s)"; color: Theme.muted; font.pixelSize: 12 }
+        UiText { text: Settings.list(Settings.shelfFiles).length + " arquivo(s) guardado(s)"; color: Theme.muted; font.pixelSize: 12 }
+    }
+
+    Card {
+        icon: "gamepad"
+        title: "Painel de jogo"
+        subtitle: "Mini-janelas por cima de tudo: mira, notas, imagem, gravação, volume por app e sistema. Com o painel aberto você move e fixa; fixadas ficam por cima do jogo sem pegar o mouse. Atalho sugerido: Super+G com  qs -c mine ipc call overlay toggle"
+        UiButton { icon: "gamepad"; text: "Abrir o painel"; kind: "accent"; onClicked: { Settings.settingsOpen = false; Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "overlay", "open"]) } }
+        UiSlider { label: "Opacidade das fixadas"; from: 20; to: 100; value: Settings.overlayPinnedOpacity; suffix: " %"; onMoved: v => Settings.overlayPinnedOpacity = Math.round(v) }
+        UiLabel { text: "Mira" }
+        UiSeg { options: [["cross", "Cruz"], ["dot", "Ponto"], ["both", "Cruz e ponto"], ["circle", "Círculo"]]; value: Settings.overlayCrossStyle; onPicked: v => Settings.overlayCrossStyle = v }
+        UiSlider { label: "Tamanho da mira"; from: 8; to: 60; value: Settings.overlayCrossSize; suffix: " px"; onMoved: v => Settings.overlayCrossSize = Math.round(v) }
+        ColorField { label: "Cor da mira"; value: Settings.overlayCrossColor; onPicked: c => Settings.overlayCrossColor = c.toString() }
+        UiSlider { label: "Tamanho da imagem flutuante"; from: 10; to: 150; value: Settings.overlayImageScale; suffix: " %"; onMoved: v => Settings.overlayImageScale = Math.round(v) }
     }
 }

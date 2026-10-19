@@ -105,14 +105,14 @@ Column {
                     model: 3
                     delegate: Rectangle {
                         required property int index
-                        readonly property string pic: (Array.isArray(Settings.wpCollage) ? Settings.wpCollage : [])[index] ?? ""
+                        readonly property string pic: (Settings.list(Settings.wpCollage))[index] ?? ""
                         width: 120; height: 72; radius: 10; color: Theme.track; clip: true; border.width: 1; border.color: Theme.border
                         Image { anchors.fill: parent; anchors.margins: 1; visible: parent.pic !== ""; source: parent.pic ? Wallpaper.stillUrl(parent.pic) : ""; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(240, 144); asynchronous: true }
                         UiIcon { visible: parent.pic === ""; anchors.centerIn: parent; name: "plus"; size: 18; color: Theme.muted }
                         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
                             onClicked: m => {
                                 const i = parent.index
-                                const put = p => { const l = (Array.isArray(Settings.wpCollage) ? Settings.wpCollage : []).slice(); while (l.length <= i) l.push(""); l[i] = p; Settings.wpCollage = l }
+                                const put = p => { const l = (Settings.list(Settings.wpCollage)).slice(); while (l.length <= i) l.push(""); l[i] = p; Settings.wpCollage = l }
                                 if (m.button === Qt.RightButton) put(""); else Pick.image("Imagem do mosaico", put)
                             } }
                     }

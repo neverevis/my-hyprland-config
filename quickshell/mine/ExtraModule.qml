@@ -121,10 +121,11 @@ Item {
     Component { id: cafC; Chip { icon: "coffee"; hot: Idle.paused; onClicked: Idle.paused = !Idle.paused } }
     // utilidades: capturar uma area, pegar uma cor, microfone (mudo)
     Component { id: utilsC; Grid {
+        id: ug
         columns: root.vertical ? 1 : 3
         spacing: root.vertical ? 8 : 12
         readonly property var mic: Pipewire.defaultAudioSource
-        PwObjectTracker { objects: [parent.mic] }
+        PwObjectTracker { objects: [ug.mic] }
         Chip { icon: "frame"; onClicked: Actions.run("shot") }
         Chip { icon: "palette"; onClicked: Actions.run("picker") }
         Chip { icon: parent.mic && parent.mic.audio && parent.mic.audio.muted ? "micOff" : "mic"; hot: !!(parent.mic && parent.mic.audio && !parent.mic.audio.muted)

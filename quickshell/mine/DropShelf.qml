@@ -15,7 +15,7 @@ Scope {
         function open(): void { root.open = true }
         function close(): void { root.open = false }
     }
-    readonly property var files: Array.isArray(Settings.shelfFiles) ? Settings.shelfFiles : []
+    readonly property var files: Settings.list(Settings.shelfFiles)
     function add(urls) {
         const l = files.slice()
         for (const u of urls) { const p = decodeURIComponent(String(u).replace(/^file:\/\//, "")); if (p && l.indexOf(p) < 0) l.push(p) }

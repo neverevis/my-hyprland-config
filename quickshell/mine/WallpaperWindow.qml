@@ -294,7 +294,7 @@ Variants {
                     "2x2": [[0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5], [0, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5]]
                 })[Settings.wpCollageLayout] ?? [[0, 0, 0.5, 1], [0.5, 0, 0.5, 1]]
                 readonly property var pics: {
-                    const chosen = (Array.isArray(Settings.wpCollage) ? Settings.wpCollage : []).filter(x => x)
+                    const chosen = (Settings.list(Settings.wpCollage)).filter(x => x)
                     const out = [Wallpaper.current].concat(chosen)
                     let i = Wallpaper.indexOfCurrent()
                     while (out.length < boxes.length && Wallpaper.files.length > 1) { i = (i + 1) % Wallpaper.files.length; out.push(Wallpaper.files[i].path) }
