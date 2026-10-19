@@ -1,5 +1,7 @@
 // Wallpaper por tras de tudo (uma janela por tela, camada Background) com transicoes em QML:
-// fade, slide (deslizar), wipe (cortina), circle (circulo que cresce do centro), zoom, none.
+// fade, slide (deslizar), wipe (cortina), circle (circulo que cresce do centro), zoom, none e, com shader (shaders/*.frag),
+// dissolve (dissolver com borda acesa), pixelate, ripple (ondas), blinds (persianas) e swirl (redemoinho).
+// Os shaders recebem as duas imagens como texturas fixas (ShaderEffectSource sem "live": tiradas uma vez por troca).
 import Quickshell
 import Quickshell.Wayland
 import QtQuick
@@ -23,6 +25,7 @@ Variants {
         property string incoming: ""    // imagem entrando (durante a transicao)
         property string trans: "fade"
         property real progress: 0
+        readonly property bool isShader: Wallpaper.shaderTransitions.indexOf(trans) >= 0
 
         readonly property string target: Wallpaper.current
         readonly property int diag: Math.ceil(Math.hypot(width, height))
@@ -65,6 +68,7 @@ Variants {
             easing.type: Easing.BezierSpline
             easing.bezierCurve: Wallpaper.curve
             onRunningChanged: Wallpaper.busy = running
+            onStarted: if (win.isShader) { fromTex.scheduleUpdate(); toTex.scheduleUpdate(); fx.seed = Math.random() * 10 }
             // a de baixo carrega em segundo plano; a camada nova so some quando ela estiver pronta (sem decodificar na hora e travar)
             onFinished: { win.shown = win.incoming; win.settle() }
         }
@@ -138,7 +142,7 @@ Variants {
             // slide: entra pela direita
             width: win.width
             x: win.trans === "slide" ? (1 - win.progress) * win.width : 0
-            opacity: win.trans === "fade" || win.trans === "zoom" ? win.progress : 1
+            opacity: win.isShader ? 0 : (win.trans === "fade" || win.trans === "zoom" ? win.progress : 1)
             scale: win.trans === "zoom" ? 1.1 - 0.1 * win.progress : 1
 
             Item { id: plainNew; width: win.width; height: win.height; visible: win.trans !== "circle" && win.trans !== "wipe" }
@@ -183,6 +187,23 @@ Variants {
                 y: win.height / 2 - d / 2
                 color: "white"
             }
+        }
+
+        // ---- transicoes com shader: as duas imagens viram texturas e o shader mistura ----
+        ShaderEffectSource { id: fromTex; sourceItem: baseImg; live: false; hideSource: false; x: -4; width: 1; height: 1 }
+        ShaderEffectSource { id: toTex; sourceItem: newImg; live: false; hideSource: false; x: -4; width: 1; height: 1 }
+        ShaderEffect {
+            id: fx
+            visible: win.isShader && win.incoming !== ""
+            width: win.width; height: win.height
+            property var source: fromTex   // o shader padrao (sem fragmentShader) procura "source"
+            property var src1: fromTex
+            property var src2: toTex
+            property real progress: win.progress
+            property real aspect: width / Math.max(1, height)
+            property real seed: 0
+            property color glow: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, 0.9)
+            fragmentShader: win.isShader ? Qt.resolvedUrl("shaders/" + win.trans + ".frag.qsb") : ""
         }
     }
 }

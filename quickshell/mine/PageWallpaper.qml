@@ -40,12 +40,14 @@ Column {
     Card {
         icon: "transition"
         title: "Transição"
-        subtitle: "A animação ao trocar de wallpaper."
+        subtitle: "A animação ao trocar de wallpaper. Dissolver, Pixelar, Ondas, Persianas e Redemoinho são shaders (a borda acesa usa a cor de destaque)."
         Flow {
             width: parent.width
             spacing: 6
             Repeater {
-                model: [["fade", "Fade"], ["slide", "Deslizar"], ["wipe", "Cortina"], ["circle", "Círculo"], ["zoom", "Zoom"], ["random", "Aleatória"], ["none", "Nenhuma"]]
+                model: [["fade", "Fade"], ["slide", "Deslizar"], ["wipe", "Cortina"], ["circle", "Círculo"], ["zoom", "Zoom"],
+                        ["dissolve", "Dissolver"], ["pixelate", "Pixelar"], ["ripple", "Ondas"], ["blinds", "Persianas"], ["swirl", "Redemoinho"],
+                        ["random", "Aleatória"], ["none", "Nenhuma"]]
                 delegate: UiButton {
                     required property var modelData
                     text: modelData[1]

@@ -22,7 +22,8 @@ Singleton {
     })
     readonly property var curve: Settings.animOf("wallpaper").curve
     readonly property int duration: Settings.animOf("wallpaper").duration
-    readonly property var transitions: ["fade", "slide", "wipe", "circle", "zoom"]
+    readonly property var shaderTransitions: ["dissolve", "pixelate", "ripple", "blinds", "swirl"]
+    readonly property var transitions: ["fade", "slide", "wipe", "circle", "zoom"].concat(shaderTransitions)
 
     // tipo de transicao a usar agora (resolve "random")
     function pickTransition(): string {
