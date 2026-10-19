@@ -101,6 +101,8 @@ Singleton {
     property alias homeOffset: adapter.homeOffset
     property alias homeFillet: adapter.homeFillet
     property alias homeRadius: adapter.homeRadius
+    property alias homeToggles: adapter.homeToggles             // botoes rapidos do Inicio (ids do Toggles.qml), na ordem
+    property alias homeTodo: adapter.homeTodo                   // tarefas da aba Agenda
     property bool homeOpen: false                               // painel aberto (nao e salvo)
     // ---- notificacoes (ver Notifications.qml) ----
     property alias notifOn: adapter.notifOn                     // o Quickshell e o servidor de notificacoes
@@ -580,6 +582,8 @@ Singleton {
             property int homeOffset: 0
             property int homeFillet: 13
             property int homeRadius: 14
+            property var homeToggles: ["wifi", "bt", "dnd", "profile", "dark", "glass"]
+            property var homeTodo: []
             property bool notifOn: true
             property string notifSide: "right"
             property string notifAnchor: "start"

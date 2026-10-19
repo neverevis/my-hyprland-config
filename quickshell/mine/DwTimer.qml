@@ -14,6 +14,7 @@ Item {
     property bool bare: false
     readonly property var me: ({ id: wid, type: "timer", opts: opts })
     function o(k) { return DeskState.opt(me, k) }
+    onMeChanged: if (wid !== "" && !DeskState.find(wid)) Timers.register(wid, me)
 
     readonly property var s: (Timers.st, Timers.get(wid))
     readonly property real el: (Timers.now, Timers.elapsed(wid))

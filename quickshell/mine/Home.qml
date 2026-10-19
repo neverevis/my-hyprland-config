@@ -20,6 +20,8 @@ Scope {
     readonly property var tabs: [
         { id: "home", label: "Início", icon: "home" },
         { id: "media", label: "Mídia", icon: "music" },
+        { id: "notifs", label: "Notificações", icon: "bell" },
+        { id: "agenda", label: "Agenda", icon: "calendar" },
         { id: "audio", label: "Áudio", icon: "volume" },
         { id: "system", label: "Sistema", icon: "chip" },
         { id: "net", label: "Conexão", icon: "wifi" },
@@ -273,7 +275,7 @@ Scope {
                         Loader {
                             id: pageL
                             anchors { left: rail.right; leftMargin: 12; right: parent.right; rightMargin: 12; top: header.bottom; topMargin: 10; bottom: parent.bottom; bottomMargin: 12 }
-                            sourceComponent: ({ home: pHome, media: pMedia, audio: pAudio, system: pSystem, net: pNet, bt: pBt })[root.tab] ?? pHome
+                            sourceComponent: ({ home: pHome, media: pMedia, notifs: pNotifs, agenda: pAgenda, audio: pAudio, system: pSystem, net: pNet, bt: pBt })[root.tab] ?? pHome
                             opacity: 0
                             onLoaded: fadeIn.restart()
                             NumberAnimation { id: fadeIn; target: pageL; property: "opacity"; from: 0; to: 1; duration: 180; easing.type: Easing.OutCubic }
@@ -284,6 +286,8 @@ Scope {
                         Component { id: pSystem; HomeSystem { home: root } }
                         Component { id: pNet; HomeNet { home: root } }
                         Component { id: pBt; HomeBt { home: root } }
+                        Component { id: pNotifs; HomeNotifs { home: root } }
+                        Component { id: pAgenda; HomeAgenda { home: root } }
                     }
                 }
             }

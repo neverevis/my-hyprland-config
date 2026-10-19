@@ -16,7 +16,7 @@ Item {
 
     readonly property var items: opts.items ?? []
     readonly property int doneCount: items.filter(i => i.done).length
-    function save(list) { if (wid !== "") DeskState.setOpt(wid, "items", list) }
+    function save(list) { if (wid === "@home") Settings.homeTodo = list; else if (wid !== "") DeskState.setOpt(wid, "items", list) }
     function add(t) { t = t.trim(); if (t) save(items.concat([{ text: t, done: false }])) }
     function toggle(i) { const l = JSON.parse(JSON.stringify(items)); l[i].done = !l[i].done; save(l) }
     function del(i) { const l = items.slice(); l.splice(i, 1); save(l) }

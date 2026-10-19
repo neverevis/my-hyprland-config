@@ -52,15 +52,26 @@ Item {
         }
     }
 
-    // ---------- atalhos ----------
+    // ---------- botoes rapidos (Settings.homeToggles; os de Wi-Fi, Bluetooth e energia sao daqui, os outros do Toggles.qml) ----------
     Grid {
         id: tiles
         anchors { top: userCard.bottom; topMargin: 10 }
         width: parent.width
         columns: 3; spacing: 8
         readonly property real tw: (width - 16) / 3
+        Repeater {
+            model: (Settings.homeToggles || []).filter(id => Toggles.find(id)).slice(0, 9)
+            delegate: Loader {
+                required property var modelData
+                width: tiles.tw; height: 58
+                sourceComponent: modelData === "wifi" ? wifiT : modelData === "bt" ? btT : modelData === "profile" ? profT : genT
+                property string tid: modelData
+            }
+        }
+    }
+    Component {
+        id: wifiT
         HomeTile {
-            width: tiles.tw; height: 58
             readonly property bool hasWifi: !!pg.home.wifiDev
             readonly property bool wired: !!pg.home.wiredDev && pg.home.wiredDev.connected
             icon: hasWifi ? (Networking.wifiEnabled ? "wifi" : "wifiOff") : (wired ? "ethernet" : "wifiOff")
@@ -71,8 +82,10 @@ Item {
             onClicked: { if (hasWifi) Networking.wifiEnabled = !Networking.wifiEnabled; else pg.home.tab = "net" }
             onMoreClicked: pg.home.tab = "net"
         }
+    }
+    Component {
+        id: btT
         HomeTile {
-            width: tiles.tw; height: 58
             icon: pg.home.bt && pg.home.bt.enabled ? "bluetooth" : "btOff"
             label: "Bluetooth"
             sub: !pg.home.bt ? "Sem adaptador" : (!pg.home.bt.enabled ? "Desligado" : (pg.home.btConnected.length > 0 ? pg.home.btConnected[0].name : "Ligado"))
@@ -81,37 +94,26 @@ Item {
             onClicked: if (pg.home.bt) pg.home.bt.enabled = !pg.home.bt.enabled
             onMoreClicked: pg.home.tab = "bt"
         }
+    }
+    Component {
+        id: profT
         HomeTile {
-            width: tiles.tw; height: 58
-            icon: Settings.notifDnd ? "bellSleep" : "bell"
-            label: "Não perturbe"
-            sub: Settings.notifDnd ? "Ligado" : "Desligado"
-            on: Settings.notifDnd
-            onClicked: Settings.notifDnd = !Settings.notifDnd
-        }
-        HomeTile {
-            width: tiles.tw; height: 58
             icon: pg.home.profile === "performance" ? "rocket" : (pg.home.profile === "power-saver" ? "leaf" : "balance")
             label: "Energia"
             sub: pg.home.profileNames[pg.home.profile] ?? pg.home.profile
             on: pg.home.profile !== "balanced"
             onClicked: pg.home.cycleProfile()
         }
+    }
+    Component {
+        id: genT
         HomeTile {
-            width: tiles.tw; height: 58
-            icon: Settings.themeModeEff === "dark" ? "night" : "sun"
-            label: "Modo escuro"
-            sub: Settings.themeMode === "auto" ? "Automático" : (Settings.themeModeEff === "dark" ? "Ligado" : "Desligado")
-            on: Settings.themeModeEff === "dark"
-            onClicked: Settings.themeMode = Settings.themeModeEff === "dark" ? "light" : "dark"
-        }
-        HomeTile {
-            width: tiles.tw; height: 58
-            icon: "glass"
-            label: "Vidro"
-            sub: Settings.glass ? Settings.glassOpacity + "% de opacidade" : "Desligado"
-            on: Settings.glass
-            onClicked: Settings.glass = !Settings.glass
+            readonly property var t: Toggles.find(parent.tid)
+            icon: t ? t.icon : "cog"
+            label: t ? t.label : ""
+            sub: t ? (Recorder.elapsed, Idle.paused, Settings.notifDnd, Toggles.gameMode, t.sub()) : ""
+            on: t ? (Recorder.active, Idle.paused, Settings.notifDnd, Settings.desktopOn, Toggles.gameMode, Osd.micMuted, t.on()) : false
+            onClicked: if (t) t.click()
         }
     }
 

@@ -14,6 +14,10 @@ Singleton {
     property real now: Date.now()
     Timer { interval: 250; repeat: true; running: Object.keys(root.st).some(k => root.st[k].running); onTriggered: { root.now = Date.now(); root.check() } }
 
+    // timers que nao sao widgets da area de trabalho (ex.: o do Inicio) se registram aqui: id -> objeto com type e opts
+    property var reg: ({})
+    function register(id, w) { const r = Object.assign({}, reg); r[id] = w; reg = r }
+    function lookup(id) { return DeskState.find(id) ?? reg[id] ?? null }
     function get(id) { return st[id] ?? { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 } }
     function put(id, v) { const c = Object.assign({}, st); c[id] = v; st = c }
     function elapsed(id) { const s = get(id); return s.base + (s.running ? now - s.startedAt : 0) }
@@ -27,7 +31,7 @@ Singleton {
     function start(id) { const s = Object.assign({}, get(id)); if (s.running) return; s.running = true; s.startedAt = Date.now(); now = s.startedAt; put(id, s) }
     function pause(id) { const s = Object.assign({}, get(id)); if (!s.running) return; s.base += Date.now() - s.startedAt; s.running = false; put(id, s) }
     function reset(id) { put(id, { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 }) }
-    function skip(id) { const w = DeskState.find(id); if (w) advance(w, false) }
+    function skip(id) { const w = lookup(id); if (w) advance(w, false) }
     function advance(w, ring) {
         const s = Object.assign({}, get(w.id)), m = DeskState.opt(w, "mode")
         if (ring && DeskState.opt(w, "notify")) {
@@ -45,7 +49,7 @@ Singleton {
         for (const id in st) {
             const s = st[id]
             if (!s.running) continue
-            const w = DeskState.find(id)
+            const w = lookup(id)
             if (!w) continue
             const t = total(w)
             if (t > 0 && elapsed(id) >= t) advance(w, true)
