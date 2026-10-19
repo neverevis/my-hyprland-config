@@ -53,6 +53,7 @@ ShellRoot {
     PowerMenu {}
     PhotoEditor {}
     PickWindow {}
+    PolkitWindow {}
     LockScreen {}
     DesktopLayer { geo: shell.geo }
 

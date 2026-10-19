@@ -78,7 +78,9 @@ Singleton {
     property alias idleLock: adapter.idleLock
     property alias idleScreenOff: adapter.idleScreenOff
     property alias idleSuspend: adapter.idleSuspend
-    property alias idleMedia: adapter.idleMedia     // segundos de contagem antes de sair/reiniciar/desligar (0 = na hora)
+    property alias idleMedia: adapter.idleMedia
+    property alias polkitOn: adapter.polkitOn             // o shell e o agente de polkit (pedidos de senha de administrador)
+    property bool polkitRegistered: false                 // conseguiu registrar (falha se outro agente ja estiver rodando)     // segundos de contagem antes de sair/reiniciar/desligar (0 = na hora)
     property alias showDelay: adapter.showDelay         // ms com o mouse na borda antes de mostrar (evita abrir sem querer)
     property alias barsPanelMode: adapter.barsPanelMode // push | out | sink: o que as barras fazem quando um painel acoplado abre
     readonly property var animCurve: [animX1 / 100, animY1 / 100, animX2 / 100, animY2 / 100, 1, 1]
@@ -562,6 +564,7 @@ Singleton {
             property int idleScreenOff: 0
             property int idleSuspend: 0
             property bool idleMedia: true
+            property bool polkitOn: false
             property string barsPanelMode: "push"
             property string wpDir: "~/Imagens/Wallpapers"
             property string wallpaper: ""

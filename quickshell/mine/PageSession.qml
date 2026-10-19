@@ -52,6 +52,19 @@ Column {
     }
 
     Card {
+        icon: "lock"
+        title: "Senha de administrador (polkit)"
+        subtitle: "Quando um programa pede permissão de administrador (montar disco, instalar, mudar o sistema), o pedido aparece num cartão do shell."
+        UiSwitch { label: "Usar o shell para os pedidos de senha"; checked: Settings.polkitOn; onToggled: on => Settings.polkitOn = on }
+        Text {
+            visible: Settings.polkitOn
+            width: parent.width; wrapMode: Text.WordWrap; font.pixelSize: 12
+            color: Settings.polkitRegistered ? Theme.accent : Theme.danger
+            text: Settings.polkitRegistered ? "Ativo: os pedidos vão aparecer aqui." : "Não deu para registrar: outro agente (provavelmente o polkit-gnome, iniciado no hyprland/execs.lua) já está rodando. Tire ele do autostart e reinicie a sessão."
+        }
+    }
+
+    Card {
         icon: "power"
         title: "Menu de energia"
         subtitle: "Ctrl + Alt + Del, o botão no Início ou o módulo \"Energia\" nas barras."
