@@ -29,7 +29,11 @@ Singleton {
         lightning: 0xF140B, sleep: 0xF0904, logout: 0xF0343, restart: 0xF0709, desktop: 0xF0AAB, router: 0xF0469, devices: 0xF0FB0,
         folderPlain: 0xF024B, folderImage: 0xF024F, folderHome: 0xF10B5, download: 0xF01DA, arrowLeft: 0xF004D, search: 0xF0349,
         sortName: 0xF05BD, sortTime: 0xF154B, folderOpen: 0xF0770, camera: 0xF0100, eyeOff: 0xF0209, arrowRight: 0xF0054, caps: 0xF030E, unlock: 0xF0FC6, accountEdit: 0xF06BC,
-        chevUp: 0xF0143, chevDown: 0xF0140, window: 0xF05B2, wave: 0xF095B, moon: 0xF0F65, sparkle: 0xF1545, tag: 0xF04F9, compose: 0xF0B5D
+        wSun: 0xF0599, wNight: 0xF0594, wPartly: 0xF0595, wNightPartly: 0xF0F31, wCloudy: 0xF0590, wFog: 0xF0591, wRain: 0xF0597, wPour: 0xF0596,
+        wSnow: 0xF0598, wStorm: 0xF0593, wWind: 0xF059D, wHail: 0xF0592, humidity: 0xF058E, sunrise: 0xF059C, sunset: 0xF059B, umbrella: 0xF054A, mapMarker: 0xF034E,
+        stopwatch: 0xF051F, bellRing: 0xF009E, coffee: 0xF0176, target: 0xF04FE, textBox: 0xF09ED, flower: 0xF024A, disc: 0xF0025, quote: 0xF0757, earth: 0xF01E7,
+        listCheck: 0xF0C51, checkbox: 0xF0135, checkboxEmpty: 0xF0131, gpuCard: 0xF08AE, network: 0xF06F3, temperature: 0xF050F, lockOpen: 0xF0FC6, menu: 0xF035C,
+        chevUp: 0xF0143, chevDown: 0xF0140, window: 0xF05B2, wave: 0xF095B, moon: 0xF0F65, sparkle: 0xF1545, tag: 0xF04F9, compose: 0xF0284
     })
     function g(name: string): string { const c = map[name]; return c ? String.fromCodePoint(c) : "" }
 }

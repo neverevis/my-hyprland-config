@@ -1,7 +1,6 @@
-// Widgets da area de trabalho: uma camada acima do wallpaper e abaixo das janelas (so na tela principal).
-// Clique direito num widget (ou "Editar" nas configuracoes) liga o modo de edicao: arrastar com encaixe na grade e guias
-// de centro, trocar o tamanho, remover. Clique fora termina. Cada widget anima posicao, tamanho e cantos: ao aplicar
-// um preset, eles deslizam e mudam de forma ate o novo lugar.
+// Area de trabalho: uma camada acima do wallpaper e abaixo das janelas (so na tela principal), com os widgets (DeskView),
+// o menu de clique direito (DeskMenu: adicionar widget no ponto clicado, editar, wallpaper, presets...) e, editando,
+// a grade, as guias e o inspetor (opcoes do widget escolhido, as mesmas da pagina Widgets).
 import Quickshell
 import Quickshell.Wayland
 import QtQuick
@@ -13,57 +12,54 @@ Scope {
     PanelWindow {
         id: win
         screen: Quickshell.screens[0]
-        visible: Settings.desktopOn
+        visible: Settings.desktopOn || Settings.desktopMenu
         anchors { left: true; right: true; top: true; bottom: true }
         exclusionMode: ExclusionMode.Ignore
         color: "transparent"
         WlrLayershell.layer: DeskState.peek ? WlrLayer.Top : WlrLayer.Bottom
         WlrLayershell.namespace: "mine-desktop"   // regra do Hyprland: blur atras dos cartoes, sem animacao propria
-        WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
-        // so os widgets pegam o mouse (fora deles, o clique vai para a area de trabalho); editando, a tela toda
-        mask: DeskState.editing ? null : wmask
+        WlrLayershell.keyboardFocus: DeskState.editing || DeskMenu.open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+        // com o menu ligado, a camada pega a area de trabalho inteira (ela fica abaixo das janelas: so recebe o que
+        // cai no fundo); sem menu, so os widgets
+        mask: DeskState.editing || Settings.desktopMenu ? null : wmask
         Region { id: wmask }
         Component { id: regC; Region {} }
         property var regs: []
         function rebuildMask() {
             for (const r of regs) r.destroy()
             const out = []
-            for (let i = 0; i < hitRep.count; i++) { const it = hitRep.itemAt(i); if (it) out.push(regC.createObject(wmask, { item: it })) }
+            for (let i = 0; i < view.count; i++) { const it = view.itemAt(i); if (it) out.push(regC.createObject(wmask, { item: it })) }
             regs = out
             wmask.regions = out
         }
 
-        readonly property var anim: Settings.animOf("desktop")
         // area livre: a tela menos o espaco reservado pelas barras/moldura, com margem
         readonly property real m: 22
         readonly property var z: root.geo && root.geo.zone ? root.geo.zone : ({})
         readonly property rect area: Qt.rect((z.left ?? 0) + m, (z.top ?? 0) + m,
             width - (z.left ?? 0) - (z.right ?? 0) - 2 * m, height - (z.top ?? 0) - (z.bottom ?? 0) - 2 * m)
+        onAreaChanged: DeskState.area = area
+        onWidthChanged: DeskState.screenSize = Qt.size(width, height)
+        onHeightChanged: DeskState.screenSize = Qt.size(width, height)
+        Component.onCompleted: { DeskState.area = area; DeskState.screenSize = Qt.size(width, height) }
 
-        // lista estavel de ids: quem continua no layout nao e recriado (assim pode animar ate o novo lugar)
-        ListModel { id: slots }
-        function sync() {
-            const ids = (Settings.desktopWidgets || []).map(w => w.id)
-            for (let i = slots.count - 1; i >= 0; i--) if (!ids.includes(slots.get(i).wid)) slots.remove(i)
-            const have = []
-            for (let i = 0; i < slots.count; i++) have.push(slots.get(i).wid)
-            for (const id of ids) if (!have.includes(id)) slots.append({ wid: id })
-        }
-        Connections { target: Settings; function onDesktopWidgetsChanged() { win.sync() } }
-        Component.onCompleted: sync()
-
-        // fora dos widgets, editando: clique termina a edicao
+        // fundo: clique direito abre o menu; clique esquerdo fecha menu/inspetor/edicao
         MouseArea {
             anchors.fill: parent
-            enabled: DeskState.editing
-            onClicked: DeskState.editing = false
+            acceptedButtons: Qt.LeftButton | Qt.RightButton
+            onClicked: m => {
+                if (m.button === Qt.RightButton) { DeskMenu.show(m.x, m.y, ""); return }
+                if (DeskMenu.open) { DeskMenu.close(); return }
+                if (DeskState.selected !== "") { DeskState.selected = ""; return }
+                DeskState.editing = false
+            }
         }
 
         // grade de pontos (so editando)
         Canvas {
             id: grid
             anchors.fill: parent
-            opacity: DeskState.editing ? 1 : 0
+            opacity: DeskState.editing && Settings.desktopSnap ? 1 : 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: 220 } }
             readonly property var deps: [win.area, Theme.text]
@@ -76,176 +72,219 @@ Scope {
                     for (let y = a.y; y <= a.y + a.height; y += st) c.fillRect(x - 1, y - 1, 2, 2)
             }
         }
-        // guias de centro (aparecem quando o widget arrastado encaixa no meio)
         property bool guideX: false
         property bool guideY: false
         Rectangle { visible: win.guideX && DeskState.dragging !== ""; x: win.area.x + win.area.width / 2 - 1; y: win.area.y; width: 2; height: win.area.height; color: Theme.accent; opacity: 0.8 }
         Rectangle { visible: win.guideY && DeskState.dragging !== ""; x: win.area.x; y: win.area.y + win.area.height / 2 - 1; width: win.area.width; height: 2; color: Theme.accent; opacity: 0.8 }
 
-        // area que pega o mouse fora da edicao: os retangulos dos widgets
-        Item {
-            id: hits
+        DeskView {
+            id: view
             anchors.fill: parent
-            Repeater {
-                id: hitRep
-                model: rep.count
-                onCountChanged: Qt.callLater(win.rebuildMask)
-                delegate: Item {
-                    required property int index
-                    readonly property Item src: rep.itemAt(index)
-                    x: src ? src.x : 0; y: src ? src.y : 0
-                    width: src ? src.width : 0; height: src ? src.height : 0
+            visible: Settings.desktopOn
+            area: win.area
+            editable: true
+            onCountChanged: Qt.callLater(win.rebuildMask)
+            onGuides: (gx, gy) => { win.guideX = gx; win.guideY = gy }
+        }
+
+        // ---- inspetor: opcoes do widget escolhido ----
+        Rectangle {
+            id: insp
+            readonly property var w: { Settings.desktopWidgets; return DeskState.find(DeskState.selected) }
+            readonly property var info: w ? DeskState.info(w.type) : null
+            readonly property Item target: { for (let i = 0; i < view.count; i++) { const it = view.itemAt(i); if (it && it.wid === DeskState.selected) return it } return null }
+            readonly property bool onRight: !target || target.x + target.width / 2 < win.width / 2
+            visible: opacity > 0
+            opacity: DeskState.editing && !!w ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: 180 } }
+            width: 380
+            height: Math.min(win.area.height, inspCol.implicitHeight + 32)
+            x: onRight ? win.area.x + win.area.width - width : win.area.x
+            y: win.area.y + (win.area.height - height) / 2
+            Behavior on x { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
+            radius: 20
+            color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.97)
+            border.width: 1; border.color: Theme.border
+            MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons; onWheel: e => { const f = inspFlick; f.contentY = Math.max(0, Math.min(Math.max(0, f.contentHeight - f.height), f.contentY - e.angleDelta.y)) } }
+            Flickable {
+                id: inspFlick
+                anchors { fill: parent; margins: 16 }
+                contentHeight: inspCol.implicitHeight
+                clip: true
+                interactive: false
+                Column {
+                    id: inspCol
+                    width: inspFlick.width
+                    spacing: 14
+                    Row {
+                        width: parent.width
+                        spacing: 10
+                        Rectangle { width: 36; height: 36; radius: 11; color: Theme.tint(0.18)
+                            UiIcon { anchors.centerIn: parent; name: insp.info ? insp.info.icon : "dashboard"; size: 18; color: Theme.accent } }
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            width: parent.width - 36 - 10 - 34
+                            Text { text: insp.info ? insp.info.name : ""; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
+                            Text { width: parent.width; elide: Text.ElideRight; text: insp.info ? insp.info.desc : ""; color: Theme.muted; font.pixelSize: 11 }
+                        }
+                        UiButton { icon: "close"; kind: "ghost"; onClicked: DeskState.selected = "" }
+                    }
+                    // tamanho
+                    Column {
+                        width: parent.width
+                        spacing: 6
+                        Text { text: "Tamanho"; color: Theme.text; font.pixelSize: 13 }
+                        Flow {
+                            width: parent.width
+                            spacing: 4
+                            Repeater {
+                                model: insp.info ? insp.info.sizes : []
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    readonly property bool on: insp.w && insp.w.cols === modelData[0] && insp.w.rows === modelData[1]
+                                    height: 28; width: 46; radius: 8
+                                    color: on ? Theme.accent : (sm.containsMouse ? Theme.cardHi : Theme.track)
+                                    border.width: 1; border.color: on ? Theme.accent : Theme.border
+                                    Text { anchors.centerIn: parent; text: modelData[0] + "×" + modelData[1]; color: parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
+                                    MouseArea { id: sm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.setSize(insp.w.id, modelData[0], modelData[1]) }
+                                }
+                            }
+                            // tamanho livre: colunas e linhas
+                            Repeater {
+                                model: [["cols", "Larg."], ["rows", "Alt."]]
+                                delegate: Row {
+                                    required property var modelData
+                                    spacing: 2
+                                    Text { text: modelData[1]; color: Theme.muted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter; rightPadding: 2; leftPadding: 6 }
+                                    Repeater {
+                                        model: [-1, 1]
+                                        delegate: Rectangle {
+                                            required property var modelData
+                                            readonly property string k: parent.modelData[0]
+                                            width: 24; height: 28; radius: 7
+                                            color: pm.containsMouse ? Theme.cardHi : Theme.track; border.width: 1; border.color: Theme.border
+                                            UiIcon { anchors.centerIn: parent; name: parent.modelData < 0 ? "minus" : "plus"; size: 12; color: Theme.text }
+                                            MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                                onClicked: { const w = insp.w; if (parent.k === "cols") DeskState.setSize(w.id, w.cols + parent.modelData, w.rows); else DeskState.setSize(w.id, w.cols, w.rows + parent.modelData) } }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    OptionsForm {
+                        width: parent.width
+                        compact: true
+                        schema: insp.w ? DeskState.optionsOf(insp.w.type) : []
+                        get: k => insp.w ? DeskState.opt(insp.w, k) : undefined
+                        set: (k, v) => DeskState.setOpt(insp.w.id, k, v)
+                        isShown: d => insp.w ? DeskState.shown(insp.w, d) : false
+                    }
+                    Flow {
+                        width: parent.width
+                        spacing: 6
+                        UiButton { icon: "cards"; text: "Duplicar"; kind: "ghost"; onClicked: DeskState.duplicate(insp.w.id) }
+                        UiButton { icon: "layers"; text: "Para a frente"; kind: "ghost"; onClicked: DeskState.bringToFront(insp.w.id) }
+                        UiButton { icon: "trash"; text: "Remover"; kind: "danger"; onClicked: DeskState.remove(insp.w.id) }
+                    }
                 }
             }
         }
 
-        Repeater {
-            id: rep
-            model: slots
-            delegate: Item {
-                id: card
-                required property string wid
-                required property int index
-                readonly property var w: { Settings.desktopWidgets; return DeskState.find(wid) }
-                readonly property var info: w ? DeskState.info(w.type) : null
-                readonly property real tw: w ? DeskState.px(w.cols) : 150
-                readonly property real th: w ? DeskState.px(w.rows) : 150
-                // posicao alvo (vinda das configuracoes) + deslocamento durante o arrasto
-                readonly property real bx: win.area.x + (w ? w.fx : 0) * Math.max(0, win.area.width - tw)
-                readonly property real by: win.area.y + (w ? w.fy : 0) * Math.max(0, win.area.height - th)
-                property real ox: 0
-                property real oy: 0
-                property bool moving: false
-                x: bx + ox; y: by + oy
-                width: tw; height: th
-                z: (Settings.desktopWidgets || []).findIndex(x => x.id === wid) + (moving ? 100 : 0)
-                Behavior on x { enabled: !card.moving; MotionAnim { use: "desktop" } }
-                Behavior on y { enabled: !card.moving; MotionAnim { use: "desktop" } }
-                Behavior on width { MotionAnim { use: "desktop" } }
-                Behavior on height { MotionAnim { use: "desktop" } }
-                // entrada: cresce e aparece
-                property real born: 0
-                Component.onCompleted: born = 1
-                Behavior on born { NumberAnimation { duration: win.anim.duration + 120; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
-                opacity: Math.min(1, born)
-                scale: (0.85 + 0.15 * born) * (moving ? 1.03 : 1)
-                Behavior on scale { enabled: card.born >= 1; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-
-                // cartao
-                Rectangle {
-                    id: bg
-                    anchors.fill: parent
-                    radius: Math.min(30, Math.min(width, height) * 0.2)
-                    color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.desktopCard / 100)
-                    border.width: 1
-                    border.color: Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.6)
-                    clip: true
-                    Behavior on radius { MotionAnim { use: "desktop" } }
-                    Loader {
-                        id: content
-                        anchors.fill: parent
-                        anchors.margins: 18
-                        sourceComponent: ({ clock: clockC, media: mediaC, system: systemC, calendar: calendarC, user: userC, notes: notesC })[card.w ? card.w.type : ""] ?? null
-                        onLoaded: card.feed()
-                    }
+        // ---- menu de clique direito ----
+        Item {
+            id: menu
+            anchors.fill: parent
+            visible: DeskMenu.open
+            readonly property var w: DeskMenu.wid !== "" ? DeskState.find(DeskMenu.wid) : null
+            readonly property var items: {
+                const out = []
+                if (w) {
+                    const nm = DeskState.info(w.type).name
+                    out.push({ icon: "tune", label: "Opções de " + nm.toLowerCase(), act: () => { DeskState.editing = true; DeskState.selected = w.id } })
+                    out.push({ icon: "cards", label: "Duplicar", act: () => DeskState.duplicate(w.id) })
+                    out.push({ icon: "trash", label: "Remover", danger: true, act: () => DeskState.remove(w.id) })
+                    out.push({ sep: true })
                 }
-                function feed() {
-                    if (!content.item || !w) return
-                    content.item.cols = w.cols; content.item.rows = w.rows; content.item.opts = w.opts || {}
-                    if (content.item.wid !== undefined) content.item.wid = wid
-                }
-                onWChanged: feed()
-
-                // fora da edicao: clique direito liga o modo de edicao
-                MouseArea {
-                    anchors.fill: parent
-                    enabled: !DeskState.editing
-                    acceptedButtons: Qt.RightButton
-                    onClicked: DeskState.editing = true
-                }
-
-                // ---- edicao ----
-                Rectangle {
-                    anchors.fill: parent
-                    anchors.margins: -3
-                    radius: bg.radius + 3
-                    color: card.moving ? Theme.tint(0.1) : "transparent"
-                    border.width: 2
-                    border.color: Theme.accent
-                    opacity: DeskState.editing ? (dragArea.containsMouse || card.moving ? 1 : 0.55) : 0
-                    visible: opacity > 0
-                    Behavior on opacity { NumberAnimation { duration: 160 } }
-                }
-                MouseArea {
-                    id: dragArea
-                    anchors.fill: parent
-                    enabled: DeskState.editing
-                    hoverEnabled: true
-                    preventStealing: true
-                    cursorShape: card.moving ? Qt.ClosedHandCursor : Qt.OpenHandCursor
-                    property real sx: 0
-                    property real sy: 0
-                    onPressed: m => { const p = mapToItem(win.contentItem, m.x, m.y); sx = p.x; sy = p.y; card.moving = true; DeskState.dragging = card.wid }
-                    onPositionChanged: m => {
-                        if (!pressed) return
-                        const p = mapToItem(win.contentItem, m.x, m.y)
-                        const a = win.area
-                        // posicao livre, presa na area e encaixada na grade (24 px); perto do centro, gruda no centro
-                        let nx = Math.max(a.x, Math.min(a.x + a.width - card.width, card.bx + p.x - sx))
-                        let ny = Math.max(a.y, Math.min(a.y + a.height - card.height, card.by + p.y - sy))
-                        nx = a.x + Math.round((nx - a.x) / 24) * 24
-                        ny = a.y + Math.round((ny - a.y) / 24) * 24
-                        const cxs = a.x + (a.width - card.width) / 2, cys = a.y + (a.height - card.height) / 2
-                        win.guideX = Math.abs(nx - cxs) < 18; if (win.guideX) nx = cxs
-                        win.guideY = Math.abs(ny - cys) < 18; if (win.guideY) ny = cys
-                        card.ox = nx - card.bx; card.oy = ny - card.by
-                    }
-                    onReleased: {
-                        const a = win.area
-                        const fx = Math.max(0, Math.min(1, (card.bx + card.ox - a.x) / Math.max(1, a.width - card.width)))
-                        const fy = Math.max(0, Math.min(1, (card.by + card.oy - a.y) / Math.max(1, a.height - card.height)))
-                        DeskState.setPos(card.wid, fx, fy)
-                        card.ox = 0; card.oy = 0
-                        card.moving = false; DeskState.dragging = ""
-                    }
-                }
-                // barra de ferramentas do widget
-                Row {
-                    anchors { right: parent.right; top: parent.top; margins: 8 }
-                    spacing: 6
-                    opacity: DeskState.editing && !card.moving ? 1 : 0
-                    visible: opacity > 0
-                    Behavior on opacity { NumberAnimation { duration: 160 } }
-                    Rectangle {   // tamanho atual (clique: proximo tamanho)
-                        height: 28; width: sz.implicitWidth + 34; radius: 14
-                        color: szm.containsMouse ? Theme.accent : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.9)
-                        border.width: 1; border.color: Theme.border
-                        Row {
-                            anchors.centerIn: parent
-                            spacing: 5
-                            UiIcon { name: "fullscreen"; size: 14; color: szm.containsMouse ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter }
-                            Text { id: sz; text: card.w ? card.w.cols + "×" + card.w.rows : ""; color: szm.containsMouse ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+                out.push({ icon: "plus", label: "Adicionar widget", sub: "add" })
+                out.push({ icon: DeskState.editing ? "check" : "pencil", label: DeskState.editing ? "Terminar a edição" : "Editar widgets", act: () => { DeskState.editing = !DeskState.editing; DeskState.selected = "" } })
+                out.push({ icon: DeskState.locked ? "lockOpen" : "lock", label: DeskState.locked ? "Destravar posições" : "Travar posições", act: () => DeskState.locked = !DeskState.locked })
+                out.push({ icon: Settings.desktopOn ? "eyeOff" : "eye", label: Settings.desktopOn ? "Esconder os widgets" : "Mostrar os widgets", act: () => Settings.desktopOn = !Settings.desktopOn })
+                out.push({ sep: true })
+                out.push({ icon: "wallpaper", label: "Trocar o wallpaper…", act: () => Settings.wpPickerOpen = true })
+                out.push({ icon: "next", label: "Próximo wallpaper", act: () => Wallpaper.step(1) })
+                out.push({ icon: "layers", label: "Presets", sub: "presets" })
+                out.push({ sep: true })
+                out.push({ icon: "cog", label: "Configurações dos widgets", act: () => { Settings.settingsPage = "desktop"; Settings.settingsOpen = true } })
+                return out
+            }
+            readonly property var subItems: DeskMenu.sub === "add"
+                ? DeskState.groups.reduce((acc, g) => acc.concat([{ head: g.label }], DeskState.catalog.filter(c => c.group === g.id).map(c => ({ icon: c.icon, label: c.name, act: () => {
+                    Settings.desktopOn = true
+                    const a = win.area, pw = DeskState.px(c.sizes[0][0]), ph = DeskState.px(c.sizes[0][1])
+                    DeskState.add(c.type, { fx: Math.max(0, Math.min(1, (DeskMenu.x - pw / 2 - a.x) / Math.max(1, a.width - pw))), fy: Math.max(0, Math.min(1, (DeskMenu.y - ph / 2 - a.y) / Math.max(1, a.height - ph))) })
+                } }))), [])
+                : DeskMenu.sub === "presets" ? DeskState.all.map(p => ({ icon: p.builtin ? "dashboard" : "layers", label: p.name, checked: DeskState.lastApplied === p.name, act: () => DeskState.apply(p.name) })) : []
+            component MenuList: Rectangle {
+                id: ml
+                property var entries: []
+                property bool isSub: false
+                width: 250
+                height: mcol.implicitHeight + 12
+                radius: 14
+                color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.98)
+                border.width: 1; border.color: Theme.border
+                scale: 0.94 + 0.06 * k; opacity: k
+                property real k: 0
+                Component.onCompleted: k = 1
+                Behavior on k { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
+                Column {
+                    id: mcol
+                    x: 6; y: 6; width: parent.width - 12
+                    Repeater {
+                        model: ml.entries
+                        delegate: Item {
+                            required property var modelData
+                            width: mcol.width
+                            height: modelData.sep ? 9 : modelData.head ? 26 : 32
+                            Rectangle { visible: !!modelData.sep; anchors.centerIn: parent; width: parent.width - 16; height: 1; color: Theme.border }
+                            Text { visible: !!modelData.head; x: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData.head ?? ""; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                            Rectangle {
+                                visible: !modelData.sep && !modelData.head
+                                anchors.fill: parent; radius: 9
+                                color: im.containsMouse || (modelData.sub && DeskMenu.sub === modelData.sub) ? (modelData.danger ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.cardHi) : "transparent"
+                                UiIcon { id: mi; x: 10; anchors.verticalCenter: parent.verticalCenter; name: modelData.icon ?? ""; size: 16; color: modelData.danger ? Theme.danger : (modelData.checked ? Theme.accent : Theme.muted) }
+                                Text { anchors { left: mi.right; leftMargin: 10; verticalCenter: parent.verticalCenter; right: parent.right; rightMargin: 24 } elide: Text.ElideRight
+                                    text: modelData.label ?? ""; color: modelData.danger ? Theme.danger : Theme.text; font.pixelSize: 13; font.weight: modelData.checked ? Font.DemiBold : Font.Normal }
+                                UiIcon { visible: !!modelData.sub || !!modelData.checked; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter } name: modelData.sub ? "chevRight" : "check"; size: 14; color: Theme.muted }
+                                MouseArea {
+                                    id: im; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    onEntered: if (!ml.isSub && modelData.sub) DeskMenu.sub = modelData.sub; else if (!ml.isSub) DeskMenu.sub = ""
+                                    onClicked: { if (modelData.sub) { DeskMenu.sub = modelData.sub; return } DeskMenu.close(); modelData.act() }
+                                }
+                            }
                         }
-                        MouseArea { id: szm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.cycleSize(card.wid) }
-                    }
-                    Rectangle {   // opcao do relogio: digital / ponteiros
-                        visible: card.w && card.w.type === "clock"
-                        width: 28; height: 28; radius: 14
-                        color: stm.containsMouse ? Theme.accent : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.9)
-                        border.width: 1; border.color: Theme.border
-                        UiIcon { anchors.centerIn: parent; name: "swap_horizontal"; size: 14; color: stm.containsMouse ? Theme.accentText : Theme.text }
-                        MouseArea { id: stm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: { const a = content.item ? content.item.analog : false; DeskState.setOpt(card.wid, "style", a ? "digital" : "analog") } }
-                    }
-                    Rectangle {   // remover
-                        width: 28; height: 28; radius: 14
-                        color: rmm.containsMouse ? Theme.danger : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.9)
-                        border.width: 1; border.color: Theme.border
-                        UiIcon { anchors.centerIn: parent; name: "close"; size: 14; color: rmm.containsMouse ? "white" : Theme.text }
-                        MouseArea { id: rmm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.remove(card.wid) }
                     }
                 }
             }
+            MenuList {
+                id: main
+                entries: menu.items
+                x: Math.min(DeskMenu.x, win.width - width - 8)
+                y: Math.min(DeskMenu.y, win.height - height - 8)
+            }
+            Loader {
+                active: DeskMenu.sub !== ""
+                readonly property bool toLeft: main.x + main.width + 254 > win.width
+                x: toLeft ? main.x - 254 : main.x + main.width + 4
+                sourceComponent: MenuList {
+                    isSub: true
+                    entries: menu.subItems
+                    y: Math.max(8, Math.min(main.y, win.height - height - 8))
+                }
+            }
+            Keys.onEscapePressed: DeskMenu.close()
         }
 
         // aviso do modo de edicao
@@ -256,28 +295,22 @@ Scope {
             opacity: DeskState.editing ? 1 : 0
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: 200 } }
-            width: tip.implicitWidth + 210; height: 44; radius: 22
+            width: tip.implicitWidth + 300; height: 44; radius: 22
             color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.94)
             border.width: 1; border.color: Theme.border
             Row {
                 anchors { left: parent.left; leftMargin: 18; verticalCenter: parent.verticalCenter }
                 spacing: 10
                 UiIcon { name: "dashboard"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                Text { id: tip; text: "Editando: arraste, troque o tamanho ou remova. Clique fora para terminar."; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                Text { id: tip; text: DeskState.locked ? "Posições travadas: clique num widget para as opções." : "Arraste para mover, clique para as opções."; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
             }
             Row {
                 anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
                 spacing: 6
-                UiButton { icon: "plus"; text: "Adicionar"; kind: "ghost"; onClicked: { Settings.settingsOpen = true; Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "settings", "go", "desktop"]) } }
-                UiButton { icon: "check"; text: "Pronto"; kind: "accent"; onClicked: DeskState.editing = false }
+                UiButton { icon: "plus"; text: "Adicionar"; kind: "ghost"; onClicked: DeskMenu.show(parent.mapToItem(win.contentItem, 0, 40).x, parent.mapToItem(win.contentItem, 0, 40).y, "") }
+                UiButton { icon: DeskState.locked ? "lockOpen" : "lock"; kind: "ghost"; onClicked: DeskState.locked = !DeskState.locked }
+                UiButton { icon: "check"; text: "Pronto"; kind: "accent"; onClicked: { DeskState.editing = false; DeskState.selected = "" } }
             }
         }
     }
-
-    Component { id: clockC; DwClock {} }
-    Component { id: mediaC; DwMedia {} }
-    Component { id: systemC; DwSystem {} }
-    Component { id: calendarC; DwCalendar {} }
-    Component { id: userC; DwUser {} }
-    Component { id: notesC; DwNotes {} }
 }

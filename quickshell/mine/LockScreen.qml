@@ -147,6 +147,15 @@ Scope {
             }
         }
 
+        // ---- widgets marcados "mostrar tambem na tela de bloqueio" (mesma posicao da area de trabalho) ----
+        DeskView {
+            anchors.fill: parent
+            area: Qt.rect(40, 40, width - 80, height - 80)
+            lockMode: true
+            darkBg: true
+            opacity: Math.max(0, Math.min(1, v.pBox * 1.2))
+        }
+
         // ---- relogio ----
         SystemClock { id: clk; precision: Settings.lockSeconds ? SystemClock.Seconds : SystemClock.Minutes }
         Item {

@@ -1,6 +1,6 @@
-// Widget de sistema: aneis de CPU, memoria e disco (+ tempo ligado no 2x2). 1x1: so o anel da CPU com a memoria por dentro.
+// Widget de sistema (dados do SysInfo.qml): metricas basicas (CPU, RAM, disco), quentes (CPU, temperatura, GPU) ou
+// todas, em aneis, barras ou graficos com historico. 1x1: so a primeira metrica.
 import Quickshell
-import Quickshell.Io
 import QtQuick
 
 Item {
@@ -8,90 +8,124 @@ Item {
     property int cols: 2
     property int rows: 1
     property var opts: ({})
+    property color fg: Theme.text
+    property color dim: Theme.muted
+    property color ac: Theme.accent
+    property bool bare: false
+    function o(k) { return DeskState.opt({ type: "system", opts: w.opts }, k) }
+    Component.onCompleted: SysInfo.use()
+    Component.onDestruction: SysInfo.release()
 
-    property real cpu: 0
-    property real mem: 0
-    property real disk: 0
-    property real lastT: 0
-    property real lastI: 0
-    property string up: ""
+    readonly property color c2: Settings.themeOn ? ThemeColors.secondary : Qt.tint(w.ac, Qt.rgba(0.4, 0.8, 1, 0.45))
+    readonly property color c3: Settings.themeOn ? ThemeColors.tertiary : Qt.tint(w.ac, Qt.rgba(1, 0.8, 0.4, 0.45))
+    readonly property var all: ({
+        cpu: { label: "CPU", icon: "chip", v: SysInfo.cpu, t: Math.round(SysInfo.cpu * 100) + "%", h: SysInfo.hist.cpu, col: w.ac },
+        mem: { label: "RAM", icon: "memory", v: SysInfo.mem, t: Math.round(SysInfo.mem * 100) + "%", h: SysInfo.hist.mem, col: w.c2 },
+        disk: { label: "Disco", icon: "disk", v: SysInfo.disk, t: Math.round(SysInfo.disk * 100) + "%", h: [], col: w.c3 },
+        temp: { label: "Temp.", icon: "temperature", v: SysInfo.temp !== null ? Math.min(1, SysInfo.temp / 100) : 0, t: SysInfo.temp !== null ? SysInfo.temp + "°" : "--", h: [], col: SysInfo.temp > 80 ? Theme.danger : w.c3 },
+        gpu: { label: "GPU", icon: "gpuCard", v: SysInfo.gpu, t: SysInfo.d.gpu ? Math.round(SysInfo.gpu * 100) + "%" : "--", h: SysInfo.hist.gpu, col: w.c2 },
+        net: { label: "Rede", icon: "network", v: Math.min(1, (SysInfo.d.rx ?? 0) / 5e6), t: "↓" + SysInfo.bytes(SysInfo.d.rx ?? 0) + "/s", h: SysInfo.hist.rx.map(x => Math.min(1, x / 5e6)), col: w.ac }
+    })
+    readonly property var keys: ({ basic: ["cpu", "mem", "disk"], hot: ["cpu", "temp", "gpu"], all: ["cpu", "mem", "gpu", "temp", "disk", "net"] })[o("metrics")]
+    readonly property var shown: (cols === 1 && rows === 1 ? keys.slice(0, 1) : keys).map(k => w.all[k])
+    readonly property string look: o("look")
 
-    FileView { id: stat; path: "/proc/stat"; onLoaded: {
-        const p = text().split("\n")[0].trim().split(/\s+/).slice(1).map(Number)
-        const idle = p[3] + p[4], tot = p.reduce((a, b) => a + b, 0)
-        if (w.lastT > 0) w.cpu = Math.max(0, Math.min(1, 1 - (idle - w.lastI) / Math.max(1, tot - w.lastT)))
-        w.lastT = tot; w.lastI = idle } }
-    FileView { id: meminfo; path: "/proc/meminfo"; onLoaded: {
-        const t = text(), tot = Number(/MemTotal:\s+(\d+)/.exec(t)[1]), av = Number(/MemAvailable:\s+(\d+)/.exec(t)[1])
-        w.mem = 1 - av / tot } }
-    FileView { id: upf; path: "/proc/uptime"; onLoaded: {
-        const s = parseFloat(text().split(" ")[0]) || 0, h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60)
-        w.up = h > 0 ? h + " h " + m + " min" : m + " min" } }
-    Process { id: df; command: ["df", "-P", "/"]; stdout: StdioCollector { onStreamFinished: {
-        const l = text.trim().split("\n")[1]; if (l) w.disk = (parseInt(l.trim().split(/\s+/)[4]) || 0) / 100 } } }
-    Timer { interval: 2000; repeat: true; running: true; triggeredOnStart: true; onTriggered: { stat.reload(); meminfo.reload() } }
-    Timer { interval: 60000; repeat: true; running: true; triggeredOnStart: true; onTriggered: { df.running = true; upf.reload() } }
-
-    component Ring: Item {
-        id: ring
-        property real value: 0
-        property string label: ""
-        property string icon: ""
-        property color col: Theme.accent
-        property real thick: 8
-        property real shown: value
-        Behavior on shown { NumberAnimation { duration: 600; easing.type: Easing.OutCubic } }
-        onShownChanged: cv.requestPaint()
-        Canvas {
-            id: cv
-            anchors.fill: parent
-            readonly property var deps: [ring.col, width]
-            onDepsChanged: requestPaint()
-            onPaint: {
-                const c = getContext("2d"); c.reset()
-                const r = Math.min(width, height) / 2 - ring.thick / 2 - 1, cx = width / 2, cy = height / 2
-                c.lineWidth = ring.thick; c.lineCap = "round"
-                c.strokeStyle = Qt.rgba(ring.col.r, ring.col.g, ring.col.b, 0.16)
-                c.beginPath(); c.arc(cx, cy, r, Math.PI * 0.75, Math.PI * 2.25); c.stroke()
-                c.strokeStyle = ring.col
-                c.beginPath(); c.arc(cx, cy, r, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5 * Math.max(0.001, ring.shown)); c.stroke()
+    // ---- aneis ----
+    Grid {
+        visible: w.look === "rings"
+        anchors.centerIn: parent
+        columns: w.rows > w.cols ? 1 : Math.min(w.shown.length, w.rows > 1 ? 3 : w.shown.length)
+        readonly property int nr: Math.ceil(w.shown.length / columns)
+        spacing: 10
+        readonly property real s: Math.min((w.width - (columns - 1) * 10) / columns, (w.height - (nr - 1) * 10) / nr)
+        Repeater {
+            model: w.shown
+            delegate: Item {
+                required property var modelData
+                width: parent.s; height: parent.s
+                Canvas {
+                    anchors.fill: parent
+                    readonly property var deps: [modelData.v, modelData.col, width, w.fg]
+                    onDepsChanged: requestPaint()
+                    onPaint: {
+                        const c = getContext("2d"); c.reset()
+                        const th = Math.max(5, width * 0.08), r = width / 2 - th / 2 - 1
+                        c.lineWidth = th; c.lineCap = "round"
+                        c.strokeStyle = Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12)
+                        c.beginPath(); c.arc(width / 2, height / 2, r, Math.PI * 0.75, Math.PI * 2.25); c.stroke()
+                        c.strokeStyle = modelData.col
+                        c.beginPath(); c.arc(width / 2, height / 2, r, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5 * Math.max(0.002, modelData.v)); c.stroke()
+                    }
+                }
+                Column {
+                    anchors.centerIn: parent
+                    UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: modelData.icon; size: Math.max(11, parent.parent.width * 0.15); color: w.dim }
+                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.t; color: w.fg; font.pixelSize: Math.max(11, parent.parent.width * (modelData.t.length > 5 ? 0.13 : 0.2)); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                    Text { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: w.dim; font.pixelSize: Math.max(9, parent.parent.width * 0.1); font.weight: Font.DemiBold }
+                }
             }
         }
-        Column {
-            anchors.centerIn: parent
-            spacing: 0
-            UiIcon { visible: ring.icon !== ""; anchors.horizontalCenter: parent.horizontalCenter; name: ring.icon; size: Math.max(12, ring.width * 0.16); color: Theme.muted }
-            Text { anchors.horizontalCenter: parent.horizontalCenter; text: Math.round(ring.value * 100) + "%"; color: Theme.text; font.pixelSize: Math.max(12, ring.width * 0.2); font.weight: Font.Bold; font.features: { "tnum": 1 } }
-            Text { visible: ring.label !== ""; anchors.horizontalCenter: parent.horizontalCenter; text: ring.label; color: Theme.muted; font.pixelSize: Math.max(9, ring.width * 0.11); font.weight: Font.DemiBold }
-        }
     }
-
-    // 1x1: CPU por fora, memoria por dentro
-    Item {
-        visible: w.cols === 1
-        anchors.fill: parent
-        Ring { anchors.centerIn: parent; width: Math.min(parent.width, parent.height); height: width; value: w.cpu; label: "CPU"; thick: 9 }
-    }
-    // 2x1 / 2x2: tres aneis lado a lado
-    Row {
-        visible: w.cols > 1
-        anchors.horizontalCenter: parent.horizontalCenter
-        y: w.rows > 1 ? 10 : (parent.height - height) / 2
-        spacing: 10
-        readonly property real s: Math.min((w.width - 20) / 3, w.rows > 1 ? w.height * 0.5 : w.height)
-        Ring { width: parent.s; height: parent.s; value: w.cpu; label: "CPU"; icon: w.rows > 1 ? "chip" : "" }
-        Ring { width: parent.s; height: parent.s; value: w.mem; label: "RAM"; icon: w.rows > 1 ? "memory" : ""; col: Settings.themeOn ? ThemeColors.secondary : Theme.accent }
-        Ring { width: parent.s; height: parent.s; value: w.disk; label: "Disco"; icon: w.rows > 1 ? "disk" : ""; col: Settings.themeOn ? ThemeColors.tertiary : Theme.accent }
-    }
+    // ---- barras ----
     Column {
-        visible: w.rows > 1
-        anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-        spacing: 4
-        Row {
-            spacing: 8
-            UiIcon { name: "clock"; size: 16; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-            Text { text: "Ligado há " + w.up; color: Theme.text; font.pixelSize: 14; font.weight: Font.Medium; anchors.verticalCenter: parent.verticalCenter }
+        visible: w.look === "bars"
+        anchors.verticalCenter: parent.verticalCenter
+        width: parent.width
+        spacing: Math.max(6, (w.height - w.shown.length * 30) / Math.max(1, w.shown.length + 1))
+        Repeater {
+            model: w.shown
+            delegate: Column {
+                required property var modelData
+                width: parent.width
+                spacing: 4
+                Item {
+                    width: parent.width; height: 16
+                    Row { spacing: 6
+                        UiIcon { name: modelData.icon; size: 13; color: modelData.col; anchors.verticalCenter: parent.verticalCenter }
+                        Text { text: modelData.label; color: w.fg; font.pixelSize: 12; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
+                    Text { anchors.right: parent.right; text: modelData.t; color: w.dim; font.pixelSize: 12; font.features: { "tnum": 1 } }
+                }
+                Rectangle {
+                    width: parent.width; height: 6; radius: 3; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12)
+                    Rectangle { width: parent.width * Math.max(0.01, modelData.v); height: parent.height; radius: 3; color: modelData.col
+                        Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } } }
+                }
+            }
         }
-        Text { text: Profile.user + "@" + (Quickshell.env("HOSTNAME") || "linux"); color: Theme.muted; font.pixelSize: 12 }
+    }
+    // ---- graficos ----
+    Grid {
+        visible: w.look === "graph"
+        anchors.fill: parent
+        columns: w.cols >= 3 && w.rows === 1 ? w.shown.length : (w.cols >= 2 && w.shown.length > 3 ? 2 : 1)
+        readonly property int nr: Math.ceil(w.shown.length / columns)
+        spacing: 8
+        Repeater {
+            model: w.shown
+            delegate: Item {
+                required property var modelData
+                width: (w.width - (parent.columns - 1) * 8) / parent.columns
+                height: (w.height - (parent.nr - 1) * 8) / parent.nr
+                Row { spacing: 5; z: 2
+                    UiIcon { name: modelData.icon; size: 12; color: modelData.col; anchors.verticalCenter: parent.verticalCenter }
+                    Text { text: modelData.label + "  " + modelData.t; color: w.fg; font.pixelSize: 11; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
+                Canvas {
+                    anchors { fill: parent; topMargin: 16 }
+                    readonly property var deps: [modelData.h, modelData.col, width, height]
+                    onDepsChanged: requestPaint()
+                    onPaint: {
+                        const c = getContext("2d"); c.reset()
+                        const h = modelData.h.length ? modelData.h : new Array(60).fill(modelData.v), n = h.length
+                        const px = i => i / Math.max(1, 59) * width + (60 - n) / 59 * width, py = v => height - 2 - v * (height - 4)
+                        c.beginPath(); c.moveTo(px(0), height)
+                        h.forEach((v, i) => c.lineTo(px(i), py(v)))
+                        c.lineTo(px(n - 1), height); c.closePath()
+                        c.fillStyle = Qt.rgba(modelData.col.r, modelData.col.g, modelData.col.b, 0.22); c.fill()
+                        c.beginPath(); h.forEach((v, i) => i ? c.lineTo(px(i), py(v)) : c.moveTo(px(i), py(v)))
+                        c.strokeStyle = modelData.col; c.lineWidth = 2; c.lineJoin = "round"; c.stroke()
+                    }
+                }
+            }
+        }
     }
 }

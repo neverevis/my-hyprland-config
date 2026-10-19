@@ -60,6 +60,13 @@ Singleton {
     property alias desktopOn: adapter.desktopOn             // mostra os widgets da area de trabalho
     property alias desktopWidgets: adapter.desktopWidgets   // [{ id, type, fx, fy, cols, rows, opts }]
     property alias desktopCard: adapter.desktopCard         // opacidade do fundo dos cartoes (0..100)
+    property alias desktopCardStyle: adapter.desktopCardStyle // fundo padrao: card | glass | none
+    property alias desktopShadow: adapter.desktopShadow     // sombra nos widgets sem fundo
+    property alias desktopSnap: adapter.desktopSnap         // encaixar na grade ao arrastar
+    property alias desktopMenu: adapter.desktopMenu         // menu de clique direito na area de trabalho
+    property alias weatherCity: adapter.weatherCity         // "" = descobrir pela internet (IP)
+    property alias weatherUnits: adapter.weatherUnits       // metric | imperial
+    property alias weatherInterval: adapter.weatherInterval // minutos
     property alias presets: adapter.presets                 // [{ name, created, data: { chave: valor } }]
     // ---- sessao: tela de bloqueio e menu de energia ----
     property alias lockBlur: adapter.lockBlur             // 0..100: desfoque do wallpaper na tela de bloqueio
@@ -522,6 +529,13 @@ Singleton {
             property bool desktopOn: true
             property var desktopWidgets: []
             property int desktopCard: 72
+            property string desktopCardStyle: "card"
+            property bool desktopShadow: true
+            property bool desktopSnap: true
+            property bool desktopMenu: true
+            property string weatherCity: ""
+            property string weatherUnits: "metric"
+            property int weatherInterval: 20
             property var presets: []
             property int lockBlur: 100
             property int lockDim: 32

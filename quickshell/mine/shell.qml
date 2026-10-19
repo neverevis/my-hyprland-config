@@ -49,6 +49,7 @@ ShellRoot {
     Home { geo: shell.geo }
     PowerMenu {}
     PhotoEditor {}
+    PickWindow {}
     LockScreen {}
     DesktopLayer { geo: shell.geo }
 

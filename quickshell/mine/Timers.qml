@@ -1,0 +1,54 @@
+// Estado dos widgets de timer (por id do widget): sobrevive a recriacao do widget (preset, troca de tamanho).
+// Modos: pomodoro (foco -> pausa, pausa longa a cada N ciclos), countdown, stopwatch. Ao terminar uma etapa:
+// notificacao + som (alarm-clock-elapsed do tema freedesktop).
+// st[id] guarda: running, startedAt (ms), base (ms ja contados antes de iniciar), phase (focus|pause|long), cycle
+pragma Singleton
+
+import Quickshell
+import Quickshell.Io
+import QtQuick
+
+Singleton {
+    id: root
+    property var st: ({})
+    property real now: Date.now()
+    Timer { interval: 250; repeat: true; running: Object.keys(root.st).some(k => root.st[k].running); onTriggered: { root.now = Date.now(); root.check() } }
+
+    function get(id) { return st[id] ?? { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 } }
+    function put(id, v) { const c = Object.assign({}, st); c[id] = v; st = c }
+    function elapsed(id) { const s = get(id); return s.base + (s.running ? now - s.startedAt : 0) }
+    // duracao total da etapa atual (ms; 0 = cronometro)
+    function total(w) {
+        const o = k => DeskState.opt(w, k), s = get(w.id), m = o("mode")
+        if (m === "stopwatch") return 0
+        if (m === "countdown") return o("minutes") * 60000
+        return (s.phase === "focus" ? o("focus") : s.phase === "long" ? o("longPause") : o("pause")) * 60000
+    }
+    function start(id) { const s = Object.assign({}, get(id)); if (s.running) return; s.running = true; s.startedAt = Date.now(); now = s.startedAt; put(id, s) }
+    function pause(id) { const s = Object.assign({}, get(id)); if (!s.running) return; s.base += Date.now() - s.startedAt; s.running = false; put(id, s) }
+    function reset(id) { put(id, { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 }) }
+    function skip(id) { const w = DeskState.find(id); if (w) advance(w, false) }
+    function advance(w, ring) {
+        const s = Object.assign({}, get(w.id)), m = DeskState.opt(w, "mode")
+        if (ring && DeskState.opt(w, "notify")) {
+            const msg = m === "countdown" ? "Tempo esgotado" : s.phase === "focus" ? "Hora da pausa" : "De volta ao foco"
+            Quickshell.execDetached(["notify-send", "-a", "Timer", "-i", "alarm-clock", msg, m === "pomodoro" ? "Ciclo " + s.cycle : ""])
+            Quickshell.execDetached(["pw-play", "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"])
+        }
+        if (m === "countdown") { put(w.id, { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 }); return }
+        if (s.phase === "focus") { s.phase = s.cycle % DeskState.opt(w, "cycles") === 0 ? "long" : "pause" }
+        else { s.phase = "focus"; s.cycle += 1 }
+        s.base = 0; s.startedAt = Date.now(); s.running = ring   // pomodoro: a proxima etapa ja comeca
+        put(w.id, s)
+    }
+    function check() {
+        for (const id in st) {
+            const s = st[id]
+            if (!s.running) continue
+            const w = DeskState.find(id)
+            if (!w) continue
+            const t = total(w)
+            if (t > 0 && elapsed(id) >= t) advance(w, true)
+        }
+    }
+}
