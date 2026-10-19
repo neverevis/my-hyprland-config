@@ -213,7 +213,7 @@ Scope {
                 out.push({ sep: true })
                 out.push({ icon: "wallpaper", label: "Trocar o wallpaper…", act: () => Settings.wpPickerOpen = true })
                 out.push({ icon: "next", label: "Próximo wallpaper", act: () => Wallpaper.step(1) })
-                out.push({ icon: "layers", label: "Presets", sub: "presets" })
+                out.push({ icon: "layers", label: "Visuais e layouts", sub: "presets" })
                 out.push({ sep: true })
                 out.push({ icon: "cog", label: "Configurações dos widgets", act: () => { Settings.settingsPage = "desktop"; Settings.settingsOpen = true } })
                 return out
@@ -224,7 +224,8 @@ Scope {
                     const a = win.area, pw = DeskState.px(c.sizes[0][0]), ph = DeskState.px(c.sizes[0][1])
                     DeskState.add(c.type, { fx: Math.max(0, Math.min(1, (DeskMenu.x - pw / 2 - a.x) / Math.max(1, a.width - pw))), fy: Math.max(0, Math.min(1, (DeskMenu.y - ph / 2 - a.y) / Math.max(1, a.height - ph))) })
                 } }))), [])
-                : DeskMenu.sub === "presets" ? DeskState.all.map(p => ({ icon: p.builtin ? "dashboard" : "layers", label: p.name, checked: DeskState.lastApplied === p.name, act: () => DeskState.apply(p.name) })) : []
+                : DeskMenu.sub === "presets" ? (Looks.undoData ? [{ icon: "restore", label: "Desfazer (" + Looks.undoName + ")", act: () => Looks.undo() }] : []).concat(
+                    DeskState.all.map(p => ({ icon: p.builtin ? (p.icon || "dashboard") : "layers", label: p.name, checked: DeskState.lastApplied === p.name, act: () => DeskState.apply(p.name) }))) : []
             component MenuList: Rectangle {
                 id: ml
                 property var entries: []

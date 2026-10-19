@@ -228,10 +228,6 @@ Singleton {
     }
 
     // ---------------- presets ----------------
-    // o que um preset guarda (o "visual" do shell); o resto das configuracoes fica como esta
-    readonly property var presetKeys: ["desktopWidgets", "desktopCard", "bars", "edge", "cornerRadius", "fillet", "topRadius", "outline",
-        "glass", "glassOpacity", "shellBlur", "shellGrain", "userAccent", "userBarColor", "userTextColor", "desktopCardStyle", "desktopShadow",
-        "themeOn", "themeMode", "themeSource", "themePreset", "themeVariant", "wallpaper"]
     // layouts prontos (so mudam os widgets): bons pontos de partida
     readonly property var builtins: [
         { name: "Painel lateral", builtin: true, icon: "view_column", data: { desktopWidgets: [
@@ -261,59 +257,15 @@ Singleton {
             { id: "b-calendar", type: "calendar", fx: 0.95, fy: 0.9, cols: 2, rows: 2, opts: {} }] } },
         { name: "Limpo", builtin: true, icon: "broom", data: { desktopWidgets: [] } }
     ]
-    readonly property var all: builtins.concat(Settings.presets || [])
+    readonly property var all: builtins.concat(Looks.list)
     property string lastApplied: ""
 
-    function snapshot() {
-        const d = {}
-        for (const k of presetKeys) if (Settings[k] !== undefined) d[k] = JSON.parse(JSON.stringify(Settings[k]))
-        return d
-    }
-    function uniqueName(base) {
-        let n = base, i = 2
-        while (all.find(p => p.name === n)) n = base + " " + i++
-        return n
-    }
-    function save(name) {
-        name = uniqueName((name || "").trim() || "Meu preset")
-        const list = JSON.parse(JSON.stringify(Settings.presets || []))
-        list.push({ name: name, created: Date.now(), data: snapshot() })
-        Settings.presets = list
-        lastApplied = name
-        return name
-    }
-    function overwrite(name) {
-        const list = JSON.parse(JSON.stringify(Settings.presets || []))
-        const p = list.find(x => x.name === name)
-        if (!p) return
-        p.data = snapshot(); p.created = Date.now()
-        Settings.presets = list
-    }
-    function rename(name, to) {
-        to = (to || "").trim()
-        if (!to || to === name || all.find(p => p.name === to)) return name
-        const list = JSON.parse(JSON.stringify(Settings.presets || []))
-        const p = list.find(x => x.name === name)
-        if (p) p.name = to
-        Settings.presets = list
-        if (lastApplied === name) lastApplied = to
-        return to
-    }
-    function removePreset(name) { Settings.presets = (Settings.presets || []).filter(p => p.name !== name) }
-    function apply(name) {
-        const p = all.find(x => x.name === name)
-        if (!p) return
-        const d = p.data || {}
-        // widgets que existem nos dois lados (mesmo id) deslizam ate o novo lugar; os outros entram/saem com fade
-        for (const k of Object.keys(d)) {
-            if (k === "wallpaper") { if (d[k] && d[k] !== Settings.wallpaper) Settings.wallpaper = d[k]; continue }
-            // presets antigos guardavam as cores calculadas (so leitura); a escolha do usuario fica em user*
-            const key = ({ accent: "userAccent", barColor: "userBarColor", textColor: "userTextColor" })[k] ?? k
-            if (Settings[key] === undefined) continue
-            Settings[key] = JSON.parse(JSON.stringify(d[k]))
-        }
-        lastApplied = name
-    }
+    // salvar / aplicar / editar: Looks.qml (os visuais guardam grupos escolhidos; os layouts prontos acima so os widgets)
+    function save(name) { return Looks.save(name, Looks.defaultGroups()) }
+    function overwrite(name) { Looks.overwrite(name) }
+    function rename(name, to) { const r = Looks.rename(name, to); if (lastApplied === name) lastApplied = r; return r }
+    function removePreset(name) { Looks.remove(name) }
+    function apply(name) { Looks.apply(name); lastApplied = name }
 
     IpcHandler {
         target: "desktop"

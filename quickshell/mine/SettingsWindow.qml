@@ -34,7 +34,8 @@ Scope {
 
     readonly property var groups: [
         { label: "Visual", pages: [
-            { id: "look", label: "Aparência", icon: "palette", desc: "Vidro, tema de cores a partir do wallpaper e cores manuais." },
+            { id: "looks", label: "Visuais", icon: "layers", desc: "Presets do shell inteiro: salvar o visual de agora, aplicar com desfazer, exportar e importar." },
+            { id: "look", label: "Aparência", icon: "palette", desc: "Vidro, tema de cores a partir do wallpaper, bordas das janelas, fontes e cores manuais." },
             { id: "frame", label: "Moldura", icon: "frame", desc: "O que nasce da moldura e o que flutua solto, o contorno, as curvas e o indicador de volume." },
             { id: "blur", label: "Blur", icon: "blur", desc: "Desfoque do Hyprland e da moldura." },
             { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e molas de tudo o que se move, inclusive as janelas do Hyprland." }
@@ -47,7 +48,7 @@ Scope {
         ] },
         { label: "Área de trabalho", pages: [
             { id: "wall", label: "Wallpaper", icon: "wallpaper", desc: "Imagem de fundo, transições e o seletor (Super + W)." },
-            { id: "desktop", label: "Widgets", icon: "view_grid", desc: "Widgets na área de trabalho e presets do visual inteiro." },
+            { id: "desktop", label: "Widgets", icon: "view_grid", desc: "Widgets na área de trabalho, a cor deles e os layouts prontos." },
             { id: "session", label: "Sessão", icon: "power", desc: "Tela de bloqueio, menu de energia e foto de perfil." }
         ] }
     ]
@@ -123,7 +124,7 @@ Scope {
                 onFinished: root.alive = false
             }
 
-            readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC })
+            readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC })
             Item { id: indexHost; visible: false; width: 900; height: 10 }
             Connections { target: root; function onSearchFor(q) { search.text = q; win.buildIndex() } }
             Connections { target: root; function onFindFor(q) { win.pendingFind = q; search.text = q; win.buildIndex(); win.tryFind() } }
@@ -355,7 +356,7 @@ Scope {
                             id: pageLoader
                             x: 28
                             width: pageFlick.width - 56
-                            sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC })[Settings.settingsPage] ?? lookC
+                            sourceComponent: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC })[Settings.settingsPage] ?? lookC
                             visible: root.query === ""
                             onSourceComponentChanged: { pageFlick.contentY = 0; pageIn.restart() }
                             // troca de pagina: entra subindo um pouco e aparecendo
@@ -432,6 +433,7 @@ Scope {
                     Component { id: wallC; PageWallpaper {} }
                     Component { id: sessionC; PageSession {} }
                     Component { id: desktopC; PageDesktop {} }
+                    Component { id: looksC; PageLooks {} }
                 }
             }
         }
