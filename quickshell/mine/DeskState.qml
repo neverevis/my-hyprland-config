@@ -68,7 +68,7 @@ Singleton {
             { sec: "Mostrar", key: "details", label: "Detalhes (sensação, vento, umidade)", icon: "info", type: "switch", def: true }
           ] },
         { type: "world", group: "time", name: "Relógio mundial", icon: "web", desc: "Várias cidades ao mesmo tempo.", sizes: [[2, 1], [2, 2], [3, 1], [1, 2]], options: [
-            { sec: "Cidades", key: "zones", label: "Fusos (um por linha: Região/Cidade)", type: "list", def: ["America/Sao_Paulo", "Europe/London", "Asia/Tokyo", "America/New_York"] },
+            { sec: "Cidades", key: "zones", label: "Fusos (um por linha: Região/Cidade; ou use a engrenagem do widget)", type: "list", def: ["America/Sao_Paulo", "Europe/London", "Asia/Tokyo", "America/New_York"] },
             { sec: "Visual", key: "faces", label: "Mostrar como", type: "seg", preview: true, def: "digital", options: [["digital", "Digital", "clockDigital"], ["analog", "Ponteiros", "clockOutline"]] },
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false }
           ] },
@@ -94,11 +94,13 @@ Singleton {
           ] },
         { type: "system", group: "system", name: "Sistema", icon: "chip", desc: "CPU, memória, disco, temperatura, GPU e rede.", sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [1, 2]], options: [
             { sec: "Medidas", key: "metrics", label: "O que mostrar", type: "seg", def: "basic", options: [["basic", "CPU, RAM, disco", "chip"], ["hot", "CPU, temperatura, GPU", "thermo"], ["all", "Tudo", "dashboard"]] },
-            { sec: "Visual", key: "look", label: "Visual", type: "seg", preview: true, def: "rings", options: [["rings", "Anéis", "chartDonut"], ["bars", "Barras", "bars"], ["graph", "Gráfico", "chart"]] }
+            { sec: "Visual", key: "look", label: "Visual", type: "seg", preview: true, def: "tiles", options: [["tiles", "Cartões", "dashboard"], ["rings", "Anéis", "chartDonut"], ["bars", "Barras", "bars"], ["graph", "Gráfico", "chart"]] },
+            { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false, when: { look: "tiles" } }
           ] },
-        { type: "user", group: "system", name: "Usuário", icon: "account", desc: "Sua foto, saudação e o computador.", sizes: [[2, 1], [3, 1], [1, 1], [2, 2]], options: [
+        { type: "user", group: "system", name: "Usuário", icon: "account", desc: "Sua foto, saudação e o computador.", sizes: [[2, 1], [3, 1], [1, 1], [2, 2], [1, 2], [2, 3]], options: [
             { sec: "Perfil", key: "greeting", label: "Saudação", icon: "greeting", type: "switch", def: true },
             { sec: "Perfil", key: "info", label: "Linha de informação", type: "seg", def: "uptime", options: [["uptime", "Tempo ligado", "timer"], ["host", "Usuário@máquina", "desktop"], ["kernel", "Sistema e kernel", "linux"], ["none", "Nada", "close"]] },
+            { sec: "Perfil", key: "buttons", label: "Botões de atalho (bloquear, ajustes, energia)", icon: "lock", type: "switch", def: true },
             { sec: "Perfil", key: "avatarShape", label: "Forma da foto", type: "seg", preview: true, def: "circle", options: Shapes.list }
           ] },
         { type: "todo", group: "work", name: "Tarefas", icon: "check", desc: "Lista de afazeres que fica salva.", sizes: [[2, 2], [2, 1], [3, 2], [2, 3]], options: [
@@ -171,7 +173,7 @@ Singleton {
         if (o[key] !== undefined) return o[key]
         // tom: widgets antigos guardavam "fg" (auto | theme | custom)
         if (key === "tone" && o.fg !== undefined) return ({ theme: "primary", custom: "custom" })[o.fg] ?? "global"
-        if (key === "card") return cardDefaults[w ? w.type : ""] ?? "auto"
+        if (key === "card") return (w && w.type === "system" && (o.look ?? "tiles") === "tiles") ? "none" : (cardDefaults[w ? w.type : ""] ?? "auto")
         const d = optionsOf(w ? w.type : "").find(x => x.key === key)
         return d ? d.def : undefined
     }

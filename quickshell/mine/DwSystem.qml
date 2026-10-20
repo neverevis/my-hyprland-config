@@ -1,6 +1,7 @@
 // Widget de sistema (dados do SysInfo.qml): metricas basicas (CPU, RAM, disco), quentes (CPU, temperatura, GPU) ou
 // todas, em aneis, barras ou graficos com historico. 1x1: so a primeira metrica.
 import Quickshell
+import Quickshell.Services.UPower
 import QtQuick
 
 Item {
@@ -15,6 +16,7 @@ Item {
     property color cont: Theme.primaryContainer
     property color contInk: Theme.primaryContainerInk
     property bool bare: false
+    property string wid: ""
     function o(k) { return DeskState.opt({ type: "system", opts: w.opts }, k) }
     Component.onCompleted: SysInfo.use()
     Component.onDestruction: SysInfo.release()
@@ -29,10 +31,83 @@ Item {
         gpu: { label: "GPU", icon: "gpuCard", v: SysInfo.gpu, t: SysInfo.d.gpu ? Math.round(SysInfo.gpu * 100) + "%" : "--", h: SysInfo.hist.gpu, col: w.c2 },
         net: { label: "Rede", icon: "network", v: Math.min(1, (SysInfo.d.rx ?? 0) / 5e6), t: "↓" + SysInfo.bytes(SysInfo.d.rx ?? 0) + "/s", h: SysInfo.hist.rx.map(x => Math.min(1, x / 5e6)), col: w.ac }
     })
+    // bateria (so notebooks): nos tiles ela troca o disco
+    readonly property var bat: UPower.displayDevice
+    readonly property bool hasBat: !!bat && bat.ready && bat.isLaptopBattery
+    readonly property real batV: hasBat ? bat.percentage : 0
+    readonly property var tileInfo: ({
+        cpu: { shape: "gem", pal: 0 }, mem: { pal: 1, shape: "cookie4" }, disk: { pal: 2, shape: "cookie12" },
+        bat: { pal: 2, shape: "cookie12" }, temp: { pal: 2, shape: "sunny" }, gpu: { pal: 1, shape: "bun" }, net: { pal: 0, shape: "clover4" }
+    })
+    readonly property var tilePal: [[w.cont, w.contInk], [Theme.secondaryContainer, Theme.secondaryContainerInk], [Theme.tertiaryContainer, Theme.tertiaryContainerInk]]
+    readonly property var tileItems: {
+        const out = []
+        for (const k of w.keys) {
+            let id = k, d = w.all[k]
+            if (k === "disk" && hasBat) { id = "bat"; d = { label: "Bateria", icon: "battery", t: Math.round(batV * 100) + "%" } }
+            const ti = w.tileInfo[id]
+            out.push({ label: d.label, icon: d.icon, t: d.t, shape: ti.shape, bg: w.tilePal[ti.pal][0], ink: w.tilePal[ti.pal][1] })
+        }
+        return (cols === 1 && rows === 1) ? out.slice(0, 1) : out
+    }
+    readonly property bool vert: o("vertical") || rows > cols
     readonly property var keys: ({ basic: ["cpu", "mem", "disk"], hot: ["cpu", "temp", "gpu"], all: ["cpu", "mem", "gpu", "temp", "disk", "net"] })[o("metrics")]
     readonly property var shown: (cols === 1 && rows === 1 ? keys.slice(0, 1) : keys).map(k => w.all[k])
     readonly property string look: o("look")
 
+    // ---- tiles (um cartao por medida, com a forma M3 e o numero grande) ----
+    Item {
+        id: tl
+        visible: w.look === "tiles"
+        anchors.fill: parent
+        readonly property int n: Math.max(1, w.tileItems.length)
+        readonly property real gap: 8
+        readonly property real tw: w.vert ? width : (width - (n - 1) * gap) / n
+        readonly property real th: w.vert ? (height - (n - 1) * gap) / n : height
+        HoverHandler { id: tlHover }
+        Repeater {
+            model: w.tileItems
+            delegate: Rectangle {
+                required property var modelData
+                required property int index
+                x: w.vert ? 0 : index * (tl.tw + tl.gap)
+                y: w.vert ? index * (tl.th + tl.gap) : 0
+                width: tl.tw; height: tl.th
+                radius: Math.min(26, Math.min(width, height) * 0.24)
+                color: modelData.bg
+                Behavior on x { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
+                Behavior on y { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
+                Behavior on width { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
+                Behavior on height { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
+                readonly property real m: Math.min(width, height)
+                ShapeIcon {
+                    anchors { top: parent.top; right: parent.right; margins: parent.m * 0.1 }
+                    size: Math.max(26, parent.m * 0.4); padding: size * 0.24
+                    shape: modelData.shape; icon: modelData.icon
+                    color: Qt.rgba(modelData.ink.r, modelData.ink.g, modelData.ink.b, 0.16); iconColor: modelData.ink
+                }
+                Column {
+                    anchors { left: parent.left; bottom: parent.bottom; margins: parent.m * 0.12 }
+                    spacing: 0
+                    UiText { text: modelData.t; color: modelData.ink; font.pixelSize: Math.max(14, parent.parent.m * 0.3); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                    UiText { text: modelData.label; color: modelData.ink; opacity: 0.6; font.pixelSize: Math.max(10, parent.parent.m * 0.13); font.weight: Font.DemiBold }
+                }
+            }
+        }
+        // alca para virar entre horizontal e vertical (so aparece com o mouse em cima)
+        Rectangle {
+            anchors { right: parent.right; bottom: parent.bottom; margins: -4 }
+            width: 24; height: 24; radius: 12
+            color: Theme.card; border.width: 1; border.color: Theme.border
+            opacity: (tlHover.hovered || fm.containsMouse) && w.wid !== "" && w.tileItems.length > 1 ? 1 : 0
+            visible: opacity > 0
+            Behavior on opacity { NumberAnimation { duration: 150 } }
+            UiIcon { anchors.centerIn: parent; name: "refresh"; size: 13; color: Theme.text
+                rotation: w.vert ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 350; easing.type: Easing.OutBack } } }
+            MouseArea { id: fm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                onClicked: DeskState.setOpt(w.wid, "vertical", !o("vertical")) }
+        }
+    }
     // ---- aneis ----
     Grid {
         visible: w.look === "rings"
