@@ -230,6 +230,7 @@ Singleton {
     property alias lockClockPos: adapter.lockClockPos   // top | center
     property alias lockChars: adapter.lockChars         // dots | shapes (cada letra uma forma: flor, estrela...)
     property alias lockKeyring: adapter.lockKeyring     // destrava o gnome-keyring junto
+    property alias lockRequirePw: adapter.lockRequirePw // desligar/reiniciar na tela de bloqueio so depois da senha
     property alias lockPower: adapter.lockPower         // botoes de energia na tela de bloqueio   // wallpaper da tela de bloqueio (vazio = o mesmo)
     property alias wpWipeAngle: adapter.wpWipeAngle     // direcao da cortina em graus (0 = esquerda->direita, 90 = cima->baixo)
     property alias wpParallax: adapter.wpParallax       // % da largura que os wallpapers andam junto com a cortina
@@ -907,6 +908,7 @@ Singleton {
             property string lockClockPos: "top"
             property string lockChars: "dots"
             property bool lockKeyring: false
+            property bool lockRequirePw: true
             property bool lockPower: true
             property int wpWipeAngle: 0
             property int wpDuration: 900

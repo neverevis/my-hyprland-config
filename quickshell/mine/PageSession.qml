@@ -40,6 +40,7 @@ Column {
         UiSeg { options: [["dots", "Bolinhas"], ["shapes", "Formas (flor, estrela…)"]]; value: Settings.lockChars; onPicked: v => Settings.lockChars = v }
         UiSwitch { label: "Destravar o chaveiro junto"; icon: "lockOpen"; description: "Usa a mesma senha para abrir o gnome-keyring (senhas salvas de apps), se ele estiver trancado."; checked: Settings.lockKeyring; onToggled: on => Settings.lockKeyring = on }
         UiSwitch { label: "Botões de energia na tela de bloqueio"; icon: "power"; description: "Desligado: para desligar ou reiniciar é preciso desbloquear antes."; checked: Settings.lockPower; onToggled: on => Settings.lockPower = on }
+        UiSwitch { label: "Pedir a senha para desligar"; icon: "shield"; description: "Desligar e reiniciar pela tela de bloqueio só acontecem depois de digitar a senha certa."; checked: Settings.lockRequirePw; onToggled: on => Settings.lockRequirePw = on }
         UiLabel { text: "Animação de entrada" }
         AnimPicker { target: "lock" }
     }

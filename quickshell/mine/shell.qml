@@ -101,6 +101,7 @@ ShellRoot {
     OsdWindow { geo: shell.geo }
     BarPopup {}
     RegionSelector {}
+    RecFrame {}
     GameOverlay {}
     // servicos que precisam existir desde o inicio (singletons so nascem quando alguem os usa)
     readonly property var services: [HotCorners.actions.length, NightLight.active, SystemGuard.updates, DropShelf.files.length]

@@ -24,6 +24,7 @@ Scope {
             property point a: Qt.point(-1, -1)
             property point b: Qt.point(-1, -1)
             property bool dragging: false
+            property bool rmb: false
             property real mx: -1
             property real my: -1
             readonly property rect sel: dragging || (a.x >= 0 && b.x >= 0) ? Qt.rect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y)) : Qt.rect(0, 0, 0, 0)
@@ -86,11 +87,16 @@ Scope {
                 cursorShape: Qt.CrossCursor
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 onPositionChanged: m => { win.mx = m.x; win.my = m.y; if (win.dragging) win.b = Qt.point(m.x, m.y) }
-                onPressed: m => { if (m.button === Qt.RightButton) { Capture.close(); return } win.a = Qt.point(m.x, m.y); win.b = win.a; win.dragging = true }
+                onPressed: m => {
+                    // botao direito: cancela, ou (em "Copiar") arrasta/clica e abre no editor de anotacao
+                    win.rmb = m.button === Qt.RightButton
+                    if (win.rmb && Capture.action !== "copy") { win.rmb = false; Capture.close(); return }
+                    win.a = Qt.point(m.x, m.y); win.b = win.a; win.dragging = true }
                 onReleased: m => {
                     if (!win.dragging) return
                     win.dragging = false
                     win.b = Qt.point(m.x, m.y)
+                    if (win.rmb) { win.rmb = false; if (win.hasSel || win.winRect) Capture.action = "annotate"; else { Capture.close(); return } }
                     if (win.hasSel) Capture.run(win.sel.x, win.sel.y, win.sel.width, win.sel.height)
                     else if (win.winRect) { const r = win.winRect; Capture.run(r.x, r.y, r.width, r.height) }
                     else { win.a = Qt.point(-1, -1); win.b = win.a }

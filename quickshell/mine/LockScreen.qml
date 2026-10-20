@@ -20,13 +20,15 @@ Scope {
     property int fails: 0
     property bool leaving: false        // senha certa: animacao de saida antes de soltar a tela
     property bool caps: false
+    property string targetAction: ""    // reboot | poweroff pedido na tela de bloqueio: roda depois da senha certa
+    property int focusTick: 0           // sobe para devolver o foco ao campo de senha (lock focus)
     readonly property int leaveMs: 520
 
     // o bloqueio de verdade: so termina quando "locked" volta a falso
     WlSessionLock {
         id: lock
         locked: Power.locked
-        onLockedChanged: if (locked) { root.pw = ""; root.error = ""; root.leaving = false; root.checking = false }
+        onLockedChanged: if (locked) { root.targetAction = ""; root.pw = ""; root.error = ""; root.leaving = false; root.checking = false }
 
         WlSessionLockSurface {
             id: surf
@@ -44,6 +46,14 @@ Scope {
             root.checking = false
             if (result === PamResult.Success) {
                 root.fails = 0
+                // desligar/reiniciar pedido na tela de bloqueio: faz a acao e continua bloqueado (na previa so desbloqueia)
+                if (root.targetAction !== "" && !root.preview) {
+                    const a = root.targetAction
+                    root.targetAction = ""; root.pw = ""
+                    Power.run(a)
+                    return
+                }
+                root.targetAction = ""
                 if (Settings.lockKeyring && !root.preview) { keyring.secret = root.pw; keyring.running = true }
                 root.leaving = true
                 unlockTimer.restart()
@@ -66,6 +76,31 @@ Scope {
     }
     // solta a tela so depois do fade terminar (nesse ponto ela ja esta invisivel: sem piscar preto)
     Timer { id: unlockTimer; interval: root.leaveMs + 30; onTriggered: { Power.locked = false; root.preview = false } }
+
+    // lock activate: bloqueia | lock focus: devolve o foco ao campo (o Hyprland as vezes perde o teclado ao acordar)
+    IpcHandler {
+        target: "lock"
+        function activate(): void { Power.lock() }
+        function focus(): void { root.focusTick++ }
+    }
+    // apaga a senha digitada depois de 10 s sem tecla
+    Timer { interval: 10000; running: root.pw !== "" && !root.checking && !root.leaving; onTriggered: root.pw = "" }
+    // loginctl lock-session, fechar a tampa e suspender por fora do shell tambem bloqueiam
+    Process {
+        id: sysSig
+        property bool sleepSig: false
+        running: true
+        command: ["dbus-monitor", "--system", "type='signal',interface='org.freedesktop.login1.Session',member='Lock'", "type='signal',interface='org.freedesktop.login1.Manager',member='PrepareForSleep'"]
+        stdout: SplitParser {
+            onRead: line => {
+                if (line.indexOf("member=Lock") >= 0) { sysSig.sleepSig = false; Power.lock() }
+                else if (line.indexOf("member=PrepareForSleep") >= 0) sysSig.sleepSig = true
+                else if (sysSig.sleepSig && line.indexOf("boolean") >= 0) { sysSig.sleepSig = false; if (line.indexOf("true") >= 0) Power.lock() }
+            }
+        }
+        onExited: sysRestart.start()
+    }
+    Timer { id: sysRestart; interval: 5000; onTriggered: sysSig.running = true }
 
     // previa (sem bloquear de verdade): qs -c mine ipc call lockpreview toggle  (Esc fecha)
     property bool preview: false
@@ -109,6 +144,10 @@ Scope {
         id: v
         property bool isPreview: false
         readonly property var anim: Settings.animOf("lock")
+        // mexer o mouse ou clicar devolve o foco ao campo de senha
+        HoverHandler { onPointChanged: input.forceActiveFocus() }
+        TapHandler { onTapped: input.forceActiveFocus() }
+        Connections { target: root; function onFocusTickChanged() { input.forceActiveFocus() } }
 
         // p: entrada (0 -> 1, curva escolhida em Animacoes); q: saida (0 -> 1 ao acertar a senha)
         property real p: 0
@@ -304,14 +343,14 @@ Scope {
                         focus: true
                         enabled: !root.checking && !root.leaving
                         Component.onCompleted: forceActiveFocus()
-                        Keys.onEscapePressed: { if (v.isPreview && root.pw === "") root.preview = false; root.pw = ""; text = "" }
+                        Keys.onEscapePressed: { if (v.isPreview && root.pw === "" && root.targetAction === "") root.preview = false; root.pw = ""; root.targetAction = ""; text = "" }
                     }
                     Connections { target: root; function onPwChanged() { if (input.text !== root.pw) input.text = root.pw } }
                     UiText {
                         anchors { left: input.left; verticalCenter: parent.verticalCenter }
                         opacity: root.pw === "" ? 1 : 0
                         Behavior on opacity { NumberAnimation { duration: 120 } }
-                        text: root.leaving ? "Bem-vindo de volta" : "Digite sua senha"
+                        text: root.leaving ? "Bem-vindo de volta" : (root.targetAction === "reboot" ? "Senha para reiniciar" : root.targetAction === "poweroff" ? "Senha para desligar" : "Digite sua senha")
                         color: Qt.rgba(1, 1, 1, 0.5); font.pixelSize: 15
                     }
 
@@ -364,7 +403,7 @@ Scope {
                         Behavior on scale { NumberAnimation { duration: 100 } }
                         UiIcon {
                             anchors.centerIn: parent
-                            name: root.leaving ? "check" : "arrowRight"; size: 20
+                            name: root.leaving ? "check" : (root.targetAction === "reboot" ? "restart" : root.targetAction === "poweroff" ? "power" : "arrowRight"); size: 20
                             color: go.hot ? Theme.accentText : Qt.rgba(1, 1, 1, 0.55)
                         }
                         MouseArea { id: gm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.submit() }
@@ -447,7 +486,8 @@ Scope {
                 delegate: Rectangle {
                     id: pb
                     required property var modelData
-                    property bool armed: false   // reiniciar/desligar: segundo clique confirma
+                    property bool localArmed: false   // reiniciar/desligar: segundo clique confirma (sem exigir senha)
+                    readonly property bool armed: Settings.lockRequirePw ? root.targetAction === modelData[1] : localArmed
                     width: armed ? 136 : 48; height: 48; radius: 24
                     clip: true
                     Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -460,7 +500,7 @@ Scope {
                         UiIcon { name: pb.modelData[0]; size: 20; color: "white"; anchors.verticalCenter: parent.verticalCenter }
                         UiText { visible: pb.armed; text: pb.modelData[2] + "?"; color: "white"; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
                     }
-                    Timer { id: disarm; interval: 3500; onTriggered: pb.armed = false }
+                    Timer { id: disarm; interval: 3500; onTriggered: pb.localArmed = false }
                     MouseArea {
                         id: pm
                         anchors.fill: parent
@@ -469,7 +509,8 @@ Scope {
                         onClicked: {
                             const id = pb.modelData[1]
                             if (id === "suspend") { Quickshell.execDetached(["systemctl", "suspend"]); return }
-                            if (!pb.armed) { pb.armed = true; disarm.restart(); return }
+                            if (Settings.lockRequirePw) { root.targetAction = pb.armed ? "" : id; input.forceActiveFocus(); return }   // so roda depois da senha
+                            if (!pb.armed) { pb.localArmed = true; disarm.restart(); return }
                             Quickshell.execDetached(["systemctl", id])
                         }
                     }

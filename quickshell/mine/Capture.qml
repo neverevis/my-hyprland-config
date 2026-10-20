@@ -31,6 +31,7 @@ Singleton {
     ]
 
     function start(a) {
+        if (a === "record" && Recorder.active) { Recorder.stop(); return }   // chamar de novo para a gravacao
         if (open || grab.running) return
         action = a || "copy"
         Settings.launcherOpen = false; Settings.homeOpen = false; Settings.wpPickerOpen = false
@@ -49,7 +50,7 @@ Singleton {
         open = false
         if (action === "record") {
             const m = Hyprland.focusedMonitor
-            const g = Math.round(x + (m ? m.x : 0)) + "," + Math.round(y + (m ? m.y : 0)) + " " + Math.round(w) + "x" + Math.round(h)
+            const g = Math.round(x + (m ? m.x : 0)) + "," + Math.round(y + (m ? m.y : 0)) + " " + Math.round(w / 2) * 2 + "x" + Math.round(h / 2) * 2   // par: yuv420p exige
             Qt.callLater(() => Recorder.start(g))
             return
         }
