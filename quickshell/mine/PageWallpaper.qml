@@ -42,13 +42,15 @@ Column {
     Card {
         icon: "transition"
         title: "Transição"
-        subtitle: "A animação ao trocar de wallpaper. Dissolver, Pixelar, Ondas, Persianas e Redemoinho são shaders (a borda acesa usa a cor de destaque)."
+        subtitle: "A animação ao trocar de wallpaper. Dissolver até Estilhaçar são shaders (a borda acesa usa a cor de destaque)."
         Flow {
             width: parent.width
             spacing: 6
             Repeater {
                 model: [["fade", "Fade"], ["slide", "Deslizar"], ["wipe", "Cortina"], ["circle", "Círculo"], ["zoom", "Zoom"],
                         ["dissolve", "Dissolver"], ["pixelate", "Pixelar"], ["ripple", "Ondas"], ["blinds", "Persianas"], ["swirl", "Redemoinho"],
+                        ["circlepit", "Poço"], ["circleselect", "Círculos"], ["magic", "Mágica"], ["doom", "Derreter"], ["peel", "Folha"],
+                        ["transition", "Diagonal"], ["stripes", "Listras"], ["crt", "TV antiga"], ["glitch", "Glitch"], ["shatter", "Estilhaçar"],
                         ["random", "Aleatória"], ["none", "Nenhuma"]]
                 delegate: UiButton {
                     required property var modelData
@@ -88,33 +90,94 @@ Column {
             ShapePicker { width: parent.width; value: Settings.wpCenterShape; sides: Settings.wpCenterSides; onPicked: v => Settings.wpCenterShape = v }
             UiSlider { visible: Settings.wpCenterShape === "flower"; label: "Pétalas"; from: 4; to: 20; value: Settings.wpCenterSides; onMoved: v => Settings.wpCenterSides = Math.round(v) }
             UiSlider { label: "Tamanho"; from: 20; to: 95; value: Settings.wpCenterSize; suffix: " %"; onMoved: v => Settings.wpCenterSize = Math.round(v) }
+            UiSwitch { label: "Só na tela de bloqueio"; description: "Ao desbloquear, a forma cresce até cobrir a tela e vira o wallpaper normal; ao bloquear, volta a encolher."; checked: Settings.wpCenterLocked; onToggled: on => Settings.wpCenterLocked = on }
             UiSwitch { label: "Girar devagar"; checked: Settings.wpCenterSpin; onToggled: on => Settings.wpCenterSpin = on }
         }
         Column {
             visible: Settings.wpMode === "collage"
             width: parent.width; spacing: 12
             UiLabel { text: "Arranjo" }
-            UiSeg { options: [["2v", "Lado a lado"], ["2h", "Em cima e embaixo"], ["3", "Três"], ["1+2", "Um grande + dois"], ["2x2", "Quatro"]]; value: Settings.wpCollageLayout; onPicked: v => Settings.wpCollageLayout = v }
+            Flow {
+                width: parent.width; spacing: 6
+                Repeater {
+                    model: Collage.presetNames
+                    delegate: UiButton { required property var modelData; text: modelData[1]; onClicked: Collage.setPreset(modelData[0]) }
+                }
+                UiButton { visible: Collage.custom; icon: "restore"; text: "Restaurar"; kind: "ghost"; onClicked: Collage.reset() }
+            }
             UiSlider { label: "Espaço entre as imagens"; from: 0; to: 80; value: Settings.wpCollageGap; suffix: " px"; onMoved: v => Settings.wpCollageGap = Math.round(v) }
             UiSlider { label: "Margem da tela"; from: 0; to: 200; value: Settings.wpCollageMargin; suffix: " px"; onMoved: v => Settings.wpCollageMargin = Math.round(v) }
             UiSlider { label: "Arredondamento"; from: 0; to: 60; value: Settings.wpCollageRadius; suffix: " px"; onMoved: v => Settings.wpCollageRadius = Math.round(v) }
-            UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "A primeira é o wallpaper atual. As outras: as escolhidas abaixo, ou as próximas da pasta." }
-            Flow {
-                width: parent.width; spacing: 8
+            UiSwitch { label: "Imagens entram voando"; checked: Settings.wpCollageEntrance; onToggled: on => Settings.wpCollageEntrance = on }
+            UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Editor: arraste as divisões para redimensionar. Em cada imagem: estrela (fundo desfocado), trocar imagem, dividir (lado a lado ou em cima e embaixo) e remover. Até 6 imagens; vazia = a próxima da pasta (a primeira, o wallpaper atual)." }
+            Item {
+                id: ed
+                width: parent.width; height: Math.min(260, width * 9 / 16)
+                Rectangle { anchors.fill: parent; radius: 10; color: Theme.track; border.width: 1; border.color: Theme.border }
                 Repeater {
-                    model: 3
+                    model: Collage.leafRects
                     delegate: Rectangle {
+                        id: et
+                        required property var modelData
                         required property int index
-                        readonly property string pic: (Settings.list(Settings.wpCollage))[index] ?? ""
-                        width: 120; height: 72; radius: 10; color: Theme.track; clip: true; border.width: 1; border.color: Theme.border
-                        Image { anchors.fill: parent; anchors.margins: 1; visible: parent.pic !== ""; source: parent.pic ? Wallpaper.stillUrl(parent.pic) : ""; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(240, 144); asynchronous: true }
-                        UiIcon { visible: parent.pic === ""; anchors.centerIn: parent; name: "plus"; size: 18; color: Theme.muted }
-                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            onClicked: m => {
-                                const i = parent.index
-                                const put = p => { const l = (Settings.list(Settings.wpCollage)).slice(); while (l.length <= i) l.push(""); l[i] = p; Settings.wpCollage = l }
-                                if (m.button === Qt.RightButton) put(""); else Pick.image("Imagem do mosaico", put)
-                            } }
+                        x: modelData.x * ed.width + 3; y: modelData.y * ed.height + 3
+                        width: modelData.w * ed.width - 6; height: modelData.h * ed.height - 6
+                        radius: 8; clip: true; color: Theme.card
+                        Image { anchors.fill: parent; visible: modelData.img !== ""; source: modelData.img ? Wallpaper.stillUrl(modelData.img) : ""; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(320, 200); asynchronous: true }
+                        UiText { visible: modelData.img === ""; anchors.centerIn: parent; text: index === 0 ? "Wallpaper atual" : "Da pasta"; color: Theme.muted; font.pixelSize: 11 }
+                        Row {
+                            anchors.top: parent.top; anchors.right: parent.right; anchors.margins: 4; spacing: 3
+                            Repeater {
+                                model: [
+                                    { ic: Collage.primary === et.modelData.id ? "star" : "starOutline", tip: "primary", on: true },
+                                    { ic: "image", tip: "img", on: true },
+                                    { ic: "view_column", tip: "h", on: Collage.count < Collage.maxLeaves },
+                                    { ic: "view_column", tip: "v", on: Collage.count < Collage.maxLeaves, rot: 90 },
+                                    { ic: "close", tip: "rm", on: Collage.count > 1 }
+                                ]
+                                delegate: Rectangle {
+                                    required property var modelData
+                                    visible: modelData.on
+                                    width: 22; height: 22; radius: 11
+                                    color: bm.containsMouse ? Theme.accent : Theme.card
+                                    UiIcon { anchors.centerIn: parent; name: parent.modelData.ic; size: 13; rotation: parent.modelData.rot ?? 0; color: bm.containsMouse ? Theme.accentText : Theme.text }
+                                    MouseArea {
+                                        id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            const id = et.modelData.id, t = parent.modelData.tip
+                                            if (t === "primary") Collage.setPrimary(id)
+                                            else if (t === "img") Pick.image("Imagem do mosaico", p => Collage.setImage(id, p))
+                                            else if (t === "rm") Collage.remove(id)
+                                            else Collage.split(id, t)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                // divisoes arrastaveis
+                Repeater {
+                    model: Collage.cuts
+                    delegate: Item {
+                        id: gt
+                        required property var modelData
+                        readonly property bool horiz: modelData.dir === "h"   // divisao vertical (lado a lado): arrasta no eixo x
+                        x: horiz ? (modelData.x + modelData.w * modelData.r) * ed.width - 6 : modelData.x * ed.width
+                        y: horiz ? modelData.y * ed.height : (modelData.y + modelData.h * modelData.r) * ed.height - 6
+                        width: horiz ? 12 : modelData.w * ed.width
+                        height: horiz ? modelData.h * ed.height : 12
+                        Rectangle { anchors.centerIn: parent; width: gt.horiz ? 4 : parent.width * 0.3; height: gt.horiz ? parent.height * 0.3 : 4; radius: 2; color: gm.containsMouse || gm.pressed ? Theme.accent : Theme.tint(0.7) }
+                        MouseArea {
+                            id: gm; anchors.fill: parent; hoverEnabled: true; preventStealing: true
+                            cursorShape: gt.horiz ? Qt.SizeHorCursor : Qt.SizeVerCursor
+                            onPositionChanged: m => {
+                                if (!pressed) return
+                                const p = mapToItem(ed, m.x, m.y)
+                                const c = gt.modelData
+                                Collage.setRatio(c.path, gt.horiz ? (p.x / ed.width - c.x) / c.w : (p.y / ed.height - c.y) / c.h)
+                            }
+                        }
                     }
                 }
             }
@@ -125,7 +188,10 @@ Column {
         icon: "blur"
         title: "Efeitos"
         subtitle: "Desfocar e escurecer ajudam a ler as janelas transparentes. \"Com janelas\" só aplica quando o workspace tem alguma."
-        UiSlider { label: "Desfoque"; from: 0; to: 100; value: Settings.wpBlur; suffix: " %"; onMoved: v => Settings.wpBlur = Math.round(v) }
+        UiSlider { label: "Desfoque (raio)"; from: 0; to: 100; value: Settings.wpBlur; suffix: " %"; onMoved: v => Settings.wpBlur = Math.round(v) }
+        UiLabel { visible: Settings.wpBlur > 0; text: "Largura do desfoque" }
+        UiSeg { visible: Settings.wpBlur > 0; options: [["100", "Tela toda"], ["50", "Metade"], ["25", "Um quarto"]]; value: Settings.wpBlurSplit; onPicked: v => Settings.wpBlurSplit = v }
+        UiSeg { visible: Settings.wpBlur > 0 && Settings.wpBlurSplit !== "100"; options: [["left", "Esquerda", "alignLeft"], ["right", "Direita", "alignRight"]]; value: Settings.wpBlurSide; onPicked: v => Settings.wpBlurSide = v }
         UiSeg { visible: Settings.wpBlur > 0; options: [["windows", "Com janelas"], ["always", "Sempre"], ["never", "Nunca"]]; value: Settings.wpBlurWhen; onPicked: v => Settings.wpBlurWhen = v }
         UiSlider { label: "Escurecer"; from: 0; to: 80; value: Settings.wpDim; suffix: " %"; onMoved: v => Settings.wpDim = Math.round(v) }
         UiSeg { visible: Settings.wpDim > 0; options: [["windows", "Com janelas"], ["always", "Sempre"], ["never", "Nunca"]]; value: Settings.wpDimWhen; onPicked: v => Settings.wpDimWhen = v }
@@ -153,6 +219,7 @@ Column {
         title: "Troca automática"
         UiSlider { label: "Trocar a cada (0 = desligado)"; from: 0; to: 120; value: Settings.wpInterval; suffix: " min"; onMoved: v => Settings.wpInterval = v }
         UiSwitch { label: "Ordem aleatória"; checked: Settings.wpShuffle; onToggled: on => Settings.wpShuffle = on }
+        UiSwitch { label: "Prévia no seletor"; description: "O wallpaper em destaque no seletor aparece na hora e volta ao anterior se você fechar sem escolher."; checked: Settings.wpPreview; onToggled: on => Settings.wpPreview = on }
     }
 
     Card {

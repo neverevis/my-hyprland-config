@@ -33,7 +33,7 @@ Variants {
         property real progress: 0
         readonly property bool isShader: Wallpaper.shaderTransitions.indexOf(trans) >= 0
 
-        readonly property string target: Wallpaper.current
+        readonly property string target: Wallpaper.preview !== "" ? Wallpaper.preview : Wallpaper.current
         readonly property int diag: Math.ceil(Math.hypot(width, height))
 
         // ---- cortina em qualquer angulo: a borda varre a tela na direcao d; os wallpapers andam junto (paralaxe) ----
@@ -98,16 +98,62 @@ Variants {
         property real dimV: dimWant
         Behavior on dimV { NumberAnimation { duration: 450; easing.type: Easing.OutCubic } }
 
+        // desfoque dividido: so uma faixa (25 / 50 % da tela, de um dos lados) fica desfocada, com a borda suave (140 px)
+        readonly property real splitFrac: Settings.wpBlurSplit === "25" ? 0.28 : (Settings.wpBlurSplit === "50" ? 0.54 : 1)
+        readonly property bool splitOn: splitFrac < 1
+        property real core: splitFrac * width
+        Behavior on core { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+        readonly property real feather: Math.min(140, core)
+        Component { id: fullFx; MultiEffect { blurEnabled: true; blur: win.blurV; blurMax: 64; autoPaddingEnabled: false } }
+        Component {
+            id: splitFx
+            Item {
+                id: sfx
+                property var source
+                ShaderEffect { anchors.fill: parent; property var source: sfx.source }
+                MultiEffect {
+                    anchors.fill: parent
+                    source: sfx.source
+                    blurEnabled: true; blur: win.blurV; blurMax: 64; autoPaddingEnabled: false
+                    maskEnabled: true; maskSource: splitMask
+                }
+            }
+        }
+        Item {
+            id: splitMask
+            x: -win.width - 120      // fora da tela, mas visivel (item invisivel nao atualiza a textura)
+            width: win.width; height: win.height
+            layer.enabled: true
+            readonly property real a: Math.max(0, (win.core - win.feather) / Math.max(1, win.width))
+            readonly property real b: Math.min(1, win.core / Math.max(1, win.width))
+            readonly property bool atLeft: Settings.wpBlurSide !== "right"
+            Rectangle {
+                anchors.fill: parent
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0; color: splitMask.atLeft ? "white" : "transparent" }
+                    GradientStop { position: splitMask.atLeft ? splitMask.a : 1 - splitMask.b; color: splitMask.atLeft ? "white" : "transparent" }
+                    GradientStop { position: splitMask.atLeft ? splitMask.b : 1 - splitMask.a; color: splitMask.atLeft ? "transparent" : "white" }
+                    GradientStop { position: 1; color: splitMask.atLeft ? "transparent" : "white" }
+                }
+            }
+        }
+
+        // centralizado so na tela de bloqueio: 0 = a forma no centro (bloqueado), 1 = a forma cobre a tela (o wallpaper normal)
+        readonly property bool lockedOnly: Settings.wpMode === "centered" && Settings.wpCenterLocked
+        property real cp: lockedOnly && !Power.locked ? 1 : 0
+        Behavior on cp { NumberAnimation { duration: Power.locked ? 650 : 800; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.38, 1.21, 0.22, 1, 1, 1] } }
+
         Item {
             id: stage
             width: win.width; height: win.height
-            visible: Settings.wpMode === "fill"
+            visible: Settings.wpMode === "fill" || (win.lockedOnly && win.cp > 0.001)
             transform: [
                 Scale { origin.x: win.width / 2; origin.y: win.height / 2; xScale: 1 + win.px; yScale: 1 + win.px },
                 Translate { x: Settings.wpWsVertical ? 0 : (0.5 - win.pf) * win.px * win.width; y: Settings.wpWsVertical ? (0.5 - win.pf) * win.px * win.height : 0 }
             ]
             layer.enabled: win.blurV > 0.002
-            layer.effect: MultiEffect { blurEnabled: true; blur: win.blurV; blurMax: 64; autoPaddingEnabled: false }
+            layer.effect: win.splitOn ? splitFx : fullFx
 
             // pre-carga da proxima imagem provavel (mantem a imagem decodificada no cache)
             Image {
@@ -272,48 +318,69 @@ Variants {
         // ---- modos alternativos: centralizado numa forma e mosaico (sobre a cor do tema) ----
         Rectangle {
             anchors.fill: parent
-            visible: Settings.wpMode !== "fill"
+            visible: Settings.wpMode !== "fill" && win.cp < 0.999
+            opacity: win.lockedOnly ? 1 - Math.max(0, (win.cp - 0.9) / 0.1) : 1
             color: Theme.role(Settings.wpBgRole)
             Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 600 } }
             ShapedImage {
                 id: centerImg
                 visible: Settings.wpMode === "centered"
                 readonly property real d: Math.min(win.width, win.height) * Settings.wpCenterSize / 100
+                readonly property real cover: Math.hypot(win.width, win.height) * 1.5
                 width: d; height: d
+                scale: 1 + (cover / d - 1) * Math.min(1, win.cp)
                 anchors.centerIn: parent
                 shape: Settings.wpCenterShape; sides: Settings.wpCenterSides
                 source: Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
                 sourceSize: Qt.size(d * 1.5, d * 1.5)
                 RotationAnimation on spin { running: Settings.wpCenterSpin && centerImg.visible; from: 0; to: 360; duration: 120000; loops: Animation.Infinite }
             }
-            // mosaico: caixas com as imagens escolhidas (ou as proximas da pasta)
+            // mosaico em arvore (Collage.qml): fundo = a imagem principal desfocada, e as imagens entram voando
+            Image {
+                id: colBack
+                anchors.fill: parent
+                visible: Settings.wpMode === "collage"
+                readonly property string pri: { const l = col.pics; const i = (Collage.leafRects ?? []).findIndex(r => r.id === Collage.primary); return l[i >= 0 ? i : 0] ?? "" }
+                source: pri ? Wallpaper.stillUrl(pri) : ""
+                sourceSize: Qt.size(win.width / 4, win.height / 4)
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                layer.enabled: visible
+                layer.effect: MultiEffect { blurEnabled: true; blur: 1; blurMax: 48; autoPaddingEnabled: false; brightness: -0.22 }
+            }
             Item {
                 id: col
                 visible: Settings.wpMode === "collage"
                 anchors.fill: parent
                 anchors.margins: Settings.wpCollageMargin
-                readonly property var boxes: ({
-                    "2v": [[0, 0, 0.5, 1], [0.5, 0, 0.5, 1]],
-                    "2h": [[0, 0, 1, 0.5], [0, 0.5, 1, 0.5]],
-                    "3": [[0, 0, 1 / 3, 1], [1 / 3, 0, 1 / 3, 1], [2 / 3, 0, 1 / 3, 1]],
-                    "1+2": [[0, 0, 0.6, 1], [0.6, 0, 0.4, 0.5], [0.6, 0.5, 0.4, 0.5]],
-                    "2x2": [[0, 0, 0.5, 0.5], [0.5, 0, 0.5, 0.5], [0, 0.5, 0.5, 0.5], [0.5, 0.5, 0.5, 0.5]]
-                })[Settings.wpCollageLayout] ?? [[0, 0, 0.5, 1], [0.5, 0, 0.5, 1]]
+                readonly property var rects: Collage.leafRects ?? []
                 readonly property var pics: {
-                    const chosen = (Settings.list(Settings.wpCollage)).filter(x => x)
-                    const out = [Wallpaper.current].concat(chosen)
+                    const out = rects.map(r => r.img)
+                    const used = out.filter(x => x)
                     let i = Wallpaper.indexOfCurrent()
-                    while (out.length < boxes.length && Wallpaper.files.length > 1) { i = (i + 1) % Wallpaper.files.length; out.push(Wallpaper.files[i].path) }
+                    if (!out[0] && Wallpaper.current !== "") out[0] = Wallpaper.current   // a primeira vazia = o wallpaper atual
+                    for (let k = 0; k < out.length; k++) {
+                        let guard = 0
+                        while (!out[k] && Wallpaper.files.length > 1 && guard++ < Wallpaper.files.length) { i = (i + 1) % Wallpaper.files.length; const p = Wallpaper.files[i].path; if (out.indexOf(p) < 0) out[k] = p }
+                    }
                     return out
                 }
                 Repeater {
-                    model: col.boxes
+                    model: col.rects.length
                     delegate: RoundImage {
-                        required property var modelData
+                        id: tile
                         required property int index
+                        readonly property var r: col.rects[index] ?? { x: 0, y: 0, w: 1, h: 1 }
                         readonly property real g: Settings.wpCollageGap / 2
-                        x: modelData[0] * col.width + g; y: modelData[1] * col.height + g
-                        width: modelData[2] * col.width - 2 * g; height: modelData[3] * col.height - 2 * g
+                        property real ent: Settings.wpCollageEntrance ? 0 : 1
+                        // entrada: cada imagem vem de uma direcao, pequena, e assenta no lugar
+                        readonly property real ang: (index * 2.399 + 0.7)
+                        NumberAnimation on ent { running: Settings.wpCollageEntrance; from: 0; to: 1; duration: 520 + index * 70; easing.type: Easing.OutBack; easing.overshoot: 0.8 }
+                        x: r.x * col.width + g + (1 - ent) * Math.cos(ang) * win.width * 0.5
+                        y: r.y * col.height + g + (1 - ent) * Math.sin(ang) * win.height * 0.5
+                        width: r.w * col.width - 2 * g; height: r.h * col.height - 2 * g
+                        scale: 0.25 + 0.75 * ent
+                        opacity: Math.min(1, ent * 2)
                         radius: Settings.wpCollageRadius
                         source: col.pics[index] ? Wallpaper.stillUrl(col.pics[index]) : ""
                         sourceSize: Qt.size(width, height)

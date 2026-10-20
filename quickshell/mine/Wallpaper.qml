@@ -72,7 +72,7 @@ Singleton {
     })
     readonly property var curve: Settings.animOf("wallpaper").curve
     readonly property int duration: Settings.animOf("wallpaper").duration
-    readonly property var shaderTransitions: ["dissolve", "pixelate", "ripple", "blinds", "swirl"]
+    readonly property var shaderTransitions: ["dissolve", "pixelate", "ripple", "blinds", "swirl", "circlepit", "circleselect", "magic", "doom", "peel", "transition", "stripes", "crt", "glitch", "shatter"]
     readonly property var transitions: ["fade", "slide", "wipe", "circle", "zoom"].concat(shaderTransitions)
 
     // tipo de transicao a usar agora (resolve "random")
@@ -86,6 +86,11 @@ Singleton {
     property bool busy: false          // transicao de wallpaper em andamento (exportacoes do tema esperam ela acabar)
     property string pickerFocus: ""    // item destacado no seletor (se aberto)
     property string upcoming: ""
+    // previa: com o seletor aberto, o wallpaper em destaque aparece na hora (so na janela do wallpaper; volta ao fechar)
+    property string preview: ""
+    Timer { id: prevT; interval: 380; onTriggered: root.preview = (Settings.wpPreview && Settings.wpPickerOpen && root.pickerFocus !== "" && root.pickerFocus !== root.current) ? root.pickerFocus : "" }
+    onPickerFocusChanged: { if (pickerFocus === "") preview = ""; else prevT.restart() }
+    Connections { target: Settings; function onWpPickerOpenChanged() { if (!Settings.wpPickerOpen) root.preview = "" } }
     readonly property string preload: pickerFocus !== "" ? pickerFocus : upcoming
     function planNext(): void {
         if (files.length < 2) { upcoming = ""; return }
@@ -138,6 +143,14 @@ Singleton {
         sortReversed: Settings.wpSortRev
         onCountChanged: root.refresh()
         onStatusChanged: if (status === FolderListModel.Ready) root.refresh()
+    }
+
+    // IPC: "wpctl pause" (pausa/retoma o video), "wpctl peek" (wallpaper na frente das janelas, para conferir), "wpctl preview <caminho>" (teste)
+    IpcHandler {
+        target: "wpctl"
+        function pause(): bool { root.videoPaused = !root.videoPaused; return root.videoPaused }
+        function peek(): bool { root.peek = !root.peek; return root.peek }
+        function preview(path: string): void { root.preview = path }
     }
 
     // troca automatica

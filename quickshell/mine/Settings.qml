@@ -158,6 +158,12 @@ Singleton {
     property alias wpWsVertical: adapter.wpWsVertical
     property alias wpBlur: adapter.wpBlur   // desfoque (0-100)
     property alias wpBlurWhen: adapter.wpBlurWhen   // never | windows | always
+    property alias wpBlurSplit: adapter.wpBlurSplit   // largura da faixa desfocada: 100 | 50 | 25 (% da tela, com borda suave)
+    property alias wpBlurSide: adapter.wpBlurSide   // left | right
+    property alias wpPreview: adapter.wpPreview   // o seletor mostra o wallpaper em destaque na hora (volta ao fechar)
+    property alias wpCenterLocked: adapter.wpCenterLocked   // centralizado so na tela de bloqueio (depois a forma cresce e vira o wallpaper)
+    property alias wpCollageTree: adapter.wpCollageTree   // mosaico em arvore (JSON); vazio = usa o arranjo fixo
+    property alias wpCollageEntrance: adapter.wpCollageEntrance   // as imagens do mosaico entram voando
     property alias wpDim: adapter.wpDim   // escurecer (0-100)
     property alias wpDimWhen: adapter.wpDimWhen
     property alias wpVideoPause: adapter.wpVideoPause   // pausa o video com janela em tela cheia
@@ -882,6 +888,12 @@ Singleton {
             property bool wpWsVertical: false
             property int wpBlur: 0
             property string wpBlurWhen: "windows"
+            property string wpBlurSplit: "100"
+            property string wpBlurSide: "left"
+            property bool wpPreview: true
+            property bool wpCenterLocked: false
+            property string wpCollageTree: ""
+            property bool wpCollageEntrance: true
             property int wpDim: 0
             property string wpDimWhen: "windows"
             property bool wpVideoPause: true
