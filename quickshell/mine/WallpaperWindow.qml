@@ -259,7 +259,7 @@ Variants {
                 opacity: on && playbackState === MediaPlayer.PlayingState ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: 400 } }
                 // parado com janela em tela cheia (ou sempre, se escolhido) para economizar a placa de video
-                readonly property bool hold: Settings.wpVideoPause && win.ws && Hyprland.toplevels.values.some(t => t.workspace && t.workspace.id === win.ws.id && t.lastIpcObject && t.lastIpcObject.fullscreen > 0)
+                readonly property bool hold: Wallpaper.videoPaused || Settings.wpVideoPause && win.ws && Hyprland.toplevels.values.some(t => t.workspace && t.workspace.id === win.ws.id && t.lastIpcObject && t.lastIpcObject.fullscreen > 0)
                 autoPlay: true
                 onSourceChanged: if (source.toString() !== "") Qt.callLater(play)
                 onHoldChanged: if (on) { if (hold) pause(); else play() }

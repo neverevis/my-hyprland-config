@@ -7,6 +7,7 @@ Item {
     property string icon: "volume"
     property bool muted: false
     property string label
+    property string iconSource      // imagem no lugar do icone (icone do app); apagada quando mudo
     signal moved(real v)
     signal iconClicked()
 
@@ -21,7 +22,16 @@ Item {
             id: ib
             width: 36; height: 36; radius: 11
             color: s.muted ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : (ibm.containsMouse ? Theme.cardHi : Theme.track)
-            UiIcon { anchors.centerIn: parent; name: s.icon; size: 18; color: s.muted ? Theme.danger : Theme.text }
+            UiIcon { visible: s.iconSource === ""; anchors.centerIn: parent; name: s.icon; size: 18; color: s.muted ? Theme.danger : Theme.text }
+            Image {
+                visible: s.iconSource !== ""
+                anchors.centerIn: parent
+                width: 22; height: 22
+                source: s.iconSource
+                sourceSize: Qt.size(44, 44)
+                asynchronous: true
+                opacity: s.muted ? 0.4 : 1
+            }
             MouseArea { id: ibm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: s.iconClicked() }
         }
         Item {

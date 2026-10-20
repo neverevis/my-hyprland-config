@@ -1,5 +1,5 @@
 // Notificacoes: o Quickshell vira o servidor (org.freedesktop.Notifications) e mostra os avisos como um bloco que cresce da moldura.
-// Clique no cartao: executa a acao padrao (se houver) e fecha; clique direito fecha; o mouse em cima pausa o tempo.
+// Clique no cartao: executa a acao padrao (se houver) e fecha; clique direito ou do meio fecha; botoes de acao embaixo; o mouse em cima pausa o tempo.
 // IPC:  qs -c mine ipc call notifications dnd | clear | test
 // Configuracoes: pagina "Notificacoes".
 import Quickshell
@@ -14,7 +14,9 @@ Scope {
 
     readonly property bool vert: Settings.notifSide === "left" || Settings.notifSide === "right"
     readonly property real cardW: Settings.notifWidth
-    readonly property real cardH: 92
+    // com botoes de acao (algum aviso na fila tem acao alem da padrao) os cartoes ganham uma faixa embaixo
+    readonly property bool anyActions: all.some(n => n.actions.some(a => a.identifier !== "default"))
+    readonly property real cardH: anyActions ? 128 : 92
     readonly property real gap: 8
     readonly property var all: server.trackedNotifications.values
     readonly property int shownCount: Math.min(all.length, Math.max(1, Settings.notifMax))
@@ -34,7 +36,10 @@ Scope {
         bodyMarkupSupported: true
         actionsSupported: true
         imageSupported: true
-        onNotification: n => { n.tracked = true; NotifHistory.add(n); if (!Settings.notifDnd) SystemGuard.sound("notif") }
+        bodyHyperlinksSupported: true
+        bodyImagesSupported: true
+        persistenceSupported: true
+        onNotification: n => { n.tracked = true; if (!n.transient) NotifHistory.add(n); if (!Settings.notifDnd) SystemGuard.sound("notif") }
     }
 
     // ---- tamanho do bloco (a moldura acoplada cresce ate ele) ----
@@ -44,7 +49,7 @@ Scope {
     onStackDepthChanged: BarState.notifDepth = stackDepth
     // so conta quando ha o que mostrar (nao perturbe esconde tudo, mas guarda). Com uma ilha dinamica (que mostra as notificacoes),
     // os cartoes nao aparecem nem fazem a moldura crescer, mas continuam existindo ate expirar (live = ainda na tela)
-    readonly property int live: Settings.notifOn && !Settings.notifDnd ? shownCount : 0
+    readonly property int live: Settings.notifOn && !Settings.notifDnd && !Settings.homeOpen ? shownCount : 0
     readonly property int visibleCount: Settings.islandNotifs ? 0 : live
     Component.onCompleted: { BarState.notifLen = stackLen; BarState.notifDepth = stackDepth; BarState.notifCount = visibleCount; BarState.notifLive = live }
 
@@ -147,7 +152,8 @@ Scope {
                             visible: opacity > 0.01
 
                             // ---- tempo ate sumir ----
-                            readonly property real total: critical ? 0 : (n.expireTimeout > 0 ? n.expireTimeout * 1000 : Settings.notifTimeout * 1000)
+                            readonly property real total: n.expireTimeout === 0 ? 0 : n.expireTimeout > 0 ? n.expireTimeout * 1000 : (critical ? 0 : Settings.notifTimeout * 1000)
+                            readonly property var acts: Array.from(n.actions).filter(a => a.identifier !== "default")
                             property real remain: total
                             Timer {
                                 interval: 50; repeat: true
@@ -180,7 +186,7 @@ Scope {
                                 // ---- icone / imagem ----
                                 Rectangle {
                                     id: iconBox
-                                    anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter }
+                                    anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter; verticalCenterOffset: root.anyActions ? -18 : 0 }
                                     width: 52; height: 52; radius: 12
                                     color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.16)
                                     clip: true
@@ -197,7 +203,7 @@ Scope {
 
                                 // ---- texto ----
                                 Column {
-                                    anchors { left: iconBox.right; leftMargin: 12; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }
+                                    anchors { left: iconBox.right; leftMargin: 12; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter; verticalCenterOffset: root.anyActions ? -18 : 0 }
                                     spacing: 2
                                     UiText {
                                         width: parent.width
@@ -214,7 +220,7 @@ Scope {
                                     }
                                     UiText {
                                         width: parent.width
-                                        text: card.n.body
+                                        text: NotifHistory.body(card.n.body, card.n.appName, true)
                                         visible: text !== ""
                                         textFormat: Text.StyledText
                                         color: Theme.muted; font.pixelSize: 12
@@ -225,7 +231,7 @@ Scope {
                                 HoverHandler { id: hover }
                                 MouseArea {
                                     anchors.fill: parent
-                                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                                    acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
                                     cursorShape: Qt.PointingHandCursor
                                     onClicked: e => {
                                         if (e.button === Qt.LeftButton) {
@@ -234,6 +240,23 @@ Scope {
                                         }
                                         card.n.dismiss()
                                     }
+                                }
+
+                                // botoes de acao do aviso (Responder, Abrir...) + copiar o texto
+                                Row {
+                                    visible: root.anyActions
+                                    anchors { left: parent.left; leftMargin: 14; right: parent.right; rightMargin: 14; bottom: parent.bottom; bottomMargin: 10 }
+                                    spacing: 6
+                                    Repeater {
+                                        model: card.acts
+                                        delegate: UiButton {
+                                            required property var modelData
+                                            text: modelData.text
+                                            kind: card.critical ? "accent" : "ghost"
+                                            onClicked: { modelData.invoke(); card.n.dismiss() }
+                                        }
+                                    }
+                                    UiButton { visible: card.acts.length > 0 && card.n.body !== ""; icon: "copy"; kind: "ghost"; onClicked: Quickshell.clipboardText = card.n.body.replace(/<[^>]*>/g, "") }
                                 }
                             }
                         }

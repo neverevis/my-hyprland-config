@@ -28,14 +28,31 @@ Singleton {
     }
     readonly property bool available: check.ok
     Process { id: check; running: true; command: ["sh", "-c", "command -v hyprsunset"]; property bool ok: false; onExited: code => ok = code === 0 }
-    Process {
-        id: sunset
-        running: root.active && check.ok
-        command: ["hyprsunset", "-t", String(Settings.nightTemp)]
+    // hyprsunset fica rodando como servico enquanto a luz noturna esta ligada ou o gamma abaixo de 100; temperatura e gamma
+    // mudam ao vivo por "hyprctl hyprsunset ..." (sem reiniciar o processo, sem piscar)
+    readonly property real gammaMin: 25
+    readonly property bool need: check.ok && (active || Settings.nightGamma < 100)
+    readonly property string tempText: Settings.nightTemp + " K"
+    Process { id: daemon; running: root.need; command: ["sh", "-c", "pidof hyprsunset >/dev/null || exec hyprsunset -i"] }
+    Process { id: apply }
+    function applyNow() {
+        const g = String(Math.max(gammaMin, Math.min(100, Settings.nightGamma)))
+        const body = 'for i in $(seq 1 25); do if [ "$1" = 1 ]; then hyprctl hyprsunset temperature "$2" >/dev/null 2>&1 && break; else hyprctl hyprsunset identity >/dev/null 2>&1 && break; fi; sleep 0.15; done; hyprctl hyprsunset gamma "$3" >/dev/null 2>&1'
+        apply.command = ["sh", "-c", body, "sh", active ? "1" : "0", String(Settings.nightTemp), g]
+        apply.running = false; apply.running = true
     }
-    onActiveChanged: if (!active) Quickshell.execDetached(["pkill", "-x", "hyprsunset"])
-    // trocar a temperatura com ela ligada: reinicia o hyprsunset
-    Connections { target: Settings; function onNightTempChanged() { if (sunset.running) { sunset.running = false; Qt.callLater(() => sunset.running = root.active && check.ok) } } }
+    Timer { id: applyT; interval: 90; onTriggered: root.applyNow() }
+    onNeedChanged: {
+        if (need) applyT.restart()
+        else Quickshell.execDetached(["sh", "-c", "hyprctl hyprsunset identity >/dev/null 2>&1; sleep 0.2; pkill -x hyprsunset"])
+    }
+    onActiveChanged: if (need) applyT.restart()
+    Connections {
+        target: Settings
+        function onNightTempChanged() { if (root.need) applyT.restart() }
+        function onNightGammaChanged() { if (root.need) applyT.restart() }
+    }
+    function setGamma(v) { Settings.nightGamma = Math.round(Math.max(gammaMin, Math.min(100, v))) }
 
     // ---- protecao contra clarao ----
     readonly property string shaderFile: Quickshell.env("HOME") + "/.cache/quickshell-mine/antiflash.glsl"
@@ -60,7 +77,7 @@ Singleton {
     }
     Connections { target: Settings; function onAntiFlashChanged() { root.applyFlash() } function onAntiFlashStrengthChanged() { if (Settings.antiFlash) flashT.restart() } }
     Timer { id: flashT; interval: 400; onTriggered: root.applyFlash() }
-    Component.onCompleted: if (Settings.antiFlash) applyFlash()
+    Component.onCompleted: { if (Settings.antiFlash) applyFlash(); if (need) applyT.restart() }
 
     IpcHandler {
         target: "night"
@@ -68,6 +85,8 @@ Singleton {
         function on(): void { root.suppressed = false; root.manual = true }
         function off(): void { root.manual = false; if (root.inSchedule) root.suppressed = true }
         function flash(): void { Settings.antiFlash = !Settings.antiFlash }
-        function status(): string { return JSON.stringify({ active: root.active, schedule: root.inSchedule, hyprsunset: check.ok, flash: Settings.antiFlash }) }
+        function gamma(v: int): string { root.setGamma(v); return String(Settings.nightGamma) }
+        function temp(k: int): string { Settings.nightTemp = Math.max(1200, Math.min(6500, k)); return String(Settings.nightTemp) }
+        function status(): string { return JSON.stringify({ active: root.active, gamma: Settings.nightGamma, temp: Settings.nightTemp, schedule: root.inSchedule, hyprsunset: check.ok, flash: Settings.antiFlash }) }
     }
 }

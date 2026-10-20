@@ -19,6 +19,7 @@ Singleton {
     // paleta de cores, miniaturas e tudo o que precisa de imagem usam esse quadro) ----
     readonly property var videoExt: ["mp4", "webm", "mkv", "mov", "m4v"]
     function isVideo(p) { return !!p && videoExt.indexOf(String(p).split(".").pop().toLowerCase()) >= 0 }
+    property bool videoPaused: false   // pausado na mao (botao rapido "Wallpaper animado"; nao e salvo)
     readonly property string frameDir: home + "/.cache/quickshell-mine/vidframe"
     function hash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) } return (h >>> 0).toString(16) }
     function framePath(p) { return frameDir + "/" + hash(p) + ".jpg" }

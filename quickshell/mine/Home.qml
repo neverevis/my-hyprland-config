@@ -16,6 +16,9 @@ Scope {
     readonly property bool open: Settings.homeOpen
     property bool alive: false
     property string tab: "home"
+    property int scrollReq: 0
+    property bool editMode: false   // editando os botoes rapidos
+    property string dialog: ""      // janelinha aberta sobre a aba ("night")
 
     readonly property var tabs: [
         { id: "home", label: "Início", icon: "home" },
@@ -34,12 +37,15 @@ Scope {
         function open(): void { Settings.homeOpen = true }
         function close(): void { Settings.homeOpen = false }
         function go(t: string): void { root.tab = t; Settings.homeOpen = true }
+        function edit(): void { root.tab = "home"; root.editMode = !root.editMode; Settings.homeOpen = true }   // edicao dos botoes rapidos
+        function popup(name: string): void { root.dialog = name === "off" ? "" : name; Settings.homeOpen = true }
+        function scroll(y: int): void { root.scrollReq = y }   // diagnostico: rola a aba atual
     }
     onOpenChanged: {
         if (open) { closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; alive = true }
         else closeTimer.restart()
     }
-    Timer { id: closeTimer; interval: Motion.durationOf("home", true) + 120; onTriggered: { root.alive = false; root.tab = "home" } }
+    Timer { id: closeTimer; interval: Motion.durationOf("home", true) + 120; onTriggered: { root.alive = false; root.tab = "home"; root.dialog = ""; root.editMode = false } }
 
     function fmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2) }
     function bytes(b) {
@@ -126,8 +132,20 @@ Scope {
     readonly property var sources: nodes.filter(n => n.audio && !n.isSink && !n.isStream)
     // apps tocando som: no Quickshell os streams de saida (Stream/Output/Audio) tem isSink = true
     readonly property var streams: nodes.filter(n => n.audio && n.isStream && n.type === PwNodeType.AudioOutStream)
-    PwObjectTracker { objects: root.alive ? root.nodes : [] }
+    // apps gravando / ouvindo o microfone (Stream/Input/Audio)
+    readonly property var inStreams: nodes.filter(n => n.audio && n.isStream && n.type === PwNodeType.AudioInStream)
+    PwObjectTracker { objects: root.alive ? root.nodes.filter(n => n.audio) : [] }
     function nodeName(n) { return n ? (n.description || n.nickname || n.name || "?") : "" }
+    // nome de um app do mixer: nome do app (ou descricao / nome do no) e, se houver, " • titulo da midia"
+    function appLabel(n) {
+        const p = n.properties || {}
+        const base = p["application.name"] || n.description || n.name || "App"
+        return base + (p["media.name"] ? " • " + p["media.name"] : "")
+    }
+    function appIcon(n) {
+        const p = n.properties || {}
+        return Icons.path(p["application.icon-name"] || "", "") || Icons.app(p["application.process.binary"] || p["application.name"] || p["node.name"] || "")
+    }
     function volIcon(a) { return !a || a.muted ? "volumeOff" : (a.volume > 0.66 ? "volume" : (a.volume > 0.25 ? "volumeMed" : "volumeLow")) }
 
     // ---- rede ----
@@ -214,7 +232,7 @@ Scope {
                         scale: win.docked ? 1 : 0.94 + 0.06 * win.pp
                         transformOrigin: Item.Top
                         focus: true
-                        Keys.onEscapePressed: Settings.homeOpen = false
+                        Keys.onEscapePressed: { if (root.dialog !== "") root.dialog = ""; else Settings.homeOpen = false }
                         Keys.onTabPressed: { const i = root.tabs.findIndex(t => t.id === root.tab); root.tab = root.tabs[(i + 1) % root.tabs.length].id }
                         MouseArea { anchors.fill: parent }
 
@@ -279,7 +297,25 @@ Scope {
                             sourceComponent: ({ home: pHome, media: pMedia, notifs: pNotifs, agenda: pAgenda, audio: pAudio, system: pSystem, net: pNet, bt: pBt })[root.tab] ?? pHome
                             opacity: 0
                             onLoaded: fadeIn.restart()
+                            Connections { target: root; function onScrollReqChanged() { if (pageL.item && pageL.item.contentY !== undefined) pageL.item.contentY = root.scrollReq } }
                             NumberAnimation { id: fadeIn; target: pageL; property: "opacity"; from: 0; to: 1; duration: 180; easing.type: Easing.OutCubic }
+                        }
+                        // janelinha sobre a aba (clique fora fecha)
+                        Rectangle {
+                            visible: root.dialog !== ""
+                            anchors { left: rail.right; leftMargin: 12; right: parent.right; rightMargin: 12; top: header.bottom; topMargin: 10; bottom: parent.bottom; bottomMargin: 12 }
+                            radius: 14
+                            color: Qt.rgba(0, 0, 0, 0.5)
+                            MouseArea { anchors.fill: parent; onClicked: root.dialog = "" }
+                            Rectangle {
+                                anchors.centerIn: parent
+                                width: Math.min(parent.width - 24, 440); height: Math.min(parent.height - 16, dlgItem.implicitHeight)
+                                radius: 16; clip: true
+                                color: Theme.bg
+                                border.width: 1; border.color: Theme.border
+                                MouseArea { anchors.fill: parent }
+                                NightDialog { id: dlgItem; visible: root.dialog === "night"; anchors.fill: parent; onCloseRequested: root.dialog = "" }
+                            }
                         }
                         Component { id: pHome; HomeMain { home: root } }
                         Component { id: pMedia; HomeMedia { home: root } }

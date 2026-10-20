@@ -14,28 +14,36 @@ Column {
     Card {
         icon: "tune"
         title: "Botões rápidos"
-        subtitle: "Até " + Settings.homeCols * 3 + " (" + Settings.homeCols + " colunas × 3 linhas), na ordem escolhida. Clique para ligar ou tirar; as setas mudam a ordem."
-        UiSeg { options: [[2, "2 colunas"], [3, "3 colunas"], [4, "4 colunas"]]; value: Settings.homeCols; onPicked: v => Settings.homeCols = v }
+        subtitle: "Cada botão ocupa de 1 a 3 colunas (1 = só o ícone). Clique para ligar ou tirar; as setas mudam a ordem e o número muda o tamanho. No painel, o lápis do cartão do usuário edita direto, e o clique direito abre o menu do botão."
+        UiSlider { icon: "view_column"; label: "Colunas"; from: 1; to: 8; value: Settings.homeColumns; onMoved: v => Settings.homeColumns = Math.max(1, Math.min(8, Math.round(v))) }
         Flow {
             width: parent.width
             spacing: 8
             Repeater {
                 model: Toggles.all
                 delegate: Rectangle {
+                    id: chip
                     required property var modelData
-                    readonly property int pos: Settings.list(Settings.homeToggles).indexOf(modelData.id)
+                    readonly property var lst: Toggles.norm(Settings.homeToggles)
+                    readonly property int pos: lst.findIndex(e => e.id === modelData.id)
                     readonly property bool on: pos >= 0
-                    width: 190; height: 48; radius: 12
+                    width: 220; height: 48; radius: 12
                     color: on ? Theme.tint(0.16) : (tm.containsMouse ? Theme.cardHi : Theme.track)
                     border.width: on ? 1.5 : 1; border.color: on ? Theme.accent : Theme.border
                     UiIcon { id: ti; x: 12; anchors.verticalCenter: parent.verticalCenter; name: modelData.icon; size: 17; color: parent.on ? Theme.accent : Theme.muted }
                     UiText { anchors { left: ti.right; leftMargin: 10; right: arrows.left; verticalCenter: parent.verticalCenter } text: (parent.on ? (parent.pos + 1) + ". " : "") + modelData.label; color: Theme.text; font.pixelSize: 13; elide: Text.ElideRight }
                     MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                        onClicked: { const l = Settings.list(Settings.homeToggles); const i = l.indexOf(modelData.id); if (i >= 0) l.splice(i, 1); else if (l.length < Settings.homeCols * 3) l.push(modelData.id); Settings.homeToggles = l } }
+                        onClicked: { const l = Toggles.norm(Settings.homeToggles); const i = chip.pos; if (i >= 0) l.splice(i, 1); else l.push({ id: modelData.id, size: 2 }); Settings.homeToggles = l } }
                     Row {
                         id: arrows
-                        visible: parent.on
+                        visible: chip.on
                         anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
+                        Rectangle {
+                            width: 22; height: 22; radius: 6; color: sm.containsMouse ? Theme.cardHi : "transparent"
+                            UiText { anchors.centerIn: parent; text: chip.on ? chip.lst[chip.pos].size : ""; color: Theme.accent; font.pixelSize: 13; font.weight: Font.Bold }
+                            MouseArea { id: sm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                onClicked: { const l = Toggles.norm(Settings.homeToggles); l[chip.pos].size = l[chip.pos].size % 3 + 1; Settings.homeToggles = l } }
+                        }
                         Repeater {
                             model: [["chevLeft", -1], ["chevRight", 1]]
                             delegate: Rectangle {
@@ -43,7 +51,7 @@ Column {
                                 width: 22; height: 22; radius: 6; color: am.containsMouse ? Theme.cardHi : "transparent"
                                 UiIcon { anchors.centerIn: parent; name: modelData[0]; size: 13; color: Theme.muted }
                                 MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                    onClicked: { const l = Settings.list(Settings.homeToggles), i = parent.parent.parent.pos, j = i + modelData[1]; if (j < 0 || j >= l.length) return; const t = l[i]; l[i] = l[j]; l[j] = t; Settings.homeToggles = l } }
+                                    onClicked: { const l = Toggles.norm(Settings.homeToggles), i = chip.pos, j = i + modelData[1]; if (j < 0 || j >= l.length) return; const t = l[i]; l[i] = l[j]; l[j] = t; Settings.homeToggles = l } }
                             }
                         }
                     }
@@ -69,9 +77,10 @@ Column {
     Card {
         icon: "night"
         title: "Luz noturna"
-        subtitle: !NightLight.available ? "Precisa do hyprsunset (sudo pacman -S hyprsunset)." : NightLight.active ? "Ligada agora (" + Settings.nightTemp + " K)." : "Desligada agora."
+        subtitle: !NightLight.available ? "Precisa do hyprsunset (sudo pacman -S hyprsunset)." : (NightLight.active ? "Ligada agora (" + Settings.nightTemp + " K)." : "Desligada agora.") + " Também abre pelo clique direito no botão Luz noturna do painel."
         UiButton { icon: NightLight.active ? "sun" : "night"; text: NightLight.active ? "Desligar agora" : "Ligar agora"; kind: NightLight.active ? "ghost" : "accent"; onClicked: NightLight.toggle() }
-        UiSlider { label: "Temperatura (menor = mais quente)"; from: 2500; to: 6000; value: Settings.nightTemp; suffix: " K"; onMoved: v => Settings.nightTemp = Math.round(v / 100) * 100 }
+        UiSlider { icon: "thermo"; label: "Temperatura (menor = mais quente)"; from: 1200; to: 6500; value: Settings.nightTemp; suffix: " K"; onMoved: v => Settings.nightTemp = Math.round(v / 100) * 100 }
+        UiSlider { icon: "sun"; label: "Brilho (gamma)"; from: 25; to: 100; value: Settings.nightGamma; suffix: " %"; onMoved: v => NightLight.setGamma(v) }
         UiSwitch { label: "Ligar sozinha no horário"; checked: Settings.nightAuto; onToggled: on => Settings.nightAuto = on }
         Row {
             visible: Settings.nightAuto

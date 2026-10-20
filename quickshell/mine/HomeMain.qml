@@ -3,14 +3,16 @@ import Quickshell
 import Quickshell.Networking
 import QtQuick
 
-Item {
+HomeScroll {
     id: pg
     property var home
+    spacing: 10
+    readonly property bool editing: !!home && home.editMode
 
     // ---------- usuario + relogio ----------
     Rectangle {
         id: userCard
-        width: parent.width; height: 108; radius: 16
+        width: pg.width; height: 108; radius: 16
         color: Theme.gl(Theme.card, 1.15)
         border.width: 1; border.color: Theme.border
         RoundImage {
@@ -50,22 +52,110 @@ Item {
                 color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12
             }
         }
+        Rectangle {   // editar os botoes rapidos
+            anchors { right: parent.right; top: parent.top; rightMargin: 8; topMargin: 8 }
+            width: 28; height: 28; radius: 14
+            color: pg.editing ? Theme.accent : (edm.containsMouse ? Qt.rgba(1, 1, 1, 0.22) : Qt.rgba(0, 0, 0, 0.28))
+            UiIcon { anchors.centerIn: parent; name: pg.editing ? "check" : "pencil"; size: 15; color: pg.editing ? Theme.accentText : "white" }
+            MouseArea { id: edm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: pg.home.editMode = !pg.home.editMode }
+        }
     }
 
     // ---------- botoes rapidos (Settings.homeToggles; os de Wi-Fi, Bluetooth e energia sao daqui, os outros do Toggles.qml) ----------
-    Grid {
+    // cada botao ocupa 1 a 3 das "colunas" (Settings.homeColumns); o clique direito (ou a seta) abre o menu do botao
+    function act(a) {
+        if (!a) return
+        if (typeof a === "function") a()
+        else if (a.indexOf("tab:") === 0) pg.home.tab = a.slice(4)
+        else if (a.indexOf("dialog:") === 0) pg.home.dialog = a.slice(7)
+    }
+    function save(l) { Settings.homeToggles = l }
+    function cur() { return Toggles.norm(Settings.homeToggles) }
+    function setSize(i, v) { const l = cur(); if (l[i]) { l[i].size = v; save(l) } }
+    function move(i, d) { const l = cur(), j = i + d; if (j < 0 || j >= l.length) return; const t = l[i]; l[i] = l[j]; l[j] = t; save(l) }
+    function drop(i) { const l = cur(); l.splice(i, 1); save(l) }
+    function add(id) { const l = cur(); l.push({ id: id, size: 2 }); save(l) }
+
+    Column {
         id: tiles
-        anchors { top: userCard.bottom; topMargin: 10 }
-        width: parent.width
-        columns: Math.max(2, Math.min(5, Settings.homeCols)); spacing: 8
-        readonly property real tw: (width - (columns - 1) * 8) / columns
+        z: 5
+        width: pg.width
+        spacing: 8
+        readonly property int cols: Math.max(1, Math.min(8, Settings.homeColumns))
+        readonly property real unit: (width - (cols - 1) * 8) / cols
         Repeater {
-            model: Settings.list(Settings.homeToggles).filter(id => Toggles.find(id)).slice(0, tiles.columns * 3)
-            delegate: Loader {
+            model: Toggles.rows(Settings.homeToggles, tiles.cols)
+            delegate: Row {
+                id: trow
                 required property var modelData
-                width: tiles.tw; height: 58
-                sourceComponent: modelData === "wifi" ? wifiT : modelData === "bt" ? btT : modelData === "profile" ? profT : genT
-                property string tid: modelData
+                spacing: 8
+                z: 10 - trow.modelData[0].idx / 100   // dicas de cima passam por cima da linha de baixo
+                Repeater {
+                    model: trow.modelData
+                    delegate: Item {
+                        id: cell
+                        required property var modelData
+                        width: modelData.w * tiles.unit + (modelData.w - 1) * 8
+                        height: 58
+                        Loader {
+                            id: ld
+                            anchors.fill: parent
+                            sourceComponent: cell.modelData.id === "wifi" ? wifiT : cell.modelData.id === "bt" ? btT : cell.modelData.id === "profile" ? profT : genT
+                            property string tid: cell.modelData.id
+                            property int tsize: cell.modelData.size
+                        }
+                        // modo de edicao: tirar, mudar de lugar e de tamanho
+                        Rectangle {
+                            visible: pg.editing
+                            anchors.fill: parent
+                            radius: 14
+                            color: Qt.rgba(0, 0, 0, 0.72)
+                            border.width: 1.5; border.color: Theme.accent
+                            MouseArea { anchors.fill: parent }
+                            Row {
+                                anchors.centerIn: parent
+                                spacing: 2
+                                Repeater {
+                                    model: [["chevLeft", -1], ["resize", 0], ["chevRight", 1]]
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        width: 26; height: 26; radius: 8
+                                        color: em.containsMouse ? Qt.rgba(1, 1, 1, 0.25) : Qt.rgba(1, 1, 1, 0.1)
+                                        UiIcon { anchors.centerIn: parent; name: parent.modelData[0]; size: 15; color: "white" }
+                                        MouseArea {
+                                            id: em; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                            onClicked: { if (parent.modelData[1] === 0) pg.setSize(cell.modelData.idx, cell.modelData.size % 3 + 1); else pg.move(cell.modelData.idx, parent.modelData[1]) }
+                                        }
+                                    }
+                                }
+                            }
+                            UiText { anchors { left: parent.left; bottom: parent.bottom; leftMargin: 8; bottomMargin: 3 }
+                                text: cell.modelData.size; color: "white"; font.pixelSize: 10; opacity: 0.8 }
+                            Rectangle {
+                                anchors { right: parent.right; top: parent.top; rightMargin: 3; topMargin: 3 }
+                                width: 20; height: 20; radius: 10
+                                color: xm.containsMouse ? Theme.danger : Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.85)
+                                UiIcon { anchors.centerIn: parent; name: "close"; size: 12; color: "white" }
+                                MouseArea { id: xm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: pg.drop(cell.modelData.idx) }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // edicao: o que ainda nao esta na lista
+    Column {
+        visible: pg.editing
+        width: pg.width
+        spacing: 6
+        UiText { text: "Toque para adicionar"; color: Theme.muted; font.pixelSize: 12 }
+        Flow {
+            width: parent.width
+            spacing: 6
+            Repeater {
+                model: Toggles.all.filter(t => Toggles.norm(Settings.homeToggles).findIndex(e => e.id === t.id) < 0)
+                delegate: UiButton { required property var modelData; icon: modelData.icon; text: modelData.label; kind: "ghost"; onClicked: pg.add(modelData.id) }
             }
         }
     }
@@ -74,6 +164,7 @@ Item {
         HomeTile {
             readonly property bool hasWifi: !!pg.home.wifiDev
             readonly property bool wired: !!pg.home.wiredDev && pg.home.wiredDev.connected
+            size: parent.tsize; editing: pg.editing; tip: label + ": " + sub
             icon: hasWifi ? (Networking.wifiEnabled ? "wifi" : "wifiOff") : (wired ? "ethernet" : "wifiOff")
             label: hasWifi ? "Wi-Fi" : "Rede"
             sub: hasWifi ? (!Networking.wifiEnabled ? "Desligado" : (pg.home.wifiCur ? pg.home.wifiCur.name : (wired ? "Cabo conectado" : "Ligado"))) : (wired ? "Cabo · " + pg.home.wiredDev.name : "Sem conexão")
@@ -86,10 +177,12 @@ Item {
     Component {
         id: btT
         HomeTile {
+            size: parent.tsize; editing: pg.editing; tip: label + ": " + sub
             icon: pg.home.bt && pg.home.bt.enabled ? "bluetooth" : "btOff"
             label: "Bluetooth"
-            sub: !pg.home.bt ? "Sem adaptador" : (!pg.home.bt.enabled ? "Desligado" : (pg.home.btConnected.length > 0 ? pg.home.btConnected[0].name : "Ligado"))
+            sub: !pg.home.bt ? "Sem adaptador" : (!pg.home.bt.enabled ? "Desligado" : (pg.home.btConnected.length > 0 ? pg.home.btConnected[0].name + (pg.home.btConnected.length > 1 ? " +" + (pg.home.btConnected.length - 1) : "") : "Ligado"))
             on: !!pg.home.bt && pg.home.bt.enabled
+            avail: !!pg.home.bt
             more: true
             onClicked: if (pg.home.bt) pg.home.bt.enabled = !pg.home.bt.enabled
             onMoreClicked: pg.home.tab = "bt"
@@ -98,6 +191,7 @@ Item {
     Component {
         id: profT
         HomeTile {
+            size: parent.tsize; editing: pg.editing; tip: label + ": " + sub
             icon: pg.home.profile === "performance" ? "rocket" : (pg.home.profile === "power-saver" ? "leaf" : "balance")
             label: "Energia"
             sub: pg.home.profileNames[pg.home.profile] ?? pg.home.profile
@@ -109,19 +203,25 @@ Item {
         id: genT
         HomeTile {
             readonly property var t: Toggles.find(parent.tid)
-            icon: t ? t.icon : "cog"
+            size: parent.tsize; editing: pg.editing
+            icon: t ? (Toggles.deps(), t.iconNow ? t.iconNow() : t.icon) : "cog"
             label: t ? t.label : ""
-            sub: t ? (Recorder.elapsed, Idle.paused, Settings.notifDnd, Toggles.gameMode, t.sub()) : ""
-            on: t ? (Recorder.active, Idle.paused, Settings.notifDnd, Settings.desktopOn, Toggles.gameMode, Osd.micMuted, t.on()) : false
-            onClicked: if (t) t.click()
+            sub: t ? (Toggles.deps(), t.sub()) : ""
+            on: t ? (Toggles.deps(), t.on()) : false
+            avail: t ? (Toggles.deps(), t.avail ? t.avail() : true) : true
+            tip: t ? label + (sub !== "" ? ": " + sub : "") : ""
+            more: !!(t && t.alt)
+            onClicked: if (t && avail) t.click()
+            onMoreClicked: if (t) pg.act(t.alt)
         }
     }
 
     // ---------- midia (resumo) ----------
+    Row {
+    spacing: 10
     HomeCard {
         id: media
-        anchors { top: tiles.bottom; topMargin: 10 }
-        width: parent.width * 0.56; height: 116
+        width: Math.round((pg.width - 10) * 0.56); height: 116
         readonly property var pl: pg.home.player
         RoundImage {   // capa desfocada de fundo
             parent: media
@@ -173,7 +273,7 @@ Item {
     // ---------- sistema (resumo) ----------
     HomeCard {
         id: sysCard
-        anchors { top: tiles.bottom; topMargin: 10; left: media.right; leftMargin: 10; right: parent.right }
+        width: pg.width - media.width - 10
         height: 116
         readonly property var s: pg.home.sys
         Column {
@@ -202,11 +302,12 @@ Item {
         }
         MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: pg.home.tab = "system" }
     }
+    }
 
     // ---------- volumes ----------
     HomeCard {
-        anchors { top: media.bottom; topMargin: 10; bottom: parent.bottom }
-        width: parent.width
+        width: pg.width
+        height: 2 * 36 + 4 + 2 * 14 - 2
         Column {
             anchors.fill: parent
             anchors.topMargin: -2

@@ -166,6 +166,8 @@ Singleton {
     property alias antiFlash: adapter.antiFlash
     property alias antiFlashStrength: adapter.antiFlashStrength
     property alias homeCols: adapter.homeCols
+    property alias homeColumns: adapter.homeColumns   // unidades por linha dos botoes rapidos do Inicio (1-8); cada botao ocupa 1 a 3 unidades
+    property alias nightGamma: adapter.nightGamma   // brilho (gamma) do hyprsunset, 25-100
     property alias hotCorners: adapter.hotCorners
     property alias hotCornerDelay: adapter.hotCornerDelay
     // painel de jogo (GameOverlay.qml)
@@ -797,6 +799,8 @@ Singleton {
             property bool antiFlash: false
             property int antiFlashStrength: 50
             property int homeCols: 3
+            property int homeColumns: 6
+            property int nightGamma: 100
             property var hotCorners: ({})
             property int hotCornerDelay: 250
             property var overlayItems: []

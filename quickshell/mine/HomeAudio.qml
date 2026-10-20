@@ -1,4 +1,5 @@
 // Aba "Audio": volume de saida e entrada, escolha dos dispositivos e volume de cada aplicativo.
+import Quickshell
 import Quickshell.Services.Pipewire
 import QtQuick
 
@@ -18,6 +19,19 @@ HomeScroll {
         UiIcon { id: ck; visible: dr.current; anchors { right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter } name: "check"; size: 16; color: Theme.accent }
         MouseArea { id: drm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: dr.clicked() }
         signal clicked()
+    }
+
+    // volume de um aplicativo (stream do PipeWire): icone do app, "app • midia", mudo no clique do icone
+    component AppRow: HomeSlider {
+        required property var modelData
+        readonly property var a: modelData.audio
+        label: pg.home.appLabel(modelData)
+        iconSource: pg.home.appIcon(modelData)
+        icon: pg.home.volIcon(a)
+        value: a ? a.volume : 0
+        muted: !!a && a.muted
+        onMoved: v => { if (a) { a.volume = v; if (a.muted && v > 0) a.muted = false } }
+        onIconClicked: if (a) a.muted = !a.muted
     }
 
     // ---- saida ----
@@ -77,6 +91,11 @@ HomeScroll {
                     onClicked: Pipewire.preferredDefaultAudioSource = modelData
                 }
             }
+            UiText { visible: pg.home.inStreams.length > 0; text: "Aplicativos usando o microfone"; color: Theme.muted; font.pixelSize: 12; topPadding: 4 }
+            Repeater {
+                model: ScriptModel { values: pg.home.inStreams; objectProp: "id" }
+                delegate: AppRow {}
+            }
         }
     }
 
@@ -91,17 +110,8 @@ HomeScroll {
             spacing: 8
             UiText { visible: pg.home.streams.length === 0; text: "Nenhum app tocando som agora."; color: Theme.muted; font.pixelSize: 13; height: 24; verticalAlignment: Text.AlignVCenter }
             Repeater {
-                model: pg.home.streams
-                delegate: HomeSlider {
-                    required property var modelData
-                    readonly property var a: modelData.audio
-                    label: (modelData.properties["application.name"] || modelData.name || "App") + (modelData.properties["media.name"] ? " · " + modelData.properties["media.name"] : "")
-                    icon: pg.home.volIcon(a)
-                    value: a ? a.volume : 0
-                    muted: !!a && a.muted
-                    onMoved: v => { if (a) { a.volume = v; if (a.muted && v > 0) a.muted = false } }
-                    onIconClicked: if (a) a.muted = !a.muted
-                }
+                model: ScriptModel { values: pg.home.streams; objectProp: "id" }
+                delegate: AppRow {}
             }
         }
     }
