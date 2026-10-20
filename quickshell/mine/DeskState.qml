@@ -129,7 +129,8 @@ Singleton {
             { sec: "Tempos", key: "longPause", label: "Pausa longa", icon: "sleep", type: "slider", from: 5, to: 60, step: 5, suffix: " min", def: 15, when: { mode: ["pomodoro", "all"] } },
             { sec: "Tempos", key: "cycles", label: "Ciclos até a pausa longa", icon: "repeat", type: "slider", from: 2, to: 8, step: 1, def: 4, when: { mode: ["pomodoro", "all"] } },
             { sec: "Tempos", key: "minutes", label: "Duração", icon: "timer", type: "slider", from: 1, to: 180, step: 1, suffix: " min", def: 10, when: { mode: ["countdown", "all"] } },
-            { sec: "Tempos", key: "notify", label: "Avisar ao terminar", icon: "bellRing", type: "switch", def: true }
+            { sec: "Tempos", key: "notify", label: "Avisar ao terminar", icon: "bellRing", type: "switch", def: true },
+            { sec: "Tempos", key: "sound", label: "Tocar um som ao terminar", icon: "volume", type: "switch", def: true, when: { notify: true } }
           ] },
         { type: "text", group: "deco", name: "Texto", icon: "compose", desc: "Uma frase, com a fonte e a cor que quiser.", sizes: [[3, 1], [2, 1], [4, 1], [2, 2], [4, 2]], options: [
             { sec: "Texto", key: "text", label: "Texto", type: "text", multiline: true, def: "Olá, mundo" },

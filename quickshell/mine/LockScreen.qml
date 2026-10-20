@@ -6,6 +6,7 @@
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import Quickshell.Services.Pam
 import Quickshell.Services.Mpris
 import QtQuick
@@ -20,6 +21,9 @@ Scope {
     property int fails: 0
     property bool leaving: false        // senha certa: animacao de saida antes de soltar a tela
     property bool caps: false
+    property bool ctrlHeld: false       // Ctrl segurado: Enter desbloqueia e depois mantem o PC acordado (como no end4)
+    property bool inhibitAfter: false
+    property string layoutName: ""      // layout atual do teclado (chip na tela)
     property string targetAction: ""    // reboot | poweroff pedido na tela de bloqueio: roda depois da senha certa
     property int focusTick: 0           // sobe para devolver o foco ao campo de senha (lock focus)
     readonly property int leaveMs: 520
@@ -54,6 +58,8 @@ Scope {
                     return
                 }
                 root.targetAction = ""
+                if (root.inhibitAfter && !root.preview) Idle.paused = true
+                root.inhibitAfter = false
                 if (Settings.lockKeyring && !root.preview) { keyring.secret = root.pw; keyring.running = true }
                 root.leaving = true
                 unlockTimer.restart()
@@ -126,10 +132,22 @@ Scope {
     }
     function submit() {
         if (checking || leaving || pw === "") return
+        inhibitAfter = ctrlHeld
         error = ""
         checking = true
         pam.start()
     }
+
+    // layout do teclado: uma leitura ao abrir e outra a cada troca (evento activelayout); nada roda com a tela desbloqueada
+    readonly property bool lockOn: Power.locked || preview
+    function layoutCode(n) { const m = { "Portuguese (Brazil)": "BR", "English (US)": "US", "English (intl., with AltGr dead keys)": "US-intl" }; return m[n] ?? n.slice(0, 3).toUpperCase() }
+    Process {
+        id: devProc
+        command: ["hyprctl", "devices", "-j"]
+        stdout: StdioCollector { onStreamFinished: { try { const k = JSON.parse(text).keyboards; root.layoutName = (k.find(x => x.main) ?? k[0]).active_keymap || "" } catch (e) {} } }
+    }
+    onLockOnChanged: if (lockOn) devProc.running = true
+    Connections { target: Hyprland; enabled: root.lockOn; function onRawEvent(ev) { if (ev.name === "activelayout") { devProc.running = false; devProc.running = true } } }
 
     // caps lock (le o LED do teclado enquanto bloqueado)
     Process {
@@ -340,6 +358,8 @@ Scope {
                         text: root.pw
                         onTextEdited: { root.pw = text; if (root.error !== "") root.error = "" }
                         onAccepted: root.submit()
+                        Keys.onPressed: ev => { if (ev.key === Qt.Key_Control) root.ctrlHeld = true }
+                        Keys.onReleased: ev => { if (ev.key === Qt.Key_Control) root.ctrlHeld = false }
                         focus: true
                         enabled: !root.checking && !root.leaving
                         Component.onCompleted: forceActiveFocus()
@@ -403,7 +423,7 @@ Scope {
                         Behavior on scale { NumberAnimation { duration: 100 } }
                         UiIcon {
                             anchors.centerIn: parent
-                            name: root.leaving ? "check" : (root.targetAction === "reboot" ? "restart" : root.targetAction === "poweroff" ? "power" : "arrowRight"); size: 20
+                            name: root.leaving ? "check" : (root.targetAction === "reboot" ? "restart" : root.targetAction === "poweroff" ? "power" : (root.ctrlHeld && root.pw !== "" ? "coffee" : "arrowRight")); size: 20
                             color: go.hot ? Theme.accentText : Qt.rgba(1, 1, 1, 0.55)
                         }
                         MouseArea { id: gm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.submit() }
@@ -415,6 +435,15 @@ Scope {
             Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: 440; height: 22
+                Rectangle {   // layout do teclado
+                    visible: root.layoutName !== ""
+                    anchors { right: parent.right; verticalCenter: parent.verticalCenter }
+                    width: lc.implicitWidth + 26; height: 22; radius: 11
+                    color: Qt.rgba(1, 1, 1, 0.1)
+                    Row { anchors.centerIn: parent; spacing: 5
+                        UiIcon { name: "keyboard"; size: 13; color: Qt.rgba(1, 1, 1, 0.75); anchors.verticalCenter: parent.verticalCenter }
+                        UiText { id: lc; text: root.layoutCode(root.layoutName); color: Qt.rgba(1, 1, 1, 0.8); font.pixelSize: 11; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
+                }
                 Row {
                     anchors.centerIn: parent
                     spacing: 6

@@ -1,7 +1,8 @@
 // Bandeja do sistema (StatusNotifier): icones dos apps; clique esquerdo ativa, direito abre o menu, meio = acao secundaria,
 // roda do mouse rola; passar o mouse mostra o nome (dica). Opcoes: size (px), spacing (px), hidePassive (esconde os icones
 // parados; padrao ligado), mono (icones na cor do texto; padrao ligado), showItemId (mostra o id do app na dica),
-// overflow (botao de mais icones: os escondidos com Shift + clique do meio ficam num cartao, padrao ligado).
+// overflow (botao de mais icones: os escondidos com Shift + clique do meio ficam num cartao, padrao ligado),
+// customMenu (menu do botao direito desenhado pelo shell; desligado usa o menu nativo do app).
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Services.SystemTray
@@ -51,6 +52,15 @@ Grid {
             }
             TipHover { text: cell.gone ? "" : cell.tipText; side: root.side; origin: root.origin }
 
+            // menu proprio do shell (BarPopup "traymenu"); com a opcao "customMenu" desligada usa o menu nativo (QsMenuAnchor)
+            function openMenu() {
+                if (root.opts.customMenu === false || !cell.modelData.menu) { menuAnchor.open(); return }
+                const p = cell.mapToItem(null, 0, 0)
+                const req = { kind: "traymenu", menu: cell.modelData.menu, side: root.side, opts: root.opts, rect: { x: p.x + root.origin.x, y: p.y + root.origin.y, w: cell.width, h: cell.height } }
+                BarState.popPending = req
+                BarState.pop = req
+                BarState.popKeep()
+            }
             QsMenuAnchor {
                 id: menuAnchor
                 menu: cell.modelData.menu
@@ -70,7 +80,7 @@ Grid {
                     BarState.popLeave()
                     if (m.button === Qt.MiddleButton && (m.modifiers & Qt.ShiftModifier)) Settings.toggleTrayHidden(cell.modelData.id)   // manda para o cartao de mais icones
                     else if (m.button === Qt.MiddleButton) cell.modelData.secondaryActivate()
-                    else if (m.button === Qt.RightButton || cell.modelData.onlyMenu) { if (cell.modelData.hasMenu) menuAnchor.open() }
+                    else if (m.button === Qt.RightButton || cell.modelData.onlyMenu) { if (cell.modelData.hasMenu) cell.openMenu() }
                     else cell.modelData.activate()
                 }
                 onWheel: w => cell.modelData.scroll(w.angleDelta.y, false)

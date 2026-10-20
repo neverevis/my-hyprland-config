@@ -69,7 +69,7 @@ Item {
         items.push({ text: a.pinned ? "Desafixar do dock" : "Fixar no dock", icon: a.pinned ? "pinOff" : "pin", fn: () => togglePin(a.id) })
         if (a.wins.length) items.push({ text: a.wins.length > 1 ? "Fechar todas as janelas" : "Fechar a janela", icon: "close", danger: true,
             fn: () => { for (const t of a.wins) hypr('hl.dsp.window.close({ window = "address:' + t.lastIpcObject.address + '" })') } })
-        const req = { kind: "appmenu", side: root.side, rect: rc, items: items, opts: ({}) }
+        const req = { kind: "appmenu", bar: root.barIdx, side: root.side, rect: rc, items: items, opts: ({}) }
         BarState.popPending = req
         BarState.pop = req
     }
@@ -230,7 +230,7 @@ Item {
                             const nm = app.e ? app.e.name : (app.modelData.cls ?? app.modelData.id)
                             // sem janelas (ou sem miniaturas): so o nome do app
                             if (!app.modelData.wins.length || root.opts.previews === false) { BarState.tipEnter(nm, root.side, rc); return }
-                            BarState.popEnter({ kind: "windows", side: root.side, wins: app.modelData.wins, title: app.e ? app.e.name : (app.modelData.cls ?? ""),
+                            BarState.popEnter({ kind: "windows", bar: root.barIdx, side: root.side, wins: app.modelData.wins, title: app.e ? app.e.name : (app.modelData.cls ?? ""),
                                                 rect: { x: p.x + root.origin.x, y: p.y + root.origin.y, w: cell.width, h: cell.height } })
                         }
                     }

@@ -45,7 +45,7 @@ Column {
         title: "Gravação de tela"
         subtitle: Recorder.active ? "Gravando " + Recorder.elapsed : "Grave a tela inteira ou uma área (ação Gravar do seletor, botão do Início ou módulo da barra)."
         UiLabel { text: "Áudio" }
-        UiSeg { options: [["none", "Sem som", "volumeOff"], ["system", "Som do PC", "speaker"], ["mic", "Microfone", "mic"]]; value: Settings.recAudio; onPicked: v => Settings.recAudio = v }
+        UiSeg { options: [["none", "Sem som", "volumeOff"], ["system", "Som do PC", "speaker"], ["mic", "Microfone", "mic"], ["both", "Os dois", "speaker"]]; value: Settings.recAudio; onPicked: v => Settings.recAudio = v }
         UiSlider { label: "Quadros por segundo (0 = do monitor)"; from: 0; to: 144; value: Settings.recFps; onMoved: v => Settings.recFps = Math.round(v) }
         Row {
             spacing: 10

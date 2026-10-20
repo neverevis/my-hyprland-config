@@ -268,7 +268,7 @@ Singleton {
     property alias overlayNotes: adapter.overlayNotes
     property alias overlayImage: adapter.overlayImage
     property alias overlayImageScale: adapter.overlayImageScale
-    property alias recAudio: adapter.recAudio           // gravacao: none | system | mic
+    property alias recAudio: adapter.recAudio           // gravacao: none | system | mic | both
     property alias imageSearchUrl: adapter.imageSearchUrl   // busca por imagem: URL base que recebe a imagem enviada
     property alias translateTarget: adapter.translateTarget // idioma da traducao de tela (codigo do trans: pt, en, es...)
     property alias regionAimLines: adapter.regionAimLines

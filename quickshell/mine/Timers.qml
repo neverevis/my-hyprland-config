@@ -39,6 +39,8 @@ Singleton {
     function start(id) { const s = Object.assign({}, get(id)); if (s.running) return; s.running = true; s.startedAt = Date.now(); now = s.startedAt; put(id, s) }
     function pause(id) { const s = Object.assign({}, get(id)); if (!s.running) return; s.base += Date.now() - s.startedAt; s.running = false; put(id, s) }
     function reset(id) { put(id, { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 }) }
+    // volta do cronometro: guarda o tempo decorrido (ms) em st[id].laps (zerar apaga)
+    function lap(id) { const s = Object.assign({}, get(id)); s.laps = (s.laps ?? []).concat([Math.round(elapsed(id))]).slice(-50); put(id, s) }
     // +N minutos na contagem regressiva (os chips +1m/+5m)
     function addMinutes(id, n) { const s = Object.assign({}, get(id)); s.extra = (s.extra ?? 0) + n * 60000; put(id, s) }
     function skip(id) { const w = lookup(id); if (w) advance(w, false) }
@@ -47,7 +49,7 @@ Singleton {
         if (ring && DeskState.opt(w, "notify")) {
             const msg = m === "countdown" ? "Tempo esgotado" : s.phase === "focus" ? "Hora da pausa" : "De volta ao foco"
             Quickshell.execDetached(["notify-send", "-a", "Timer", "-i", "alarm-clock", msg, m === "pomodoro" ? "Ciclo " + s.cycle : ""])
-            Quickshell.execDetached(["pw-play", "/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga"])
+            if (DeskState.opt(w, "sound")) root.ring()
         }
         if (m === "countdown") { put(w.id, { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 }); return }
         if (s.phase === "focus") { s.phase = s.cycle % DeskState.opt(w, "cycles") === 0 ? "long" : "pause" }
@@ -55,6 +57,8 @@ Singleton {
         s.base = 0; s.startedAt = Date.now(); s.running = ring   // pomodoro: a proxima etapa ja comeca
         put(w.id, s)
     }
+    // som ao terminar (tema freedesktop); sem o arquivo ou sem pw-play/paplay nao toca
+    function ring() { Quickshell.execDetached(["sh", "-c", 'f=/usr/share/sounds/freedesktop/stereo/alarm-clock-elapsed.oga; [ -f "$f" ] || exit 0; command -v pw-play >/dev/null && exec pw-play "$f"; command -v paplay >/dev/null && exec paplay "$f"']) }
     function check() {
         for (const id in st) {
             const s = st[id]

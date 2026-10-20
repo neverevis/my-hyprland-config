@@ -133,7 +133,7 @@ Item {
 
     Component {
         id: workspacesC
-        WorkspacesModule { vertical: root.vertical; opts: root.opts }
+        WorkspacesModule { vertical: root.vertical; side: root.side; origin: root.origin; opts: root.opts }
     }
 
     Component {

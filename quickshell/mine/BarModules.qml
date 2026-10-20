@@ -56,6 +56,7 @@ Singleton {
         tray: [{ key: "hidePassive", label: "Esconder os ícones parados", type: "switch", def: true },
                { key: "mono", label: "Ícones monocromáticos (cor do texto da barra)", type: "switch", def: true },
                { key: "overflow", label: "Botão de mais ícones", icon: "dotsH", type: "switch", def: true, desc: "Os ícones escondidos (Shift + botão do meio no ícone) ficam num cartão que abre neste botão, em vez de sumirem." },
+               { key: "customMenu", label: "Menu do botão direito desenhado pelo shell", icon: "menu", type: "switch", def: true, desc: "Desligado, usa o menu nativo de cada app." },
                { key: "showItemId", label: "Mostrar o id do app na dica", icon: "tag", type: "switch", def: false }],
         launcher: [{ key: "icon", label: "Ícone (nome, ex.: apps, arch, rocket)", type: "text", def: "apps" }],
         visualizer: [{ key: "bars", label: "Barrinhas", type: "slider", from: 4, to: 32, def: 10 },

@@ -20,7 +20,9 @@ PanelWindow {
     property bool hovering: false   // alimentado pelo HoverHandler abaixo
     // mouse na borda deste lado (faixa fina em todo o lado, opcao "Revelar encostando em qualquer ponto da borda")
     readonly property bool edgeHot: autoHide && Settings.barEdgeReveal && !!BarState.edgeHover[side]
-    readonly property bool hot: hovering || edgeHot
+    // um popup aberto a partir desta barra (previews de janelas do dock, menus) segura a barra escondida-automatica aberta
+    readonly property bool popHold: autoHide && !!BarState.pop && BarState.pop.bar === modelData && ["windows", "appmenu", "modstyle"].indexOf(BarState.pop.kind) >= 0
+    readonly property bool hot: hovering || edgeHot || popHold
     property bool armed: false      // mouse parado na borda pelo tempo de Settings.showDelay (0 = na hora)
     // barsOpen: o comando "bar close" (IPC) esconde todas as barras, com ou sem autoHide
     // dock com "revealEmpty": aparece sozinho quando o workspace nao tem janela (e nunca por conta propria com tela cheia)
@@ -237,6 +239,28 @@ PanelWindow {
                                     x: sec.vert ? 6 : 0; y: sec.vert ? 0 : 5
                                     width: sec.vert ? parent.width - 12 : 1; height: sec.vert ? 1 : parent.height - 10
                                     color: Qt.rgba(Settings.textColor.r, Settings.textColor.g, Settings.textColor.b, 0.22)
+                                }
+                                // botao direito: editor de estilo do modulo (BarPopup "modstyle"); modulos que ja usam o botao direito pedem Shift
+                                function openStyle() {
+                                    const q = cw.mapToItem(null, 0, 0)
+                                    const req = { kind: "modstyle", side: win.side, type: cw.m.type, bar: win.modelData, sec: sec.index, mod: cw.index, opts: ({}),
+                                                  rect: { x: q.x + win.margins.left, y: q.y + win.margins.top, w: cw.width, h: cw.height } }
+                                    BarState.popPending = req
+                                    BarState.pop = req
+                                    BarState.popKeep()
+                                }
+                                TapHandler {
+                                    acceptedButtons: Qt.RightButton
+                                    acceptedModifiers: Qt.NoModifier
+                                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                                    onTapped: if (["tray", "workspaces", "taskbar", "island", "media", "updates", "notifs", "bluetooth"].indexOf(cw.m.type) < 0) cw.openStyle()
+                                }
+                                TapHandler {
+                                    acceptedButtons: Qt.RightButton
+                                    acceptedModifiers: Qt.ShiftModifier
+                                    enabled: cw.m.type !== "taskbar"
+                                    gesturePolicy: TapHandler.ReleaseWithinBounds
+                                    onTapped: cw.openStyle()
                                 }
                                 ModuleView {
                                     id: mv

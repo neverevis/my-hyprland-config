@@ -17,7 +17,7 @@ Singleton {
     property string file: ""
     property string geo: ""   // area gravada ("x,y wxh", coordenadas globais); vazio = tela inteira
     readonly property string dir: (Settings.recDir || "~/Vídeos/Gravações").replace(/^~/, Quickshell.env("HOME"))
-    // audio: none | system (o que toca no PC) | mic (microfone) - pelo PipeWire (nomes do pulse)
+    // audio: none | system (o que toca no PC) | mic (microfone) | both (os dois misturados) - pelo PipeWire (nomes do pulse)
     readonly property string audioArg: Settings.recAudio === "system" ? '--audio="@DEFAULT_MONITOR@" ' : Settings.recAudio === "mic" ? '--audio="@DEFAULT_SOURCE@" ' : ""
 
     // region: false = tela inteira, true = escolher com o slurp, texto "x,y wxh" = essa area (seletor do shell)
@@ -28,7 +28,14 @@ Singleton {
         root.geo = geo
         const mon = Hyprland.focusedMonitor ? Hyprland.focusedMonitor.name : ""
         const sel = region === true ? 'g=$(slurp -d -b "#00000066" -c "#ffffffff" -w 2) || exit 0; ' : (geo ? 'g="$3"; ' : "")
-        proc.command = ["sh", "-c", 'mkdir -p "$1"; ' + sel + 'exec wf-recorder ' + (region ? '-g "$g" ' : (mon ? '-o "$4" ' : "")) + '-x yuv420p ' + root.audioArg + (Settings.recFps > 0 ? "-r " + Settings.recFps + " " : "") + '-f "$2"', "sh", dir, file, geo, mon]
+        const both = Settings.recAudio === "both"
+        const rec = 'wf-recorder ' + (region ? '-g "$g" ' : (mon ? '-o "$4" ' : "")) + '-x yuv420p ' + (both ? '"$A" ' : root.audioArg) + (Settings.recFps > 0 ? "-r " + Settings.recFps + " " : "") + '-f "$2"'
+        // som do PC + microfone: sink virtual temporario com dois loopbacks (descarregados ao terminar); sem pactl/sink, grava so o som do PC
+        const mix = both ? 'ds="$(pactl get-default-sink 2>/dev/null).monitor"; dm=$(pactl get-default-source 2>/dev/null); A="--audio=$ds"; ' +
+            'm1=$(pactl load-module module-null-sink sink_name=mine_rec_mix sink_properties=device.description=mine_rec_mix 2>/dev/null); ' +
+            'if [ -n "$m1" ]; then l1=$(pactl load-module module-loopback source="$ds" sink=mine_rec_mix latency_msec=30 2>/dev/null); l2=$(pactl load-module module-loopback source="$dm" sink=mine_rec_mix latency_msec=30 2>/dev/null); A="--audio=mine_rec_mix.monitor"; fi; ' : ""
+        const tail = both ? '; r=$?; for m in $l2 $l1 $m1; do pactl unload-module $m 2>/dev/null; done; exit $r' : ""
+        proc.command = ["sh", "-c", 'mkdir -p "$1"; ' + sel + mix + 'notify-send -a Gravação -i media-record "Gravação iniciada" "Salvando em $1"; ' + (both ? "" : "exec ") + rec + tail, "sh", dir, file, geo, mon]
         started = Date.now(); now = started
         proc.running = true
     }

@@ -13,7 +13,7 @@ Singleton {
     function date(d: var): string { return Qt.formatDateTime(d, Settings.dateFormat || "ddd, dd/MM") }
     function dateYear(d: var): string { return Qt.formatDateTime(d, Settings.dateYearFormat || "dd/MM/yyyy") }
     // data longa em pt-BR (o formato escolhido em Sessao, ou "def"); primeira letra maiuscula
-    function long(d: var, def: string): string {
+    function long(d: var, def: var): string {
         const s = d.toLocaleDateString(Qt.locale("pt_BR"), Settings.dateLongFormat || def || "dddd, d 'de' MMMM")
         return s.charAt(0).toUpperCase() + s.slice(1)
     }

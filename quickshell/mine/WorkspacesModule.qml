@@ -3,7 +3,7 @@
 //   size (px), spacing (px), anim (ms), count (0 = so os que existem), onlyOccupied (esconde vazios),
 //   symbols ("a b c ..." para "custom"), activeColor (#rrggbb; vazio = cor do texto), wrap (a roda volta do ultimo ao primeiro; padrao ligado)
 //   paged (grupos de 'count', ex.: 1-10, 11-20), showNumbers (hold = pontos viram numeros com Super; always; never), appIcons (+ mono),
-//   glyphs (nomes de icones por workspace, para o estilo glyphs)
+//   glyphs (nomes de icones por workspace, para o estilo glyphs), hoverWins (cartao com os icones das janelas ao passar o mouse; padrao ligado)
 // Clique vai para o workspace; botao direito abre a visao geral; a roda do mouse passa para o proximo/anterior.
 import Quickshell
 import Quickshell.Hyprland
@@ -14,6 +14,8 @@ Item {
     id: root
     property var opts: ({})
     property bool vertical: false
+    property string side: "bottom"
+    property point origin: Qt.point(0, 0)
     implicitWidth: grid.implicitWidth
     implicitHeight: grid.implicitHeight
     readonly property real gap: opts.spacing ?? 6
@@ -309,7 +311,18 @@ Item {
                 hoverEnabled: true
                 acceptedButtons: Qt.LeftButton | Qt.RightButton
                 cursorShape: Qt.PointingHandCursor
-                onClicked: m => { if (m.button === Qt.RightButton) Actions.run("overview"); else root.go(cell.modelData) }
+                onClicked: m => { BarState.popLeave(); if (m.button === Qt.RightButton) Actions.run("overview"); else root.go(cell.modelData) }
+                // passar o mouse: cartao com os icones das janelas deste workspace (BarPopup "wsicons"; so existe enquanto aberto)
+                onContainsMouseChanged: {
+                    if (!containsMouse) { BarState.popLeave(); return }
+                    if (root.opts.hoverWins === false || !cell.st.occupied) return
+                    const ws = Hyprland.workspaces.values.find(w => w.id === cell.modelData)
+                    if (!ws) return
+                    const wins = ws.toplevels.values.map(t => ({ cls: t.lastIpcObject ? (t.lastIpcObject.class ?? "") : "", title: t.title ?? "" }))
+                    const p = cell.mapToItem(null, 0, 0)
+                    BarState.popEnter({ kind: "wsicons", wsid: cell.modelData, wins: wins, side: root.side, opts: ({}),
+                                        rect: { x: p.x + root.origin.x, y: p.y + root.origin.y, w: cell.width, h: cell.height } })
+                }
             }
         }
     }

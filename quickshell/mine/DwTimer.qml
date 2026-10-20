@@ -145,12 +145,24 @@ Item {
         spacing: 4
         UiText { visible: w.rows === 1; text: w.fmt(w.remain); color: w.fg; font.pixelSize: Math.min(40, w.height * 0.36); font.weight: Font.Bold; font.features: { "tnum": 1 } }
         UiText { width: parent.width; horizontalAlignment: w.rows > 1 ? Text.AlignHCenter : Text.AlignLeft; text: w.phaseLabel; color: w.dim; font.pixelSize: 12 }
+        // voltas do cronometro: as 3 ultimas (a mais nova em cima), com a diferenca para a anterior
+        Column {
+            visible: w.rows > 1 && w.o("mode") === "stopwatch" && lapList.length > 0
+            anchors.horizontalCenter: parent.horizontalCenter
+            readonly property var lapList: (Timers.st, Array.from(Timers.get(w.wid).laps ?? []))
+            id: lapCol
+            spacing: 1
+            Repeater {
+                model: lapCol.visible ? lapCol.lapList.slice(-3).reverse().map((v, i, a) => { const n = lapCol.lapList.length - i, prev = n > 1 ? lapCol.lapList[n - 2] : 0; return { n: n, d: v - prev, t: v } }) : []
+                delegate: UiText { required property var modelData; text: "#" + modelData.n + "   +" + w.fmt(modelData.d) + "   " + w.fmt(modelData.t); color: w.dim; font.pixelSize: 11; font.features: { "tnum": 1 } }
+            }
+        }
         Row {
             anchors.horizontalCenter: w.rows > 1 ? parent.horizontalCenter : undefined
             spacing: 6
             Repeater {
                 model: [[w.s.running ? "pause" : "play", () => w.s.running ? Timers.pause(w.wid) : Timers.start(w.wid), true],
-                        ["refresh", () => Timers.reset(w.wid), false]].concat(w.o("mode") === "pomodoro" ? [["next", () => Timers.skip(w.wid), false]] : [])
+                        ["refresh", () => Timers.reset(w.wid), false]].concat(w.o("mode") === "pomodoro" ? [["next", () => Timers.skip(w.wid), false]] : w.o("mode") === "stopwatch" ? [["flag", () => Timers.lap(w.wid), false]] : [])
                 delegate: Rectangle {
                     required property var modelData
                     width: modelData[2] ? 40 : 32; height: 32; radius: 16

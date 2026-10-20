@@ -33,6 +33,7 @@ Scope {
     readonly property var trayItems: SystemTray.items.values.filter(m => trayIds.indexOf(m.id) >= 0)
     readonly property int trayN: trayItems.length
     function menuH(items) { let h = 16; for (const it of (items || [])) h += it.sep ? 9 : it.header ? 26 : it.wsrow ? 44 : 32; return h }
+    property real dynH: 120   // altura do conteudo dos cartoes de menu da bandeja e de estilo (eles informam)
     readonly property int todoPending: Settings.list(Settings.homeTodo).filter(i => !i.done).length
 
     LazyLoader {
@@ -61,7 +62,7 @@ Scope {
             readonly property size sz: ({ tip: Qt.size(tmeas.width + 28, tmeas.implicitHeight + 18),
                                           resources: Qt.size(340, 4 * 27 + 3 * 12 + 34),
                                           calendar: Qt.size(320, 358 + (root.todoPending > 0 ? 30 + 18 * Math.min(3, root.todoPending) : 0)), weather: Qt.size(380, 270), net: Qt.size(300, 252), ai: Qt.size(310, 108 + (ClaudeUsage.available ? 100 + 20 * Math.min(4, ClaudeUsage.sessions.length) : 40)), profile: Qt.size(300, 150),
-                                          tray: Qt.size(32 + 36 * Math.max(1, Math.min(5, trayN)), 34 + 36 * Math.max(1, Math.ceil(trayN / 5))), appmenu: Qt.size(250, root.menuH(p ? p.items : [])), system: Qt.size(360, 250), media: Qt.size(400, 210),
+                                          tray: Qt.size(32 + 36 * Math.max(1, Math.min(5, trayN)), 34 + 36 * Math.max(1, Math.ceil(trayN / 5))), appmenu: Qt.size(250, root.menuH(p ? p.items : [])), traymenu: Qt.size(260, root.dynH + 32), wsicons: Qt.size(Math.max(1, Math.min(8, p && p.wins ? p.wins.length : 1)) * 38 + 24, 66), modstyle: Qt.size(320, root.dynH + 32), system: Qt.size(360, 250), media: Qt.size(400, 210),
                                           volume: Qt.size(320, 170), privacy: Qt.size(300, 120), updates: Qt.size(300, 178), battery: Qt.size(252, 150), bt: Qt.size(280, 60 + 22 * (Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.devices.values.filter(d => d.connected).length : 0)),
                                           windows: Qt.size(Math.min(width - 40, Math.max(1, p && p.wins ? p.wins.length : 1) * 232 + 22), 196) })[kind] ?? Qt.size(300, 150)
             readonly property real gap: kind === "tip" ? 8 : 12
@@ -86,7 +87,7 @@ Scope {
                 HoverHandler { onHoveredChanged: BarState.popHover = hovered }
                 Loader {
                     anchors { fill: parent; leftMargin: win.kind === "tip" ? 14 : 16; rightMargin: win.kind === "tip" ? 14 : 16; topMargin: win.kind === "tip" ? 9 : 16; bottomMargin: win.kind === "tip" ? 9 : 16 }
-                    sourceComponent: ({ tip: tipC, resources: resC, calendar: calC, weather: weatherC, system: sysC, media: mediaC, volume: volC, privacy: privC, updates: updC, windows: winsC, battery: batC, bt: btC, net: netC, ai: aiC, profile: profC, tray: trayC, appmenu: menuC })[win.kind] ?? null
+                    sourceComponent: ({ tip: tipC, resources: resC, calendar: calC, weather: weatherC, system: sysC, media: mediaC, volume: volC, privacy: privC, updates: updC, windows: winsC, battery: batC, bt: btC, net: netC, ai: aiC, profile: profC, tray: trayC, appmenu: menuC, traymenu: trayMenuC, wsicons: wsIconsC, modstyle: modStyleC })[win.kind] ?? null
                 }
             }
         }
@@ -333,6 +334,150 @@ Scope {
                             else { tc.modelData.activate(); BarState.pop = null }
                         }
                         onWheel: w => tc.modelData.scroll(w.angleDelta.y, false)
+                    }
+                }
+            }
+        }
+    }
+    // menu de um icone da bandeja desenhado pelo shell (QsMenuOpener): submenus com "Voltar", marcas de check/radio
+    Component {
+        id: trayMenuC
+        Item {
+            id: tm
+            property var sub: null
+            property var stack: []
+            readonly property var cur: sub ?? (root.shown ? root.shown.menu : null)
+            Connections { target: root; function onShownChanged() { tm.sub = null; tm.stack = [] } }
+            QsMenuOpener { id: op; menu: tm.cur }
+            readonly property var ents: op.children ? op.children.values : []
+            readonly property real contentH: (tm.stack.length > 0 ? 32 : 0) + tm.ents.reduce((h, e) => h + (e.isSeparator ? 9 : 30), 0)
+            Binding { target: root; property: "dynH"; value: Math.min(440, Math.max(40, tm.contentH)); when: root.shown && root.shown.kind === "traymenu" }
+            Flickable {
+                anchors.fill: parent
+                contentHeight: tcol.implicitHeight
+                clip: true
+                interactive: contentHeight > height
+                Column {
+                    id: tcol
+                    width: parent.width
+                    Item {
+                        visible: tm.stack.length > 0
+                        width: parent.width; height: visible ? 32 : 0
+                        Rectangle { anchors.fill: parent; anchors.margins: 1; radius: 9; color: bm.containsMouse ? Theme.tint(0.18) : "transparent" }
+                        Row { anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter } spacing: 8
+                            UiIcon { name: "chevLeft"; size: 15; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                            UiText { text: "Voltar"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter } }
+                        MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: { const st = tm.stack.slice(); tm.sub = st.length > 1 ? st[st.length - 1] : null; st.pop(); tm.stack = st } }
+                    }
+                    Repeater {
+                        model: op.children
+                        delegate: Item {
+                            id: te
+                            required property var modelData
+                            width: tcol.width
+                            height: modelData.isSeparator ? 9 : 30
+                            Rectangle { visible: te.modelData.isSeparator; anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter } height: 1; color: Theme.border }
+                            Rectangle {
+                                visible: !te.modelData.isSeparator
+                                anchors.fill: parent; anchors.margins: 1; radius: 9
+                                color: em.containsMouse && te.modelData.enabled ? Theme.tint(0.18) : "transparent"
+                                opacity: te.modelData.enabled ? 1 : 0.4
+                                Row {
+                                    anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
+                                    spacing: 8
+                                    Item {
+                                        width: 16; height: 16; anchors.verticalCenter: parent.verticalCenter
+                                        visible: te.modelData.buttonType !== QsMenuButtonType.None || (te.modelData.icon ?? "") !== ""
+                                        UiIcon { anchors.centerIn: parent; visible: te.modelData.buttonType !== QsMenuButtonType.None
+                                            name: te.modelData.buttonType === QsMenuButtonType.RadioButton ? "circleOutline" : "check"; size: 14; color: Theme.accent
+                                            opacity: te.modelData.checkState === Qt.Unchecked ? 0.0 : 1 }
+                                        Image { anchors.fill: parent; visible: te.modelData.buttonType === QsMenuButtonType.None; source: te.modelData.icon ?? ""; sourceSize: Qt.size(32, 32); fillMode: Image.PreserveAspectFit }
+                                    }
+                                    UiText { width: tcol.width - 70; elide: Text.ElideRight; text: (te.modelData.text ?? "").replace(/_/g, ""); color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                                }
+                                UiIcon { visible: te.modelData.hasChildren; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter } name: "chevRight"; size: 14; color: Theme.muted }
+                                MouseArea {
+                                    id: em
+                                    anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        if (!te.modelData.enabled) return
+                                        if (te.modelData.hasChildren) { const st = tm.stack.slice(); st.push(tm.sub); tm.stack = st; tm.sub = te.modelData }
+                                        else { te.modelData.triggered(); BarState.pop = null }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // editor de estilo de um modulo da barra (botao direito): pilula propria + as opcoes do modulo (mesmo esquema da pagina Barras)
+    Component {
+        id: modStyleC
+        Item {
+            id: ms
+            readonly property var rq: root.shown
+            readonly property var bar: { Settings.bars; return rq ? Settings.bars[rq.bar] : null }
+            readonly property var secCfg: { const l = Settings.sectionsOf(bar); return l[rq ? rq.sec : 0] ?? ({}) }
+            readonly property var mod: (secCfg.modules ?? [])[rq ? rq.mod : 0] ?? ({})
+            readonly property var schema: BarModules.schema(mod.type ?? "")
+            function put(k, v) { Settings.setModuleOpt(rq.bar, rq.sec, rq.mod, k, v) }
+            Binding { target: root; property: "dynH"; value: Math.min(460, mcol.implicitHeight); when: root.shown && root.shown.kind === "modstyle" }
+            Flickable {
+                anchors.fill: parent
+                contentHeight: mcol.implicitHeight
+                clip: true
+                interactive: contentHeight > height
+                Column {
+                    id: mcol
+                    width: parent.width
+                    spacing: 10
+                    Item {
+                        width: parent.width; height: 26
+                        UiText { anchors.verticalCenter: parent.verticalCenter; text: "Estilo do módulo"; color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold }
+                        UiIcon { anchors { right: parent.right; verticalCenter: parent.verticalCenter } name: "close"; size: 16; color: Theme.muted
+                            MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: BarState.pop = null } }
+                    }
+                    UiSwitch { width: parent.width; label: "Pílula própria"; checked: ms.mod.group ?? ((ms.secCfg.groupStyle ?? "section") === "pills"); onToggled: on => ms.put("group", on) }
+                    RoleRow { width: parent.width; label: "Cor da pílula (vazio = da seção)"; allowNone: true; value: ms.mod.bgRole ?? ""; onPicked: v => ms.put("bgRole", v) }
+                    UiSlider { width: parent.width; label: "Opacidade"; from: 4; to: 100; value: ms.mod.bgAlpha ?? (ms.secCfg.bgAlpha ?? 14); suffix: " %"; onMoved: v => ms.put("bgAlpha", Math.round(v)) }
+                    UiSlider { width: parent.width; label: "Folga nas laterais"; from: 2; to: 24; value: ms.mod.bgPad ?? 9; suffix: " px"; onMoved: v => ms.put("bgPad", Math.round(v)) }
+                    UiSlider { width: parent.width; label: "Arredondamento (0 = redonda)"; from: 0; to: 24; value: ms.mod.bgRadius ?? 0; suffix: " px"; onMoved: v => ms.put("bgRadius", v > 0 ? Math.round(v) : undefined) }
+                    UiSwitch { width: parent.width; label: "Contorno"; checked: !!ms.mod.bgBorder; onToggled: on => ms.put("bgBorder", on) }
+                    UiLabel { visible: ms.schema.length > 0; text: "Opções do módulo" }
+                    OptionsForm {
+                        visible: ms.schema.length > 0
+                        width: parent.width
+                        compact: true
+                        schema: ms.schema
+                        get: k => BarModules.value(ms.mod, k)
+                        set: (k, v) => ms.put(k, v)
+                        isShown: d => BarModules.shown(ms.mod, d)
+                    }
+                    UiButton { icon: "restore"; text: "Voltar ao padrão"; kind: "ghost"
+                        onClicked: Settings.mutate(b => { const m = Settings.sectionsOf(b[ms.rq.bar])[ms.rq.sec].modules[ms.rq.mod]; for (const k of ["group", "bgRole", "bgAlpha", "bgPad", "bgRadius", "bgBorder"]) delete m[k] }) }
+                }
+            }
+        }
+    }
+    // janelas de um workspace (passar o mouse nos workspaces da barra): so os icones
+    Component {
+        id: wsIconsC
+        Row {
+            spacing: 6
+            anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+            Repeater {
+                model: root.shown && root.shown.wins ? Array.from(root.shown.wins).slice(0, 8) : []
+                delegate: Item {
+                    required property var modelData
+                    width: 32; height: 32
+                    Image {
+                        anchors.centerIn: parent; width: 26; height: 26
+                        readonly property var e: modelData.cls !== "" ? DesktopEntries.heuristicLookup(modelData.cls) : null
+                        source: Icons.path(e && e.icon ? e.icon : modelData.cls, "application-x-executable")
+                        sourceSize: Qt.size(64, 64); smooth: true; fillMode: Image.PreserveAspectFit
                     }
                 }
             }

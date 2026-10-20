@@ -36,7 +36,7 @@ Item {
             })
         } }
     }
-    Timer { interval: 20000; repeat: true; running: true; triggeredOnStart: true; onTriggered: { q.running = false; q.running = true } }
+    Timer { interval: 20000; repeat: true; running: w.visible; triggeredOnStart: true; onTriggered: { q.running = false; q.running = true } }
     onZonesChanged: { q.running = false; q.running = true }
 
     Component.onCompleted: Weather.use()

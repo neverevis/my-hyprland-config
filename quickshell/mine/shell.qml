@@ -8,6 +8,7 @@
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
+import Quickshell.Services.SystemTray
 import QtQuick
 import QtQuick.Shapes
 import QtQuick.Effects
@@ -94,6 +95,16 @@ ShellRoot {
         function superdown(): string { BarState.superSet(true); return "segurado" }
         function superup(): string { BarState.superSet(false); return "solto" }
         function status(): string { return BarState.barsOpen ? "aberta" : "fechada" }
+        // teste dos cartoes abertos por clique: bar popdemo modstyle|traymenu|wsicons|close (usa a primeira barra, no meio da tela)
+        function popdemo(kind: string): string {
+            if (kind === "close") { BarState.pop = null; return "ok" }
+            const rect = { x: 600, y: 900, w: 30, h: 30 }
+            if (kind === "modstyle") BarState.pop = { kind: "modstyle", side: "bottom", type: "clock", bar: 0, sec: 0, mod: 0, opts: ({}), rect: rect }
+            else if (kind === "traymenu") { const t = SystemTray.items.values.find(i => i.hasMenu); if (!t) return "sem icone com menu"; BarState.pop = { kind: "traymenu", menu: t.menu, side: "bottom", opts: ({}), rect: rect } }
+            else return "?"
+            BarState.popKeep()
+            return "ok"
+        }
     }
 
     WallpaperWindow {}

@@ -95,6 +95,40 @@ Card {
         }
     }
 
+    // criar / apagar presets (arquivos em ~/.local/share/easyeffects/output): "salvar como novo" copia o preset carregado; apagar vai para a lixeira (gio trash)
+    readonly property string presetDir: Quickshell.env("HOME") + "/.local/share/easyeffects/output"
+    property string newPreset: ""
+    property bool askDel: false
+    readonly property bool nameOk: /^[^\/.][^\/]{0,60}$/.test(newPreset.trim()) && presets.indexOf(newPreset.trim()) < 0
+    readonly property bool canDel: current !== "" && current !== "mine-eq" && presets.indexOf(current) >= 0
+    Process { id: presetProc; onExited: { eq.askDel = false; later.interval = 600; later.restart() } }
+    function savePreset() {
+        const n = newPreset.trim(); if (!nameOk || current === "") return
+        presetProc.command = ["sh", "-c", 'cp -n "$1/$2.json" "$1/$3.json" && easyeffects -l "$3"', "sh", presetDir, current, n]
+        presetProc.running = false; presetProc.running = true
+        newPreset = ""
+    }
+    function trashPreset() {
+        if (!canDel) return
+        presetProc.command = ["gio", "trash", presetDir + "/" + current + ".json"]
+        presetProc.running = false; presetProc.running = true
+    }
+    UiLabel { visible: eq.running; text: "Criar ou apagar presets" }
+    Row {
+        visible: eq.running
+        spacing: 8
+        UiField { width: 180; placeholderText: "Nome do novo preset"; text: eq.newPreset; onTextEdited: eq.newPreset = text; onAccepted: eq.savePreset() }
+        UiButton { icon: "check"; text: "Salvar o atual como novo"; kind: "ghost"; enabled: eq.nameOk && eq.current !== ""; onClicked: eq.savePreset() }
+        UiButton { visible: !eq.askDel; icon: "trash"; text: "Apagar o atual"; kind: "ghost"; enabled: eq.canDel; onClicked: eq.askDel = true }
+    }
+    Row {
+        visible: eq.running && eq.askDel
+        spacing: 8
+        UiText { anchors.verticalCenter: parent.verticalCenter; text: "Mover \"" + eq.current + "\" para a lixeira?"; color: Theme.text; font.pixelSize: 13 }
+        UiButton { icon: "trash"; text: "Sim, mover"; kind: "accent"; onClicked: eq.trashPreset() }
+        UiButton { text: "Cancelar"; kind: "ghost"; onClicked: eq.askDel = false }
+    }
+
     // equalizador grafico
     UiLabel { visible: eq.running; text: "Equalizador de 10 bandas" }
     UiText { visible: eq.running; width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: eq.eqOn ? "A curva está ativa no preset \"mine-eq\". Ao mexer, ele substitui o preset carregado no EasyEffects." : "Mexer nas bandas carrega o preset \"mine-eq\" no EasyEffects (substitui o preset atual)." }

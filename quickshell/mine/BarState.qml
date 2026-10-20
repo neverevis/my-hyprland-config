@@ -22,8 +22,11 @@ Singleton {
         if (pop) pop = p      // ja aberto: troca na hora (passar de um modulo para o outro)
         else popShowT.restart()
     }
+    // menus abertos por clique (bandeja, estilo do modulo): continuam abertos ate o mouse entrar e sair do cartao, ou 3 s sem entrar
+    Timer { id: popKeepT; interval: 3000; onTriggered: if (!bs.popHover) bs.pop = null }
+    function popKeep() { popShowT.stop(); popHideT.stop(); popKeepT.restart() }
     function popLeave() { popShowT.stop(); popHideT.restart() }
-    onPopHoverChanged: if (!popHover) popHideT.restart(); else popHideT.stop()
+    onPopHoverChanged: { if (!popHover) popHideT.restart(); else { popHideT.stop(); popKeepT.stop() } }
     // dica de texto (kind "tip"): qualquer modulo/botao chama tipEnter(texto, lado, retangulo na tela) ao passar o mouse e popLeave() ao sair
     function tipEnter(text, side, rect) {
         if (!text) return
