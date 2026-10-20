@@ -50,6 +50,13 @@ OPTIONAL=(
     gnome-keyring                                              # destravar o chaveiro junto com a tela de bloqueio
     networkmanager bluez bluez-utils                           # paginas de Wi-Fi e Bluetooth
     kitty                                                      # terminal padrao do launcher (tema ao vivo)
+    libqalculate                                               # calculadora do launcher (unidades, moedas)
+    zenity                                                     # importar VPN e escolher arquivos
+    brightnessctl upower                                       # brilho e bateria (notebooks)
+    pciutils                                                   # GPU na pagina Sobre
+    ydotool                                                    # teclado na tela digitar (systemctl --user enable --now ydotool)
+    mangohud                                                   # limitador de FPS do overlay de jogo
+    imagemagick                                                # icones dos webapps (.ico)
 )
 if [ "$DEPS" = 1 ]; then
     if command -v pacman >/dev/null; then
