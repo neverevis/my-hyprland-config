@@ -43,6 +43,15 @@ Item {
     readonly property string greet: { const h = clk.date.getHours(); return h < 5 ? "Boa noite" : h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite" }
 
     readonly property real bodyH: height - quoteH
+    property bool locked: false            // o DeskView avisa quando este relogio esta na tela de bloqueio
+    // linha de status: so na tela de bloqueio
+    Row {
+        visible: w.locked
+        anchors.horizontalCenter: parent.horizontalCenter; anchors.top: parent.top; anchors.topMargin: -2
+        spacing: 5; z: 4
+        UiIcon { name: "lock"; size: 13; color: w.dim; anchors.verticalCenter: parent.verticalCenter }
+        UiText { text: "Bloqueado"; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+    }
 
     // dados do estilo diario: clima (so busca enquanto esse estilo esta em uso) e bateria
     readonly property bool wantWx: style === "daily"

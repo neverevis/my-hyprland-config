@@ -37,10 +37,12 @@ Item {
         const s = parseFloat(text().split(" ")[0]) || 0, h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60)
         w.upD = Math.floor(h / 24); w.upH = h % 24; w.upM = m
         w.up = h > 0 ? h + " h " + m + " min" : m + " min" } }
+    property string distro: "Linux"
+    FileView { path: "/etc/os-release"; onLoaded: { const m = text().match(/^PRETTY_NAME="?([^"\n]*)"?/m); if (m) w.distro = m[1] } }
     FileView { path: "/proc/sys/kernel/osrelease"; onLoaded: w.kernel = text().trim() }
     FileView { path: "/proc/sys/kernel/hostname"; onLoaded: w.host = text().trim() }
     Timer { interval: 60000; repeat: true; running: true; triggeredOnStart: true; onTriggered: upf.reload() }
-    readonly property string infoText: ({ uptime: "Ligado há " + up, host: Profile.user + "@" + host, kernel: "Arch Linux · " + kernel, none: "" })[o("info")] ?? ""
+    readonly property string infoText: ({ uptime: "Ligado há " + up, host: Profile.user + "@" + host, kernel: distro + " · " + kernel, none: "" })[o("info")] ?? ""
     readonly property string infoIcon: ({ uptime: "clock", host: "account", kernel: "arch", none: "" })[o("info")] ?? ""
 
     readonly property bool statsOn: rows > 2 && o("info") === "uptime"

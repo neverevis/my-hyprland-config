@@ -113,7 +113,7 @@ Item {
             anchors.margins: -w.o("outline")
             source: stk
             visible: w.o("outline") > 0 && stk.status === Image.Ready
-            colorization: 1; colorizationColor: "white"; brightness: 1
+            colorization: 1; colorizationColor: w.o("outlineColor") || "white"; brightness: 1
             blurEnabled: true; blur: 0.2; blurMax: Math.max(1, w.o("outline") * 2)
             shadowEnabled: Settings.desktopShadow; shadowColor: DeskState.shadowColor(false); shadowBlur: DeskState.shadowBlur(false); shadowVerticalOffset: DeskState.shadowOffset(false) + 3
         }

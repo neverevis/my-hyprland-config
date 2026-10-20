@@ -21,7 +21,7 @@ Item {
     function o(k) { return DeskState.opt({ type: "convert", opts: w.opts }, k) }
 
     readonly property string script: Qt.resolvedUrl("scripts/convert.py").toString().replace("file://", "")
-    readonly property var formats: ["png", "jpg", "webp", "avif", "pdf"]
+    readonly property var formats: ["png", "jpg", "webp", "avif", "bmp", "tiff", "pdf"]
     readonly property var imgExt: ["png", "jpg", "jpeg", "webp", "avif", "bmp", "gif", "tif", "tiff", "tga", "ico"]
     property string status: "idle"        // idle | busy | done | error
     property var results: []              // ultimas conversoes [{ in, out, ok, err }]
@@ -32,7 +32,7 @@ Item {
         if (!files.length) { status = "error"; results = [{ ok: false, err: "Nenhuma imagem nos arquivos soltos." }]; back.restart(); return }
         if (proc.running) return
         status = "busy"; results = []
-        proc.command = ["python3", script, o("format"), String(o("quality")), o("where"), o("keep") ? "1" : "0"].concat(files)
+        proc.command = ["python3", script, o("format"), String(o("quality")), o("where"), o("keep") ? "1" : "0", o("merge") && o("format") === "pdf" && files.length > 1 ? "merge" : "single"].concat(files)
         proc.running = true
     }
     Process {
@@ -95,12 +95,14 @@ Item {
             color: w.status === "error" ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.2) : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.2)
             scale: drop.containsDrag ? 1.15 : 1
             Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
+            LoadingBlob { anchors.centerIn: parent; size: parent.width; visible: w.status === "busy"; running: visible; color: w.ac; bg: "transparent"; showBg: false }
             UiIcon {
+                visible: w.status !== "busy"
                 anchors.centerIn: parent
                 name: w.status === "busy" ? "refresh" : w.status === "done" ? "check" : w.status === "error" ? "info" : "fileSwap"
                 size: parent.width * 0.48
                 color: w.status === "error" ? Theme.danger : w.ac
-                RotationAnimation on rotation { running: w.status === "busy"; from: 0; to: 360; duration: 900; loops: Animation.Infinite }
+                
             }
         }
         UiText {

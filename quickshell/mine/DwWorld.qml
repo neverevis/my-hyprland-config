@@ -43,7 +43,7 @@ Item {
     SystemClock { id: clk; precision: SystemClock.Minutes }
     function two(n) { return String(n).padStart(2, "0") }
     // hora no formato do shell (24 h ou 12 h com AM/PM)
-    function fmt(hh, mm) { return Settings.clock24 ? two(hh) + ":" + two(mm) : (hh % 12 === 0 ? 12 : hh % 12) + ":" + two(mm) + (hh < 12 ? " AM" : " PM") }
+    function fmt(hh, mm) { return (o("hours") === "auto" ? Settings.clock24 : o("hours") === "24") ? two(hh) + ":" + two(mm) : (hh % 12 === 0 ? 12 : hh % 12) + ":" + two(mm) + (hh < 12 ? " AM" : " PM") }
     function utc(off) { const a = Math.abs(off), m = a % 60; return "UTC" + (off < 0 ? "-" : "+") + Math.floor(a / 60) + (m ? ":" + two(m) : "") }
 
     readonly property bool vert: o("vertical") || rows > cols

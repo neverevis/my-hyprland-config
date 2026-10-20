@@ -68,11 +68,13 @@ Item {
             property real dw: -1
             property real dh: -1
             property bool resizing: false
-            readonly property real tw: dw > 0 ? dw : (w ? DeskState.px(w.cols) : 150)
-            readonly property real th: dh > 0 ? dh : (w ? DeskState.px(w.rows) : 150)
+            readonly property bool docked: !!w && w.type === "visualizer" && DeskState.opt(w, "dock") === true
+            readonly property real freeSz: w && w.type === "image" && DeskState.opt(w, "kind") === "photo" ? DeskState.opt(w, "size") : 0
+            readonly property real tw: docked ? view.area.width : dw > 0 ? dw : freeSz > 0 ? freeSz : (w ? DeskState.px(w.cols) : 150)
+            readonly property real th: dh > 0 ? dh : freeSz > 0 ? freeSz : (w ? DeskState.px(w.rows) : 150)
             readonly property var pos: w ? (DeskState.auto, DeskState.posOf(w)) : ({ fx: 0, fy: 0 })
-            readonly property real bx: view.area.x + pos.fx * Math.max(0, view.area.width - tw)
-            readonly property real by: view.area.y + pos.fy * Math.max(0, view.area.height - th)
+            readonly property real bx: docked ? view.area.x : view.area.x + pos.fx * Math.max(0, view.area.width - tw)
+            readonly property real by: docked ? view.area.y + view.area.height - th : view.area.y + pos.fy * Math.max(0, view.area.height - th)
             property real ox: 0
             property real oy: 0
             property bool moving: false
@@ -163,6 +165,19 @@ Item {
                 clip: !card.bare
                 Behavior on radius { MotionAnim { use: "desktop" } }
                 Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 220 } }
+                // vidro como lente: bruma, brilho diagonal e aro de luz (so estatico, so no estilo vidro)
+                Loader {
+                    anchors.fill: parent
+                    active: card.cardStyle === "glass"
+                    sourceComponent: Item {
+                        Rectangle { anchors.fill: parent; radius: bg.radius
+                            gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.10) } GradientStop { position: 0.55; color: Qt.rgba(1, 1, 1, 0.02) } GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 0.06) } } }
+                        Rectangle { x: parent.width * 0.08; y: 1; width: parent.width * 0.84; height: Math.min(parent.height * 0.4, 40); radius: height / 2
+                            gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.16) } GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 0) } } }
+                        Rectangle { anchors.fill: parent; radius: bg.radius; color: "transparent"; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.22)
+                            Rectangle { anchors.fill: parent; anchors.margins: 1; radius: parent.radius - 1; color: "transparent"; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.05) } }
+                    }
+                }
                 Loader {
                     id: content
                     anchors.fill: parent
@@ -184,6 +199,7 @@ Item {
                 it.opts = ls && ls !== "same" ? Object.assign({}, w.opts || {}, { style: ls }) : (w.opts || {})
                 if (it.posX !== undefined) it.posX = Qt.binding(() => card.pos.fx)
                 if (it.wid !== undefined) it.wid = wid
+                if (it.locked !== undefined) it.locked = view.lockMode
                 if (it.fg !== undefined) { it.fg = Qt.binding(() => card.fg); it.dim = Qt.binding(() => card.dim); it.ac = Qt.binding(() => card.ac) }
                 if (it.ac2 !== undefined) it.ac2 = Qt.binding(() => card.ac2)
                 if (it.cont !== undefined) { it.cont = Qt.binding(() => card.cont); it.contInk = Qt.binding(() => card.contInk) }
@@ -298,7 +314,8 @@ Item {
                     else if (DeskState.selected === card.wid) { DeskState.selected = ""; DeskState.selection = [] }
                     else { DeskState.selected = card.wid; DeskState.selection = [card.wid] }   // clique: abre as opcoes
                 }
-                onDoubleClicked: { DeskState.selected = card.wid; DeskState.selection = [card.wid] }
+                onDoubleClicked: { if (card.w && card.w.type === "image" && DeskState.opt(card.w, "kind") === "sticker" && DeskState.opt(card.w, "tilt") !== 0) { DeskState.setOpt(card.wid, "tilt", 0); return }
+                    DeskState.selected = card.wid; DeskState.selection = [card.wid] }
             }
             // ---- alca do canto: tamanho arrastando (imagem: livre; os outros encaixam na grade) ----
             Rectangle {

@@ -71,6 +71,7 @@ Singleton {
         { type: "world", group: "time", name: "Relógio mundial", icon: "web", desc: "Várias cidades ao mesmo tempo.", sizes: [[2, 1], [2, 2], [3, 1], [1, 2]], options: [
             { sec: "Cidades", key: "zones", label: "Fusos (um por linha: Região/Cidade; ou use a engrenagem do widget)", type: "list", def: ["America/Sao_Paulo", "Europe/London", "Asia/Tokyo", "America/New_York"] },
             { sec: "Visual", key: "faces", label: "Mostrar como", type: "seg", preview: true, def: "digital", options: [["digital", "Digital", "clockDigital"], ["analog", "Ponteiros", "clockOutline"]] },
+            { sec: "Visual", key: "hours", label: "Horas", type: "seg", def: "auto", options: [["auto", "Do shell", "auto"], ["24", "24 h", "clockOutline"], ["12", "12 h (AM/PM)", "clockOutline"]] },
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false }
           ] },
         { type: "calendar", group: "time", name: "Calendário", icon: "calendar", desc: "O mês, a semana ou o dia de hoje.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2]], options: [
@@ -91,7 +92,13 @@ Singleton {
             { sec: "Estilo", key: "colors", label: "Cores", type: "seg", def: "theme", options: [["theme", "Tema", "palette"], ["cover", "Capa da música", "album"], ["mono", "Uma cor", "swatch"]] },
             { sec: "Som", key: "bars", label: "Faixas", icon: "equalizer", type: "slider", from: 8, to: 64, step: 4, def: 32 },
             { sec: "Som", key: "sensitivity", label: "Sensibilidade", icon: "gauge", type: "slider", from: 30, to: 300, step: 10, suffix: " %", def: 100 },
-            { sec: "Som", key: "idleHide", label: "Esconder quando nada toca", icon: "eyeOff", type: "switch", def: true }
+            { sec: "Som", key: "idleHide", label: "Esconder quando nada toca", icon: "eyeOff", type: "switch", def: true },
+            { sec: "Detalhes", key: "peaks", label: "Pontas que caem devagar", icon: "equalizer", type: "switch", def: false, when: { vstyle: "bars" } },
+            { sec: "Detalhes", key: "pulse", label: "Pulsar no grave", icon: "pulse", type: "switch", def: false },
+            { sec: "Detalhes", key: "cover", label: "Capa no meio do anel", icon: "album", type: "switch", def: true, when: { vstyle: "ring" } },
+            { sec: "Detalhes", key: "bandH", label: "Altura das faixas", icon: "alignVCenter", type: "slider", from: 30, to: 100, step: 5, suffix: " %", def: 100, when: { vstyle: ["bars", "mirror", "wave", "dots", "aurora"] } },
+            { sec: "Detalhes", key: "dock", label: "Fixo embaixo, largura toda", icon: "alignVCenter", desc: "Cola o visualizador na base da tela, de ponta a ponta.", type: "switch", def: false },
+            { sec: "Detalhes", key: "ringSize", label: "Tamanho do anel", icon: "circleOutline", type: "slider", from: 40, to: 130, step: 5, suffix: " %", def: 100, when: { vstyle: "ring" } }
           ] },
         { type: "system", group: "system", name: "Sistema", icon: "chip", desc: "CPU, memória, disco, temperatura, GPU e rede.", sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [1, 2]], options: [
             { sec: "Medidas", key: "metrics", label: "O que mostrar", type: "seg", def: "basic", options: [["basic", "CPU, RAM, disco", "chip"], ["hot", "CPU, temperatura, GPU", "thermo"], ["all", "Tudo", "dashboard"]] },
@@ -142,14 +149,17 @@ Singleton {
             { sec: "Enquadramento", key: "panX", label: "Posição na horizontal", icon: "swap_horizontal", desc: "Qual parte aparece: -100 % mostra a esquerda, 100 % a direita.", type: "slider", from: -100, to: 100, step: 5, suffix: " %", def: 0, when: { kind: ["photo", "card"], fit: "crop" } },
             { sec: "Enquadramento", key: "panY", label: "Posição na vertical", icon: "swap_vertical", type: "slider", from: -100, to: 100, step: 5, suffix: " %", def: 0, when: { kind: ["photo", "card"], fit: "crop" } },
             { sec: "Enquadramento", key: "tilt", label: "Inclinação", icon: "rotate", desc: "Editando, a alça redonda em cima do widget gira arrastando.", type: "slider", from: -180, to: 180, step: 1, suffix: "°", def: 0, when: { kind: ["photo", "sticker"] } },
+            { sec: "Forma", key: "size", label: "Tamanho livre", icon: "arrow_expand", desc: "0 usa o tamanho da grade; senão a foto fica quadrada com esse lado.", type: "slider", from: 0, to: 600, step: 10, suffix: " px", def: 0, when: { kind: "photo" } },
             { sec: "Imagem", key: "caption", label: "Legenda", icon: "tag", type: "text", def: "", when: { kind: "card" } },
-            { sec: "Adesivo", key: "outline", label: "Contorno branco", icon: "circleOutline", type: "slider", from: 0, to: 16, step: 1, suffix: " px", def: 8, when: { kind: "sticker" } }
+            { sec: "Adesivo", key: "outline", label: "Contorno branco", icon: "circleOutline", type: "slider", from: 0, to: 16, step: 1, suffix: " px", def: 8, when: { kind: "sticker" } },
+            { sec: "Adesivo", key: "outlineColor", label: "Cor do contorno", type: "color", def: "#ffffff", when: { kind: "sticker" } }
           ] },
-        { type: "convert", group: "deco", name: "Conversor de imagens", icon: "fileSwap", desc: "Solte imagens nele e elas viram PNG, JPG, WEBP, AVIF ou PDF.", sizes: [[2, 2], [2, 1], [1, 1], [3, 2]], options: [
-            { sec: "Conversão", key: "format", label: "Converter para", type: "seg", def: "webp", options: [["png", "PNG"], ["jpg", "JPG"], ["webp", "WEBP"], ["avif", "AVIF"], ["pdf", "PDF"]] },
+        { type: "convert", group: "deco", name: "Conversor de imagens", icon: "fileSwap", desc: "Solte imagens nele e elas viram PNG, JPG, WEBP, AVIF, BMP, TIFF ou PDF.", sizes: [[2, 2], [2, 1], [1, 1], [3, 2]], options: [
+            { sec: "Conversão", key: "format", label: "Converter para", type: "seg", def: "webp", options: [["png", "PNG"], ["jpg", "JPG"], ["webp", "WEBP"], ["avif", "AVIF"], ["bmp", "BMP"], ["tiff", "TIFF"], ["pdf", "PDF"]] },
             { sec: "Conversão", key: "quality", label: "Qualidade", icon: "tuneVariant", type: "slider", from: 30, to: 100, step: 5, suffix: " %", def: 85, when: { format: ["jpg", "webp", "avif"] } },
             { sec: "Conversão", key: "where", label: "Salvar em", type: "seg", def: "same", options: [["same", "Mesma pasta", "folder"], ["downloads", "Downloads", "download"]] },
-            { sec: "Conversão", key: "keep", label: "Manter o original", icon: "copy", type: "switch", def: true }
+            { sec: "Conversão", key: "keep", label: "Manter o original", icon: "copy", type: "switch", def: true },
+            { sec: "Conversão", key: "merge", label: "Juntar tudo em um PDF", icon: "fileSwap", desc: "Várias imagens soltas de uma vez viram um único PDF.", type: "switch", def: false, when: { format: "pdf" } }
           ] }
     ]
     // opcoes que todo widget tem
