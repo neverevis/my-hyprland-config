@@ -12,13 +12,14 @@ HomeScroll {
     // ---------- usuario + relogio ----------
     Rectangle {
         id: userCard
+        visible: Settings.homeBanner
         width: pg.width; height: 108; radius: 16
         color: Theme.glc(Theme.card, 1.15)
         border.width: 1; border.color: Theme.border
         RoundImage {
             x: 1; y: 1; width: parent.width - 2; height: parent.height - 2
             radius: 15
-            source: Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
+            source: Settings.homeBannerImage !== "" ? "file://" + Settings.homeBannerImage : Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
             sourceSize: Qt.size(640, 200)
             blur: 0.7
             dim: 0.48
@@ -306,13 +307,15 @@ HomeScroll {
 
     // ---------- volumes ----------
     HomeCard {
+        visible: Settings.homeSliderVol || Settings.homeSliderMic
         width: pg.width
-        height: 2 * 36 + 4 + 2 * 14 - 2
+        height: ((Settings.homeSliderVol ? 1 : 0) + (Settings.homeSliderMic ? 1 : 0)) * 36 + (Settings.homeSliderVol && Settings.homeSliderMic ? 4 : 0) + 2 * 14 - 2
         Column {
             anchors.fill: parent
             anchors.topMargin: -2
             spacing: 4
             HomeSlider {
+                visible: Settings.homeSliderVol
                 readonly property var a: pg.home.sink ? pg.home.sink.audio : null
                 icon: pg.home.volIcon(a)
                 value: a ? a.volume : 0
@@ -321,6 +324,7 @@ HomeScroll {
                 onIconClicked: if (a) a.muted = !a.muted
             }
             HomeSlider {
+                visible: Settings.homeSliderMic
                 readonly property var a: pg.home.source ? pg.home.source.audio : null
                 icon: a && a.muted ? "micOff" : "mic"
                 value: a ? a.volume : 0

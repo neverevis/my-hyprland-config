@@ -59,20 +59,29 @@ Singleton {
     readonly property bool pickerDockedAll: Settings.wpPickerDocked
     readonly property bool launcherDockedAll: Settings.launcherDocked
     readonly property bool homeDockedAll: Settings.homeDocked
-    property real pickerRaw: Settings.wpPickerOpen && !(pickerDockedAll && ((launcherDockedAll && launcherProg > 0.02) || (homeDockedAll && homeProg > 0.02))) ? 1 : 0
+    readonly property bool leftDockedAll: Settings.leftDocked
+    property real pickerRaw: Settings.wpPickerOpen && !(pickerDockedAll && ((launcherDockedAll && launcherProg > 0.02) || (homeDockedAll && homeProg > 0.02) || (leftDockedAll && leftProg > 0.02))) ? 1 : 0
     Behavior on pickerRaw { id: b_pickerProg; MotionAnim { use: "picker"; out: b_pickerProg.targetValue < 0.5 } }
     readonly property real pickerProg: pickerRaw
     // progresso do launcher (0..1) e profundidade do conteudo dele (o Launcher.qml atualiza; a moldura acopla)
-    property real launcherRaw: Settings.launcherOpen && !(launcherDockedAll && ((pickerDockedAll && pickerProg > 0.02) || (homeDockedAll && homeProg > 0.02))) ? 1 : 0
+    property real launcherRaw: Settings.launcherOpen && !(launcherDockedAll && ((pickerDockedAll && pickerProg > 0.02) || (homeDockedAll && homeProg > 0.02) || (leftDockedAll && leftProg > 0.02))) ? 1 : 0
     Behavior on launcherRaw { id: b_launcherProg; MotionAnim { use: "launcher"; out: b_launcherProg.targetValue < 0.5 } }
     readonly property real launcherProg: launcherRaw
     property real launcherDepth: 64
     // painel Inicio: tamanho fixo do conteudo e progresso
     readonly property real homeW: 700
     readonly property real homeH: 556
-    property real homeRaw: Settings.homeOpen && !(homeDockedAll && ((pickerDockedAll && pickerProg > 0.02) || (launcherDockedAll && launcherProg > 0.02))) ? 1 : 0
+    property real homeRaw: Settings.homeOpen && !(homeDockedAll && ((pickerDockedAll && pickerProg > 0.02) || (launcherDockedAll && launcherProg > 0.02) || (leftDockedAll && leftProg > 0.02))) ? 1 : 0
     Behavior on homeRaw { id: b_homeProg; MotionAnim { use: "home"; out: b_homeProg.targetValue < 0.5 } }
     readonly property real homeProg: homeRaw
+    // barra lateral esquerda (IA, tradutor): acoplada na borda esquerda, como o Inicio
+    property bool leftWide: false
+    property real leftW: leftWide ? 760 : 520
+    Behavior on leftW { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+    readonly property real leftH: 680
+    property real leftRaw: Settings.leftOpen && !(leftDockedAll && ((pickerDockedAll && pickerProg > 0.02) || (launcherDockedAll && launcherProg > 0.02) || (homeDockedAll && homeProg > 0.02))) ? 1 : 0
+    Behavior on leftRaw { id: b_leftProg; MotionAnim { use: "home"; out: b_leftProg.targetValue < 0.5 } }
+    readonly property real leftProg: leftRaw
     // notificacoes: quantidade de cartoes (a moldura cresce ate o bloco), progresso e comprimento do bloco ao longo da borda (animados)
     property int notifCount: 0
     property int notifLive: 0   // notificacoes ainda na tela (mesmo se a ilha dinamica mostra no lugar dos cartoes)

@@ -15,7 +15,8 @@ Scope {
     property var geo: ({ home: null })        // resultado de Geometry.compute (vem do shell.qml)
     readonly property bool open: Settings.homeOpen
     property bool alive: false
-    property string tab: "home"
+    property string tab: Settings.homeLastTab
+    onTabChanged: if (tab !== Settings.homeLastTab) Settings.homeLastTab = tab
     property int scrollReq: 0
     property bool editMode: false   // editando os botoes rapidos
     property string dialog: ""      // janelinha aberta sobre a aba ("night")
@@ -43,10 +44,10 @@ Scope {
         function scroll(y: int): void { root.scrollReq = y }   // diagnostico: rola a aba atual
     }
     onOpenChanged: {
-        if (open) { closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; alive = true }
+        if (open) { closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.leftOpen = false; alive = true }
         else closeTimer.restart()
     }
-    Timer { id: closeTimer; interval: Motion.durationOf("home", true) + 120; onTriggered: { root.alive = false; root.tab = "home"; root.dialog = ""; root.editMode = false } }
+    Timer { id: closeTimer; interval: Motion.durationOf("home", true) + 120; onTriggered: { root.alive = false; root.dialog = ""; root.editMode = false } }
 
     function fmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2) }
     function bytes(b) {
@@ -120,10 +121,9 @@ Scope {
     }
 
     // ---- midia ----
-    readonly property var players: Mpris.players.values
-    property int playerPick: -1   // -1 = automatico (o que esta tocando)
-    readonly property var player: playerPick >= 0 && playerPick < players.length ? players[playerPick]
-        : (players.find(p => p.isPlaying) ?? (players.length > 0 ? players[0] : null))
+    readonly property var players: Players.list
+    property int playerPick: -1   // -1 = automatico (preferido, tocando ou o ultimo que tocou)
+    readonly property var player: Players.pick(playerPick)
 
     // ---- audio ----
     readonly property var sink: Pipewire.defaultAudioSink

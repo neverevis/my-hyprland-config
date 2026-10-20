@@ -26,7 +26,7 @@ Scope {
         function search(q: string): void { root.pending = q; Settings.launcherOpen = true; root.searchFor(q) }   // abre ja com o texto (ex.: "=2+2", ":fogo")
     }
     onOpenChanged: {
-        if (open) { closeTimer.stop(); Settings.wpPickerOpen = false; Settings.homeOpen = false; query = ""; alive = true }
+        if (open) { closeTimer.stop(); Settings.wpPickerOpen = false; Settings.homeOpen = false; Settings.leftOpen = false; query = ""; alive = true }
         else if (Settings.launcherDocked) closeTimer.restart()   // acoplado: espera a moldura recolher
         else alive = false                                        // flutuante: quem anima a saida e o Hyprland
     }

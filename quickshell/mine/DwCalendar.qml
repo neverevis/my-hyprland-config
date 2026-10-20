@@ -20,6 +20,7 @@ Item {
     SystemClock { id: clk; precision: SystemClock.Minutes }
     readonly property date today: clk.date
     property int shift: 0
+    WheelHandler { acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad; onWheel: e => w.shift += e.angleDelta.y > 0 ? -1 : 1 }   // roda: troca de mes
     readonly property date month: new Date(today.getFullYear(), today.getMonth() + shift, 1)
     readonly property var loc: Qt.locale("pt_BR")
     function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1) }

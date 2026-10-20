@@ -27,9 +27,9 @@ ShellRoot {
     IpcHandler {
         target: "panels"
         function closeall(): bool {
-            const any = Settings.settingsOpen || Settings.launcherOpen || Settings.wpPickerOpen || Settings.homeOpen
+            const any = Settings.settingsOpen || Settings.launcherOpen || Settings.wpPickerOpen || Settings.homeOpen || Settings.leftOpen
                 || Power.menuOpen || Profile.picking || Profile.editing !== ""
-            Settings.settingsOpen = false; Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false
+            Settings.settingsOpen = false; Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; Settings.leftOpen = false
             Power.menuOpen = false
             if (Profile.picking || Profile.editing !== "") Profile.cancel()
             return any
@@ -111,6 +111,7 @@ ShellRoot {
     // servicos que precisam existir desde o inicio (singletons so nascem quando alguem os usa)
     readonly property var services: [HotCorners.actions.length, Battery.present, Brightness.available, NightLight.active, SystemGuard.updates, DropShelf.files.length]
     Home { geo: shell.geo }
+    Left { geo: shell.geo }
     PowerMenu {}
     PhotoEditor {}
     PickWindow {}

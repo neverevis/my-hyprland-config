@@ -9,11 +9,12 @@ import QtQuick
 Singleton {
     id: root
     readonly property var actions: [
-        ["", "Nada"], ["home", "Início"], ["launcher", "Launcher"], ["overview", "Visão geral"], ["desktop", "Ver a área de trabalho"],
+        ["", "Nada"], ["home", "Início"], ["left", "Barra lateral esquerda"], ["launcher", "Launcher"], ["overview", "Visão geral"], ["desktop", "Ver a área de trabalho"],
         ["picker", "Seletor de wallpaper"], ["settings", "Configurações"], ["power", "Menu de energia"], ["lock", "Bloquear"], ["night", "Luz noturna"]
     ]
     function run(a) {
         if (a === "home") Settings.homeOpen = !Settings.homeOpen
+        else if (a === "left") Settings.leftOpen = !Settings.leftOpen
         else if (a === "launcher") Settings.launcherOpen = !Settings.launcherOpen
         else if (a === "picker") Settings.wpPickerOpen = !Settings.wpPickerOpen
         else if (a === "settings") Settings.settingsOpen = !Settings.settingsOpen
@@ -26,7 +27,7 @@ Singleton {
     readonly property var corners: ["tl", "tr", "bl", "br"]
 
     Variants {
-        model: root.corners.filter(c => !!(Settings.hotCorners || {})[c])
+        model: Settings.hotCornerHideFs && Settings.fsActive ? [] : root.corners.filter(c => !!(Settings.hotCorners || {})[c])
         delegate: PanelWindow {
             id: cw
             required property string modelData

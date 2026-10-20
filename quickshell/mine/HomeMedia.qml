@@ -1,4 +1,5 @@
 // Aba "Midia": capa grande, faixa, barra de progresso (arrastavel), controles e escolha do player.
+import Quickshell
 import Quickshell.Services.Mpris
 import QtQuick
 
@@ -6,6 +7,9 @@ Item {
     id: pg
     property var home
     readonly property var pl: home.player
+    Component.onCompleted: Lyrics.use()
+    Component.onDestruction: Lyrics.release()
+    readonly property string lyric: Lyrics.index >= 0 && Lyrics.lines[Lyrics.index] ? Lyrics.lines[Lyrics.index].text : ""
 
     Timer { interval: 1000; repeat: true; running: !!pg.pl && pg.pl.isPlaying; onTriggered: pg.pl.positionChanged() }
 
@@ -54,10 +58,17 @@ Item {
                 UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: pg.pl ? [pg.pl.trackArtist, pg.pl.trackAlbum].filter(x => !!x).join(" · ") : ""; color: Qt.rgba(1, 1, 1, 0.72); font.pixelSize: 13; elide: Text.ElideRight }
             }
 
+            UiText {   // linha atual da letra (lrclib), so enquanto esta aba esta aberta
+                visible: pg.lyric !== ""
+                anchors { top: info.bottom; topMargin: 2; left: parent.left; right: parent.right; leftMargin: 24; rightMargin: 24 }
+                horizontalAlignment: Text.AlignHCenter; text: pg.lyric; elide: Text.ElideRight
+                color: Theme.accent; font.pixelSize: 13; font.italic: true
+            }
+
             // ---- progresso ----
             Item {
                 id: prog
-                anchors { top: info.bottom; topMargin: 16; left: parent.left; right: parent.right; leftMargin: 24; rightMargin: 24 }
+                anchors { top: info.bottom; topMargin: pg.lyric !== "" ? 26 : 16; left: parent.left; right: parent.right; leftMargin: 24; rightMargin: 24 }
                 height: 34
                 visible: !!pg.pl && pg.pl.lengthSupported && pg.pl.length > 0
                 property real dragV: -1
@@ -105,6 +116,7 @@ Item {
                 CBtn { icon: "prev"; onClicked: if (pg.pl && pg.pl.canGoPrevious) pg.pl.previous() }
                 CBtn { main: true; icon: pg.pl && pg.pl.isPlaying ? "pause" : "play"; onClicked: if (pg.pl && pg.pl.canTogglePlaying) pg.pl.togglePlaying() }
                 CBtn { icon: "next"; onClicked: if (pg.pl && pg.pl.canGoNext) pg.pl.next() }
+                CBtn { icon: "equalizer"; onClicked: Quickshell.execDetached(["sh", "-c", "command -v easyeffects >/dev/null && easyeffects"]) }   // abre o equalizador
                 CBtn {
                     visible: !!pg.pl && pg.pl.loopSupported
                     icon: pg.pl && pg.pl.loopState === MprisLoopState.None ? "repeatOff" : "repeat"

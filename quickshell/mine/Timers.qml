@@ -19,7 +19,15 @@ Singleton {
     function register(id, w) { const r = Object.assign({}, reg); r[id] = w; reg = r }
     function lookup(id) { return DeskState.find(id) ?? reg[id] ?? null }
     function get(id) { return st[id] ?? { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 } }
-    function put(id, v) { const c = Object.assign({}, st); c[id] = v; st = c }
+    function put(id, v) { const c = Object.assign({}, st); c[id] = v; st = c; saveT.restart() }
+    // sobrevive a reinicios do shell: grava so quando o usuario muda algo (startedAt e hora de relogio, entao o tempo continua certo)
+    Timer { id: saveT; interval: 500; onTriggered: stFile.setText(JSON.stringify(root.st)) }
+    FileView {
+        id: stFile
+        path: Quickshell.env("HOME") + "/.cache/quickshell-mine/timers.json"
+        printErrors: false
+        onLoaded: { try { const d = JSON.parse(text()); if (d && typeof d === "object") root.st = d } catch (e) {} }
+    }
     function elapsed(id) { const s = get(id); return s.base + (s.running ? now - s.startedAt : 0) }
     // duracao total da etapa atual (ms; 0 = cronometro)
     function total(w) {

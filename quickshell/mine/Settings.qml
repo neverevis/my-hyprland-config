@@ -225,6 +225,27 @@ Singleton {
     property alias hotCornerClick: adapter.hotCornerClick   // agir no clique em vez de encostar
     property alias hotCornerWheel: adapter.hotCornerWheel   // roda no canto de baixo: brilho (esquerda) / volume (direita)
     property alias hotCornerVisualize: adapter.hotCornerVisualize
+    property alias mediaDedupe: adapter.mediaDedupe           // tira players duplicados
+    property alias mediaPreferred: adapter.mediaPreferred     // parte do nome do player preferido
+    property alias homeLastTab: adapter.homeLastTab
+    property alias homeBannerImage: adapter.homeBannerImage
+    property alias homeBanner: adapter.homeBanner
+    property alias homeSliderVol: adapter.homeSliderVol
+    property alias homeSliderMic: adapter.homeSliderMic
+    property alias hotCornerHideFs: adapter.hotCornerHideFs   // esconde as zonas com uma janela em tela cheia
+    property alias leftDocked: adapter.leftDocked             // barra lateral esquerda saindo da moldura (ou flutuante)
+    property alias aiBackend: adapter.aiBackend
+    property alias aiOllamaUrl: adapter.aiOllamaUrl
+    property alias aiOllamaModel: adapter.aiOllamaModel
+    property alias aiOpenaiUrl: adapter.aiOpenaiUrl
+    property alias aiOpenaiModel: adapter.aiOpenaiModel
+    property alias aiGeminiModel: adapter.aiGeminiModel
+    property alias aiTemp: adapter.aiTemp
+    property alias aiSystem: adapter.aiSystem
+    property alias trEngine: adapter.trEngine
+    property alias trSource: adapter.trSource
+    property alias trTarget: adapter.trTarget
+    property bool leftOpen: false                               // barra lateral esquerda aberta (nao e salva)
     // mostrar a barra escondida segurando a tecla Super (IPC bar superdown / superup)
     property alias superReveal: adapter.superReveal
     property alias superDelay: adapter.superDelay
@@ -941,6 +962,26 @@ Singleton {
             property int hotCornerW: 4
             property int hotCornerH: 4
             property bool hotCornerClick: false
+            property bool hotCornerHideFs: true
+            property bool mediaDedupe: true
+            property string mediaPreferred: ""
+            property string homeLastTab: "home"
+            property string homeBannerImage: ""
+            property bool homeBanner: true
+            property bool homeSliderVol: true
+            property bool homeSliderMic: true
+            property bool leftDocked: true
+            property string aiBackend: "ollama"
+            property string aiOllamaUrl: "http://localhost:11434"
+            property string aiOllamaModel: ""
+            property string aiOpenaiUrl: "https://api.openai.com/v1"
+            property string aiOpenaiModel: "gpt-4o-mini"
+            property string aiGeminiModel: "gemini-2.5-flash"
+            property int aiTemp: 70
+            property string aiSystem: ""
+            property string trEngine: "google"
+            property string trSource: "auto"
+            property string trTarget: "pt"
             property bool hotCornerWheel: true
             property bool hotCornerVisualize: false
             property bool superReveal: true

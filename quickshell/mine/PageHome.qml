@@ -101,6 +101,24 @@ Column {
     }
 
     Card {
+        icon: "tune"
+        title: "Início e mídia"
+        subtitle: "O que aparece na aba Início e como escolher o player."
+        UiSwitch { label: "Faixa com foto e relógio"; checked: Settings.homeBanner; onToggled: on => Settings.homeBanner = on }
+        Row {
+            spacing: 8
+            UiButton { icon: "image"; text: Settings.homeBannerImage === "" ? "Foto própria da faixa…" : "Trocar a foto da faixa…"; onClicked: Pick.image("Foto da faixa do Início", p => Settings.homeBannerImage = p) }
+            UiButton { visible: Settings.homeBannerImage !== ""; icon: "close"; text: "Usar o wallpaper"; kind: "ghost"; onClicked: Settings.homeBannerImage = "" }
+        }
+        UiSwitch { label: "Controle de volume"; checked: Settings.homeSliderVol; onToggled: on => Settings.homeSliderVol = on }
+        UiSwitch { label: "Controle do microfone"; checked: Settings.homeSliderMic; onToggled: on => Settings.homeSliderMic = on }
+        UiSwitch { label: "Esconder players repetidos"; description: "Tira o playerctld e cópias do mesmo navegador."; checked: Settings.mediaDedupe; onToggled: on => Settings.mediaDedupe = on }
+        UiText { text: "Player preferido"; color: Theme.muted; font.pixelSize: 12 }
+        UiField { placeholderText: "parte do nome, ex.: spotify"; text: Settings.mediaPreferred; onEditingFinished: Settings.mediaPreferred = text.trim() }
+        UiSwitch { label: "Barra lateral esquerda saindo da moldura"; description: "Desligado, ela flutua. Abre com a ação \"Barra lateral esquerda\" (ou um canto ativo)."; checked: Settings.leftDocked; onToggled: on => Settings.leftDocked = on }
+    }
+
+    Card {
         icon: "arrow_top_left"
         title: "Cantos ativos"
         subtitle: "Encostar o mouse num canto da tela faz uma ação."
@@ -108,6 +126,7 @@ Column {
         UiSlider { visible: !Settings.hotCornerClick; label: "Esperar antes de agir"; from: 0; to: 1000; value: Settings.hotCornerDelay; suffix: " ms"; onMoved: v => Settings.hotCornerDelay = Math.round(v / 50) * 50 }
         UiSlider { label: "Largura da zona"; from: 1; to: 250; value: Settings.hotCornerW; suffix: " px"; onMoved: v => Settings.hotCornerW = Math.round(v) }
         UiSlider { label: "Altura da zona"; from: 1; to: 60; value: Settings.hotCornerH; suffix: " px"; onMoved: v => Settings.hotCornerH = Math.round(v) }
+        UiSwitch { label: "Esconder em tela cheia"; description: "Sem as zonas quando uma janela está em tela cheia (jogos, vídeos)."; checked: Settings.hotCornerHideFs; onToggled: on => Settings.hotCornerHideFs = on }
         UiSwitch { label: "Mostrar as zonas"; description: "Pinta a área de cada canto ativo para você ver onde ela fica."; checked: Settings.hotCornerVisualize; onToggled: on => Settings.hotCornerVisualize = on }
         UiSwitch { label: "Roda do mouse nos cantos de baixo"; description: "Esquerda muda o brilho da tela (só em telas com backlight), direita muda o volume."; checked: Settings.hotCornerWheel; onToggled: on => Settings.hotCornerWheel = on }
         Repeater {
