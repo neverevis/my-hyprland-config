@@ -278,10 +278,21 @@ Scope {
             readonly property var w: DeskMenu.wid !== "" ? DeskState.find(DeskMenu.wid) : null
             // carrossel do topo: o wallpaper atual + 5 da mesma pasta, sorteados cada vez que o menu abre
             property var carList: []
+            property var carPool: []      // todas as outras, sorteadas; a roda do mouse desliza a janela de 5 sobre elas
+            property int carOff: 0
+            function scrollCar(d) {
+                const n = carPool.length
+                if (n < 1) return
+                carOff = ((carOff + d) % n + n) % n
+                const cur = Wallpaper.current, out = cur ? [cur] : []
+                for (let i = 0; i < Math.min(5, n); i++) out.push(carPool[(carOff + i) % n])
+                carList = out
+            }
             function buildCar() {
                 const cur = Wallpaper.current
                 const others = Wallpaper.files.filter(f => f.path !== cur).map(f => f.path)
                 for (let i = others.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = others[i]; others[i] = others[j]; others[j] = t }
+                carPool = others; carOff = 0
                 carList = (cur ? [cur] : []).concat(others.slice(0, 5))
             }
             Connections { target: DeskMenu; function onOpenChanged() { if (DeskMenu.open) menu.buildCar() } }

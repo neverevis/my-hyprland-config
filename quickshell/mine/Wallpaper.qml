@@ -129,8 +129,35 @@ Singleton {
             else out.push({ path: model.get(i, "filePath"), name: model.get(i, "fileBaseName") })
         }
         dirs = d
+        if (Settings.wpSort === "manual") out.sort((a, b) => ordKey(a.path) - ordKey(b.path))
         files = out
     }
+    // ordem manual: posicao na lista salva (os novos vao para o fim, em ordem de nome)
+    function ordKey(p: string): real { const i = Settings.list(Settings.wpOrder).indexOf(p.split("/").pop()); return i < 0 ? 1e9 : i }
+    Connections { target: Settings; function onWpSortChanged() { root.refresh() } function onWpOrderChanged() { if (Settings.wpSort === "manual") root.refresh() } }
+    // move o arquivo d posicoes na lista (so com ordem manual); grava a lista inteira da pasta vista
+    function moveFile(path: string, d: int): void {
+        const names = files.map(f => f.path.split("/").pop())
+        const i = names.indexOf(path.split("/").pop()), j = i + d
+        if (i < 0 || j < 0 || j >= names.length) return
+        const t = names[i]; names[i] = names[j]; names[j] = t
+        const rest = Settings.list(Settings.wpOrder).filter(n => names.indexOf(n) < 0)
+        reorderTo = j
+        Settings.wpOrder = names.concat(rest)
+    }
+    // excluir = lixeira (gio trash); sem gio nao apaga nada
+    property int reorderTo: -1      // indice (em files) que o item movido passa a ter: o seletor segue o foco
+    property string trashErr: ""
+    property string delPath: ""     // arquivo esperando confirmacao de exclusao no seletor
+    Connections { target: Settings; function onWpPickerOpenChanged() { root.delPath = "" } }
+    function trash(path: string): void {
+        if (!path) return
+        if (path === current && files.length > 1) step(1)
+        trashProc.command = ["sh", "-c", 'command -v gio >/dev/null || exit 3; gio trash -- "$1"', "sh", path]
+        trashProc.running = true
+    }
+    Process { id: trashProc; onExited: code => { root.trashErr = code === 0 ? "" : (code === 3 ? "gio não encontrado (pacote glib2)" : "Não foi possível mover para a lixeira"); if (code !== 0) errT.restart() } }
+    Timer { id: errT; interval: 3500; onTriggered: root.trashErr = "" }
 
     FolderListModel {
         id: model

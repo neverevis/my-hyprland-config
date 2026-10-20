@@ -240,7 +240,7 @@ Scope {
                 }
                 UiText {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "dddd, d 'de' MMMM"); return s.charAt(0).toUpperCase() + s.slice(1) }
+                    text: DateTime.long(clk.date)
                     color: Qt.rgba(1, 1, 1, 0.88); font.pixelSize: 21; font.weight: Font.Medium; font.letterSpacing: 0.4
                 }
             }

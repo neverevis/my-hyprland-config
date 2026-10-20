@@ -55,22 +55,37 @@ Item {
         boundsBehavior: Flickable.StopAtBounds
         model: w.items.map((it, i) => ({ text: it.text, done: it.done, i: i })).filter(x => !(w.o("hideDone") && x.done))
         delegate: Item {
+            id: row
             required property var modelData
             width: lv.width; height: 30
-            Rectangle { anchors.fill: parent; radius: 8; color: rm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07) : "transparent" }
-            UiIcon { id: box; x: 4; anchors.verticalCenter: parent.verticalCenter; name: modelData.done ? "checkbox" : "checkboxEmpty"; size: 18; color: modelData.done ? w.ac : w.dim }
-            UiText {
-                anchors { left: box.right; leftMargin: 8; right: x.left; rightMargin: 4; verticalCenter: parent.verticalCenter }
-                text: modelData.text; elide: Text.ElideRight
-                color: modelData.done ? w.dim : w.fg; font.pixelSize: 13; font.strikeout: modelData.done
-            }
-            MouseArea { id: rm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: w.toggle(modelData.i) }
-            UiIcon {
-                id: x
-                anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
-                visible: rm.containsMouse || xm.containsMouse
-                name: "close"; size: 14; color: xm.containsMouse ? Theme.danger : w.dim
-                MouseArea { id: xm; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: w.del(modelData.i) }
+            // arrastar a linha para o lado mais de 70 px apaga a tarefa (o fundo avermelha ate la)
+            Rectangle { anchors.fill: parent; radius: 8; color: Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, Math.min(1, Math.abs(rowc.x) / 70) * 0.35); visible: rowc.x !== 0 }
+            Item {
+                id: rowc
+                width: parent.width; height: parent.height
+                opacity: 1 - Math.min(0.6, Math.abs(rowc.x) / 140)
+                Behavior on x { enabled: !rm.drag.active; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Rectangle { anchors.fill: parent; radius: 8; color: rm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07) : "transparent" }
+                UiIcon { id: box; x: 4; anchors.verticalCenter: parent.verticalCenter; name: row.modelData.done ? "checkbox" : "checkboxEmpty"; size: 18; color: row.modelData.done ? w.ac : w.dim }
+                UiText {
+                    anchors { left: box.right; leftMargin: 8; right: x.left; rightMargin: 4; verticalCenter: parent.verticalCenter }
+                    text: row.modelData.text; elide: Text.ElideRight
+                    color: row.modelData.done ? w.dim : w.fg; font.pixelSize: 13; font.strikeout: row.modelData.done
+                }
+                MouseArea {
+                    id: rm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                    drag.target: rowc; drag.axis: Drag.XAxis; drag.minimumX: -w.width; drag.maximumX: w.width
+                    preventStealing: drag.active
+                    onClicked: w.toggle(row.modelData.i)
+                    onReleased: { if (Math.abs(rowc.x) > 70) w.del(row.modelData.i); else rowc.x = 0 }
+                }
+                UiIcon {
+                    id: x
+                    anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
+                    visible: rm.containsMouse || xm.containsMouse
+                    name: "close"; size: 14; color: xm.containsMouse ? Theme.danger : w.dim
+                    MouseArea { id: xm; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: w.del(row.modelData.i) }
+                }
             }
         }
         UiText { visible: lv.count === 0; anchors.centerIn: parent; text: w.items.length ? "Tudo feito!" : "Nada por aqui"; color: w.dim; font.pixelSize: 13 }

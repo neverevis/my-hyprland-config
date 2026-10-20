@@ -189,6 +189,7 @@ Singleton {
     property alias clockAmPm: adapter.clockAmPm          // "ap" (am/pm) | "AP" (AM/PM) quando o relogio e de 12 h
     property alias clockSeconds: adapter.clockSeconds    // segundos no relogio da barra, da ilha e do bloqueio
     property alias dateFormat: adapter.dateFormat        // data curta (Qt), ex.: ddd, dd/MM
+    property alias dateLongFormat: adapter.dateLongFormat // data longa (Qt; vazio = "dddd, d 'de' MMMM"): tela de bloqueio, popups, widgets
     property alias dateYearFormat: adapter.dateYearFormat // data com ano (Qt)
     // transparencia: fundo (moldura, janelas) e conteudo (cartoes) separados; OLED = fundos pretos
     property alias glassSplit: adapter.glassSplit
@@ -362,8 +363,10 @@ Singleton {
     property alias wpPickerCount: adapter.wpPickerCount       // quantos wallpapers aparecem no seletor (1, 3 ou 5)
     property alias wpPickerRadius: adapter.wpPickerRadius     // arredondamento dos cantos do painel (topo)
     property alias wpPickerFillet: adapter.wpPickerFillet     // curva onde o painel encontra a moldura
-    property alias wpSort: adapter.wpSort                     // ordem no seletor: name | time | size
+    property alias wpSort: adapter.wpSort                     // ordem no seletor: name | time | size | manual
     property alias wpSortRev: adapter.wpSortRev
+    property alias wpOrder: adapter.wpOrder                   // ordem manual (wpSort = manual): nomes de arquivo
+    property alias wpLayout: adapter.wpLayout                 // seletor: carousel | grid
     property alias wpCloseAfter: adapter.wpCloseAfter         // fechar o seletor ao escolher
     property alias wpSystemDialog: adapter.wpSystemDialog     // super + W abre o navegador de arquivos em vez do carrossel
     property alias whPrefs: adapter.whPrefs                   // filtros do Wallhaven { sorting, topRange, order, ratios, cats, purity, colors }
@@ -627,6 +630,7 @@ Singleton {
         adapter.clockSeconds = false
         adapter.dateFormat = "ddd, dd/MM"
         adapter.dateYearFormat = "dd/MM/yyyy"
+        adapter.dateLongFormat = ""
         adapter.blurManaged = false
         adapter.blurEnabled = true
         adapter.blurSize = 3
@@ -888,6 +892,8 @@ Singleton {
             property bool overviewBtt: false
             property string wpSort: "name"
             property bool wpSortRev: false
+            property var wpOrder: []
+            property string wpLayout: "carousel"
             property bool wpCloseAfter: false
             property bool wpSystemDialog: false
             property var whPrefs: ({})
@@ -946,6 +952,7 @@ Singleton {
             property bool clockSeconds: false
             property string dateFormat: "ddd, dd/MM"
             property string dateYearFormat: "dd/MM/yyyy"
+            property string dateLongFormat: ""
             property bool glassSplit: false
             property int glassContent: 60
             property bool uiOled: false

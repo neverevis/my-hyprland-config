@@ -39,7 +39,7 @@ Item {
     readonly property string mm: String(clk.date.getMinutes()).padStart(2, "0")
     readonly property string ss: String(clk.date.getSeconds()).padStart(2, "0")
     readonly property string ampm: clk.date.getHours() < 12 ? "AM" : "PM"
-    readonly property string dateText: cap(clk.date.toLocaleDateString(loc, "dddd, d 'de' MMMM"))
+    readonly property string dateText: DateTime.long(clk.date)
     readonly property string greet: { const h = clk.date.getHours(); return h < 5 ? "Boa noite" : h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite" }
 
     readonly property real bodyH: height - quoteH

@@ -104,6 +104,7 @@ Column {
         }
         UiSwitch { label: "Mostrar segundos"; icon: "timer"; description: "No relógio da barra e da ilha (a tela de bloqueio tem a sua opção)."; checked: Settings.clockSeconds; onToggled: on => Settings.clockSeconds = on }
         UiField { width: parent.width; placeholderText: "Data curta, ex.: ddd, dd/MM"; text: Settings.dateFormat; onEditingFinished: Settings.dateFormat = text }
+        UiField { width: parent.width; placeholderText: "Data longa (vazio = padrão), ex.: dddd, d 'de' MMMM"; text: Settings.dateLongFormat; onEditingFinished: Settings.dateLongFormat = text }
         UiField { width: parent.width; placeholderText: "Data com ano, ex.: dd/MM/yyyy"; text: Settings.dateYearFormat; onEditingFinished: Settings.dateYearFormat = text }
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Letras do Qt: d dd ddd dddd (dia), M MM MMM MMMM (mês), yy yyyy (ano). Nos módulos de relógio com formato próprio, o trecho HH:mm segue a escolha acima." }
     }

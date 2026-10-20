@@ -65,6 +65,9 @@ Item {
     // lista de fusos do sistema (so quando o cartao vira)
     property var tzAll: []
     property string region: ""
+    property string tzq: ""     // busca no seletor de fusos
+    function norm(t) { return String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() }
+    onBackChanged: if (!back) { tzq = ""; tzs.text = "" }
     Process {
         id: tzp
         command: ["timedatectl", "list-timezones"]
@@ -101,7 +104,7 @@ Item {
                 Column {
                     anchors { right: parent.right; bottom: parent.bottom }
                     UiText { anchors.right: parent.right; text: w.fmt(clk.date.getHours(), clk.date.getMinutes()); color: w.fg; font.pixelSize: Math.min(42, front.hh * 0.5); font.weight: Font.Bold; font.features: { "tnum": 1 } }
-                    UiText { anchors.right: parent.right; text: { const t = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "dddd, d MMM yyyy"); return t.charAt(0).toUpperCase() + t.slice(1) } color: w.dim; font.pixelSize: 11 }
+                    UiText { anchors.right: parent.right; text: DateTime.long(clk.date, "dddd, d MMM yyyy"); color: w.dim; font.pixelSize: 11 }
                 }
             }
             Grid {
@@ -180,10 +183,23 @@ Item {
                     UiIcon { anchors.centerIn: parent; name: "check"; size: 14; color: w.fg }
                     MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: w.flip() } }
             }
+            // busca por cidade/pais em todas as regioes (com texto, os chips de regiao somem)
+            UiField {
+                id: tzs
+                anchors { top: bh.bottom; topMargin: 4 }
+                width: parent.width; implicitHeight: 28; font.pixelSize: 12
+                placeholderText: "Buscar cidade…"
+                onTextEdited: w.tzq = text
+                onActiveFocusChanged: DeskState.wantKeys("world-f-" + w.wid, activeFocus)
+                Keys.onEscapePressed: { text = ""; w.tzq = ""; focus = false }
+                HoverHandler { onHoveredChanged: DeskState.wantKeys("world-h-" + w.wid, hovered) }
+                Component.onDestruction: { DeskState.wantKeys("world-h-" + w.wid, false); DeskState.wantKeys("world-f-" + w.wid, false) }
+            }
             ListView {
                 id: regs
-                anchors { top: bh.bottom; topMargin: 4 }
-                width: parent.width; height: 26
+                visible: w.tzq === ""
+                anchors { top: tzs.bottom; topMargin: 4 }
+                width: parent.width; height: w.tzq === "" ? 26 : 0
                 orientation: ListView.Horizontal; spacing: 4; clip: true
                 model: parent.regions
                 delegate: Rectangle {
@@ -199,13 +215,13 @@ Item {
                 anchors { top: regs.bottom; topMargin: 4; bottom: parent.bottom }
                 width: parent.width; clip: true; spacing: 2
                 boundsBehavior: Flickable.StopAtBounds
-                model: w.tzAll.filter(z => z.split("/")[0] === regs.parent.reg)
+                model: w.tzq !== "" ? w.tzAll.filter(z => w.norm(z.replace(/_/g, " ")).includes(w.norm(w.tzq))) : w.tzAll.filter(z => z.split("/")[0] === regs.parent.reg)
                 delegate: Rectangle {
                     required property string modelData
                     readonly property bool on: zl.parent.sel.indexOf(modelData) >= 0
                     width: zl.width; height: 26; radius: 8
                     color: on ? Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.25) : (zm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.1) : "transparent")
-                    UiText { anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter; right: ck.left } text: modelData.split("/").slice(1).join(" / ").replace(/_/g, " "); color: w.fg; font.pixelSize: 12; elide: Text.ElideRight }
+                    UiText { anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter; right: ck.left } text: modelData.split("/").slice(w.tzq !== "" ? 0 : 1).join(" / ").replace(/_/g, " "); color: w.fg; font.pixelSize: 12; elide: Text.ElideRight }
                     UiIcon { id: ck; visible: parent.on; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter } name: "check"; size: 13; color: w.ac }
                     MouseArea { id: zm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: w.toggleZone(modelData) }
                 }

@@ -81,6 +81,9 @@ Scope {
             readonly property real contentDepth: Geometry.pickerDepth(vert)   // profundidade do conteudo
             readonly property real len: Geometry.pickerLen(vert, width, height)
             readonly property real total: vert ? height : width
+            readonly property bool gridMode: Settings.wpLayout === "grid"
+            readonly property var items: root.src === "wh" ? Wallhaven.results : Wallpaper.entries
+            function focusView() { if (gridMode) gv.forceActiveFocus(); else list.forceActiveFocus() }
             readonly property real pp: BarState.pickerProg                // progresso (0..1), mesma animacao das barras
 
             // acoplado: a moldura (Geometry) ja cresceu ate aqui; usamos o retangulo dessa "barra"
@@ -163,16 +166,17 @@ Scope {
                     height: 34
                     spacing: 4
                     readonly property bool wh: root.src === "wh"
-                    readonly property int nBtn: wh ? 4 : 5
+                    readonly property int nBtn: wh ? 5 : 6
                     UiButton { icon: "web"; kind: "ghost"; checked: tools.wh; onClicked: root.src = tools.wh ? "local" : "wh" }
+                    UiButton { icon: win.gridMode ? "view_column" : "view_grid"; kind: "ghost"; onClicked: Settings.wpLayout = win.gridMode ? "carousel" : "grid" }
                     UiButton { visible: !tools.wh; icon: "arrowUp"; kind: "ghost"; onClicked: Wallpaper.up() }
                     UiButton { visible: !tools.wh; icon: "folderHome"; kind: "ghost"; onClicked: Wallpaper.reset() }
                     UiButton {
-                        visible: !tools.wh; icon: Settings.wpSort === "name" ? "sortName" : (Settings.wpSort === "time" ? "sortTime" : "disk"); kind: "ghost"; checked: Settings.wpSortRev
+                        visible: !tools.wh; icon: Settings.wpSort === "name" ? "sortName" : (Settings.wpSort === "time" ? "sortTime" : (Settings.wpSort === "manual" ? "swap_horizontal" : "disk")); kind: "ghost"; checked: Settings.wpSortRev
                         onClicked: {
-                            const o = ["name", "time", "size"]
+                            const o = ["name", "time", "size", "manual"]
                             if (!Settings.wpSortRev) Settings.wpSortRev = true
-                            else { Settings.wpSortRev = false; Settings.wpSort = o[(o.indexOf(Settings.wpSort) + 1) % 3] }
+                            else { Settings.wpSortRev = false; Settings.wpSort = o[(o.indexOf(Settings.wpSort) + 1) % 4] }
                         }
                     }
                     UiButton { visible: tools.wh; icon: "sortName"; kind: "ghost"; onClicked: { Wallhaven.nextSort(); Wallhaven.newSearch() } }
@@ -185,8 +189,8 @@ Scope {
                         placeholderText: tools.wh ? "Buscar no Wallhaven…" : "Filtrar ( / )"
                         text: tools.wh ? Wallhaven.query : Wallpaper.filter
                         onTextEdited: if (!tools.wh) Wallpaper.filter = text
-                        onAccepted: { if (tools.wh) { Wallhaven.query = text; Wallhaven.newSearch() } list.forceActiveFocus() }
-                        Keys.onEscapePressed: { if (!tools.wh) { Wallpaper.filter = ""; text = "" } list.forceActiveFocus() }
+                        onAccepted: { if (tools.wh) { Wallhaven.query = text; Wallhaven.newSearch() } win.focusView() }
+                        Keys.onEscapePressed: { if (!tools.wh) { Wallpaper.filter = ""; text = "" } win.focusView() }
                     }
                 }
 
@@ -196,8 +200,9 @@ Scope {
                     // a lista mostra exatamente N cartoes (a folga das margens fica fora dela: sem lasca do proximo wallpaper)
                     x: win.box.x + (win.vert ? 0 : Geometry.pickerPad); y: win.box.y + 40 + (win.vert ? Geometry.pickerPad : 0)
                     width: win.box.width - (win.vert ? 0 : 2 * Geometry.pickerPad); height: win.box.height - 40 - (win.vert ? 2 * Geometry.pickerPad : 0)
-                    model: root.src === "wh" ? Wallhaven.results : Wallpaper.entries
-                    focus: true
+                    model: win.gridMode ? [] : win.items
+                    visible: !win.gridMode
+                    focus: !win.gridMode
                     clip: true
                     // carrossel circular: ao passar do ultimo volta ao primeiro (e vice-versa). Os itens correm por uma reta centrada
                     readonly property real span: (win.vert ? height : width)
@@ -216,8 +221,9 @@ Scope {
                     highlightRangeMode: PathView.StrictlyEnforceRange
                     highlightMoveDuration: 280
                     interactive: false          // so a roda do mouse / setas movem
-                    function onOpen() { currentIndex = Math.max(0, Wallpaper.entries.findIndex(f => f.path === Wallpaper.current)); positionViewAtIndex(currentIndex, PathView.Center); forceActiveFocus(); Qt.callLater(forceActiveFocus); syncFocus() }
-                    function syncFocus() { const it = root.src === "local" && currentIndex >= 0 && currentIndex < count ? Wallpaper.entries[currentIndex] : null; Wallpaper.pickerFocus = it && !it.dir ? it.path : "" }
+                    function onOpen() { const i = Math.max(0, Wallpaper.entries.findIndex(f => f.path === Wallpaper.current)); currentIndex = i; gv.currentIndex = i; positionViewAtIndex(i, PathView.Center); gv.positionViewAtIndex(i, GridView.Center); win.focusView(); Qt.callLater(win.focusView); syncFocus() }
+                    function syncFocus() { const ci = win.gridMode ? gv.currentIndex : currentIndex; const it = root.src === "local" && ci >= 0 && ci < win.items.length ? Wallpaper.entries[ci] : null; Wallpaper.pickerFocus = it && !it.dir ? it.path : "" }
+                    Connections { target: Settings; function onWpLayoutChanged() { const i = win.gridMode ? list.currentIndex : gv.currentIndex; if (win.gridMode) gv.currentIndex = i; else list.currentIndex = i; Qt.callLater(win.focusView); Qt.callLater(list.syncFocus) } }
                     Connections {
                         target: root
                         function onAliveChanged() { if (root.alive) list.onOpen(); else Wallpaper.pickerFocus = "" }
@@ -227,16 +233,23 @@ Scope {
                     Component.onDestruction: Wallpaper.pickerFocus = ""
 
                     Keys.onEscapePressed: Settings.wpPickerOpen = false
-                    Connections { target: Wallpaper; function onEntriesChanged() { if (root.alive && root.src === "local") { list.currentIndex = 0; list.syncFocus() } } }
-                    Connections { target: root; function onSrcChanged() { list.currentIndex = 0; list.syncFocus() } }
+                    Connections { target: Wallpaper; function onEntriesChanged() {
+                        if (!root.alive || root.src !== "local") return
+                        let i = 0
+                        if (Wallpaper.reorderTo >= 0) { i = Wallpaper.reorderTo + Wallpaper.dirs.length; Wallpaper.reorderTo = -1 }
+                        list.currentIndex = i; gv.currentIndex = i; list.syncFocus()
+                    } }
+                    Connections { target: root; function onSrcChanged() { list.currentIndex = 0; gv.currentIndex = 0; list.syncFocus() } }
                     // segurar a tecla: movimento curto por passo (senao cada repeticao reinicia a animacao longa e o carrossel arrasta)
                     function step(d, fast) {
                         highlightMoveDuration = fast ? 70 : 260
                         if (d > 0) incrementCurrentIndex(); else decrementCurrentIndex()
                     }
-                    Keys.onLeftPressed: e => step(-1, e.isAutoRepeat)
+                    // Alt+setas: move o wallpaper em foco (ordem manual)
+                    function shift(d, e) { if (!(e.modifiers & Qt.AltModifier)) return false; const it = Wallpaper.entries[currentIndex]; if (it && !it.dir && Settings.wpSort === "manual") Wallpaper.moveFile(it.path, d); return true }
+                    Keys.onLeftPressed: e => { if (!shift(-1, e)) step(-1, e.isAutoRepeat) }
                     Keys.onUpPressed: e => step(-1, e.isAutoRepeat)
-                    Keys.onRightPressed: e => step(1, e.isAutoRepeat)
+                    Keys.onRightPressed: e => { if (!shift(1, e)) step(1, e.isAutoRepeat) }
                     Keys.onDownPressed: e => step(1, e.isAutoRepeat)
                     Keys.onReturnPressed: apply()
                     Keys.onEnterPressed: apply()
@@ -246,6 +259,7 @@ Scope {
                         else if (e.key === Qt.Key_End) { highlightMoveDuration = 260; currentIndex = count - 1 }
                         else if (e.key === Qt.Key_Slash || e.key === Qt.Key_F) { sfield.forceActiveFocus(); sfield.selectAll() }
                         else if (e.key === Qt.Key_Backspace && root.src === "local") Wallpaper.up()
+                        else if (e.key === Qt.Key_Delete && root.src === "local") { const it = Wallpaper.entries[currentIndex]; if (it && !it.dir) Wallpaper.delPath = it.path }
                         else if (e.key === Qt.Key_R && count > 1) {   // R: vai para um aleatorio (Enter aplica)
                             let n = currentIndex
                             while (n === currentIndex) n = Math.floor(Math.random() * count)
@@ -340,7 +354,7 @@ Scope {
                                 UiText {
                                     id: count
                                     anchors { right: parent.right; rightMargin: 10; bottom: parent.bottom; bottomMargin: 7 }
-                                    text: (card.index + 1) + " / " + list.count
+                                    text: (card.index + 1) + " / " + win.items.length
                                     color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 10
                                 }
                             }
@@ -359,12 +373,89 @@ Scope {
                                 cursorShape: Qt.PointingHandCursor
                                 onClicked: { list.currentIndex = card.index; list.choose(card.modelData) }
                             }
+                            WpActions { anchors.fill: parent; visible: !card.isWh && !card.isDir; path: card.modelData.path || ""; shown: card.cur || cm.containsMouse; radius: Settings.wpCardRadius }
+                        }
+                    }
+                }
+
+
+                // ---- grade (Settings.wpLayout = grid): linhas fixas, rolagem pelo lado longo ----
+                GridView {
+                    id: gv
+                    visible: win.gridMode
+                    x: list.x; y: list.y; width: list.width; height: list.height
+                    model: win.gridMode ? win.items : []
+                    clip: true
+                    flow: win.vert ? GridView.FlowLeftToRight : GridView.FlowTopToBottom
+                    cellWidth: win.vert ? width / 2 : height / 2 * 16 / 9
+                    cellHeight: win.vert ? width / 2 * 9 / 16 : height / 2
+                    boundsBehavior: Flickable.StopAtBounds
+                    keyNavigationEnabled: true
+                    highlightMoveDuration: 120
+                    onCurrentIndexChanged: if (root.alive && win.gridMode) list.syncFocus()
+                    Keys.onEscapePressed: Settings.wpPickerOpen = false
+                    Keys.onReturnPressed: list.choose(win.items[currentIndex])
+                    Keys.onEnterPressed: list.choose(win.items[currentIndex])
+                    Keys.onSpacePressed: list.choose(win.items[currentIndex])
+                    Keys.onPressed: e => {
+                        const it = win.items[currentIndex]
+                        if ((e.modifiers & Qt.AltModifier) && (e.key === Qt.Key_Left || e.key === Qt.Key_Right || e.key === Qt.Key_Up || e.key === Qt.Key_Down)) {
+                            if (it && !it.dir && root.src === "local" && Settings.wpSort === "manual") Wallpaper.moveFile(it.path, (e.key === Qt.Key_Left || e.key === Qt.Key_Up) ? -1 : 1)
+                        }
+                        else if (e.key === Qt.Key_Slash || e.key === Qt.Key_F) { sfield.forceActiveFocus(); sfield.selectAll() }
+                        else if (e.key === Qt.Key_Backspace && root.src === "local") Wallpaper.up()
+                        else if (e.key === Qt.Key_Delete && root.src === "local") { if (it && !it.dir) Wallpaper.delPath = it.path }
+                        else if (e.key === Qt.Key_R && count > 1) currentIndex = Math.floor(Math.random() * count)
+                        else return
+                        e.accepted = true
+                    }
+                    WheelHandler {
+                        enabled: !win.vert
+                        acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                        onWheel: e => { gv.contentX = Math.max(0, Math.min(Math.max(0, gv.contentWidth - gv.width), gv.contentX - (e.angleDelta.y + e.angleDelta.x) * 0.8)) }
+                    }
+                    delegate: Item {
+                        id: gcell
+                        required property int index
+                        required property var modelData
+                        readonly property bool cur: GridView.isCurrentItem
+                        readonly property bool isDir: !!modelData.dir
+                        readonly property bool isWh: root.src === "wh"
+                        width: gv.cellWidth; height: gv.cellHeight
+                        Item {
+                            anchors.fill: parent; anchors.margins: 5
+                            Rectangle {
+                                visible: gcell.isDir
+                                anchors.fill: parent; radius: Settings.wpCardRadius; color: Theme.card; border.width: 1; border.color: Theme.border
+                                UiIcon { anchors.centerIn: parent; anchors.verticalCenterOffset: -6; name: "folder"; size: 36; color: Theme.accent }
+                                UiText { anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 6 } horizontalAlignment: Text.AlignHCenter; text: gcell.modelData.name || ""; color: Theme.muted; font.pixelSize: 10; elide: Text.ElideRight }
+                            }
+                            RoundImage {
+                                visible: !gcell.isDir
+                                anchors.fill: parent; radius: Settings.wpCardRadius
+                                source: gcell.isDir ? "" : (gcell.isWh ? gcell.modelData.thumb : "file://" + gcell.modelData.path)
+                                sourceSize: Qt.size(320, 180)
+                                opacity: gcell.cur ? 1 : (gm.containsMouse ? 0.95 : 0.72)
+                            }
+                            Rectangle { anchors.fill: parent; radius: Settings.wpCardRadius; color: "transparent"; border.width: gcell.cur ? 2 : 0; border.color: Theme.accent }
+                            Rectangle {
+                                visible: !gcell.isWh && !gcell.isDir && gcell.modelData.path === Wallpaper.current
+                                anchors { right: parent.right; top: parent.top; margins: 6 }
+                                width: 18; height: 18; radius: 9; color: Theme.accent
+                                UiIcon { anchors.centerIn: parent; name: "check"; size: 12; color: Theme.accentText }
+                            }
+                            MouseArea {
+                                id: gm
+                                anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                onClicked: { gv.currentIndex = gcell.index; list.choose(gcell.modelData) }
+                            }
+                            WpActions { anchors.fill: parent; visible: !gcell.isWh && !gcell.isDir; path: gcell.modelData.path || ""; shown: gcell.cur || gm.containsMouse; radius: Settings.wpCardRadius }
                         }
                     }
                 }
 
                 UiText {
-                    visible: list.count === 0
+                    visible: win.items.length === 0
                     x: win.box.x; y: win.box.y + 40 + (win.box.height - 40) / 2 - height / 2; width: win.box.width
                     horizontalAlignment: Text.AlignHCenter
                     color: Theme.muted; font.pixelSize: 14

@@ -24,7 +24,8 @@ Item {
     Component.onCompleted: if (lyr) Lyrics.use()
     Component.onDestruction: if (lyr) Lyrics.release()
 
-    readonly property var p: Mpris.players.values.find(x => x.isPlaying) ?? Mpris.players.values[0] ?? null
+    // "so o player ativo": sem nada tocando o widget mostra "Nada tocando" (em vez do ultimo player pausado)
+    readonly property var p: o("onlyActive") ? Players.playingNow : (Players.playingNow ?? Players.pick(-1))
     readonly property string art: p ? (p.trackArtUrl ?? "") : ""
     readonly property real prog: p && p.length > 0 ? Math.max(0, Math.min(1, p.position / p.length)) : 0
     Timer { interval: 1000; repeat: true; running: !!w.p && w.p.isPlaying; onTriggered: if (w.p) w.p.positionChanged() }
@@ -55,8 +56,9 @@ Item {
         anchors.fill: parent
         readonly property bool tall: w.rows > 1
         readonly property bool tiny: w.cols === 1 && w.rows === 1
+        readonly property bool strip: w.cols === 2 && w.rows >= 3 && !w.lyr
         readonly property bool lyrBox: w.lyr && tall && w.rows >= 2 && w.cols >= 3
-        readonly property real coverS: tiny ? Math.min(width, height) : (tall ? Math.min(lyrBox ? width * 0.42 : width, height * (lyrBox ? 0.62 : 0.55)) : height)
+        readonly property real coverS: tiny ? Math.min(width, height) : (tall ? Math.min(lyrBox ? width * 0.42 : width, strip ? height - 118 : height * (lyrBox ? 0.62 : 0.55)) : height)
         ShapedImage {
             id: cover
             width: body.coverS; height: body.coverS
@@ -78,14 +80,20 @@ Item {
             color: w.ac; iconColor: Theme.accentText
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: if (w.p) w.p.togglePlaying() }
         }
+        // 2x3: faixa com titulo/artista/controles sob a capa
+        Rectangle {
+            visible: body.strip
+            anchors { left: parent.left; right: parent.right; top: cover.bottom; topMargin: 8; bottom: parent.bottom }
+            radius: 18; color: Qt.rgba(w.tfg.r, w.tfg.g, w.tfg.b, 0.08)
+        }
         Column {
             id: info
             visible: !body.tiny
-            readonly property bool center: body.tall && !body.lyrBox
+            readonly property bool center: body.tall && !body.lyrBox && !body.strip
             anchors {
-                left: body.tall && !body.lyrBox ? parent.left : cover.right; leftMargin: body.tall && !body.lyrBox ? 0 : 16
-                right: parent.right
-                top: body.tall && !body.lyrBox ? cover.bottom : undefined; topMargin: 12
+                left: body.tall && !body.lyrBox ? parent.left : cover.right; leftMargin: body.strip ? 12 : (body.tall && !body.lyrBox ? 0 : 16)
+                right: parent.right; rightMargin: body.strip ? 12 : 0
+                top: body.tall && !body.lyrBox ? cover.bottom : undefined; topMargin: body.strip ? 18 : 12
                 verticalCenter: body.tall && !body.lyrBox ? undefined : cover.verticalCenter
             }
             spacing: 4

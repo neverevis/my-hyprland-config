@@ -22,7 +22,7 @@ Scope {
     function goWs(id) { hypr('hl.dsp.focus({ workspace = ' + id + ' })'); open = false }
     function goWin(addr) { hypr('hl.dsp.focus({ window = "address:' + addr + '" })'); open = false }
     function closeWin(addr) { hypr('hl.dsp.window.close({ window = "address:' + addr + '" })'); Qt.callLater(Hyprland.refreshToplevels) }
-    function moveWin(addr, ws) { hypr('hl.dsp.window.move({ workspace = ' + ws + ', window = "address:' + addr + '" })'); Qt.callLater(Hyprland.refreshToplevels) }
+    function moveWin(addr, ws) { hypr('hl.dsp.window.move({ workspace = ' + ws + ', follow = false, window = "address:' + addr + '" })'); Qt.callLater(Hyprland.refreshToplevels) }
 
     LazyLoader {
         active: root.open && Settings.overviewOn
@@ -55,6 +55,7 @@ Scope {
             readonly property var wins: Hyprland.toplevels.values.filter(t => t.lastIpcObject && t.lastIpcObject.workspace && t.lastIpcObject.mapped !== false)
             property string dragAddr: ""
             property int dropWs: -1
+            property var tipWr: null     // janela sob o mouse (dica com titulo e classe)
 
             Rectangle { anchors.fill: parent; color: Qt.rgba(0, 0, 0, 0.45 * Math.min(1, win.k)) }
             MouseArea { anchors.fill: parent; onClicked: root.open = false }
@@ -141,10 +142,30 @@ Scope {
                                     }
                                     onClicked: mouse => { if (mouse.button === Qt.MiddleButton) root.closeWin(wr.o.address); else root.goWin(wr.o.address) }
                                 }
-                                HoverHandler { id: wm }
+                                HoverHandler { id: wm; onHoveredChanged: { if (hovered) win.tipWr = wr; else if (win.tipWr === wr) win.tipWr = null } }
                             }
                         }
                     }
+                }
+            }
+            // dica da janela sob o mouse: titulo e classe (some ao arrastar)
+            Rectangle {
+                id: tip
+                readonly property var t: win.tipWr
+                visible: !!t && win.dragAddr === "" && tipTxt.text !== ""
+                readonly property point pos: t ? t.mapToItem(null, 0, 0) : Qt.point(0, 0)
+                x: Math.max(8, Math.min(win.width - width - 8, pos.x + (t ? t.width : 0) / 2 - width / 2))
+                y: Math.max(8, pos.y - height - 6)
+                width: tipTxt.implicitWidth + 20; height: tipTxt.implicitHeight + 12
+                radius: 10; color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.96); border.width: 1; border.color: Theme.border
+                z: 200
+                UiText {
+                    id: tipTxt
+                    anchors.centerIn: parent
+                    width: Math.min(implicitWidth, 340); elide: Text.ElideRight
+                    text: tip.t ? ((tip.t.modelData.title || tip.t.o.title || "") + (tip.t.o.class ? "\n" + tip.t.o.class : "")) : ""
+                    color: Theme.text; font.pixelSize: 12
+                    lineHeightMode: Text.ProportionalHeight; lineHeight: 1.1
                 }
             }
             UiText {

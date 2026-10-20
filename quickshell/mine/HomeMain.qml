@@ -49,7 +49,7 @@ HomeScroll {
             UiText { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: "white"; font.pixelSize: 36; font.weight: Font.Bold }
             UiText {
                 anchors.right: parent.right
-                text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "dddd, d 'de' MMMM"); return s.charAt(0).toUpperCase() + s.slice(1) }
+                text: DateTime.long(clk.date)
                 color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12
             }
         }

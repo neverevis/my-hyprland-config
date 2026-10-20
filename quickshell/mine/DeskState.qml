@@ -64,7 +64,7 @@ Singleton {
             { sec: "Frase", key: "quoteFont", label: "Frase na fonte do relógio", icon: "font", type: "switch", def: true },
             { sec: "Tela de bloqueio", key: "lockStyle", label: "Estilo na tela de bloqueio", type: "seg", preview: true, previewAs: "style", def: "same", options: [["same", "O mesmo", "check"], ["digital", "Digital", "clockDigital"], ["analog", "Flor", "flowerOutline"], ["daily", "Diário", "calendar"], ["pixel", "Pixel", "grid"]], when: { lock: true } }
           ] },
-        { type: "weather", group: "time", name: "Clima", icon: "sun", desc: "Agora e a previsão (Open-Meteo, sem chave).", sizes: [[2, 1], [1, 1], [3, 1], [2, 2], [3, 2]], options: [
+        { type: "weather", group: "time", name: "Clima", icon: "sun", desc: "Agora e a previsão (Open-Meteo, sem chave).", sizes: [[2, 1], [1, 1], [3, 1], [2, 2], [3, 2], [1, 2], [1, 3]], options: [
             { sec: "Mostrar", key: "show", label: "Conteúdo", type: "seg", preview: true, def: "auto", options: [["auto", "Conforme o tamanho", "auto"], ["now", "Só agora", "cloudSun"], ["tiles", "Blocos de detalhes", "view_grid"], ["hours", "Próximas horas", "clockOutline"], ["days", "Próximos dias", "calendarWeek"]] },
             { sec: "Mostrar", key: "details", label: "Detalhes (sensação, vento, umidade)", icon: "info", type: "switch", def: true }
           ] },
@@ -79,7 +79,8 @@ Singleton {
             { sec: "Mês", key: "weekends", label: "Destacar fins de semana", icon: "calendarWeek", type: "switch", def: true },
             { sec: "Mês", key: "weekNumbers", label: "Número da semana", icon: "numeric", type: "switch", def: false }
           ] },
-        { type: "media", group: "media", name: "Mídia", icon: "music", desc: "Capa, música, controles e letra sincronizada.", sizes: [[2, 1], [3, 1], [2, 2], [1, 1], [3, 2]], options: [
+        { type: "media", group: "media", name: "Mídia", icon: "music", desc: "Capa, música, controles e letra sincronizada.", sizes: [[2, 1], [3, 1], [2, 2], [1, 1], [3, 2], [2, 3]], options: [
+            { sec: "Conteúdo", key: "onlyActive", label: "Só o player ativo", icon: "play", desc: "Ignora players pausados: sem nada tocando mostra 'Nada tocando'.", type: "switch", def: false },
             { sec: "Conteúdo", key: "controls", label: "Controles", icon: "play", type: "switch", def: true },
             { sec: "Conteúdo", key: "titles", label: "Título e artista", icon: "text", type: "switch", def: true },
             { sec: "Conteúdo", key: "lyrics", label: "Letra sincronizada", icon: "quoteClose", desc: "Busca no lrclib.net pelo nome da música.", type: "switch", def: false },
@@ -100,7 +101,7 @@ Singleton {
             { sec: "Detalhes", key: "dock", label: "Fixo embaixo, largura toda", icon: "alignVCenter", desc: "Cola o visualizador na base da tela, de ponta a ponta.", type: "switch", def: false },
             { sec: "Detalhes", key: "ringSize", label: "Tamanho do anel", icon: "circleOutline", type: "slider", from: 40, to: 130, step: 5, suffix: " %", def: 100, when: { vstyle: "ring" } }
           ] },
-        { type: "system", group: "system", name: "Sistema", icon: "chip", desc: "CPU, memória, disco, temperatura, GPU e rede.", sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [1, 2]], options: [
+        { type: "system", group: "system", name: "Sistema", icon: "chip", desc: "CPU, memória, disco, temperatura, GPU e rede.", sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [1, 2], [1, 3]], options: [
             { sec: "Medidas", key: "metrics", label: "O que mostrar", type: "seg", def: "basic", options: [["basic", "CPU, RAM, disco", "chip"], ["hot", "CPU, temperatura, GPU", "thermo"], ["all", "Tudo", "dashboard"]] },
             { sec: "Visual", key: "look", label: "Visual", type: "seg", preview: true, def: "tiles", options: [["tiles", "Cartões", "dashboard"], ["rings", "Anéis", "chartDonut"], ["bars", "Barras", "bars"], ["graph", "Gráfico", "chart"]] },
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false, when: { look: "tiles" } }

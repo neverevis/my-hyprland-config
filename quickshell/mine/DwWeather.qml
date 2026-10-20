@@ -73,8 +73,32 @@ Item {
             text: Weather.error || "Buscando o clima…"; color: w.dim; font.pixelSize: 12 }
     }
 
+    // ---- estreito (1x2: agora e max/min; 1x3: + proximos dias): modos fixos, sem opcoes de conteudo ----
+    readonly property bool narrow: cols === 1 && rows > 1
+    Column {
+        visible: Weather.ready && w.narrow
+        anchors.fill: parent
+        spacing: 3
+        ShapeIcon { anchors.horizontalCenter: parent.horizontalCenter; shape: "cookie12"; icon: Weather.icon(w.n.code, w.n.day); size: 48; padding: 10; color: w.ac; iconColor: Theme.accentText }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: 30; font.weight: Font.Bold }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; width: w.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: Weather.describe(w.n.code); color: w.fg; font.pixelSize: 12; font.weight: Font.Medium }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) + "  ↓ " + w.t(Weather.days[0].min) : ""; color: w.dim; font.pixelSize: 11 }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; width: w.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: Weather.place; color: w.dim; font.pixelSize: 11 }
+        Repeater {
+            model: w.rows >= 3 ? Weather.days.slice(1, 3) : []
+            delegate: Row {
+                required property var modelData
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: 6
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: w.loc.dayName(modelData.date.getDay(), Locale.ShortFormat).replace(".", ""); color: w.dim; font.pixelSize: 11; font.weight: Font.DemiBold }
+                UiIcon { anchors.verticalCenter: parent.verticalCenter; name: Weather.icon(modelData.code, true); size: 18; color: w.ac }
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: w.t(modelData.max) + " " + w.t(modelData.min); color: w.fg; font.pixelSize: 11 }
+            }
+        }
+    }
+
     Item {
-        visible: Weather.ready
+        visible: Weather.ready && !w.narrow
         anchors.fill: parent
         readonly property bool tiny: w.cols === 1 && w.rows === 1
         readonly property real topH: w.rows > 1 ? height * 0.5 : height
