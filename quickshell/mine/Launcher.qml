@@ -33,7 +33,17 @@ Scope {
     Timer { id: closeTimer; interval: Motion.durationOf("launcher", true) + 80; onTriggered: root.alive = false }
 
     // ---- tamanho do conteudo (compartilhado: a moldura acoplada cresce ate ele) ----
-    readonly property var list: root.results(root.query)
+    property string expandId: ""          // app com as acoes do .desktop abertas (seta para a direita / clique direito)
+    readonly property var base: root.results(root.query)
+    readonly property var list: {
+        if (expandId === "") return base
+        const i = base.findIndex(x => x.appId === expandId)
+        if (i < 0 || !base[i].dact) return base
+        const out = base.slice(0, i + 1)
+        for (const a of base[i].dact) out.push({ name: a.name, desc: base[i].name, icon: a.icon || base[i].icon, sub: true, act: () => a.execute() })
+        return out.concat(base.slice(i + 1))
+    }
+    onQueryChanged: expandId = ""
     readonly property int rows: Math.max(3, Settings.launcherRows)
     readonly property real rowH: Math.max(40, Settings.launcherIcon + 20)
     readonly property real shown: Math.min(list.length, rows)
@@ -96,8 +106,10 @@ Scope {
             else { const r = rank(e, q); if (r > 0) scored.push({ e: e, s: r + boost, fav: fav }) }
         }
         scored.sort((a, b) => b.s - a.s || (a.e.name ?? "").localeCompare(b.e.name ?? ""))
-        return scored.map(x => ({ name: x.e.name, desc: x.e.comment || x.e.genericName || "", icon: x.e.icon, fav: x.fav,
-                                  act: () => root.launch(x.e), alt: () => root.toggleFav(x.e.id), altHint: x.fav ? "tirar dos favoritos" : "favoritar" }))
+        return scored.map(x => { const da = x.e.actions ? Array.from(x.e.actions) : []
+            return { name: x.e.name, desc: x.e.comment || x.e.genericName || "", icon: x.e.icon, fav: x.fav, appId: x.e.id, dact: da.length ? da : null,
+                     act: () => root.launch(x.e), alt: da.length ? () => { root.expandId = root.expandId === x.e.id ? "" : x.e.id } : () => root.toggleFav(x.e.id),
+                     altHint: da.length ? "ações do app (seta direita)" : (x.fav ? "tirar dos favoritos" : "favoritar") } })
     }
     function arr(v) { return Settings.list(v) }
     function toggleFav(id) { const l = arr(Settings.launcherFavs).slice(), i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else l.push(id); Settings.launcherFavs = l }
@@ -111,13 +123,46 @@ Scope {
             out.push({ name: "Nova tarefa: " + a, desc: "Adiciona à lista da Agenda", glyph: "check", act: () => { Settings.homeTodo = Array.from(Settings.homeTodo ?? []).concat([{ text: a, done: false }]) } })
         if (c.length >= 2 && "dark".startsWith(c) && a === "") out.push({ name: "Tema escuro", desc: "Ação do shell", glyph: "themeAuto", act: () => Settings.themeMode = "dark" })
         if (c.length >= 2 && "light".startsWith(c) && a === "") out.push({ name: "Tema claro", desc: "Ação do shell", glyph: "themeAuto", act: () => Settings.themeMode = "light" })
+        if (c.length >= 4 && "accentcolor".startsWith(c) && /^#?([0-9a-f]{6}|[0-9a-f]{3})$/i.test(a)) {
+            const hex = a.charAt(0) === "#" ? a : "#" + a
+            out.push({ name: "Cor de destaque " + hex, desc: "Troca o destaque (desliga o tema automático)", glyph: "palette", act: () => { Settings.userAccent = hex; Settings.themeOn = false } })
+        }
         if (c.length >= 3 && ("wipeclipboard".startsWith(c) || "limparareadetransferencia".startsWith(c)) && a === "")
             out.push({ name: "Apagar todo o histórico da área de transferência", desc: "cliphist wipe", glyph: "trash", act: () => Quickshell.execDetached(["cliphist", "wipe"]) })
         return out
     }
+    // scripts do usuario (~/.config/quickshell-mine/actions/*.sh): lidos so quando o launcher abre
+    property var userActs: []
+    Process {
+        id: userScan
+        command: ["sh", "-c", "ls -1 \"$HOME/.config/quickshell-mine/actions\"/*.sh 2>/dev/null"]
+        stdout: StdioCollector { onStreamFinished: root.userActs = text.trim() === "" ? [] : text.trim().split("\n").map(p => ({ path: p, name: p.split("/").pop().replace(/\.sh$/, "").replace(/[-_]+/g, " ") })) }
+    }
+    // destaque do trecho digitado no nome do resultado
+    function hl(t) {
+        const q = norm(mode ? rest : query).trim()
+        t = String(t)
+        if (q === "" || mode === "clipboard" || mode === "math") return t.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        const ch = Array.from(t), nt = ch.map(c => norm(c))
+        if (nt.some(c => c.length !== 1)) return t.replace(/&/g, "&amp;").replace(/</g, "&lt;")
+        const joined = nt.join("")
+        let marks = new Array(ch.length).fill(false)
+        const idx = joined.indexOf(q)
+        if (idx >= 0) for (let k = idx; k < idx + q.length; k++) marks[k] = true
+        else { let j = 0; for (let k = 0; k < ch.length && j < q.length; k++) if (nt[k] === q[j]) { marks[k] = true; j++ } if (j < q.length) return t.replace(/&/g, "&amp;").replace(/</g, "&lt;") }
+        const col = String(Theme.accent)
+        let out = "", on = false
+        for (let k = 0; k < ch.length; k++) {
+            const c = ch[k].replace(/&/g, "&amp;").replace(/</g, "&lt;")
+            if (marks[k] !== on) { out += on ? "</font></b>" : '<b><font color="' + col + '">'; on = marks[k] }
+            out += c
+        }
+        return out + (on ? "</font></b>" : "")
+    }
     function actionItems(q) {
         const w = norm(q).trim().split(/\s+/).filter(x => x)
-        return argActions(q).concat(Actions.list.filter(a => w.every(x => norm(a.name + " " + a.keys).includes(x)))
+        const us = userActs.filter(u => w.every(x => norm(u.name).includes(x))).map(u => ({ name: u.name, desc: "Script em ~/.config/quickshell-mine/actions", glyph: "desktop", act: () => Quickshell.execDetached(["sh", u.path]) }))
+        return argActions(q).concat(us, Actions.list.filter(a => w.every(x => norm(a.name + " " + a.keys).includes(x)))
             .map(a => ({ name: a.name + (a.toggle ? (a.on() ? "  (ligado)" : "  (desligado)") : ""), desc: a.desc ?? "Ação do shell", glyph: a.icon, act: () => a.run() })))
     }
     // qalc (unidades, moedas, porcentagens): roda 30 ms depois de parar de digitar; a conta simples em JS continua instantanea
@@ -298,7 +343,7 @@ Scope {
             dflt.settings && t.length >= 3 ? settingItems(t) : [],
             dflt.web ? [webItem(t)] : [])
     }
-    onAliveChanged: if (alive && dflt.settings && settingsRef && !settingsRef.index.length) settingsRef.buildIndex()
+    onAliveChanged: if (alive) { userScan.running = false; userScan.running = true; if (dflt.settings && settingsRef && !settingsRef.index.length) settingsRef.buildIndex() }
     function run(it) { if (!it) return; Settings.launcherOpen = false; it.act() }
     function launch(e) {
         if (!e) return
@@ -444,12 +489,21 @@ Scope {
                                 Keys.onEscapePressed: Settings.launcherOpen = false
                                 Keys.onDownPressed: view.currentIndex = Math.min(view.count - 1, view.currentIndex + 1)
                                 Keys.onUpPressed: view.currentIndex = Math.max(0, view.currentIndex - 1)
-                                Keys.onTabPressed: view.currentIndex = (view.currentIndex + 1) % Math.max(1, view.count)
+                                Keys.onTabPressed: {
+                                    // completa o texto com o nome do resultado selecionado; se ja esta completo, passa para o proximo
+                                    const it = root.list[view.currentIndex], cur = root.mode ? root.rest : root.query
+                                    if (it && !it.sub && !it.big && !it.thumb && root.mode !== "clipboard" && cur.trim() !== "" && it.name.toLowerCase() !== cur.trim().toLowerCase() && root.norm(it.name).startsWith(root.norm(cur.trim()))) {
+                                        const pre = root.mode ? root.query.slice(0, root.query.length - root.rest.length) : ""
+                                        input.text = pre + it.name; input.cursorPosition = input.text.length
+                                    } else view.currentIndex = (view.currentIndex + 1) % Math.max(1, view.count)
+                                }
                                 Keys.onReturnPressed: root.run(root.list[view.currentIndex])
                                 Keys.onEnterPressed: root.run(root.list[view.currentIndex])
                                 Keys.onPressed: e => {
                                     const it = root.list[view.currentIndex]
                                     if (e.key === Qt.Key_Delete && it && it.del) { it.del(); e.accepted = true; return }
+                                    if (e.key === Qt.Key_Right && it && it.dact && input.cursorPosition === input.text.length) { root.expandId = root.expandId === it.appId ? "" : it.appId; e.accepted = true; return }
+                                    if (e.key === Qt.Key_Left && root.expandId !== "" && input.cursorPosition === input.text.length) { root.expandId = ""; e.accepted = true; return }
                                     if ((e.key === Qt.Key_Menu || (e.key === Qt.Key_F10 && (e.modifiers & Qt.ShiftModifier))) && it && it.alt) { it.alt(); e.accepted = true; return }
                                     if (e.modifiers & Qt.ControlModifier) {
                                         if (e.key === Qt.Key_N || e.key === Qt.Key_J) { view.currentIndex = Math.min(view.count - 1, view.currentIndex + 1); e.accepted = true }
@@ -535,7 +589,7 @@ Scope {
                                 Column {
                                     anchors { left: ico.right; leftMargin: row.modelData.thumb ? 14 + ico.width * 0.3 : 14; right: tail.left; rightMargin: 10; verticalCenter: parent.verticalCenter }
                                     spacing: 1
-                                    UiText { width: parent.width; text: row.modelData.name; color: Theme.text; font.pixelSize: 15; font.weight: Font.Medium; elide: Text.ElideRight }
+                                    UiText { width: parent.width; text: root.hl(row.modelData.name); textFormat: Text.StyledText; color: Theme.text; font.pixelSize: 15; font.weight: Font.Medium; elide: Text.ElideRight }
                                     UiText {
                                         visible: text !== ""
                                         width: parent.width

@@ -309,6 +309,7 @@ Singleton {
     property alias notifCorner: adapter.notifCorner             // encostar no canto (com o ponto da borda no inicio ou no fim)
     property alias notifAnchor: adapter.notifAnchor             // start | center | end (ao longo da borda)
     property alias notifWidth: adapter.notifWidth               // largura do cartao (px)
+    property alias notifGroup: adapter.notifGroup               // agrupa avisos do mesmo app num cartao so
     property alias notifMax: adapter.notifMax                   // cartoes visiveis ao mesmo tempo
     property alias notifTimeout: adapter.notifTimeout           // segundos (quando o app nao pede um tempo)
     property alias notifFillet: adapter.notifFillet
@@ -1044,6 +1045,7 @@ Singleton {
             property bool notifDocked: true
             property int notifWidth: 360
             property int notifMax: 4
+            property bool notifGroup: true
             property int notifTimeout: 6
             property int notifFillet: 12
             property int notifRadius: 14

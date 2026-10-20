@@ -23,6 +23,15 @@ Singleton {
         return b.replace(/<img /gi, "\n\n<img width=\"280\" ")
     }
 
+    // aviso sem icone: adivinha um pelo texto (como o end4)
+    readonly property var guesses: [["reboot|restart|reinici", "refresh"], ["screenshot|captura|print", "frame"], ["updat|atualiz|upgrade", "download"], ["install|instala", "download"],
+        ["music|música|musica|playing|tocando", "music"], ["record|grava", "monitor"], ["wifi|wi-fi|network|rede", "wifi"], ["bluetooth", "bluetooth"], ["volume|áudio|audio", "volume"], ["battery|bateria", "battery"]]
+    function guessIcon(app, summary, body) {
+        const t = (String(app) + " " + String(summary) + " " + String(body)).toLowerCase()
+        for (const g of guesses) if (new RegExp(g[0]).test(t)) return g[1]
+        return ""
+    }
+
     function add(n) {
         const it = { app: n.appName || "", summary: n.summary || "", body: n.body || "", icon: n.appIcon || "", image: n.image || "", time: Date.now(), id: Date.now() + Math.random(), ref: n }
         items = [it].concat(items).slice(0, 80)

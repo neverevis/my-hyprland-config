@@ -45,6 +45,7 @@ Column {
         icon: "tune"
         title: "Aparência"
         UiSlider { label: "Largura do cartão"; from: 260; to: 520; value: Settings.notifWidth; suffix: " px"; onMoved: v => Settings.notifWidth = Math.round(v) }
+        UiSwitch { label: "Agrupar por aplicativo"; description: "Vários avisos do mesmo app viram um cartão com o número; os outros aparecem quando ele fecha."; checked: Settings.notifGroup; onToggled: on => Settings.notifGroup = on }
         UiSlider { label: "Notificações visíveis"; from: 1; to: 8; value: Settings.notifMax; onMoved: v => Settings.notifMax = Math.round(v) }
         UiSlider { label: "Tempo na tela"; from: 2; to: 20; value: Settings.notifTimeout; suffix: " s"; onMoved: v => Settings.notifTimeout = Math.round(v) }
         UiSlider { label: "Arredondamento"; from: 0; to: 30; value: Settings.notifRadius; suffix: " px"; onMoved: v => Settings.notifRadius = Math.round(v) }

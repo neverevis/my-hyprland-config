@@ -19,7 +19,20 @@ Scope {
     readonly property real cardH: anyActions ? 128 : 92
     readonly property real gap: 8
     readonly property var all: server.trackedNotifications.values
-    readonly property int shownCount: Math.min(all.length, Math.max(1, Settings.notifMax))
+    // agrupamento por app: o aviso mais novo de cada app e a "cabeca"; os outros esperam atras dela
+    readonly property var plan: {
+        const L = all, out = new Array(L.length), seen = {}
+        let g = 0
+        for (let i = L.length - 1; i >= 0; i--) {
+            const key = Settings.notifGroup && L[i].appName ? L[i].appName : "#" + i
+            if (seen[key] !== undefined) { seen[key].cnt++; out[i] = { rank: seen[key].rank, head: false, grp: seen[key] }; continue }
+            const grp = { rank: g++, cnt: 1 }
+            seen[key] = grp; out[i] = { rank: grp.rank, head: true, grp: grp }
+        }
+        out.groups = g
+        return out
+    }
+    readonly property int shownCount: Math.min(plan.groups ?? 0, Math.max(1, Settings.notifMax))
 
     IpcHandler {
         target: "notifications"
@@ -137,9 +150,13 @@ Scope {
                             required property var modelData      // Notification
                             required property int index
                             readonly property var n: modelData
-                            readonly property int rank: root.all.length - 1 - index   // 0 = a mais nova
+                            readonly property var pl: root.plan[index] ?? ({ rank: 0, head: true, grp: { cnt: 1 } })
+                            readonly property int rank: pl.rank   // 0 = a mais nova
+                            readonly property real swipe: dragOff
                             readonly property bool critical: n.urgency === NotificationUrgency.Critical
-                            readonly property bool shown: rank < root.shownCount
+                            readonly property bool shown: pl.head && rank < root.shownCount
+                            property real dragOff: 0
+                            readonly property string guess: card.n.image === "" && !card.n.appIcon ? NotifHistory.guessIcon(card.n.appName, card.n.summary, card.n.body) : ""
                             width: root.cardW; height: root.cardH
                             // posicao: cartoes enfileirados ao longo da borda (animados)
                             readonly property real along: rank * ((root.vert ? root.cardH : root.cardW) + root.gap)
@@ -172,6 +189,17 @@ Scope {
                                 scale: hover.hovered ? 1.015 : 1
                                 Behavior on scale { NumberAnimation { duration: 120 } }
                                 clip: true
+                                // arrastar de lado mais de 70 px dispensa o aviso
+                                transform: Translate { x: root.vert ? card.dragOff : 0; y: root.vert ? 0 : card.dragOff }
+                                opacity: 1 - Math.min(0.7, Math.abs(card.dragOff) / 200)
+                                Behavior on opacity { enabled: !swipeH.active; NumberAnimation { duration: 120 } }
+                                DragHandler {
+                                    id: swipeH
+                                    xAxis.enabled: root.vert; yAxis.enabled: !root.vert
+                                    onTranslationChanged: card.dragOff = root.vert ? translation.x : translation.y
+                                    onActiveChanged: if (!active) { if (Math.abs(card.dragOff) > 70) card.n.dismiss(); else resetA.restart() }
+                                }
+                                NumberAnimation { id: resetA; target: card; property: "dragOff"; to: 0; duration: 140; easing.type: Easing.OutCubic }
 
                                 // barra de tempo restante (fina, na base)
                                 Rectangle {
@@ -190,7 +218,9 @@ Scope {
                                     width: 52; height: 52; radius: 12
                                     color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.16)
                                     clip: true
+                                    UiIcon { visible: card.guess !== ""; anchors.centerIn: parent; name: card.guess; size: 28; color: Theme.accent }
                                     Image {
+                                        visible: card.guess === ""
                                         anchors.fill: parent
                                         anchors.margins: card.n.image !== "" ? 0 : 8
                                         source: card.n.image !== "" ? card.n.image : Icons.path(card.n.appIcon, "dialog-information")
@@ -228,6 +258,12 @@ Scope {
                                     }
                                 }
 
+                                Rectangle {   // varios avisos do mesmo app
+                                    visible: card.pl.grp.cnt > 1
+                                    anchors { right: parent.right; top: parent.top; rightMargin: 10; topMargin: 8 }
+                                    width: Math.max(20, gcnt.implicitWidth + 12); height: 20; radius: 10; color: Theme.accent
+                                    UiText { id: gcnt; anchors.centerIn: parent; text: "+" + (card.pl.grp.cnt - 1); color: Theme.accentText; font.pixelSize: 11; font.weight: Font.Bold }
+                                }
                                 HoverHandler { id: hover }
                                 MouseArea {
                                     anchors.fill: parent

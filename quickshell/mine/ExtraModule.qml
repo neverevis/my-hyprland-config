@@ -204,9 +204,9 @@ Item {
     // Opcao "badge": count (numero ao lado, padrao) | dot (so um pontinho no sino)
     Component { id: notifC; Chip {
         readonly property bool useDot: root.opts.badge === "dot"
-        readonly property int n: Settings.notifDnd ? 0 : BarState.notifLive
+        readonly property int n: !Settings.notifDnd && BarState.notifLive > 0 ? BarState.notifLive : NotifHistory.unread   // ao vivo, senao as nao lidas
         icon: Settings.notifDnd ? "bellOff" : (BarState.notifLive > 0 ? "bellRing" : "bell")
-        hot: BarState.notifLive > 0
+        hot: BarState.notifLive > 0 || n > 0
         dot: useDot && n > 0
         text: !useDot && n > 0 ? String(n) : ""
         tip: Settings.notifDnd ? "Não perturbe ligado. Clique desliga, direito limpa." : (BarState.notifLive > 0 ? BarState.notifLive + " notificação(ões). Clique liga o não perturbe, direito limpa." : "Sem notificações. Clique liga o não perturbe.")

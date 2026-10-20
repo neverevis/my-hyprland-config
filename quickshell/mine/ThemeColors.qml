@@ -44,8 +44,8 @@ Singleton {
     })
 
     // propriedades com nome "onX" viram tratadores de sinal no QML (e valiam preto): o texto sobre uma cor e "xInk"
-    function prop(id: string): string { return id.startsWith("on") ? id.charAt(2).toLowerCase() + id.slice(3) + "Ink" : id }
-    function of(id: string): color { return root[prop(id)] }
+    function prop(id: string): string { if (id === "bg") return "background"; return id.startsWith("on") ? id.charAt(2).toLowerCase() + id.slice(3) + "Ink" : id }
+    function of(id: string): color { const v = root[prop(id)]; return v === undefined ? root.primary : v }
     function hexOf(id: string): string { return (root.t[id] ?? root.defaults[id]).toString() }
 
     property color primary: t.primary ?? defaults.primary
