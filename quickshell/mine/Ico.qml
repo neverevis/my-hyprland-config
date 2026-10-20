@@ -42,7 +42,12 @@ Singleton {
         fileSwap: 0xF0FB4, imageEdit: 0xF11E3, dotsCircle: 0xF1978, progressCheck: 0xF0995, listChecks: 0xF0756, quoteClose: 0xF027E,
         chartDonut: 0xF07AF, alignVCenter: 0xF11C6, tap: 0xF0741, star4: 0xF0AE2, imageFrame: 0xF0E49, bringForward: 0xF003D, copy: 0xF018F,
         package: 0xF03D6, record: 0xF044A, recordRec: 0xF044B, stopCircle: 0xF0666, fire: 0xF0238,
-        paint: 0xF027C, compass: 0xF018C, tuneVariant: 0xF1542, wave2: 0xF0F2E, emoticon: 0xF01F2
+        paint: 0xF027C, compass: 0xF018C, tuneVariant: 0xF1542, wave2: 0xF0F2E, emoticon: 0xF01F2,
+        // formas (Shapes.list)
+        heart: 0xF02D1, cookie: 0xF0198, clover: 0xF0816, cloud: 0xF015F, firework: 0xF0E30, starFourOutline: 0xF0AE3, cardsDiamond: 0xF08CF,
+        ellipseOutline: 0xF0EA1, pill: 0xF0402, hexagonOutline: 0xF02D9, rhombusOutline: 0xF070C, triangleOutline: 0xF0537, pentagonOutline: 0xF0700,
+        shieldOutline: 0xF0499, circleSlice: 0xF0AA1, seal: 0xF047A, fan: 0xF0210, arrowUpBold: 0xF0737, ghostOutline: 0xF165D, breadSlice: 0xF0CEE,
+        dotsGrid: 0xF15FC, squareOutline: 0xF0763, loading: 0xF0772
     })
     function g(name: string): string { const c = map[name]; return c ? String.fromCodePoint(c) : "" }
 }

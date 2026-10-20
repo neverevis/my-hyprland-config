@@ -289,7 +289,8 @@ Singleton {
         { name: "Mola", type: "spring", mass: 1, stiffness: 238, dampening: 24.2, builtin: true },
         { name: "Mola macia", type: "spring", mass: 1, stiffness: 170, dampening: 26, builtin: true },
         { name: "Mola elástica", type: "spring", mass: 1, stiffness: 320, dampening: 15, builtin: true },
-        { name: "Quique", type: "spring", mass: 1, stiffness: 420, dampening: 11, builtin: true }
+        { name: "Quique", type: "spring", mass: 1, stiffness: 420, dampening: 11, builtin: true },
+        { name: "Expressiva rápida", x1: 42, y1: 167, x2: 21, y2: 90, duration: 350, builtin: true }
     ]
     // group: secao na pagina Animacoes; phases: tem abrir e fechar; hypr: folhas do Hyprland [abrir, fechar]; style: chave do estilo (hyprStyle)
     readonly property var animGroups: [
@@ -313,12 +314,13 @@ Singleton {
         { id: "wallpaper", label: "Transição de wallpaper", group: "desk", page: "wallpaper" },
         { id: "desktop", label: "Widgets da área de trabalho", group: "desk", page: "desktop" },
         { id: "lock", label: "Tela de bloqueio", group: "desk", page: "session" },
+        { id: "shapes", label: "Formas (morph ao trocar)", group: "desk", page: "desktop" },
         { id: "hyprWindows", label: "Abrir e fechar janelas", group: "hypr", phases: true, hypr: ["windowsIn", "windowsOut"], style: "windows" },
         { id: "hyprMove", label: "Mover e redimensionar", group: "hypr", hypr: ["windowsMove"] },
         { id: "hyprWorkspaces", label: "Trocar de workspace", group: "hypr", hypr: ["workspaces"], style: "workspaces" },
         { id: "hyprLayers", label: "Camadas flutuantes (launcher solto, menus)", group: "hypr", phases: true, hypr: ["layersIn", "layersOut"], style: "layers" }
     ]
-    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera", power: "Desacelera", lock: "Desacelera", desktop: "Suave",
+    readonly property var animDefaults: ({ bars: "Padrão", picker: "Desacelera", wallpaper: "Wallpaper", workspaces: "Rápida", launcher: "Desacelera", notifications: "Desacelera", home: "Desacelera", power: "Desacelera", lock: "Desacelera", desktop: "Suave", shapes: "Expressiva rápida",
         osd: "Desacelera", island: "Mola", popups: "Desacelera", settings: "Ênfase (entrada)", hyprWindows: "Ênfase (entrada)", hyprMove: "Padrão M3", hyprWorkspaces: "Padrão M3", hyprLayers: "Ênfase (entrada)" })
     // saida: so onde a fechada sempre foi diferente (o resto fecha igual abre, como antes)
     readonly property var animOutDefaults: ({ settings: "Ênfase (saída)", hyprWindows: "Saída rápida", hyprLayers: "Ênfase (saída)" })

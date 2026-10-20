@@ -1,4 +1,4 @@
-// Imagem recortada numa forma: flower | circle | rounded | square (Flower.qml como mascara). fit: crop | fit.
+// Imagem recortada numa forma de Shapes.qml (Flower.qml como mascara, entao a troca de forma anima). fit: crop | fit.
 // spin gira a imagem dentro da forma (capa como disco). Mesmo esquema do RoundImage.
 // A imagem e a mascara viram texturas por ShaderEffectSource (hideSource), nao por camadas escondidas: a camada de um
 // item com visible: false ficava vazia quando a imagem carregava com um pai invisivel (a foto do perfil sumia, o
@@ -11,6 +11,9 @@ Item {
     property alias source: img.source
     property string shape: "rounded"
     property int sides: 10
+    property real depth: 0.11
+    property bool animated: true                       // morph ao trocar de forma
+    readonly property bool morphing: msk.morphing
     property real radius: Math.min(width, height) * 0.18
     property string fit: "crop"
     property real spin: 0
@@ -51,6 +54,8 @@ Item {
         shape: si.shape
         sides: si.sides
         radius: si.radius
+        depth: si.depth
+        animated: si.animated
         color: "white"
     }
     // texturas (1 px no centro, coberto pelo resultado): escondem a fonte e atualizam sempre que ela muda
@@ -60,7 +65,8 @@ Item {
         anchors.fill: parent
         source: imgTex
         visible: si.ready
-        maskEnabled: si.shape !== "square"
+        // sempre com mascara (quadrada = retangulo cheio): ligar e desligar no meio de um morph piscaria
+        maskEnabled: true
         maskSource: mskTex
         maskThresholdMin: 0.5
         maskSpreadAtMin: 1.0
