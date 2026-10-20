@@ -48,7 +48,7 @@ Column {
                     readonly property bool on: page.idx === index
                     readonly property var info: page.geo && page.geo.bars ? page.geo.bars[index] : null
                     width: 196; height: 58; radius: 14
-                    color: on ? Theme.tint(0.14) : (bm.containsMouse ? Theme.cardHi : Theme.gl(Theme.card, 1))
+                    color: on ? Theme.tint(0.14) : (bm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1))
                     border.width: 1
                     border.color: on ? Theme.accent : Theme.border
                     Rectangle {   // prioridade

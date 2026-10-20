@@ -7,6 +7,7 @@ pragma Singleton
 
 import Quickshell
 import Quickshell.Io
+import Quickshell.Hyprland
 import QtQuick
 
 Singleton {
@@ -167,6 +168,27 @@ Singleton {
     property alias soundVolChange: adapter.soundVolChange
     property alias sessionGuard: adapter.sessionGuard
     property alias clock24: adapter.clock24
+    property alias clockAmPm: adapter.clockAmPm          // "ap" (am/pm) | "AP" (AM/PM) quando o relogio e de 12 h
+    property alias clockSeconds: adapter.clockSeconds    // segundos no relogio da barra, da ilha e do bloqueio
+    property alias dateFormat: adapter.dateFormat        // data curta (Qt), ex.: ddd, dd/MM
+    property alias dateYearFormat: adapter.dateYearFormat // data com ano (Qt)
+    // transparencia: fundo (moldura, janelas) e conteudo (cartoes) separados; OLED = fundos pretos
+    property alias glassSplit: adapter.glassSplit
+    property alias glassContent: adapter.glassContent
+    property alias uiOled: adapter.uiOled
+    readonly property int glassContentEff: glassSplit ? glassContent : glassOpacityEff
+    // cantos arredondados da tela: yes | auto (some com janela em tela cheia) | no
+    property alias cornerMode: adapter.cornerMode
+    property bool fsActive: false
+    readonly property real cornerEff: cornerMode === "no" ? 0 : (cornerMode === "auto" && fsActive ? 0 : cornerRadius)
+    Timer { id: fsT; interval: 80; onTriggered: { const t = Hyprland.activeToplevel; root.fsActive = !!(t && t.lastIpcObject && t.lastIpcObject.fullscreen > 0) } }
+    Connections {
+        target: Hyprland
+        enabled: root.cornerMode === "auto"
+        function onRawEvent(e) { if (e.name === "fullscreen" || e.name === "activewindowv2" || e.name === "workspacev2" || e.name === "closewindow") { Hyprland.refreshToplevels(); fsT.restart() } }
+    }
+    // cor-semente do tema (hex); vazio = vem do wallpaper
+    property alias themeSeed: adapter.themeSeed
     // luz noturna, protecao contra clarao (NightLight.qml), colunas do Inicio, cantos ativos (HotCorners.qml)
     property alias nightAuto: adapter.nightAuto
     property alias nightFrom: adapter.nightFrom
@@ -520,6 +542,15 @@ Singleton {
         adapter.outline = true
         adapter.glass = false
         adapter.glassOpacity = 60
+        adapter.glassSplit = false
+        adapter.glassContent = 60
+        adapter.uiOled = false
+        adapter.cornerMode = "yes"
+        adapter.themeSeed = ""
+        adapter.clockAmPm = "AP"
+        adapter.clockSeconds = false
+        adapter.dateFormat = "ddd, dd/MM"
+        adapter.dateYearFormat = "dd/MM/yyyy"
         adapter.blurManaged = false
         adapter.blurEnabled = true
         adapter.blurSize = 3
@@ -823,6 +854,15 @@ Singleton {
             property bool soundVolChange: false
             property bool sessionGuard: true
             property bool clock24: true
+            property string clockAmPm: "AP"
+            property bool clockSeconds: false
+            property string dateFormat: "ddd, dd/MM"
+            property string dateYearFormat: "dd/MM/yyyy"
+            property bool glassSplit: false
+            property int glassContent: 60
+            property bool uiOled: false
+            property string cornerMode: "yes"
+            property string themeSeed: ""
             property bool nightAuto: false
             property string nightFrom: "19:00"
             property string nightTo: "06:30"

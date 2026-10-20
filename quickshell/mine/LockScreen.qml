@@ -194,7 +194,7 @@ Scope {
                 spacing: 0
                 UiText {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    text: Qt.formatDateTime(clk.date, (Settings.clock24 ? "HH:mm" : "h:mm") + (Settings.lockSeconds ? ":ss" : "") + (Settings.clock24 ? "" : " AP"))
+                    text: DateTime.time(clk.date, Settings.lockSeconds)
                     font.features: { "tnum": 1 }   // digitos de largura fixa: o relogio nao "pula" quando os numeros mudam
                     font.pixelSize: 140; font.weight: Font.DemiBold; font.letterSpacing: -3
                     color: "white"

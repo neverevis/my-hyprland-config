@@ -36,7 +36,7 @@ Singleton {
         if (Settings.notifOn && Settings.notifDocked && npr > 0.002 && BarState.notifLen > 1) {
             const ns = Settings.notifSide, nv = ns === "left" || ns === "right"
             const PLn = nv ? H : W, fN = Settings.notifFillet
-            const avail = PLn - 2 * (Settings.edge + (Settings.outline ? Settings.cornerRadius : 0) + fN)
+            const avail = PLn - 2 * (Settings.edge + (Settings.outline ? Settings.cornerEff : 0) + fN)
             const len = Math.min(BarState.notifLen, avail)
             const sl = (avail - len) / 2
             const marg = 18
@@ -95,7 +95,7 @@ Singleton {
         }
         const edge = Settings.edge
         const outline = Settings.outline
-        const r = outline ? Settings.cornerRadius : 0
+        const r = outline ? Settings.cornerEff : 0
 
         // barras do mesmo lado que um painel acoplado (launcher, seletor, Inicio) abrem espaco para ele (Settings.barsPanelMode):
         //   push = deslizam so ate encostar no painel (continuam visiveis); se nao couberem, saem pela borda

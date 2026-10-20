@@ -56,7 +56,7 @@ Item {
                         required property var modelData
                         readonly property var acts: modelData.ref ? Array.from(modelData.ref.actions).filter(a => a.identifier !== "default") : []
                         width: grp.width; height: Math.max(62, col.implicitHeight + 20 + (acts.length > 0 ? 36 : 0)); radius: 12
-                        color: nm.containsMouse ? Theme.cardHi : Theme.gl(Theme.card, 1.15)
+                        color: nm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1.15)
                         border.width: 1; border.color: Theme.border
                         MouseArea {
                             id: nm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor

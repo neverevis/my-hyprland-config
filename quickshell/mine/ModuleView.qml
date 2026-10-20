@@ -53,13 +53,13 @@ Item {
             implicitHeight: col.implicitHeight
             opacity: cm.containsMouse ? 0.75 : 1
             Behavior on opacity { NumberAnimation { duration: 120 } }
-            SystemClock { id: clk; precision: SystemClock.Minutes }
+            SystemClock { id: clk; precision: Settings.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes }
             Column {
                 id: col
                 spacing: 1
                 Label {
                     width: col.width
-                    text: root.vertical ? Qt.formatDateTime(clk.date, Settings.clock24 ? "HH\nmm" : "h\nmm") : Qt.formatDateTime(clk.date, root.opts.format || (Settings.clock24 ? "ddd dd MMM   HH:mm" : "ddd dd MMM   h:mm AP"))
+                    text: root.vertical ? Qt.formatDateTime(clk.date, Settings.clock24 ? "HH\nmm" : "h\nmm") : DateTime.formatted(clk.date, root.opts.format)
                 }
                 // barra lateral: data curta (dia/mes) embaixo da hora
                 Label {

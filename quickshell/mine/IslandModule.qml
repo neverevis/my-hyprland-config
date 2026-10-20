@@ -121,7 +121,7 @@ Item {
         id: idleC
         Row {
             spacing: 8
-            SystemClock { id: clk; precision: SystemClock.Minutes }
+            SystemClock { id: clk; precision: Settings.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes }
             readonly property var tl: Hyprland.activeToplevel
             Rectangle { visible: root.idleKind === "dot"; width: 6; height: 6; radius: 3; color: root.ac; anchors.verticalCenter: parent.verticalCenter }
             Image {
@@ -133,7 +133,7 @@ Item {
                 visible: root.idleKind !== "dot"
                 anchors.verticalCenter: parent.verticalCenter
                 text: root.vertical ? Qt.formatDateTime(clk.date, "HH\nmm")
-                    : root.idleKind === "window" ? (parent.tl ? parent.tl.title : "").slice(0, 48) : Qt.formatDateTime(clk.date, root.opts.format || (Settings.clock24 ? "HH:mm" : "h:mm AP"))
+                    : root.idleKind === "window" ? (parent.tl ? parent.tl.title : "").slice(0, 48) : DateTime.formatted(clk.date, root.opts.format || "HH:mm")
                 color: root.fg; font.pixelSize: 13; font.weight: Font.DemiBold; font.features: { "tnum": 1 }
             }
         }

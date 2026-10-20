@@ -56,7 +56,8 @@ Scope {
             { id: "session", label: "Sessão", icon: "power", desc: "Tela de bloqueio, menu de energia e foto de perfil." }
         ] },
         { label: "Sistema", pages: [
-            { id: "system", label: "Sistema", icon: "desktop", desc: "Ícones dos aplicativos, cursor, mouse e fontes do sistema, com prévia e para baixar mais." }
+            { id: "system", label: "Sistema", icon: "desktop", desc: "Ícones dos aplicativos, cursor, mouse e fontes do sistema, com prévia e para baixar mais." },
+            { id: "about", label: "Sobre", icon: "info", desc: "A distribuição, o kernel, as cores do tema e os números do computador." }
         ] }
     ]
     readonly property var allPages: groups.reduce((a, g) => a.concat(g.pages), [])
@@ -88,7 +89,7 @@ Scope {
     readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === Settings.settingsPage) ?? groups[0].pages[0]
 
     // ---- paginas e indice de busca (fora da janela: o launcher tambem procura opcoes com ela fechada) ----
-    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC, system: systemC, overview: overviewC })
+    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC, system: systemC, about: aboutC, overview: overviewC })
     Item { id: indexHost; visible: false; width: 900; height: 10 }
     Component { id: barsC; PageBars { geo: root.geo } }
     Component { id: homeC; PageHome {} }
@@ -105,6 +106,7 @@ Scope {
     Component { id: hyprC; PageHypr {} }
     Component { id: toolsC; PageTools {} }
     Component { id: systemC; PageSystem {} }
+    Component { id: aboutC; PageAbout {} }
     Component { id: overviewC; PageOverview { pages: root.groups } }
     function walk(o, card, out, pg) {
         if (!o) return
@@ -203,20 +205,23 @@ Scope {
                 anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16; topMargin: 20 }
                 spacing: 4
 
-                Row {
-                    spacing: 12
-                    bottomPadding: 18
-                    leftPadding: 4
-                    Rectangle {
-                        width: 38; height: 38; radius: 12
-                        color: Theme.accent
-                        UiIcon { anchors.centerIn: parent; name: "tune"; size: 20; color: Theme.accentText }
-                    }
-                    Column {
+                // cabecalho: foto, nome e a distro; o clique leva a foto de perfil (pagina Sessao)
+                Item {
+                    width: parent.width; height: 62
+                    Row {
+                        spacing: 12
+                        leftPadding: 2
                         anchors.verticalCenter: parent.verticalCenter
-                        UiText { text: "Quickshell"; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
-                        UiText { text: "Configurações"; color: Theme.muted; font.pixelSize: 12 }
+                        Avatar { size: 40; ring: 2 }
+                        Column {
+                            anchors.verticalCenter: parent.verticalCenter
+                            UiText { text: Profile.name; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
+                            UiText { text: SysInfo.info.distro || "Configurações"; color: Theme.muted; font.pixelSize: 12 }
+                        }
                     }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.settingsPage = "session" }
+                    Component.onCompleted: SysInfo.use()
+                    Component.onDestruction: SysInfo.release()
                 }
 
                 // busca
@@ -235,7 +240,7 @@ Scope {
             // lista das paginas: rola quando nao cabe (ao passar o mouse por cima, a roda rola)
             Flickable {
                 id: navFlick
-                anchors { left: parent.left; right: parent.right; top: sideTop.bottom; bottom: resetBtn.top; leftMargin: 16; rightMargin: 16; topMargin: 6; bottomMargin: 8 }
+                anchors { left: parent.left; right: parent.right; top: sideTop.bottom; bottom: cfgBtn.top; leftMargin: 16; rightMargin: 16; topMargin: 6; bottomMargin: 8 }
                 contentHeight: navCol.implicitHeight
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
@@ -279,6 +284,22 @@ Scope {
                     }
                 }
             }
+            }
+
+            // arquivo de configuracao: clique abre o settings.json, botao direito copia o caminho
+            UiButton {
+                id: cfgBtn
+                property bool copied: false
+                anchors { left: parent.left; right: parent.right; bottom: resetBtn.top; leftMargin: 16; rightMargin: 16; bottomMargin: 6 }
+                icon: copied ? "check" : "pencil"
+                text: copied ? "Caminho copiado" : "Arquivo de configuração"
+                kind: "ghost"
+                onClicked: Qt.openUrlExternally(Qt.resolvedUrl("settings.json"))
+                MouseArea {
+                    anchors.fill: parent; acceptedButtons: Qt.RightButton
+                    onClicked: { Quickshell.clipboardText = Qt.resolvedUrl("settings.json").toString().replace("file://", ""); cfgBtn.copied = true; cfgT.restart() }
+                }
+                Timer { id: cfgT; interval: 1500; onTriggered: cfgBtn.copied = false }
             }
 
             // restaurar: pede confirmacao (segundo clique em ate 4 s)

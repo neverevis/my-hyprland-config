@@ -2,8 +2,10 @@
 """Gera o tema (Material You) a partir de uma imagem, como o Caelestia faz:
 quantiza o wallpaper (Celebi), escolhe a cor-fonte pela pontuacao do Material e monta um esquema dinamico.
 
-uso: material.py <imagem> [dark|light] [variante]
+uso: material.py <imagem> [dark|light] [variante] [#semente]
 variantes: tonalspot (padrao) vibrant expressive fidelity content neutral monochrome rainbow fruitsalad wallpaper
+  auto = decide pelo colorido da imagem (Hasler-Suesstrunk): abaixo de 40 usa neutral, senao tonalspot
+  #semente = cor-fonte escolhida (conta-gotas): ignora a imagem e monta o esquema so dessa cor
   wallpaper = primaria da cor principal e secundaria/terciaria de outras cores que existem na imagem (sem girar o matiz)
 saida extra: _wall = ate 8 cores marcantes da imagem (para os widgets escolherem)
 saida: JSON { papel: "#rrggbb", ... } (papeis do Material + term0..term15). Resultado guardado em ~/.cache/quickshell-mine.
@@ -84,17 +86,44 @@ def wall_colors(data: dict) -> list:
     return [to_hex(h.to_int()) for h in out]
 
 
+def colorfulness(path: str) -> float:
+    # metrica de Hasler-Suesstrunk numa miniatura (so PIL, sem numpy)
+    from PIL import Image
+    im = Image.open(path).convert("RGB")
+    im.thumbnail((96, 96))
+    px = list(im.get_flattened_data() if hasattr(im, "get_flattened_data") else im.getdata())
+    n = max(1, len(px))
+    rg = [r - g for r, g, b in px]
+    yb = [0.5 * (r + g) - b for r, g, b in px]
+    def stat(v):
+        m = sum(v) / n
+        return m, (sum((x - m) ** 2 for x in v) / n) ** 0.5
+    m1, s1 = stat(rg)
+    m2, s2 = stat(yb)
+    return (s1 ** 2 + s2 ** 2) ** 0.5 + 0.3 * (m1 ** 2 + m2 ** 2) ** 0.5
+
+
 def main() -> None:
     image = sys.argv[1]
     mode = sys.argv[2] if len(sys.argv) > 2 else "dark"
     variant = sys.argv[3] if len(sys.argv) > 3 else "tonalspot"
-    if variant not in SCHEMES and variant != "wallpaper":
+    seed_hex = sys.argv[4].lstrip("#") if len(sys.argv) > 4 and len(sys.argv[4].lstrip("#")) == 6 else ""
+    if variant not in SCHEMES and variant not in ("wallpaper", "auto"):
         variant = "tonalspot"
 
-    p = Path(image)
-    key = hashlib.sha1(f"{p.resolve()}:{p.stat().st_mtime_ns}".encode()).hexdigest()[:16]
     cache_dir = Path.home() / ".cache" / "quickshell-mine"
-    cache = cache_dir / f"{key}-{variant}-{mode}-v2.json"   # v2: com _wall
+    p = Path(image)
+    if seed_hex:
+        key = "seed" + seed_hex
+    else:
+        key = hashlib.sha1(f"{p.resolve()}:{p.stat().st_mtime_ns}".encode()).hexdigest()[:16]
+    shown = variant
+    if variant == "auto":
+        try:
+            variant = "neutral" if (seed_hex or colorfulness(image) < 40) and not seed_hex else "tonalspot"
+        except Exception:
+            variant = "tonalspot"
+    cache = cache_dir / f"{key}-{shown}-{mode}-v2.json"   # v2: com _wall
     if cache.exists():
         print(cache.read_text())
         return
@@ -103,7 +132,10 @@ def main() -> None:
     # as outras cores marcantes (JSON); o formato antigo (so um numero) e recalculado
     seed_cache = cache_dir / f"{key}.seed"
     data = None
-    if seed_cache.exists():
+    if seed_hex:
+        c = int("ff" + seed_hex, 16)
+        data = {"seed": c, "ranked": [c], "loose": [c]}
+    elif seed_cache.exists():
         try:
             data = json.loads(seed_cache.read_text())
             if not isinstance(data, dict):
@@ -134,7 +166,7 @@ def main() -> None:
         out[f"term{i}"] = to_hex(Blend.harmonize(int("ff" + h, 16), key_color))
     out["_source"] = to_hex(source)
     out["_wall"] = wall_colors(data)
-    out["_variant"] = variant
+    out["_variant"] = shown
     out["_mode"] = mode
 
     cache_dir.mkdir(parents=True, exist_ok=True)

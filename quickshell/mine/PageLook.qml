@@ -10,7 +10,10 @@ Column {
         subtitle: "Moldura e painéis translúcidos, com o fundo desfocado."
         UiSwitch { label: "Ativar vidro"; checked: Settings.glass; onToggled: on => Settings.glass = on }
         UiSwitch { visible: Settings.glass; label: "Opacidade automática"; description: "Pelo wallpaper, como no end4: fundo calmo deixa mais transparente, fundo vivo deixa mais opaco (agora " + Settings.glassOpacityAuto + "%)."; checked: Settings.glassAuto; onToggled: on => Settings.glassAuto = on }
-        UiSlider { visible: Settings.glass && !Settings.glassAuto; label: "Opacidade"; from: 10; to: 100; value: Settings.glassOpacity; suffix: " %"; onMoved: v => Settings.glassOpacity = v }
+        UiSlider { visible: Settings.glass && !Settings.glassAuto; label: Settings.glassSplit ? "Opacidade do fundo" : "Opacidade"; from: 10; to: 100; value: Settings.glassOpacity; suffix: " %"; onMoved: v => Settings.glassOpacity = v }
+        UiSwitch { visible: Settings.glass; label: "Separar fundo e conteúdo"; description: "Fundo (moldura, janelas) e conteúdo (cartões) com transparências diferentes."; checked: Settings.glassSplit; onToggled: on => Settings.glassSplit = on }
+        UiSlider { visible: Settings.glass && Settings.glassSplit; label: "Opacidade do conteúdo"; from: 10; to: 100; value: Settings.glassContent; suffix: " %"; onMoved: v => Settings.glassContent = v }
+        UiSwitch { label: "Fundo OLED"; icon: "night"; description: "Fundos de painéis e janelas em preto puro (economiza energia em tela OLED)."; checked: Settings.uiOled; onToggled: on => Settings.uiOled = on }
     }
 
     ShadowCard {}
@@ -63,7 +66,7 @@ Column {
                 width: parent.width
                 spacing: 6
                 Repeater {
-                    model: [["wallpaper", "Do wallpaper"], ["tonalspot", "Tonal spot"], ["vibrant", "Vibrante"], ["expressive", "Expressivo"], ["fidelity", "Fiel à imagem"], ["content", "Conteúdo"], ["neutral", "Neutro"], ["monochrome", "Monocromático"], ["rainbow", "Arco-íris"], ["fruitsalad", "Salada de frutas"]]
+                    model: [["auto", "Automático"], ["wallpaper", "Do wallpaper"], ["tonalspot", "Tonal spot"], ["vibrant", "Vibrante"], ["expressive", "Expressivo"], ["fidelity", "Fiel à imagem"], ["content", "Conteúdo"], ["neutral", "Neutro"], ["monochrome", "Monocromático"], ["rainbow", "Arco-íris"], ["fruitsalad", "Salada de frutas"]]
                     delegate: UiButton {
                         required property var modelData
                         text: modelData[1]
@@ -77,6 +80,7 @@ Column {
                 visible: Settings.themeSource === "wallpaper"
                 width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
                 text: ({
+                    auto: "Automático: wallpaper calmo (pouca cor) vira neutro, colorido vira tonal spot; decide por imagem.",
                     wallpaper: "Do wallpaper: a cor principal e outras duas que existem na imagem. Fica com a cara do wallpaper.",
                     tonalspot: "Tonal spot (padrão do Android): a cor principal com uma terciária vizinha calculada; suave.",
                     vibrant: "Vibrante: mais saturado; a secundária e a terciária são calculadas girando a cor principal.",

@@ -11,7 +11,7 @@ Rectangle {
     property alias headerRight: hr.data
 
     radius: 14
-    color: Theme.gl(Theme.card, 1.15)
+    color: Theme.glc(Theme.card, 1.15)
     border.width: 1
     border.color: Theme.border
 

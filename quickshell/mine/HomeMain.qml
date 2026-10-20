@@ -13,7 +13,7 @@ HomeScroll {
     Rectangle {
         id: userCard
         width: pg.width; height: 108; radius: 16
-        color: Theme.gl(Theme.card, 1.15)
+        color: Theme.glc(Theme.card, 1.15)
         border.width: 1; border.color: Theme.border
         RoundImage {
             x: 1; y: 1; width: parent.width - 2; height: parent.height - 2

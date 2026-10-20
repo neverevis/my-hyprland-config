@@ -11,6 +11,7 @@ Item {
     readonly property string src: Wallpaper.still
     readonly property string mode: Settings.themeModeEff
     readonly property string variant: Settings.themeVariant
+    readonly property string seed: Settings.themeSeed
     readonly property string py: Quickshell.env("HOME") + "/.local/share/quickshell-mine/venv/bin/python"
     readonly property string script: Qt.resolvedUrl("scripts/material.py").toString().replace("file://", "")
     property bool pyOk: true   // falhou uma vez: usa so a reserva
@@ -25,17 +26,18 @@ Item {
     onSrcChanged: if (Settings.themeOn && source === "wallpaper") load()
     onModeChanged: if (Settings.themeOn) load()
     onVariantChanged: if (Settings.themeOn) load()
+    onSeedChanged: if (Settings.themeOn) load()
     Connections { target: Settings; function onThemeOnChanged() { if (Settings.themeOn) root.load() } }
     Component.onCompleted: if (Settings.themeOn) load()
 
     function load() {
         if (source === "preset") { apply(Presets.toMaterial(Presets.find(preset))); return }
-        if (!src) return
+        if (!src && !seed) return
         if (pyOk) {
-            const key = src + "|" + mode + "|" + variant
+            const key = (seed ? "seed" : src) + "|" + mode + "|" + variant + "|" + seed
             if (memo[key]) { apply(memo[key]); return }   // ja calculado nesta sessao: sem rodar o Python de novo
             runKey = key
-            runner.command = [py, script, src, mode, variant]; runner.running = false; runner.running = true
+            runner.command = [py, script, src || "-", mode, variant].concat(seed ? [seed] : []); runner.running = false; runner.running = true
             return
         }
         fallback()

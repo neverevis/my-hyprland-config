@@ -93,7 +93,7 @@ Scope {
         Column {
             spacing: 8
             SystemClock { id: clk; precision: SystemClock.Seconds }
-            UiText { text: Qt.formatDateTime(clk.date, Settings.clock24 ? "HH:mm:ss" : "h:mm:ss AP"); color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+            UiText { text: DateTime.time(clk.date, true); color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold; font.features: { "tnum": 1 } }
             UiText { text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "dddd, d 'de' MMMM 'de' yyyy"); return s.charAt(0).toUpperCase() + s.slice(1) } color: Theme.muted; font.pixelSize: 12 }
             DwCalendar { width: parent.width; height: 230; cols: 2; rows: 2; opts: ({}) }
             // tarefas pendentes (Agenda do Inicio) e ha quanto tempo o PC esta ligado

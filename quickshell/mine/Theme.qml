@@ -5,9 +5,9 @@ import Quickshell
 import QtQuick
 
 Singleton {
-    readonly property color bg: Settings.themeOn ? ThemeColors.background : "#17161d"
-    readonly property color sidebar: Settings.themeOn ? ThemeColors.surface : "#1d1c25"
-    readonly property color card: Settings.themeOn ? ThemeColors.surfaceHigh : "#23222c"
+    readonly property color bg: Settings.uiOled ? "#000000" : Settings.themeOn ? ThemeColors.background : "#17161d"
+    readonly property color sidebar: Settings.uiOled ? "#000000" : Settings.themeOn ? ThemeColors.surface : "#1d1c25"
+    readonly property color card: Settings.uiOled ? "#0c0c0e" : Settings.themeOn ? ThemeColors.surfaceHigh : "#23222c"
     readonly property color cardHi: Settings.themeOn ? Qt.lighter(ThemeColors.surfaceHigh, 1.18) : "#2d2c39"
     readonly property color border: Settings.themeOn ? ThemeColors.outline : "#33313f"
     readonly property color text: Settings.themeOn ? ThemeColors.text : "#e8e3ee"
@@ -83,5 +83,7 @@ Singleton {
     function tint(a: real): color { return Qt.rgba(accent.r, accent.g, accent.b, a) }
 
     // cor com a transparencia do vidro (Aparencia > Vidro); k escala a opacidade (1 = a mesma da moldura)
+    // conteudo (cartoes): usa a transparencia propria quando "separar fundo e conteudo" esta ligado
+    function glc(c: color, k: real): color { return Qt.rgba(c.r, c.g, c.b, Settings.glass ? Math.min(1, Settings.glassContentEff / 100 * k) : 1) }
     function gl(c: color, k: real): color { return Qt.rgba(c.r, c.g, c.b, Settings.glass ? Math.min(1, Settings.glassOpacityEff / 100 * k) : 1) }
 }

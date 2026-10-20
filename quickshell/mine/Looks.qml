@@ -22,7 +22,7 @@ Singleton {
           keys: ["bars", "edge", "cornerRadius", "fillet", "topRadius", "outline", "barsPanelMode", "hideDelay", "showDelay"] },
         { id: "colors", label: "Cores e vidro", icon: "palette", def: true,
           keys: ["themeOn", "themeMode", "themeSource", "themePreset", "themeVariant", "userAccent", "userBarColor", "userTextColor",
-                 "glass", "glassOpacity", "glassAuto", "shellBlur", "shellGrain", "shellIgnoreAlpha",
+                 "glass", "glassOpacity", "glassAuto", "glassSplit", "glassContent", "uiOled", "cornerMode", "shellBlur", "shellGrain", "shellIgnoreAlpha",
                  "themeBorders", "themeBorderA", "themeBorderB", "themeBorderIn", "themeBorderAngle", "themeBorderAlpha", "themeBorderInAlpha"] },
         { id: "anims", label: "Animações", icon: "animation", def: true, keys: ["animCfg"] },
         { id: "panels", label: "Painéis e composição", icon: "frame", def: true,

@@ -12,7 +12,7 @@ Rectangle {
     implicitHeight: col.implicitHeight + 36
     height: implicitHeight
     radius: 16
-    color: Theme.gl(Theme.card, 1)
+    color: Theme.glc(Theme.card, 1)
     border.width: 1 + glow
     border.color: glow > 0.01 ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35 + 0.65 * glow) : Theme.border
     // acende a borda por um instante (a busca das configuracoes usa ao abrir um resultado)

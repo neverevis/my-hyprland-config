@@ -21,7 +21,7 @@ Rectangle {
     radius: on ? 14 : Math.min(height / 2, 22)
     Behavior on radius { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
     opacity: avail ? 1 : 0.45
-    color: on ? Theme.tint(ma.pressed ? 0.38 : ma.containsMouse ? 0.30 : 0.22) : (ma.containsMouse ? Theme.cardHi : Theme.gl(Theme.card, 1.15))
+    color: on ? Theme.tint(ma.pressed ? 0.38 : ma.containsMouse ? 0.30 : 0.22) : (ma.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1.15))
     border.width: 1
     border.color: on ? Theme.tint(0.55) : Theme.border
     Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }

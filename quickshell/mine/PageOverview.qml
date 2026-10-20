@@ -1,6 +1,7 @@
 // Pagina "Geral": o visual de agora em miniatura (wallpaper, moldura, barras, widgets), a paleta do tema, claro/escuro,
 // interruptores rapidos e um atalho para cada pagina das configuracoes.
 import Quickshell
+import Quickshell.Io
 import QtQuick
 
 Column {
@@ -52,6 +53,102 @@ Column {
                         onClicked: { const n = Looks.save(Looks.uniqueName("Meu visual"), Looks.defaultGroups()); page.toast = "Salvo como “" + n + "”"; toastT.restart() } }
                 }
                 UiText { visible: page.toast !== ""; text: page.toast; color: Theme.accent; font.pixelSize: 12 }
+            }
+        }
+    }
+
+    // ---- esquema de cores (Material You) + conta-gotas ----
+    Process {
+        id: picker
+        command: ["hyprpicker", "--format=hex", "--no-fancy"]
+        stdout: StdioCollector { onStreamFinished: { const h = text.trim(); if (/^#[0-9a-fA-F]{6}$/.test(h)) { Settings.themeSeed = h.toLowerCase(); if (!Settings.themeOn) Settings.themeOn = true; Settings.themeSource = "wallpaper" } } }
+    }
+    Card {
+        visible: Settings.themeOn && Settings.themeSource === "wallpaper"
+        icon: "palette"
+        title: "Esquema de cores"
+        subtitle: "Como o Material You monta a paleta. Automático escolhe pelo colorido do wallpaper (calmo fica neutro)."
+        Flow {
+            width: parent.width
+            spacing: 8
+            readonly property real tw: (width - 8 * 3) / 4
+            Repeater {
+                model: [["auto", "Automático", "auto"], ["content", "Conteúdo", "image"], ["expressive", "Expressivo", "magic"], ["fidelity", "Fiel à imagem", "eye"],
+                        ["fruitsalad", "Salada de frutas", "leaf"], ["monochrome", "Mono", "moon"], ["neutral", "Neutro", "balance"], ["rainbow", "Arco-íris", "firework"],
+                        ["tonalspot", "Tonal spot", "palette"], ["vibrant", "Vibrante", "lightning"], ["wallpaper", "Do wallpaper", "wallpaper"]]
+                delegate: Rectangle {
+                    id: sv
+                    required property var modelData
+                    readonly property bool on: Settings.themeVariant === modelData[0]
+                    width: parent.tw; height: 48; radius: on ? 12 : 24
+                    color: on ? Theme.accent : (sm.containsMouse ? Theme.cardHi : Theme.track)
+                    border.width: 1; border.color: on ? Theme.accent : Theme.border
+                    Behavior on color { ColorAnimation { duration: 140 } }
+                    Behavior on radius { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                    Row {
+                        anchors.centerIn: parent
+                        spacing: 8
+                        UiIcon { name: sv.modelData[2]; size: 17; color: sv.on ? Theme.accentText : Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                        UiText { text: sv.modelData[1]; color: sv.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
+                    }
+                    MouseArea { id: sm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.themeVariant = sv.modelData[0] }
+                }
+            }
+        }
+        Row {
+            spacing: 10
+            UiButton { icon: "eyedropper"; text: picker.running ? "Escolhendo… (Esc cancela)" : "Escolher cor da tela"; kind: "ghost"; enabled: !picker.running; onClicked: picker.running = true }
+            Rectangle { visible: Settings.themeSeed !== ""; width: 32; height: 32; radius: 16; color: Settings.themeSeed || "transparent"; border.width: 2; border.color: Theme.border; anchors.verticalCenter: parent.verticalCenter }
+            UiButton { visible: Settings.themeSeed !== ""; icon: "close"; text: "Voltar à cor do wallpaper"; kind: "ghost"; onClicked: Settings.themeSeed = "" }
+        }
+        UiText { visible: Settings.themeSeed !== ""; width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Paleta gerada só da cor " + Settings.themeSeed + ", sem olhar para o wallpaper." }
+    }
+
+    // ---- barra e cantos da tela ----
+    Card {
+        icon: "bars"
+        title: "Barra e tela"
+        subtitle: "Atalhos para o que mais se mexe. O resto fica nas páginas Barras e Moldura."
+        Column {
+            width: parent.width
+            spacing: 8
+            UiLabel { text: "Posição da primeira barra" }
+            UiSeg {
+                options: [["top", "Cima", "arrowUp"], ["left", "Esquerda", "arrowLeft"], ["bottom", "Baixo", "arrowDown"], ["right", "Direita", "arrowRight"]]
+                value: (Settings.bars[0] && Settings.bars[0].side) || "bottom"
+                onPicked: v => Settings.setBar(0, "side", v)
+            }
+        }
+        Column {
+            width: parent.width
+            spacing: 8
+            UiLabel { text: "Estilo das peças" }
+            UiSeg {
+                options: [["integrated", "Integrado", "frame"], ["independent", "Independente", "layers"]]
+                value: Settings.composition
+                onPicked: v => Settings.applyComposition(v)
+            }
+            UiText { visible: Settings.composition === "mixed"; text: "Hoje está misto (parte a parte, na página Moldura); escolher um destes ajusta tudo."; color: Theme.muted; font.pixelSize: 12 }
+        }
+        Column {
+            width: parent.width
+            spacing: 8
+            UiLabel { text: "Módulos da barra" }
+            UiSeg {
+                readonly property bool pills: !Settings.bars.some(b => Settings.sectionsOf(b).some(sc => Array.from(sc.modules ?? []).some(m => m.pill === false)))
+                options: [["yes", "Com fundo", "squareRounded"], ["no", "Sem fundo", "squareOutline"]]
+                value: pills ? "yes" : "no"
+                onPicked: v => Settings.mutate(bs => { for (const b of bs) for (const sc of (b.sections ?? [])) for (const m of (sc.modules ?? [])) m.pill = (v === "yes") })
+            }
+        }
+        Column {
+            width: parent.width
+            spacing: 8
+            UiLabel { text: "Cantos arredondados da tela" }
+            UiSeg {
+                options: [["no", "Não", "squareOutline"], ["yes", "Sim", "rounded"], ["auto", "Fora da tela cheia", "fullscreen"]]
+                value: Settings.cornerMode
+                onPicked: v => Settings.cornerMode = v
             }
         }
     }
@@ -122,7 +219,7 @@ Column {
                         id: pt
                         required property var modelData
                         width: pf.tw; height: 78; radius: 14
-                        color: pm.containsMouse ? Theme.cardHi : Theme.gl(Theme.card, 1)
+                        color: pm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1)
                         border.width: 1; border.color: pm.containsMouse ? Theme.tint(0.5) : Theme.border
                         Behavior on color { ColorAnimation { duration: 120 } }
                         Rectangle {

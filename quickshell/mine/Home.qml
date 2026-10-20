@@ -242,7 +242,7 @@ Scope {
                             id: rail
                             x: 12; y: 12; width: 56; height: parent.height - 24
                             radius: 16
-                            color: Theme.gl(Theme.card, 1.15)
+                            color: Theme.glc(Theme.card, 1.15)
                             border.width: 1; border.color: Theme.border
                             Column {
                                 anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 7 }

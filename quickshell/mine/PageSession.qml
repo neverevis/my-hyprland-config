@@ -83,10 +83,34 @@ Column {
     }
 
     Card {
+        icon: "clock"
+        title: "Hora e data"
+        subtitle: "Formato do relógio na barra, na ilha, na tela de bloqueio e nos detalhes (os widgets têm a opção própria)."
+        Row {
+            spacing: 14
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: DateTime.time(clk.date); color: Theme.text; font.pixelSize: 30; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                UiText { text: DateTime.date(clk.date); color: Theme.text; font.pixelSize: 14 }
+                UiText { text: DateTime.dateYear(clk.date); color: Theme.muted; font.pixelSize: 12 }
+            }
+            SystemClock { id: clk; precision: SystemClock.Seconds }
+        }
+        UiSeg {
+            options: [["24", "24 horas", "clock"], ["ap", "12 h (am/pm)", "clockOutline"], ["AP", "12 h (AM/PM)", "clockOutline"]]
+            value: Settings.clock24 ? "24" : Settings.clockAmPm
+            onPicked: v => { if (v === "24") Settings.clock24 = true; else { Settings.clock24 = false; Settings.clockAmPm = v } }
+        }
+        UiSwitch { label: "Mostrar segundos"; icon: "timer"; description: "No relógio da barra e da ilha (a tela de bloqueio tem a sua opção)."; checked: Settings.clockSeconds; onToggled: on => Settings.clockSeconds = on }
+        UiField { width: parent.width; placeholderText: "Data curta, ex.: ddd, dd/MM"; text: Settings.dateFormat; onEditingFinished: Settings.dateFormat = text }
+        UiField { width: parent.width; placeholderText: "Data com ano, ex.: dd/MM/yyyy"; text: Settings.dateYearFormat; onEditingFinished: Settings.dateYearFormat = text }
+        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Letras do Qt: d dd ddd dddd (dia), M MM MMM MMMM (mês), yy yyyy (ano). Nos módulos de relógio com formato próprio, o trecho HH:mm segue a escolha acima." }
+    }
+
+    Card {
         icon: "cog"
         title: "Sistema"
         subtitle: "Cuidados com o volume, as atualizações, a hora e os sons do shell."
-        UiSwitch { label: "Relógio de 24 horas"; icon: "clock"; description: "Barra, ilha, tela de bloqueio e detalhes (os widgets têm a opção própria)."; checked: Settings.clock24; onToggled: on => Settings.clock24 = on }
         UiSwitch { label: "Avisar antes de desligar durante uma atualização"; icon: "power"; description: "Com o pacman (ou yay/paru) rodando, desligar, reiniciar ou sair pede confirmação."; checked: Settings.sessionGuard; onToggled: on => Settings.sessionGuard = on }
         UiLabel { text: "Proteção do volume" }
         UiSwitch { label: "Limitar o volume"; icon: "volume"; description: "Nunca passa do teto, e um salto grande de uma vez (um app que aumenta sozinho, a roda do mouse) fica limitado."; checked: Settings.volGuard; onToggled: on => Settings.volGuard = on }
