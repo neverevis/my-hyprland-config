@@ -45,7 +45,7 @@ Item {
             }
             ShaderEffectSource { id: fsrc; sourceItem: fimg; hideSource: true; live: true }
             MultiEffect { id: fblur; anchors.fill: parent; source: fsrc; blurEnabled: true; blurMax: 64; blur: 1.0; autoPaddingEnabled: false }
-            ShaderEffectSource { id: ftex; sourceItem: fblur; hideSource: true; live: true; width: fh.width; height: fh.height }
+            ShaderEffectSource { id: ftex; sourceItem: fblur; hideSource: true; live: true; visible: false; width: fh.width; height: fh.height }
         }
     }
     signal guides(bool gx, bool gy)
@@ -152,11 +152,15 @@ Item {
             readonly property color ink: light ? "#16151b" : "#f6f3fa"
             // sobre wallpaper claro (sem fundo) as cores da paleta escurecem para continuar legiveis
             function wallSafe(c) { return bare && light ? Qt.darker(c, 1.9) : c }
-            readonly property color fgT: tone === "custom" ? custom
+            // cartao com cor escolhida (Composicao): o texto usa o "sobre" dessa cor (tom global/neutro)
+            readonly property color roleInk: Theme.role(({ primary: "onPrimary", primaryContainer: "onPrimaryContainer", secondaryContainer: "onSecondaryContainer", tertiaryContainer: "onTertiaryContainer" })[cardRole] ?? "text")
+            readonly property color fgT: roleCard && !fam && tone !== "custom" ? roleInk
+                : tone === "custom" ? custom
                 : fam ? (bare ? (light ? Qt.darker(pal.main, 2.4) : pal.contInk) : pal.contInk)
                 : tone === "neutral" ? (bare ? ink : Theme.text)
                 : bare ? ink : Theme.text
-            readonly property color acT: tone === "custom" ? custom
+            readonly property color acT: roleCard && !fam && tone !== "custom" ? (cardRole === "primary" ? roleInk : cardRole === "secondaryContainer" ? Theme.secondary : cardRole === "tertiaryContainer" ? Theme.tertiary : Theme.accent)
+                : tone === "custom" ? custom
                 : tone === "neutral" ? fgT
                 : fam ? wallSafe(pal.main)
                 : bare ? (light ? Qt.darker(Theme.accent, 1.8) : Qt.lighter(Theme.accent, 1.1)) : Theme.accent
@@ -178,7 +182,21 @@ Item {
             Behavior on contInk { ColorAnimation { duration: 700; easing.type: Easing.OutCubic } }
             readonly property color dim: Qt.rgba(fg.r, fg.g, fg.b, 0.68)
             // fundo do cartao: no tom escolhido usa a versao suave da familia
-            readonly property color cardBase: fam ? pal.cont : tone === "custom" ? contT : Theme.bg
+            readonly property string cardRole: w ? DeskState.opt(w, "cardRole") : "auto"
+            readonly property bool roleCard: cardRole !== "auto" && cardRole !== undefined && !bare
+            readonly property color cardBase: roleCard ? Theme.role(cardRole) : fam ? pal.cont : tone === "custom" ? contT : Theme.bg
+            readonly property real alphaOpt: w ? Number(DeskState.opt(w, "cardAlpha")) || 0 : 0
+            readonly property real cardA: alphaOpt > 0 ? alphaOpt / 100 : Settings.desktopCard / 100
+            readonly property real scrimA: w ? (Number(DeskState.opt(w, "scrim")) || 0) / 100 : 0
+            readonly property string radiusOpt: w ? String(DeskState.opt(w, "radius")) : "auto"
+            readonly property real cardR: radiusOpt === "pill" ? Math.min(width, height) / 2 : radiusOpt !== "auto" && Number(radiusOpt) > 0 ? Math.min(Number(radiusOpt), Math.min(width, height) / 2) : Math.min(30, Math.min(width, height) * 0.2)
+            // opcoes de composicao que o conteudo recebe (caixas internas, selos, destaque)
+            readonly property string accRole: w ? DeskState.opt(w, "accentRole") : "auto"
+            readonly property var compo: ({
+                innerRole: w ? DeskState.opt(w, "innerRole") : "auto", innerAlpha: w ? (Number(DeskState.opt(w, "innerAlpha")) || 0) / 100 : 0,
+                innerRadius: w ? Number(DeskState.opt(w, "innerRadius")) || 0 : 0, badgeShape: w ? DeskState.opt(w, "badgeShape") : "auto",
+                accentRole: accRole, accent: accRole === "auto" || accRole === "mix" ? ac : Theme.role(accRole), third: pal.third,
+                cardBase: Qt.rgba(cardBase.r, cardBase.g, cardBase.b, 1), radius: cardR, scrim: scrimA })
 
             // cartao e vidro: sombra opcional por baixo (pagina Aparencia > Sombras e brilhos)
             RectangularShadow {
@@ -193,9 +211,9 @@ Item {
             Rectangle {
                 id: bg
                 anchors.fill: parent
-                radius: Math.min(30, Math.min(width, height) * 0.2)
-                color: card.cardStyle === "card" ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Settings.desktopCard / 100)
-                    : card.glassy ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.32, Settings.desktopCard / 100 * 0.55))
+                radius: card.cardR
+                color: card.cardStyle === "card" ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, card.cardA)
+                    : card.glassy ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.32, card.cardA * 0.55))
                     : "transparent"
                 border.width: card.bare ? 0 : 1
                 border.color: card.glassy ? Qt.rgba(1, 1, 1, 0.14) : card.frosted ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.6)
@@ -209,7 +227,7 @@ Item {
                     visible: card.frosted
                     property var source: card.frosted ? view.frostTex : null
                     property vector4d region: Qt.vector4d(card.x / Math.max(1, view.width), card.y / Math.max(1, view.height), card.width / Math.max(1, view.width), card.height / Math.max(1, view.height))
-                    property color tint: Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.28, Settings.desktopCard / 100 * 0.6))
+                    property color tint: Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.28, card.cardA * 0.6))
                     property vector2d size: Qt.vector2d(width, height)
                     property real radius: bg.radius
                     fragmentShader: Qt.resolvedUrl("shaders/frost.frag.qsb")
@@ -226,10 +244,16 @@ Item {
                             Rectangle { anchors.fill: parent; anchors.margins: 1; radius: parent.radius - 1; color: "transparent"; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.05) } }
                     }
                 }
+                Rectangle {
+                    anchors.fill: parent
+                    radius: bg.radius
+                    visible: card.scrimA > 0 && !card.bare
+                    color: Qt.rgba(0, 0, 0, card.scrimA)
+                }
                 Loader {
                     id: content
                     anchors.fill: parent
-                    anchors.margins: card.bare ? 4 : 18
+                    anchors.margins: content.item && content.item.pad !== undefined && content.item.pad >= 0 ? content.item.pad : card.bare ? 4 : 18
                     sourceComponent: DeskWidgets.component(card.w ? card.w.type : "")
                     onLoaded: card.feed()
                     // sem fundo: sombra suave para ler em cima de qualquer wallpaper
@@ -252,6 +276,8 @@ Item {
                 if (it.ac2 !== undefined) it.ac2 = Qt.binding(() => card.ac2)
                 if (it.cont !== undefined) { it.cont = Qt.binding(() => card.cont); it.contInk = Qt.binding(() => card.contInk) }
                 if (it.bare !== undefined) it.bare = Qt.binding(() => card.bare)
+                if (it.comp !== undefined) it.comp = Qt.binding(() => card.compo)
+                if (it.deskRect !== undefined) it.deskRect = Qt.binding(() => Qt.rect(card.x, card.y, view.width, view.height))
             }
             onWChanged: feed()
 

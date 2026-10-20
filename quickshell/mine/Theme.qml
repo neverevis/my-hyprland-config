@@ -69,6 +69,14 @@ Singleton {
         case "surfaceLow": return surfaceLow
         case "surfaceHighest": return surfaceHighest
         case "bg": return bg
+        case "onPrimary": return accentText
+        case "onSecondary": return secondaryInk
+        case "onTertiary": return tertiaryInk
+        case "surfaceVariant": return themed ? ThemeColors.surfaceHighest : surfaceHighest
+        case "error": return danger
+        case "onError": return "#2b0b10"
+        case "scrim": return "#000000"
+        case "track": return track
         case "muted": return muted
         case "outline": return border
         default: return text
@@ -77,9 +85,9 @@ Singleton {
     // os tons de uma familia (o widget com tom "secundaria" usa a secundaria, o container dela e o texto sobre ele;
     // "par" e a cor companheira para um segundo elemento, como o ponteiro dos minutos)
     function family(id: string): var {
-        if (id === "secondary") return { main: secondary, cont: secondaryContainer, contInk: secondaryContainerInk, mainInk: secondaryInk, pair: tertiary }
-        if (id === "tertiary") return { main: tertiary, cont: tertiaryContainer, contInk: tertiaryContainerInk, mainInk: tertiaryInk, pair: primary }
-        return { main: primary, cont: primaryContainer, contInk: primaryContainerInk, mainInk: accentText, pair: tertiary }
+        if (id === "secondary") return { main: secondary, cont: secondaryContainer, contInk: secondaryContainerInk, mainInk: secondaryInk, pair: tertiary, third: primary }
+        if (id === "tertiary") return { main: tertiary, cont: tertiaryContainer, contInk: tertiaryContainerInk, mainInk: tertiaryInk, pair: primary, third: secondary }
+        return { main: primary, cont: primaryContainer, contInk: primaryContainerInk, mainInk: accentText, pair: tertiary, third: secondary }
     }
 
     // fundo rebaixado (trilhos, campos, seletores) dentro de um cartao

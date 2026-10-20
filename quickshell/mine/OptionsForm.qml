@@ -76,7 +76,7 @@ Column {
                     x: form.pad; y: form.pad
                     width: parent.width - form.pad * 2
                     active: row.shownNow
-                    sourceComponent: ({ seg: row.modelData.preview && form.previewType !== "" ? previewC : segC, switch: switchC, slider: sliderC, text: textC, font: fontC, color: colorC, image: imageC, list: listC, tone: toneC })[row.modelData.type] ?? null
+                    sourceComponent: ({ seg: row.modelData.preview && form.previewType !== "" ? previewC : segC, switch: switchC, slider: sliderC, text: textC, font: fontC, color: colorC, image: imageC, list: listC, tone: toneC, role: roleC })[row.modelData.type] ?? null
                     property var def: row.modelData
                     property var val: form.get(row.modelData.key)
                 }
@@ -320,6 +320,58 @@ Column {
             allowGlobal: true
             custom: form.get("fgColor") || "#ffffff"
             onPicked: v => form.set(dd.key, v)
+        }
+    }
+    // escolha de papel de cor: faixa de bolinhas com a cor de verdade (dica com o nome ao passar o mouse)
+    readonly property var roleNames: ({ auto: "Automático", none: "Sem", mix: "Misturar cores", bg: "Fundo", primary: "Destaque", secondary: "Secundária", tertiary: "Terciária",
+        primaryContainer: "Destaque suave", secondaryContainer: "Secundária suave", tertiaryContainer: "Terciária suave", surfaceHigh: "Superfície",
+        surfaceLow: "Superfície baixa", surfaceVariant: "Superfície variante", track: "Fundo rebaixado", text: "Texto", error: "Erro" })
+    Component {
+        id: roleC
+        Column {
+            id: rc
+            readonly property var dd: parent ? parent.def : ({})
+            readonly property var vv: parent ? parent.val : undefined
+            spacing: 8
+            FormLabel { dd: rc.dd }
+            Flow {
+                width: rc.width
+                spacing: 8
+                Repeater {
+                    model: rc.dd.roles ?? []
+                    delegate: Item {
+                        id: sw
+                        required property string modelData
+                        readonly property bool on: rc.vv === modelData
+                        readonly property bool special: modelData === "auto" || modelData === "none" || modelData === "mix"
+                        width: 30; height: 30
+                        z: swm.containsMouse ? 10 : 0
+                        Rectangle {
+                            anchors.fill: parent; radius: 15
+                            color: sw.special ? "transparent" : Theme.role(sw.modelData)
+                            border.width: sw.special ? 1.5 : 1; border.color: sw.special ? Theme.muted : Qt.rgba(1, 1, 1, 0.18)
+                            Rectangle { visible: sw.modelData === "none"; anchors.centerIn: parent; width: parent.width * 0.8; height: 1.5; rotation: -45; color: Theme.muted }
+                            UiIcon { visible: sw.modelData === "auto"; anchors.centerIn: parent; name: "auto"; size: 14; color: Theme.muted }
+                            Row {
+                                visible: sw.modelData === "mix"; anchors.centerIn: parent; spacing: 1
+                                Repeater { model: ["primary", "secondary", "tertiary"]; delegate: Rectangle { required property string modelData; width: 6; height: 14; radius: 3; color: Theme.role(modelData) } }
+                            }
+                            // quem cai em cima da cor do cartao precisa continuar visivel: aro duplo claro/escuro
+                            Rectangle { anchors.fill: parent; anchors.margins: -4; radius: width / 2; color: "transparent"; border.width: 2; border.color: sw.on ? Theme.accent : (swm.containsMouse ? Theme.border : "transparent") }
+                            UiIcon { visible: sw.on && !sw.special; anchors.centerIn: parent; name: "check"; size: 14; color: (0.299 * Theme.role(sw.modelData).r + 0.587 * Theme.role(sw.modelData).g + 0.114 * Theme.role(sw.modelData).b) > 0.55 ? "#15131a" : "#f6f3fa" }
+                        }
+                        Rectangle {
+                            visible: swm.containsMouse
+                            z: 5
+                            anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.top; bottomMargin: 6 }
+                            width: tt.implicitWidth + 14; height: 22; radius: 7
+                            color: Theme.card; border.width: 1; border.color: Theme.border
+                            UiText { id: tt; anchors.centerIn: parent; text: form.roleNames[sw.modelData] ?? sw.modelData; color: Theme.text; font.pixelSize: 11 }
+                        }
+                        MouseArea { id: swm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: form.set(rc.dd.key, sw.modelData) }
+                    }
+                }
+            }
         }
     }
     Component {

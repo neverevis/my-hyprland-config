@@ -36,7 +36,7 @@ Singleton {
         "Diário": "calendar", "Pixel": "grid", "Frase": "quoteClose", "Tela de bloqueio": "lockClock", "Mostrar": "eye", "Cidades": "earth",
         "Mês": "calendarWeek", "Capa": "album", "Conteúdo": "listChecks", "Som": "sineWave", "Medidas": "gauge", "Perfil": "accountCircle",
         "Lista": "checkbox", "Bloco": "noteText", "Tempos": "timer", "Texto": "text", "Fonte": "font", "Imagem": "image", "Conversão": "fileSwap",
-        "Visual": "paint", "Posição": "cursorMove", "Forma": "shape", "Enquadramento": "crop", "Adesivo": "sticker" })
+        "Visual": "paint", "Composição": "view_grid", "Banner": "image", "Posição": "cursorMove", "Forma": "shape", "Enquadramento": "crop", "Adesivo": "sticker" })
     readonly property var catalog: [
         { type: "clock", group: "time", name: "Relógio", icon: "clock", desc: "Digital, flor com ponteiros, diário ou pixel; com frase opcional.",
           sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [3, 2]], options: [
@@ -69,6 +69,7 @@ Singleton {
             { sec: "Tela de bloqueio", key: "lockStyle", label: "Estilo na tela de bloqueio", type: "seg", preview: true, previewAs: "style", def: "same", options: [["same", "O mesmo", "check"], ["digital", "Digital", "clockDigital"], ["analog", "Flor", "flowerOutline"], ["daily", "Diário", "calendar"], ["pixel", "Pixel", "grid"]], when: { lock: true } }
           ] },
         { type: "weather", group: "time", name: "Clima", icon: "sun", desc: "Agora e a previsão (Open-Meteo, sem chave).", sizes: [[2, 1], [1, 1], [3, 1], [2, 2], [3, 2], [1, 2], [1, 3]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["hero", "Destaque", "cloudSun"]] },
             { sec: "Mostrar", key: "show", label: "Conteúdo", type: "seg", preview: true, def: "auto", options: [["auto", "Conforme o tamanho", "auto"], ["now", "Só agora", "cloudSun"], ["tiles", "Blocos de detalhes", "view_grid"], ["hours", "Próximas horas", "clockOutline"], ["days", "Próximos dias", "calendarWeek"]] },
             { sec: "Mostrar", key: "details", label: "Detalhes (sensação, vento, umidade)", icon: "info", type: "switch", def: true }
           ] },
@@ -79,6 +80,9 @@ Singleton {
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false }
           ] },
         { type: "calendar", group: "time", name: "Calendário", icon: "calendar", desc: "O mês, a semana ou o dia de hoje.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["tearoff", "Folha", "calendar"], ["pill", "Pílula e semana", "calendarWeek"], ["panel", "Mês em caixa", "view_grid"], ["side", "Data ao lado", "view_column"]] },
+            { sec: "Estilo", key: "navStyle", label: "Botões de mês", type: "seg", def: "outlined", options: [["outlined", "Contorno"], ["tonal", "Suave"], ["hidden", "Sem"]], when: { look: ["end4", "panel", "side"] } },
+            { sec: "Estilo", key: "todayShape", label: "Marca do dia de hoje", type: "seg", preview: true, def: "rounded", options: [["rounded", "Quadrado"], ["circle", "Círculo"], ["flower", "Flor"], ["cookie9", "Biscoito"], ["clover4", "Trevo"]], when: { look: ["end4", "panel", "side"] } },
             { sec: "Mês", key: "weekStart", label: "Semana começa no", type: "seg", def: 0, options: [[0, "Domingo"], [1, "Segunda"]] },
             { sec: "Mês", key: "weekends", label: "Destacar fins de semana", icon: "calendarWeek", type: "switch", def: true },
             { sec: "Mês", key: "weekNumbers", label: "Número da semana", icon: "numeric", type: "switch", def: false }
@@ -111,6 +115,12 @@ Singleton {
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false, when: { look: "tiles" } }
           ] },
         { type: "user", group: "system", name: "Usuário", icon: "account", desc: "Sua foto, saudação e o computador.", sizes: [[2, 1], [3, 1], [1, 1], [2, 2], [1, 2], [2, 3]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Coluna (atual)", "auto"], ["end4", "Como o end4", "view_grid"], ["box", "Caixa", "view_grid"], ["hero", "Capa", "image"], ["photo", "Só a foto", "account"], ["strip", "Faixa", "view_column"]] },
+            { sec: "Banner", key: "banner", label: "Imagem da capa", type: "seg", def: "wallpaper", options: [["wallpaper", "Wallpaper atrás", "image"], ["profile", "Minha foto", "account"], ["path", "Outra imagem", "folderOpen"]], when: { look: ["end4", "hero"] } },
+            { sec: "Banner", key: "bannerPath", label: "Imagem", type: "image", def: "", when: { look: ["end4", "hero"], banner: "path" } },
+            { sec: "Perfil", key: "quipSource", label: "Frase", type: "seg", def: "weather", options: [["weather", "Do tempo", "cloudSun"], ["smart", "Esperta (avisos e tempo)", "bell"], ["custom", "Minha frase", "pencil"], ["none", "Nenhuma", "close"]], when: { look: ["end4", "box"] } },
+            { sec: "Perfil", key: "quipText", label: "Minha frase", icon: "quoteClose", type: "text", def: "", when: { look: ["end4", "box"], quipSource: "custom" } },
+            { sec: "Perfil", key: "buttonStyle", label: "Botões", type: "seg", def: "pill", options: [["pill", "Bloquear + círculos", "lock"], ["outline", "Três círculos", "circleOutline"], ["icon", "Só ícones", "dotsGrid"]], when: { look: ["end4", "box", "hero"] } },
             { sec: "Perfil", key: "greeting", label: "Saudação", icon: "greeting", type: "switch", def: true },
             { sec: "Perfil", key: "info", label: "Linha de informação", type: "seg", def: "uptime", options: [["uptime", "Tempo ligado", "timer"], ["host", "Usuário@máquina", "desktop"], ["kernel", "Sistema e kernel", "linux"], ["none", "Nada", "close"]] },
             { sec: "Perfil", key: "buttons", label: "Botões de atalho (bloquear, ajustes, energia)", icon: "lock", type: "switch", def: true },
@@ -173,6 +183,15 @@ Singleton {
         { sec: "Visual", key: "card", label: "Fundo", type: "seg", def: "auto", options: [["auto", "Padrão", "auto"], ["card", "Cartão", "cards"], ["glass", "Vidro", "glass"], ["frost", "Fosco", "blur"], ["none", "Sem fundo", "image"]] },
         { sec: "Visual", key: "tone", label: "Cor", type: "tone", def: "global" },
         { sec: "Visual", key: "fgColor", label: "Minha cor", type: "color", def: "#ffffff", when: { tone: "custom" } },
+        { sec: "Composição", key: "cardRole", label: "Cor do cartão", type: "role", def: "auto", roles: ["auto", "bg", "primaryContainer", "secondaryContainer", "tertiaryContainer", "surfaceHigh", "surfaceLow", "primary"] },
+        { sec: "Composição", key: "cardAlpha", label: "Opacidade do cartão (0 = a do shell)", icon: "blur", type: "slider", from: 0, to: 100, step: 5, suffix: " %", def: 0 },
+        { sec: "Composição", key: "scrim", label: "Véu escuro dentro do cartão", icon: "tune", type: "slider", from: 0, to: 40, step: 2, suffix: " %", def: 0 },
+        { sec: "Composição", key: "radius", label: "Cantos do cartão", type: "seg", def: "auto", options: [["auto", "Automático"], ["8", "8"], ["12", "12"], ["17", "17"], ["23", "23"], ["30", "30"], ["pill", "Pílula"]] },
+        { sec: "Composição", key: "innerRole", label: "Cor das caixas internas", type: "role", def: "auto", roles: ["auto", "primaryContainer", "secondaryContainer", "tertiaryContainer", "surfaceVariant", "surfaceHigh", "surfaceLow", "bg", "track", "none"] },
+        { sec: "Composição", key: "innerAlpha", label: "Opacidade das caixas internas (0 = a do estilo)", icon: "blur", type: "slider", from: 0, to: 100, step: 5, suffix: " %", def: 0 },
+        { sec: "Composição", key: "innerRadius", label: "Cantos das caixas internas", type: "seg", def: "auto", options: [["auto", "Automático"], ["12", "12"], ["17", "17"], ["23", "23"]] },
+        { sec: "Composição", key: "badgeShape", label: "Forma dos selos de ícone", type: "seg", preview: true, def: "auto", options: [["auto", "Padrão", "auto"]].concat(Shapes.list) },
+        { sec: "Composição", key: "accentRole", label: "Cor de destaque", type: "role", def: "auto", roles: ["auto", "primary", "secondary", "tertiary", "mix"] },
         { sec: "Posição", key: "place", label: "Posição", type: "seg", def: "free", options: [["free", "Onde eu deixar", "cursorMove"], ["calm", "Área calma", "leaf"], ["busy", "Área movimentada", "sparkle"]] },
         { sec: "Tela de bloqueio", key: "lock", label: "Mostrar também na tela de bloqueio", icon: "lock", type: "switch", def: false },
         { sec: "Tela de bloqueio", key: "lockOnly", label: "Só na tela de bloqueio", icon: "lockClock", desc: "Some da área de trabalho (aparece apagado enquanto você edita).", type: "switch", def: false, when: { lock: true } }
