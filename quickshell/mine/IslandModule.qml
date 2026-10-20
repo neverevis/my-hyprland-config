@@ -3,7 +3,10 @@
 // musica tocando > repouso (relogio, janela ativa ou so um ponto). Numa barra com "Largura do conteudo" a propria
 // moldura cresce junto: vira um entalhe que respira. Mudanca de forma: animacao "Ilha dinamica" (pagina Animacoes).
 // Clique: relogio abre o Inicio; musica toca/pausa (passar o mouse mostra anterior/proxima); notificacao abre a central;
-// gravacao para; timer pausa/continua. Opcoes: idle (clock | window | dot), notifs, osd, media, timer, rec, pill.
+// gravacao para; timer pausa/continua (botao direito zera). A roda do mouse alterna "so repouso" (a ilha volta ao relogio
+// mesmo com musica); com Ctrl, ou sobre os botoes, a roda troca de faixa. Com uma ilha ligada em "notificacoes" / "volume",
+// os cartoes de notificacao e o indicador de volume nao aparecem (a ilha mostra no lugar).
+// Opcoes: idle (clock | window | dot), notifs, osd, media, timer, rec, pill.
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Services.Mpris
@@ -19,6 +22,9 @@ Item {
 
     // ---- o que mostrar ----
     property string notifText: ""
+    property string notifBody: ""
+    property bool forceIdle: false   // roda do mouse: fica so no repouso (nao nasce nada no lugar)
+    property bool btnHover: false
     property string notifIcon: ""
     property real notifUntil: 0
     property real osdUntil: 0
@@ -30,9 +36,15 @@ Item {
             const n = NotifHistory.items[0]
             if (!n || !root.on("notifs") || Settings.notifDnd || Date.now() - n.time > 2000) return
             root.notifText = n.summary || n.app
+            root.notifBody = (n.body || "").replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim()
             root.notifIcon = n.icon || n.app
-            root.now = Date.now(); root.notifUntil = root.now + 5000
+            root.now = Date.now(); root.notifUntil = root.now + Math.max(4000, Settings.notifTimeout * 1000)
         }
+    }
+    // a notificacao some da ilha quando some da tela (expirou ou foi dispensada)
+    Connections {
+        target: BarState
+        function onNotifLiveChanged() { if (BarState.notifLive === 0) root.notifUntil = 0 }
     }
     Connections {
         target: Osd
@@ -46,6 +58,7 @@ Item {
     }
     readonly property string mode: notifUntil > now ? "notif"
         : osdUntil > now ? "osd"
+        : forceIdle ? "idle"
         : Recorder.active && on("rec") ? "rec"
         : timer && on("timer") ? "timer"
         : player && on("media") ? "media"
@@ -68,7 +81,7 @@ Item {
         color: root.mode === "rec" ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Qt.rgba(root.ac.r, root.ac.g, root.ac.b, hm.hovered ? 0.2 : 0.11)
         Behavior on color { ColorAnimation { duration: 220 } }
     }
-    HoverHandler { id: hm }
+    HoverHandler { id: hm; onHoveredChanged: if (!hovered) root.btnHover = false }
     clip: true
 
     // o conteudo troca com um fade rapido; a largura segue o conteudo (animada)
@@ -81,19 +94,26 @@ Item {
         Connections { target: ld.item; ignoreUnknownSignals: true; function onImplicitWidthChanged() { if (!root.vertical) root.targetW = ld.item.implicitWidth + 22 } }
         NumberAnimation { id: fadeIn; target: ld.item; property: "opacity"; from: 0; to: 1; duration: 220; easing.type: Easing.OutCubic }
     }
+    Timer { id: wheelT; interval: 220 }   // evita alternar varias vezes por um giro so da roda
     MouseArea {
         anchors.fill: parent
         acceptedButtons: Qt.LeftButton | Qt.RightButton
         cursorShape: Qt.PointingHandCursor
         z: -1
         onClicked: m => {
+            if (root.mode === "timer" && m.button === Qt.RightButton) { Timers.reset(root.timer.id); return }   // zera o timer
             if (root.mode === "media") { if (root.player) root.player.togglePlaying() }
             else if (root.mode === "notif") { root.notifUntil = 0; Settings.homeOpen = true }
             else if (root.mode === "rec") Recorder.stop()
             else if (root.mode === "timer") { const s = Timers.get(root.timer.id); if (s.running) Timers.pause(root.timer.id); else Timers.start(root.timer.id) }
             else Settings.homeOpen = !Settings.homeOpen
         }
-        onWheel: w => { if (root.mode === "media" && root.player) { if (w.angleDelta.y < 0) root.player.next(); else root.player.previous() } }
+        onWheel: w => {
+            if (root.mode === "media" && root.player && ((w.modifiers & Qt.ControlModifier) || root.btnHover)) { if (w.angleDelta.y < 0) root.player.next(); else root.player.previous(); return }
+            if (wheelT.running) return
+            wheelT.restart()
+            root.forceIdle = !root.forceIdle
+        }
     }
 
     // ---- conteudos ----
@@ -165,7 +185,8 @@ Item {
                         required property var modelData
                         width: 20; height: 20; radius: 10; color: bm.containsMouse ? Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.16) : "transparent"
                         UiIcon { anchors.centerIn: parent; name: modelData[0]; size: 13; color: root.fg }
-                        MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: modelData[1]() }
+                        MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: modelData[1]()
+                            onContainsMouseChanged: root.btnHover = containsMouse }
                     }
                 }
             }
@@ -179,11 +200,14 @@ Item {
                 width: 16; height: 16; sourceSize: Qt.size(32, 32); anchors.verticalCenter: parent.verticalCenter
                 source: Icons.path(root.notifIcon, "dialog-information")
             }
-            UiText {
+            // titulo e, embaixo, o comeco do texto da notificacao
+            Column {
                 visible: !root.vertical
                 anchors.verticalCenter: parent.verticalCenter
-                width: Math.min(implicitWidth, 320); elide: Text.ElideRight
-                text: root.notifText; color: root.fg; font.pixelSize: 12; font.weight: Font.DemiBold
+                width: Math.min(Math.max(nt.implicitWidth, nb.implicitWidth), 320)
+                spacing: -2
+                UiText { id: nt; width: parent.width; elide: Text.ElideRight; text: root.notifText; color: root.fg; font.pixelSize: root.notifBody !== "" ? 11 : 12; font.weight: Font.DemiBold }
+                UiText { id: nb; visible: root.notifBody !== ""; width: parent.width; elide: Text.ElideRight; text: root.notifBody; color: root.fg; opacity: 0.65; font.pixelSize: 9 }
             }
         }
     }

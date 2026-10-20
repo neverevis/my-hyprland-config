@@ -124,7 +124,8 @@ Scope {
     readonly property var nodes: Pipewire.nodes.values
     readonly property var sinks: nodes.filter(n => n.audio && n.isSink && !n.isStream)
     readonly property var sources: nodes.filter(n => n.audio && !n.isSink && !n.isStream)
-    readonly property var streams: nodes.filter(n => n.audio && n.isStream && !n.isSink)
+    // apps tocando som: no Quickshell os streams de saida (Stream/Output/Audio) tem isSink = true
+    readonly property var streams: nodes.filter(n => n.audio && n.isStream && n.type === PwNodeType.AudioOutStream)
     PwObjectTracker { objects: root.alive ? root.nodes : [] }
     function nodeName(n) { return n ? (n.description || n.nickname || n.name || "?") : "" }
     function volIcon(a) { return !a || a.muted ? "volumeOff" : (a.volume > 0.66 ? "volume" : (a.volume > 0.25 ? "volumeMed" : "volumeLow")) }

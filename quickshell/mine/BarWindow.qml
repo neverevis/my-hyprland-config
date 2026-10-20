@@ -17,8 +17,12 @@ PanelWindow {
 
     // ---- mostrar / esconder ----
     property bool hovering: false   // alimentado pelo HoverHandler abaixo
+    // mouse na borda deste lado (faixa fina em todo o lado, opcao "Revelar encostando em qualquer ponto da borda")
+    readonly property bool edgeHot: autoHide && Settings.barEdgeReveal && !!BarState.edgeHover[side]
+    readonly property bool hot: hovering || edgeHot
     property bool armed: false      // mouse parado na borda pelo tempo de Settings.showDelay (0 = na hora)
-    property bool shown: !autoHide || armed || hideTimer.running
+    // barsOpen: o comando "bar close" (IPC) esconde todas as barras, com ou sem autoHide
+    property bool shown: BarState.barsOpen && (!autoHide || armed || hideTimer.running)
     property real prog: shown ? 1 : 0
     Behavior on prog { id: progB; MotionAnim { use: "bars"; out: progB.targetValue < 0.5 } }
     // fade dos modulos: acompanha o mesmo tempo da animacao, mas com curva propria
@@ -37,8 +41,8 @@ PanelWindow {
     onProgChanged: BarState.set(modelData, prog)
     Component.onCompleted: BarState.set(modelData, prog)
 
-    onHoveringChanged: {
-        if (hovering) {
+    onHotChanged: {
+        if (hot) {
             if (Settings.showDelay <= 0 || prog > 0.01) armed = true
             else showTimer.restart()
         } else {
@@ -47,7 +51,7 @@ PanelWindow {
             armed = false
         }
     }
-    Timer { id: showTimer; interval: Math.max(1, Settings.showDelay); onTriggered: win.armed = win.hovering }
+    Timer { id: showTimer; interval: Math.max(1, Settings.showDelay); onTriggered: win.armed = win.hot }
     Timer { id: hideTimer; interval: Settings.hideDelay }
 
     visible: !!info && !!bar && !info.hidden   // hidden: sem espaco livre neste lado (outra barra tem prioridade)
@@ -67,12 +71,12 @@ PanelWindow {
     WlrLayershell.namespace: "mine-bar"
 
     // area que recebe o mouse: tudo quando visivel; so uma faixa na borda quando escondida
-    readonly property int trigger: 8
-    readonly property bool open: !autoHide || prog > 0.01 || hovering
+    readonly property int trigger: Math.max(1, Math.min(16, Settings.barHoverStrip))
+    readonly property bool open: BarState.barsOpen ? (!autoHide || prog > 0.01 || hovering) : prog > 0.01
     Item {
         id: hit
         readonly property bool vert: win.side === "left" || win.side === "right"
-        readonly property real depth: win.open ? win.full : win.trigger   // so a barra de verdade (ou a faixa) recebe o mouse
+        readonly property real depth: win.open ? win.full : (BarState.barsOpen ? win.trigger : 0)   // so a barra de verdade (ou a faixa) recebe o mouse
         width: vert ? depth : win.width
         height: vert ? win.height : depth
         x: win.side === "right" ? win.width - depth : 0

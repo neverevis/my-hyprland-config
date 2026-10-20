@@ -15,8 +15,9 @@ Item {
     property point origin: Qt.point(0, 0)   // canto da janela da barra na tela (para os detalhes ao passar o mouse)
 
     // detalhes ao passar o mouse: que cartao cada modulo abre (opcao "popup" desliga)
-    readonly property string popKind: root.opts.popup === false ? "" : ({ clock: "calendar", weather: "weather", cpu: "system", memory: "system", gpu: "system",
+    readonly property string popKind: root.opts.popup === false ? "" : ({ clock: "calendar", weather: "weather", cpu: "resources", memory: "resources", disk: "resources", swap: "resources", gpu: "system",
         temp: "system", netspeed: "system", media: "media", volume: "volume", privacy: "privacy", updates: "updates" })[root.type] ?? ""
+    readonly property bool hasPop: popKind !== ""
     HoverHandler {
         enabled: root.popKind !== ""
         onHoveredChanged: {
@@ -40,17 +41,35 @@ Item {
         id: loader
         sourceComponent: ({
             clock: clockC, workspaces: workspacesC, window: windowC,
-            cpu: cpuC, memory: memoryC, volume: volumeC, text: textC, tray: trayC, palette: paletteC, power: powerC, taskbar: taskbarC, island: islandC
+            cpu: cpuC, memory: memoryC, disk: diskC, swap: swapC, volume: volumeC, text: textC, tray: trayC, palette: paletteC, power: powerC, taskbar: taskbarC, island: islandC
         })[root.type] ?? extraC
     }
 
     Component {
         id: clockC
-        Label {
-            SystemClock { id: clk; precision: SystemClock.Minutes }
-            text: root.vertical ? Qt.formatDateTime(clk.date, Settings.clock24 ? "HH\nmm" : "h\nmm") : Qt.formatDateTime(clk.date, root.opts.format || (Settings.clock24 ? "ddd dd MMM   HH:mm" : "ddd dd MMM   h:mm AP"))
+        Item {
+            id: ck
+            implicitWidth: col.implicitWidth
+            implicitHeight: col.implicitHeight
             opacity: cm.containsMouse ? 0.75 : 1
             Behavior on opacity { NumberAnimation { duration: 120 } }
+            SystemClock { id: clk; precision: SystemClock.Minutes }
+            Column {
+                id: col
+                spacing: 1
+                Label {
+                    width: col.width
+                    text: root.vertical ? Qt.formatDateTime(clk.date, Settings.clock24 ? "HH\nmm" : "h\nmm") : Qt.formatDateTime(clk.date, root.opts.format || (Settings.clock24 ? "ddd dd MMM   HH:mm" : "ddd dd MMM   h:mm AP"))
+                }
+                // barra lateral: data curta (dia/mes) embaixo da hora
+                Label {
+                    visible: root.vertical && root.opts.shortDate !== false
+                    width: col.width
+                    text: Qt.formatDateTime(clk.date, "dd/MM")
+                    font.pixelSize: 10
+                    opacity: 0.7
+                }
+            }
             MouseArea {   // clique no relogio abre o painel Inicio
                 id: cm
                 anchors.fill: parent; anchors.margins: -4
@@ -78,6 +97,7 @@ Item {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: Power.menuOpen = true
             }
+            TipHover { text: "Menu de energia"; side: root.side; origin: root.origin; enabled: !root.hasPop }
         }
     }
 
@@ -106,7 +126,7 @@ Item {
     }
     Component {
         id: extraC
-        ExtraModule { type: root.type; opts: root.opts; vertical: root.vertical; side: root.side }
+        ExtraModule { type: root.type; opts: root.opts; vertical: root.vertical; side: root.side; origin: root.origin; hasPop: root.popKind !== "" }
     }
 
     Component {
@@ -123,6 +143,9 @@ Item {
         id: memoryC
         SystemMeter { kind: "memory"; opts: root.opts; vertical: root.vertical }
     }
+
+    Component { id: diskC; SystemMeter { kind: "disk"; opts: root.opts; vertical: root.vertical } }
+    Component { id: swapC; SystemMeter { kind: "swap"; opts: root.opts; vertical: root.vertical } }
 
     Component {
         id: volumeC
@@ -143,19 +166,39 @@ Item {
 
     Component {
         id: trayC
-        TrayModule { vertical: root.vertical; side: root.side; opts: root.opts }
+        TrayModule { vertical: root.vertical; side: root.side; opts: root.opts; origin: root.origin }
     }
 
     Component {
         id: windowC
-        // janela ativa: icone do app + titulo (nas barras laterais, so o icone)
+        // janela ativa: icone do app + classe (pequena) e titulo; sem janela focada usa a maior do workspace, e sem nenhuma
+        // mostra "Área de trabalho". Nas barras laterais, so o icone. Opcao showClass (padrao ligada) liga/desliga a linha da classe.
         Row {
             id: winRow
             spacing: 8
+            readonly property var focusedWs: Hyprland.focusedWorkspace
             readonly property var tl: Hyprland.activeToplevel
-            readonly property string cls: tl && tl.lastIpcObject ? (tl.lastIpcObject.class ?? "") : ""
+            // maior janela do workspace atual (quando nada esta focado)
+            readonly property var biggest: {
+                if (tl || !focusedWs) return null
+                let best = null, area = -1
+                for (const t of focusedWs.toplevels.values) {
+                    const o = t.lastIpcObject
+                    if (!o || !o.size) continue
+                    const a = o.size[0] * o.size[1]
+                    if (a > area) { area = a; best = t }
+                }
+                return best
+            }
+            readonly property var cur: tl ?? biggest
+            readonly property string cls: cur && cur.lastIpcObject ? (cur.lastIpcObject.class ?? "") : ""
+            readonly property string title: cur ? (cur.title ?? "") : ""
+            readonly property bool desktop: !cur
             readonly property var entry: cls !== "" ? DesktopEntries.heuristicLookup(cls) : null
-            readonly property string iconUrl: cls === "" ? "" : Icons.path(entry && entry.icon ? entry.icon : cls, "")
+            readonly property string iconUrl: desktop ? Icons.path("user-desktop", "") : (cls === "" ? "" : Icons.path(entry && entry.icon ? entry.icon : cls, "application-x-executable"))
+            readonly property bool showClass: root.opts.showClass !== false
+            readonly property string line1: desktop ? "Área de trabalho" : (entry && entry.name ? entry.name : cls)
+            readonly property string line2: desktop ? "Workspace " + (focusedWs ? focusedWs.id : 1) : title
             Image {
                 visible: winRow.iconUrl !== ""
                 anchors.verticalCenter: parent.verticalCenter
@@ -163,17 +206,34 @@ Item {
                 source: winRow.iconUrl
                 sourceSize: Qt.size(36, 36)
                 fillMode: Image.PreserveAspectFit
+                opacity: winRow.desktop ? 0.7 : 1
             }
-            Label {
+            Column {
                 visible: !root.vertical
                 anchors.verticalCenter: parent.verticalCenter
-                width: Math.min(implicitWidth, 320)
-                elide: Text.ElideRight
-                text: winRow.tl ? winRow.tl.title : ""
+                width: Math.min(Math.max(winRow.showClass ? l1.implicitWidth : 0, l2.implicitWidth), 320)
+                spacing: -1
+                Label {
+                    id: l1
+                    visible: winRow.showClass
+                    width: parent.width
+                    horizontalAlignment: Text.AlignLeft
+                    elide: Text.ElideRight
+                    font.pixelSize: 10
+                    opacity: 0.65
+                    text: winRow.line1
+                }
+                Label {
+                    id: l2
+                    width: parent.width
+                    horizontalAlignment: Text.AlignLeft
+                    elide: Text.ElideRight
+                    font.pixelSize: winRow.showClass ? 12 : 14
+                    text: winRow.showClass || !winRow.desktop ? winRow.line2 : winRow.line1
+                }
             }
+            TipHover { text: root.vertical ? winRow.line1 + (winRow.title !== "" ? " · " + winRow.title : "") : ""; side: root.side; origin: root.origin }
         }
     }
-
-
 
 }

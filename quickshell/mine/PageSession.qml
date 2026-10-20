@@ -96,7 +96,14 @@ Column {
         UiText { text: SystemGuard.updates < 0 ? "Verificando…" : SystemGuard.updates === 0 ? "Sistema em dia." : SystemGuard.updates + " atualização(ões) disponível(is)."; color: Theme.muted; font.pixelSize: 12 }
         UiSlider { label: "Verificar a cada"; from: 1; to: 24; value: Settings.updHours; suffix: " h"; onMoved: v => Settings.updHours = Math.round(v) }
         UiSlider { label: "Avisar a partir de (0 = nunca)"; from: 0; to: 200; value: Settings.updWarn; suffix: " pacotes"; onMoved: v => Settings.updWarn = Math.round(v / 5) * 5 }
-        UiButton { icon: "refresh"; text: "Verificar agora"; kind: "ghost"; onClicked: SystemGuard.checkUpdates() }
+        UiSlider { label: "Ficar vermelho a partir de (0 = nunca)"; icon: "download"; from: 0; to: 300; value: Settings.updStrong; suffix: " pacotes"; onMoved: v => Settings.updStrong = Math.round(v / 5) * 5 }
+        UiSwitch { label: "Contar também o AUR"; icon: "package"; description: "Usa o yay (ou o paru) para ver e instalar os pacotes do AUR junto com os do pacman. Sem eles, só o pacman."; checked: Settings.updAur; onToggled: on => { Settings.updAur = on; SystemGuard.checkUpdates() } }
+        UiText { visible: Settings.updAur && SystemGuard.updAurN > 0; text: SystemGuard.updRepo + " do pacman e " + SystemGuard.updAurN + " do AUR."; color: Theme.muted; font.pixelSize: 12 }
+        Row {
+            spacing: 8
+            UiButton { icon: "refresh"; text: SystemGuard.checking ? "Verificando…" : "Verificar agora"; kind: "ghost"; enabled: !SystemGuard.checking; onClicked: SystemGuard.checkUpdates() }
+            UiButton { icon: "download"; text: "Atualizar agora"; kind: "ghost"; onClicked: SystemGuard.runUpdate() }
+        }
         UiLabel { text: "Outros daemons de notificação" }
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: SystemGuard.conflicts.length ? Theme.danger : Theme.muted; font.pixelSize: 12
             text: SystemGuard.conflicts.length ? "Rodando junto com o shell: " + SystemGuard.conflicts.join(", ") + " (as notificações podem ir para ele)." : "Nenhum conflito." }

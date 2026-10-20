@@ -166,7 +166,10 @@ Singleton {
         const grp = { top: [], right: [], bottom: [], left: [] }
         bars.forEach((b, i) => { if (grp[b.side]) grp[b.side].push(i) })
         // progresso de mostrar (0 = escondida, 1 = visivel) das barras com autoHide
-        const pf = i => (bars[i].autoHide ? Math.max(0, Math.min(1.3, prog && prog[i] !== undefined ? prog[i] : 1)) : 1) * (1 - cover[i])
+        // "bar close" (IPC): com as barras do usuario fechadas, todas passam a seguir o progresso (as que nao se escondem tambem)
+        const closed = !BarState.barsOpen
+        const hides = i => bars[i].autoHide || (closed && i < nUser)
+        const pf = i => (hides(i) ? Math.max(0, Math.min(1.3, prog && prog[i] !== undefined ? prog[i] : 1)) : 1) * (1 - cover[i])
         const detOf = i => i < nUser && !!bars[i].detached && !bars[i].full
         const gapOf = i => bars[i].gap ?? 8
         const thOf = i => Math.max(18, bars[i].height - edge)   // espessura da barra solta (sem a moldura)
@@ -179,7 +182,7 @@ Singleton {
             if (full !== undefined) idx = grp[s] = [full].concat(idx.filter(i => i === pIdx || (i !== full && i < nUser && !!bars[i].detached && !bars[i].full)))
             // espaco reservado: barra fixa reserva tudo; barra que se esconde depende de "reserve":
             //   overlay (padrao) = nao reserva (aparece por cima das janelas), always = reserva sempre, follow = acompanha a animacao
-            const zone1 = i => !bars[i].autoHide || bars[i].reserve === "always" ? tOf(i)
+            const zone1 = i => !hides(i) || (bars[i].reserve === "always" && !closed) ? tOf(i)
                 : bars[i].reserve === "follow" ? edge + (tOf(i) - edge) * Math.min(1, pf(i)) : 0
             const zmax = idx.reduce((m, i) => Math.max(m, zone1(i)), 0)
             inset[s] = idx.length ? (full !== undefined ? edge + (tOf(full) - edge) * pf(full) : edge) : (outline ? edge : -2)
@@ -280,7 +283,7 @@ Singleton {
                 it.lift = under.reduce((m, o) => Math.max(m, o.te - inset[s]), 0)
                 it.t += it.lift
                 const b = bars[it.i]
-                if (!b.autoHide || b.reserve === "always") zone[s] = Math.max(zone[s], tOf(it.i) + under.reduce((m, o) => Math.max(m, o.t - edge), 0))
+                if (!hides(it.i) || (b.reserve === "always" && !closed)) zone[s] = Math.max(zone[s], tOf(it.i) + under.reduce((m, o) => Math.max(m, o.t - edge), 0))
             }
             const hole = main.filter(it => !it.hidden && !it.det)
             const aS = hole.find(it => it.attU < 0), aE = hole.find(it => it.attU > 0)

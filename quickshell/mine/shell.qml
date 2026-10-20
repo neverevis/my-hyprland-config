@@ -66,11 +66,32 @@ ShellRoot {
             if (f.length > 0) return "erro: " + fn + " precisa de argumentos"
             try { const r = f(); return r === undefined ? "ok" : JSON.stringify(r) } catch (e) { return "erro: " + e }
         }
+        // diagnostico: mostra uma dica de texto como se o mouse estivesse na barra de cima (tip <texto> | tip off)
+        function tip(text: string): string {
+            if (text === "off") { BarState.pop = null; return "ok" }
+            BarState.tipEnter(text.replace(/_/g, " "), "top", { x: 900, y: 0, w: 30, h: 34 })
+            BarState.pop = BarState.popPending
+            return "ok"
+        }
+        // diagnostico: abre um cartao de detalhes da barra de cima (calendar | resources | updates | ...) ou fecha (off)
+        function popup(kind: string): string {
+            BarState.pop = kind === "off" ? null : { kind: kind, opts: ({}), side: "top", type: kind, rect: { x: 900, y: 0, w: 30, h: 34 } }
+            return "ok"
+        }
         function color(id: string): string { return "theme " + Theme.role(id) + " · paleta " + ThemeColors.of(id) + " · t " + ThemeColors.t[id] + " · fam " + JSON.stringify(Theme.family(id)) }
         function bars(): string {
             return JSON.stringify((shell.geo.bars || []).map((b, i) => b ? { i: i, side: b.side, hidden: !!b.hidden, det: !!b.detached, full: !!b.full, t: b.t, rect: b.rect } : null))
         }
     }   // carrega o HyprSync (singleton) ja no inicio
+
+    // mostrar / esconder todas as barras: qs -c mine ipc call bar toggle | open | close | status
+    IpcHandler {
+        target: "bar"
+        function toggle(): string { BarState.barsOpen = !BarState.barsOpen; return BarState.barsOpen ? "aberta" : "fechada" }
+        function open(): string { BarState.barsOpen = true; return "aberta" }
+        function close(): string { BarState.barsOpen = false; return "fechada" }
+        function status(): string { return BarState.barsOpen ? "aberta" : "fechada" }
+    }
 
     WallpaperWindow {}
     WallpaperPicker { geo: shell.geo }
@@ -157,6 +178,30 @@ ShellRoot {
     }
 
     readonly property var geo: frame.geo
+
+    // faixa fina em todo o comprimento de cada lado que tem barra escondida: encostar nela revela a barra (opcao "Revelar encostando em qualquer ponto da borda")
+    component EdgeReveal: PanelWindow {
+        id: er
+        required property string side
+        readonly property bool vert: side === "left" || side === "right"
+        visible: Settings.barEdgeReveal && BarState.barsOpen && Settings.bars.some(b => b.side === side && b.autoHide)
+        anchors {
+            top: side !== "bottom"
+            bottom: side !== "top"
+            left: side !== "right"
+            right: side !== "left"
+        }
+        implicitWidth: vert ? Math.max(1, Math.min(16, Settings.barHoverStrip)) : 1
+        implicitHeight: vert ? 1 : Math.max(1, Math.min(16, Settings.barHoverStrip))
+        exclusionMode: ExclusionMode.Ignore
+        color: "transparent"
+        WlrLayershell.namespace: "mine-edge"
+        HoverHandler { onHoveredChanged: BarState.setEdge(er.side, hovered) }
+    }
+    EdgeReveal { side: "top" }
+    EdgeReveal { side: "bottom" }
+    EdgeReveal { side: "left" }
+    EdgeReveal { side: "right" }
 
     Variants {
         model: Settings.bars.map((b, i) => i)

@@ -242,6 +242,11 @@ Singleton {
     property alias settingsWindowed: adapter.settingsWindowed   // configuracoes numa janela normal do Hyprland (senao, camada do shell)
     property alias barPopups: adapter.barPopups                 // detalhes ao passar o mouse nos modulos da barra
     property alias barPopupDelay: adapter.barPopupDelay
+    property alias barTips: adapter.barTips                     // dicas de texto ao passar o mouse (bandeja, botoes, dock)
+    property alias barHoverStrip: adapter.barHoverStrip         // espessura (px) da faixa que revela a barra escondida
+    property alias barEdgeReveal: adapter.barEdgeReveal         // encostar em qualquer ponto da borda revela a barra escondida daquele lado
+    property alias updStrong: adapter.updStrong                 // atualizacoes: acima disso o modulo fica vermelho (0 = desligado)
+    property alias updAur: adapter.updAur                       // conta tambem os pacotes do AUR (yay)
     property alias launcherExclude: adapter.launcherExclude     // sites fora da busca na web (vira -site:x)
     property alias launcherPrefixes: adapter.launcherPrefixes   // prefixo de cada modo (so os trocados; ver Launcher.prefixDefaults)
     property alias launcherDefaults: adapter.launcherDefaults   // o que aparece sem prefixo: math, actions, settings, web
@@ -379,6 +384,16 @@ Singleton {
     }
 
     // listas vindas do settings.json chegam como objetos parecidos com array (Array.isArray da falso): use Settings.list(x)
+    // ilha dinamica presente numa barra que nao se esconde: ela mostra as notificacoes / o volume no lugar dos cartoes e do indicador
+    // (opt = "notifs" | "osd"; ligados por padrao em cada ilha). Le "bars" direto para o QML refazer a conta quando elas mudam.
+    function islandHas(opt: string): bool {
+        for (const b of Array.from(bars || []))
+            if (!b.autoHide) for (const sec of Array.from(sectionsOf(b)))
+                for (const m of Array.from(sec.modules || [])) if (m.type === "island" && m[opt] !== false) return true
+        return false
+    }
+    readonly property bool islandNotifs: { bars; return islandHas("notifs") }
+    readonly property bool islandOsd: { bars; return islandHas("osd") }
     function list(v: var): var { if (!v || typeof v === "string") return []; try { return Array.from(v) } catch (e) { return [] } }
     readonly property int schemaNow: 2
     function migrate(): void {
@@ -468,7 +483,10 @@ Singleton {
         { type: "visualizer", label: "Mini visualizador" },
         { type: "taskbar", label: "Dock (apps fixados e abertos)" },
         { type: "island", label: "Ilha dinâmica" },
-        { type: "privacy", label: "Privacidade (microfone / tela em uso)" }
+        { type: "privacy", label: "Privacidade (microfone / tela em uso)" },
+        { type: "divisor", label: "Divisor" },
+        { type: "disk", label: "Disco" },
+        { type: "swap", label: "Swap" }
     ]
 
     function reset(): void {
@@ -842,6 +860,11 @@ Singleton {
             property var hyprMonitor: ({})
             property var hyprAutostart: []
             property int barPopupDelay: 450
+            property bool barTips: true
+            property int barHoverStrip: 8
+            property bool barEdgeReveal: false
+            property int updStrong: 0
+            property bool updAur: true
             property var launcherPrefixes: ({})
             property var launcherDefaults: ({})
             property bool launcherFuzzy: true

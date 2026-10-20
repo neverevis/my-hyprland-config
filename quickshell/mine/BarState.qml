@@ -17,13 +17,26 @@ Singleton {
     Timer { id: popShowT; interval: Settings.barPopupDelay; onTriggered: bs.pop = bs.popPending }
     Timer { id: popHideT; interval: 260; onTriggered: if (!bs.popHover) bs.pop = null }
     function popEnter(p) {
-        if (!Settings.barPopups) return
+        if (p.kind === "tip" ? !Settings.barTips : !Settings.barPopups) return
         popPending = p; popHideT.stop()
         if (pop) pop = p      // ja aberto: troca na hora (passar de um modulo para o outro)
         else popShowT.restart()
     }
     function popLeave() { popShowT.stop(); popHideT.restart() }
     onPopHoverChanged: if (!popHover) popHideT.restart(); else popHideT.stop()
+    // dica de texto (kind "tip"): qualquer modulo/botao chama tipEnter(texto, lado, retangulo na tela) ao passar o mouse e popLeave() ao sair
+    function tipEnter(text, side, rect) {
+        if (!text) return
+        popEnter({ kind: "tip", text: text, side: side, rect: rect, opts: ({}) })
+    }
+    // mostrar / esconder todas as barras (IPC "bar"; nao e salvo)
+    property bool barsOpen: true
+    // mouse encostado na borda de cada lado (faixa fina, ver EdgeReveal em shell.qml): revela a barra escondida daquele lado
+    property var edgeHover: ({ top: false, right: false, bottom: false, left: false })
+    function setEdge(side, on) {
+        if (edgeHover[side] === on) return
+        const c = Object.assign({}, edgeHover); c[side] = on; edgeHover = c
+    }
     // barras com "fit" (largura do conteudo, ex.: o dock): comprimento que os modulos pedem, por indice da barra
     property var fitLen: ({})
     function setFit(i, v) {
@@ -52,12 +65,13 @@ Singleton {
     readonly property real homeProg: homeRaw
     // notificacoes: quantidade de cartoes (a moldura cresce ate o bloco), progresso e comprimento do bloco ao longo da borda (animados)
     property int notifCount: 0
+    property int notifLive: 0   // notificacoes ainda na tela (mesmo se a ilha dinamica mostra no lugar dos cartoes)
     property real notifRaw: notifCount > 0 ? 1 : 0
     Behavior on notifRaw { id: b_notifProg; MotionAnim { use: "notifications"; out: b_notifProg.targetValue < 0.5 } }
     readonly property real notifProg: notifRaw
     property real notifLen: 0
     // indicador de volume (OSD): progresso; tamanho fixo do conteudo (comprimento ao longo da borda x profundidade)
-    property real osdRaw: Osd.showing ? 1 : 0
+    property real osdRaw: Osd.showing && !Settings.islandOsd ? 1 : 0
     Behavior on osdRaw { id: b_osd; MotionAnim { use: "osd"; out: b_osd.targetValue < 0.5 } }
     readonly property real osdProg: osdRaw
     readonly property real osdDepth: 46

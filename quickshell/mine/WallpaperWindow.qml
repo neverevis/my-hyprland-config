@@ -276,6 +276,7 @@ Variants {
             color: Theme.role(Settings.wpBgRole)
             Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 600 } }
             ShapedImage {
+                id: centerImg
                 visible: Settings.wpMode === "centered"
                 readonly property real d: Math.min(win.width, win.height) * Settings.wpCenterSize / 100
                 width: d; height: d
@@ -283,7 +284,7 @@ Variants {
                 shape: Settings.wpCenterShape; sides: Settings.wpCenterSides
                 source: Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
                 sourceSize: Qt.size(d * 1.5, d * 1.5)
-                RotationAnimation on spin { running: Settings.wpCenterSpin && parent.visible; from: 0; to: 360; duration: 120000; loops: Animation.Infinite }
+                RotationAnimation on spin { running: Settings.wpCenterSpin && centerImg.visible; from: 0; to: 360; duration: 120000; loops: Animation.Infinite }
             }
             // mosaico: caixas com as imagens escolhidas (ou as proximas da pasta)
             Item {

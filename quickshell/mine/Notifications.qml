@@ -42,15 +42,18 @@ Scope {
     readonly property real stackDepth: vert ? cardW : cardH
     onStackLenChanged: BarState.notifLen = stackLen
     onStackDepthChanged: BarState.notifDepth = stackDepth
-    // so conta quando ha o que mostrar (nao perturbe esconde tudo, mas guarda)
-    readonly property int visibleCount: Settings.notifOn && !Settings.notifDnd ? shownCount : 0
-    Component.onCompleted: { BarState.notifLen = stackLen; BarState.notifDepth = stackDepth; BarState.notifCount = visibleCount }
+    // so conta quando ha o que mostrar (nao perturbe esconde tudo, mas guarda). Com uma ilha dinamica (que mostra as notificacoes),
+    // os cartoes nao aparecem nem fazem a moldura crescer, mas continuam existindo ate expirar (live = ainda na tela)
+    readonly property int live: Settings.notifOn && !Settings.notifDnd ? shownCount : 0
+    readonly property int visibleCount: Settings.islandNotifs ? 0 : live
+    Component.onCompleted: { BarState.notifLen = stackLen; BarState.notifDepth = stackDepth; BarState.notifCount = visibleCount; BarState.notifLive = live }
 
     // janela existe enquanto houver bloco visivel (ou a animacao de saida)
     property bool alive: false
-    onVisibleCountChanged: {
-        BarState.notifCount = visibleCount
-        if (visibleCount > 0) { closeT.stop(); alive = true } else closeT.restart()
+    onVisibleCountChanged: BarState.notifCount = visibleCount
+    onLiveChanged: {
+        BarState.notifLive = live
+        if (live > 0) { closeT.stop(); alive = true } else closeT.restart()
     }
     Timer { id: closeT; interval: 600; onTriggered: root.alive = false }
 
@@ -67,6 +70,7 @@ Scope {
             WlrLayershell.namespace: "mine-notifications"
             // so o bloco recebe o mouse; o resto da tela fica livre
             mask: Region { item: hit }
+            visible: !Settings.islandNotifs   // a ilha dinamica mostra no lugar (os cartoes seguem vivos por baixo, so para expirar)
 
             readonly property string side: Settings.notifSide
             readonly property real e: Settings.edge

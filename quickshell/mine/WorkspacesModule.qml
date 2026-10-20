@@ -1,8 +1,8 @@
 // Modulo de workspaces com varios estilos. Opcoes (em "opts"):
 //   style: numbers | dots | pills | squares | bars | ring | icons | roman | kanji | custom
 //   size (px), spacing (px), anim (ms), count (0 = so os que existem), onlyOccupied (esconde vazios),
-//   symbols ("a b c ..." para "custom"), activeColor (#rrggbb; vazio = cor do texto)
-// Clique vai para o workspace; a roda do mouse passa para o proximo/anterior.
+//   symbols ("a b c ..." para "custom"), activeColor (#rrggbb; vazio = cor do texto), wrap (a roda volta do ultimo ao primeiro; padrao ligado)
+// Clique vai para o workspace; botao direito abre a visao geral; a roda do mouse passa para o proximo/anterior.
 import Quickshell
 import Quickshell.Hyprland
 import QtQuick
@@ -21,8 +21,8 @@ Grid {
     // texto sobre o ativo (estilo numeros/capsulas): contraste com a cor ativa
     readonly property color accentInk: opts.activeColor ? Settings.barColor : (Settings.themeOn ? ThemeColors.primaryInk : Settings.barColor)
     readonly property var symbols: (opts.symbols ?? "").trim().split(/\s+/).filter(s => s.length > 0)
-    readonly property var kanji: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
-    readonly property var roman: ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ", "Ⅹ"]
+    readonly property var kanji: ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十"]
+    readonly property var roman: ["Ⅰ", "Ⅱ", "Ⅲ", "Ⅳ", "Ⅴ", "Ⅵ", "Ⅶ", "Ⅷ", "Ⅸ", "Ⅹ", "Ⅺ", "Ⅻ", "XIII", "XIV", "XV", "XVI", "XVII", "XVIII", "XIX", "XX"]
 
     spacing: opts.spacing ?? 6
     columns: vertical ? 1 : 99
@@ -34,10 +34,14 @@ Grid {
         onWheel: e => {
             acc += e.angleDelta.y
             if (Math.abs(acc) < 100) return
-            // passa pelos workspaces que o modulo mostra (em volta: do ultimo volta ao primeiro)
+            // passa pelos workspaces que o modulo mostra (com wrap: do ultimo volta ao primeiro; sem, para nas pontas)
             const cur = Hyprland.focusedWorkspace ? Hyprland.focusedWorkspace.id : 1
             const i = root.ids.indexOf(cur), n = root.ids.length
-            if (n > 0) root.go(root.ids[((i < 0 ? 0 : i) + (acc < 0 ? 1 : -1) + n) % n])
+            if (n > 0) {
+                const j = (i < 0 ? 0 : i) + (acc < 0 ? 1 : -1)
+                if (root.opts.wrap === false) root.go(root.ids[Math.max(0, Math.min(n - 1, j))])
+                else root.go(root.ids[(j + n) % n])
+            }
             acc = 0
         }
     }
@@ -208,8 +212,9 @@ Grid {
                 anchors.fill: parent
                 anchors.margins: -2
                 hoverEnabled: true
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
                 cursorShape: Qt.PointingHandCursor
-                onClicked: root.go(cell.modelData)
+                onClicked: m => { if (m.button === Qt.RightButton) Actions.run("overview"); else root.go(cell.modelData) }
             }
         }
     }

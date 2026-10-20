@@ -17,7 +17,7 @@ Column {
     readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil",
         media: "music", weather: "wPartly", netspeed: "network", gpu: "gpuCard", temp: "temperature", updates: "download", keyboard: "keyboard",
         notifs: "bell", recorder: "monitor", utils: "frame", caffeine: "coffee", launcher: "apps", visualizer: "wave", taskbar: "dock",
-        island: "pulse", privacy: "eye" })
+        island: "pulse", privacy: "eye", divisor: "alignVCenter", disk: "disk", swap: "swap_vertical" })
     function setBar(k, v) { Settings.setBar(idx, k, v) }
     // marca as secoes na propria barra enquanto esta pagina esta aberta
     // so a pagina de verdade (a copia escondida que a busca cria para montar o indice nao mexe na depuracao)
@@ -173,6 +173,25 @@ Column {
         UiSlider { label: "Espessura"; icon: "bars"; from: 24; to: 90; value: page.bar ? page.bar.height : 0; suffix: " px"; onMoved: v => page.setBar("height", v) }
         UiSlider { visible: page.bar ? !!page.bar.detached : false; label: "Distância da moldura"; icon: "dock"; from: 0; to: 40; value: page.bar ? (page.bar.gap ?? 8) : 8; suffix: " px"; onMoved: v => page.setBar("gap", v) }
         UiSlider { visible: page.bar ? !!page.bar.detached : false; label: "Arredondamento"; icon: "curve"; from: 0; to: 40; value: page.bar ? (page.bar.radius ?? 14) : 14; suffix: " px"; onMoved: v => page.setBar("radius", v) }
+        // curvas da barra presa na moldura (cada barra pode ter as suas; sem escolher, vale a da pagina Moldura)
+        Column {
+            visible: page.bar ? !page.bar.detached && !page.bar.full : false
+            width: parent.width
+            spacing: 12
+            UiLabel { text: "Curvas da barra" }
+            UiSlider { label: "Curva da subida"; icon: "curve"; from: 0; to: 30; value: page.bar ? (page.bar.fillet ?? Settings.fillet) : 0; suffix: " px"; onMoved: v => page.setBar("fillet", Math.round(v)) }
+            UiSlider { label: "Cantos do topo"; icon: "rounded"; from: 0; to: 30; value: page.bar ? (page.bar.topRadius ?? Settings.topRadius) : 0; suffix: " px"; onMoved: v => page.setBar("topRadius", Math.round(v)) }
+            Row {
+                spacing: 6
+                UiButton { icon: "squareRounded"; text: "Retangular"; kind: "ghost"; onClicked: { page.setBar("fillet", 0); page.setBar("topRadius", 0) } }
+                UiButton { icon: "restore"; text: "Usar as curvas da moldura"; kind: "ghost"; enabled: page.bar ? page.bar.fillet !== undefined || page.bar.topRadius !== undefined : false
+                    onClicked: Settings.mutate(b => { if (b[page.idx]) { delete b[page.idx].fillet; delete b[page.idx].topRadius } }) }
+            }
+            UiText {
+                width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+                text: "Com as duas em zero a barra vira um retângulo reto saindo da moldura. Sem escolher, vale o que está na página Moldura."
+            }
+        }
     }
 
     Card {
@@ -198,8 +217,19 @@ Column {
             }
             UiSlider { label: "Esperar antes de mostrar"; from: 0; to: 1000; value: Settings.showDelay; suffix: " ms"; onMoved: v => Settings.showDelay = v }
             UiSlider { label: "Esperar antes de esconder"; from: 0; to: 2000; value: Settings.hideDelay; suffix: " ms"; onMoved: v => Settings.hideDelay = v }
+            UiSlider { label: "Faixa que revela a barra"; icon: "arrow_bottom_right"; from: 1; to: 16; value: Settings.barHoverStrip; suffix: " px"; onMoved: v => Settings.barHoverStrip = Math.round(v) }
+            UiSwitch { label: "Revelar encostando em qualquer ponto da borda"; description: "Em vez de só no pedaço da barra, a faixa fina corre o lado inteiro da tela (vale para todas as barras escondidas daquele lado)."; checked: Settings.barEdgeReveal; onToggled: on => Settings.barEdgeReveal = on }
             UiLabel { text: "Animação" }
             AnimPicker { target: "bars" }
+        }
+        UiLabel { text: "Todas as barras de uma vez" }
+        Row {
+            spacing: 8
+            UiButton { icon: BarState.barsOpen ? "eyeOff" : "eye"; text: BarState.barsOpen ? "Esconder todas agora" : "Mostrar todas"; kind: BarState.barsOpen ? "ghost" : "accent"; onClicked: BarState.barsOpen = !BarState.barsOpen }
+        }
+        UiText {
+            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+            text: "Para um atalho de teclado, use o comando qs -c mine ipc call bar toggle (ou open / close). A moldura continua na tela."
         }
     }
 
@@ -294,7 +324,7 @@ Column {
                 readonly property var mod: page.sections[page.sec].modules[index] ?? ({})
                 readonly property bool hasField: mod.type === "clock" || mod.type === "text"
                 readonly property string mtype: mod.type
-                readonly property bool isMeter: mtype === "cpu" || mtype === "memory" || mtype === "volume"
+                readonly property bool isMeter: mtype === "cpu" || mtype === "memory" || mtype === "volume" || mtype === "disk" || mtype === "swap"
                 readonly property var schema: BarModules.schema(mtype)
                 readonly property bool hasOpts: mtype === "workspaces" || isMeter || mtype === "tray" || mtype === "palette" || schema.length > 0
                 readonly property bool optsOpen: hasOpts && page.openMod === index
@@ -351,7 +381,9 @@ Column {
                         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14 }
                         spacing: 12
                         readonly property string disp: mrow.mod.display ?? "text"
-                        readonly property bool isCpuMem: mrow.mtype === "cpu" || mrow.mtype === "memory"
+                        readonly property bool isCpuMem: mrow.mtype === "cpu" || mrow.mtype === "memory" || mrow.mtype === "disk" || mrow.mtype === "swap"
+                        readonly property bool isRound: mCol.disp === "ring" || mCol.disp === "disc"
+                        readonly property int warnDef: ({ cpu: 90, memory: 95, disk: 90, swap: 85 })[mrow.mtype] ?? 85
                         function set(k, v) { Settings.setModuleOpt(page.idx, page.sec, mrow.index, k, v) }
 
                         // ---- bandeja ----
@@ -372,7 +404,8 @@ Column {
                         UiLabel { visible: mrow.isMeter; text: "Exibição" }
                         UiSeg {
                             visible: mrow.isMeter
-                            options: mCol.isCpuMem ? [["text", "Texto"], ["bar", "Barra"], ["graph", "Gráfico"], ["segments", "Segmentos"]] : [["text", "Texto"], ["bar", "Barra"], ["segments", "Segmentos"], ["slider", "Ícone + barra"]]
+                            options: mCol.isCpuMem ? [["text", "Texto"], ["bar", "Barra"], ["graph", "Gráfico"], ["segments", "Segmentos"], ["ring", "Anel", "circleOutline"], ["disc", "Disco", "disc"]]
+                                : [["text", "Texto"], ["bar", "Barra"], ["segments", "Segmentos"], ["slider", "Ícone + barra"], ["ring", "Anel", "circleOutline"], ["disc", "Disco", "disc"]]
                             value: mCol.disp
                             onPicked: v => mCol.set("display", v)
                         }
@@ -382,15 +415,16 @@ Column {
                             UiText { anchors.verticalCenter: parent.verticalCenter; text: "Rótulo"; color: Theme.text; font.pixelSize: 13; width: 90 }
                             UiField {
                                 width: 180
-                                text: mrow.mod.label ?? (mrow.mtype === "cpu" ? "CPU" : (mrow.mtype === "memory" ? "RAM" : "VOL"))
+                                text: mrow.mod.label ?? ({ cpu: "CPU", memory: "RAM", disk: "DSK", swap: "SWP" })[mrow.mtype] ?? "VOL"
                                 placeholderText: "vazio = sem rótulo"
                                 onEditingFinished: mCol.set("label", text)
                             }
                         }
                         UiSwitch { visible: mrow.isMeter; label: "Mostrar o valor em número"; checked: mrow.mod.showValue ?? (mCol.disp === "text"); onToggled: on => mCol.set("showValue", on) }
-                        UiSlider { visible: mrow.isMeter && mCol.disp !== "text"; label: "Largura"; from: 20; to: 200; value: mrow.mod.width ?? 60; suffix: " px"; onMoved: v => mCol.set("width", v) }
-                        UiSlider { visible: mrow.isMeter && mCol.disp !== "text"; label: "Altura"; from: 6; to: 40; value: mrow.mod.height ?? 16; suffix: " px"; onMoved: v => mCol.set("height", v) }
+                        UiSlider { visible: mrow.isMeter && mCol.disp !== "text" && !mCol.isRound; label: "Largura"; from: 20; to: 200; value: mrow.mod.width ?? 60; suffix: " px"; onMoved: v => mCol.set("width", v) }
+                        UiSlider { visible: mrow.isMeter && mCol.disp !== "text"; label: mCol.isRound ? "Tamanho" : "Altura"; from: mCol.isRound ? 14 : 6; to: 40; value: mrow.mod.height ?? (mCol.isRound ? 22 : 16); suffix: " px"; onMoved: v => mCol.set("height", v) }
                         UiSwitch { visible: mCol.isCpuMem; label: "Cor de alerta"; description: "Fica amarelo e vermelho quando o uso está alto."; checked: !!mrow.mod.warn; onToggled: on => mCol.set("warn", on) }
+                        UiSlider { visible: mCol.isCpuMem && !!mrow.mod.warn; label: "Vermelho a partir de"; icon: "gauge"; from: 40; to: 100; value: mrow.mod.warnAt ?? mCol.warnDef; suffix: " %"; onMoved: v => mCol.set("warnAt", Math.round(v / 5) * 5) }
                         UiSlider { visible: mCol.isCpuMem && mCol.disp === "graph"; label: "Pontos do gráfico"; from: 10; to: 120; value: mrow.mod.points ?? 30; onMoved: v => mCol.set("points", v) }
                         UiSlider { visible: mCol.isCpuMem; label: "Atualização"; from: 500; to: 5000; value: mrow.mod.interval ?? (mCol.disp === "graph" ? 1000 : 2000); suffix: " ms"; onMoved: v => mCol.set("interval", Math.round(v / 100) * 100) }
                         UiSlider { visible: mrow.mtype === "volume"; label: "Passo da roda do mouse"; from: 1; to: 20; value: mrow.mod.step ?? 5; suffix: " %"; onMoved: v => mCol.set("step", v) }
@@ -458,8 +492,10 @@ Column {
                         AnimPicker { target: "workspaces" }
                         UiSlider { label: "Tamanho"; from: 10; to: 40; value: mrow.mod.size ?? 22; suffix: " px"; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "size", v) }
                         UiSlider { label: "Espaçamento"; from: 0; to: 24; value: mrow.mod.spacing ?? 6; suffix: " px"; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "spacing", v) }
-                        UiSlider { label: "Quantidade fixa (0 = automática)"; from: 0; to: 10; value: mrow.mod.count ?? 0; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "count", v) }
+                        UiSlider { label: "Quantidade fixa (0 = automática)"; from: 0; to: 20; value: mrow.mod.count ?? 0; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "count", v) }
                         UiSwitch { label: "Só os ocupados (e o atual)"; checked: !!mrow.mod.onlyOccupied; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "onlyOccupied", on) }
+                        UiSwitch { label: "Roda do mouse dá a volta"; icon: "refresh"; description: "Do último workspace a roda volta ao primeiro. Desligado, ela para nas pontas."; checked: mrow.mod.wrap ?? true; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "wrap", on) }
+                        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Clique troca de workspace; o botão direito abre a visão geral." }
                         ColorField {
                             label: "Cor do ativo"
                             value: mrow.mod.activeColor ? mrow.mod.activeColor : Settings.textColor
@@ -490,6 +526,7 @@ Column {
         title: "Detalhes e ilha dinâmica"
         subtitle: "Parar o mouse em cima do relógio, clima, sistema, música, volume ou atualizações mostra um cartão com mais detalhes. A ilha dinâmica é um módulo (adicione numa seção): ela muda de forma com música, notificações, volume, timer e gravação — numa barra com \"Largura do conteúdo\" a moldura cresce junto."
         UiSwitch { label: "Detalhes ao passar o mouse"; checked: Settings.barPopups; onToggled: on => Settings.barPopups = on }
+        UiSwitch { label: "Dicas de texto"; icon: "tag"; description: "Um balãozinho com o nome do botão, do ícone da bandeja ou do app do dock ao parar o mouse em cima."; checked: Settings.barTips; onToggled: on => Settings.barTips = on }
         UiSlider { visible: Settings.barPopups; label: "Esperar antes de mostrar"; from: 100; to: 1500; value: Settings.barPopupDelay; suffix: " ms"; onMoved: v => Settings.barPopupDelay = Math.round(v / 50) * 50 }
         UiLabel { text: "Animação dos detalhes" }
         AnimPicker { target: "popups" }

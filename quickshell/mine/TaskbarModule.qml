@@ -84,6 +84,7 @@ Item {
                 UiIcon { anchors.centerIn: parent; name: "apps"; size: root.isz * 0.55; color: Theme.accent }
             }
             MouseArea { id: abm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.launcherOpen = !Settings.launcherOpen }
+            TipHover { text: "Todos os apps"; side: root.side; origin: root.origin }
         }
 
         Repeater {
@@ -157,8 +158,11 @@ Item {
                         // miniaturas das janelas (detalhes da barra, tipo "windows")
                         onContainsMouseChanged: {
                             if (!containsMouse) { BarState.popLeave(); return }
-                            if (!app.modelData.wins.length || root.opts.previews === false) return
                             const p = cell.mapToItem(null, 0, 0)
+                            const rc = { x: p.x + root.origin.x, y: p.y + root.origin.y, w: cell.width, h: cell.height }
+                            const nm = app.e ? app.e.name : (app.modelData.cls ?? app.modelData.id)
+                            // sem janelas (ou sem miniaturas): so o nome do app
+                            if (!app.modelData.wins.length || root.opts.previews === false) { BarState.tipEnter(nm, root.side, rc); return }
                             BarState.popEnter({ kind: "windows", side: root.side, wins: app.modelData.wins, title: app.e ? app.e.name : (app.modelData.cls ?? ""),
                                                 rect: { x: p.x + root.origin.x, y: p.y + root.origin.y, w: cell.width, h: cell.height } })
                         }

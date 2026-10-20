@@ -41,6 +41,7 @@ Singleton {
         eyedropper: 0xF020A, opacity: 0xF05CC, numeric: 0xF03A0, text: 0xF09A8, album: 0xF0025, accountCircle: 0xF0009, greeting: 0xF17C4,
         fileSwap: 0xF0FB4, imageEdit: 0xF11E3, dotsCircle: 0xF1978, progressCheck: 0xF0995, listChecks: 0xF0756, quoteClose: 0xF027E,
         chartDonut: 0xF07AF, alignVCenter: 0xF11C6, tap: 0xF0741, star4: 0xF0AE2, imageFrame: 0xF0E49, bringForward: 0xF003D, copy: 0xF018F,
+        package: 0xF03D6, record: 0xF044A, recordRec: 0xF044B, stopCircle: 0xF0666, fire: 0xF0238,
         paint: 0xF027C, compass: 0xF018C, tuneVariant: 0xF1542, wave2: 0xF0F2E, emoticon: 0xF01F2
     })
     function g(name: string): string { const c = map[name]; return c ? String.fromCodePoint(c) : "" }

@@ -1,5 +1,5 @@
 // Volume do PipeWire. Clique = mudo; roda = ajusta.
-// Opcoes: display (text|bar|segments), label, showValue, width, height, color, step (%), segments
+// Opcoes: display (text|bar|segments|ring|disc), label, showValue, width, height, color, step (%), segments
 import Quickshell.Services.Pipewire
 import QtQuick
 
@@ -13,7 +13,8 @@ MeterView {
     label: opts.label ?? "VOL"
     showValue: opts.showValue ?? (display === "text")
     w: opts.width ?? 60
-    h: opts.height ?? 16
+    h: opts.height ?? (round ? 22 : 16)
+    icon: audio && audio.muted ? "volumeOff" : "volume"
     col: opts.color ? opts.color : (Settings.themeOn ? ThemeColors.primary : Settings.textColor)   // sem cor escolhida: destaque do tema (se ligado)
     segments: opts.segments ?? 8
     value: audio && !audio.muted ? Math.min(1, audio.volume) : 0

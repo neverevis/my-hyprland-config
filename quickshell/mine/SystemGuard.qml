@@ -29,15 +29,22 @@ Singleton {
         last = v
     }
 
-    // ---- atualizacoes (checkupdates) ----
+    // ---- atualizacoes (checkupdates + AUR pelo yay/paru) ----
+    // updates = total (repositorios + AUR); -1 = ainda verificando / sem checkupdates
     property int updates: -1
+    property int updRepo: 0
+    property int updAurN: 0
+    property bool checking: false
     property int notified: -1
-    function checkUpdates() { upd.running = false; upd.running = true }
+    function checkUpdates() { checking = true; upd.running = false; upd.running = true }
     Process {
         id: upd
-        command: ["sh", "-c", "command -v checkupdates >/dev/null && checkupdates 2>/dev/null | wc -l || echo -1"]
+        command: ["sh", "-c", 'command -v checkupdates >/dev/null || { echo "-1 0"; exit; }; r=$(checkupdates 2>/dev/null | wc -l); a=0; if [ "$1" = 1 ]; then h=$(command -v yay || command -v paru); [ -n "$h" ] && a=$("$h" -Qua 2>/dev/null | wc -l); fi; echo "$r $a"', "sh", Settings.updAur ? "1" : "0"]
         stdout: StdioCollector { onStreamFinished: {
-            root.updates = parseInt(text.trim())
+            const p = text.trim().split(/\s+/).map(x => parseInt(x))
+            root.checking = false
+            root.updRepo = p[0] ?? -1; root.updAurN = p[1] ?? 0
+            root.updates = root.updRepo < 0 ? -1 : root.updRepo + root.updAurN
             if (Settings.updWarn > 0 && root.updates >= Settings.updWarn && root.notified !== root.updates) {
                 root.notified = root.updates
                 Quickshell.execDetached(["notify-send", "-a", "Atualizações", "-i", "system-software-update", root.updates + " atualizações disponíveis", "Clique no módulo de atualizações da barra ou rode sudo pacman -Syu"])
@@ -45,6 +52,16 @@ Singleton {
         } }
     }
     Timer { interval: Math.max(1, Settings.updHours) * 3600000; repeat: true; running: true; triggeredOnStart: true; onTriggered: root.checkUpdates() }
+    // atualizar de verdade num terminal (pacman, e o yay/paru se o AUR estiver ligado): ao terminar, avisa e confere de novo
+    function runUpdate() {
+        if (updRun.running) return
+        updRun.running = true
+    }
+    Process {
+        id: updRun
+        command: ["kitty", "sh", "-c", 'h=; [ "$1" = 1 ] && h=$(command -v yay || command -v paru); if [ -n "$h" ]; then "$h" -Syu; else sudo pacman -Syu; fi; st=$?; if [ $st -eq 0 ]; then notify-send -a Atualizações -i system-software-update "Atualização concluída" "O sistema foi atualizado."; else notify-send -a Atualizações -i dialog-warning "Atualização interrompida" "O terminal terminou com erro (código $st)."; fi; echo; read -r -p "Pressione Enter para fechar" _', "sh", Settings.updAur ? "1" : "0"]
+        onExited: root.checkUpdates()
+    }
 
     // ---- pacman rodando? (para nao desligar no meio de uma atualizacao) ----
     function busy(cb) { busyProc.cb = cb; busyProc.running = false; busyProc.running = true }

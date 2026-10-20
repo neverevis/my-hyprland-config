@@ -11,7 +11,7 @@ Scope {
     property var geo: ({ osd: null })
 
     property bool alive: false
-    readonly property bool want: Settings.osdOn && Osd.showing
+    readonly property bool want: Settings.osdOn && Osd.showing && !Settings.islandOsd   // com uma ilha dinamica ela mostra o volume no lugar
     onWantChanged: if (want) { closeT.stop(); alive = true } else closeT.restart()
     Timer { id: closeT; interval: Motion.durationOf("osd", true) + 80; onTriggered: root.alive = false }
 
