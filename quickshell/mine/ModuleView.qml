@@ -16,7 +16,7 @@ Item {
 
     // detalhes ao passar o mouse: que cartao cada modulo abre (opcao "popup" desliga)
     readonly property string popKind: root.opts.popup === false ? "" : ({ clock: "calendar", weather: "weather", cpu: "resources", memory: "resources", disk: "resources", swap: "resources", gpu: "system",
-        temp: "system", netspeed: "system", media: "media", volume: "volume", privacy: "privacy", updates: "updates" })[root.type] ?? ""
+        temp: "system", netspeed: "system", media: "media", volume: "volume", privacy: "privacy", updates: "updates", battery: "battery", bluetooth: "bt" })[root.type] ?? ""
     readonly property bool hasPop: popKind !== ""
     HoverHandler {
         enabled: root.popKind !== ""

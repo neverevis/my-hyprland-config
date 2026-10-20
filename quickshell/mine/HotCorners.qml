@@ -32,17 +32,28 @@ Singleton {
             required property string modelData
             readonly property string act: (Settings.hotCorners || {})[modelData] ?? ""
             anchors { top: modelData[0] === "t"; bottom: modelData[0] === "b"; left: modelData[1] === "l"; right: modelData[1] === "r" }
-            implicitWidth: 4; implicitHeight: 4
+            implicitWidth: Math.max(1, Settings.hotCornerW); implicitHeight: Math.max(1, Settings.hotCornerH)
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
             WlrLayershell.namespace: "mine-corner"
+            Rectangle { anchors.fill: parent; visible: Settings.hotCornerVisualize; color: Theme.tint(0.35); border.width: 1; border.color: Theme.accent }
             MouseArea {
                 anchors.fill: parent
                 hoverEnabled: true
-                onEntered: fire.restart()
+                onEntered: if (!Settings.hotCornerClick) fire.restart()
                 onExited: fire.stop()
-                onPositionChanged: if (!fire.running) fire.restart()
+                onPositionChanged: if (!Settings.hotCornerClick && !fire.running) fire.restart()
+                onClicked: if (Settings.hotCornerClick) root.run(cw.act)
+            }
+            // roda do mouse nos cantos de baixo: brilho (esquerda) / volume (direita)
+            WheelHandler {
+                enabled: Settings.hotCornerWheel && cw.modelData[0] === "b"
+                onWheel: e => {
+                    const up = e.angleDelta.y > 0
+                    if (cw.modelData[1] === "l") Brightness.step(up ? 0.05 : -0.05)
+                    else { const a = Osd.sink ? Osd.sink.audio : null; if (a) a.volume = Math.max(0, Math.min(Settings.volMax / 100, a.volume + (up ? 0.05 : -0.05))) }
+                }
             }
             Timer { id: fire; interval: Math.max(1, Settings.hotCornerDelay); onTriggered: root.run(cw.act) }
         }

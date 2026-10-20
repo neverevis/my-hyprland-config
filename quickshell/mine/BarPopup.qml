@@ -9,6 +9,7 @@ import Quickshell.Wayland
 import Quickshell.Io
 import Quickshell.Services.Pipewire
 import Quickshell.Hyprland
+import Quickshell.Bluetooth
 import QtQuick
 
 Scope {
@@ -54,7 +55,7 @@ Scope {
             readonly property size sz: ({ tip: Qt.size(tmeas.width + 28, tmeas.implicitHeight + 18),
                                           resources: Qt.size(340, 4 * 27 + 3 * 12 + 34),
                                           calendar: Qt.size(320, 358 + (root.todoPending > 0 ? 30 + 18 * Math.min(3, root.todoPending) : 0)), weather: Qt.size(380, 250), system: Qt.size(360, 250), media: Qt.size(400, 210),
-                                          volume: Qt.size(320, 170), privacy: Qt.size(300, 120), updates: Qt.size(300, 178),
+                                          volume: Qt.size(320, 170), privacy: Qt.size(300, 120), updates: Qt.size(300, 178), battery: Qt.size(252, 150), bt: Qt.size(280, 60 + 22 * (Bluetooth.defaultAdapter ? Bluetooth.defaultAdapter.devices.values.filter(d => d.connected).length : 0)),
                                           windows: Qt.size(Math.min(width - 40, Math.max(1, p && p.wins ? p.wins.length : 1) * 232 + 22), 196) })[kind] ?? Qt.size(300, 150)
             readonly property real gap: kind === "tip" ? 8 : 12
             readonly property real cx: Math.max(12, Math.min(width - sz.width - 12, r.x + r.w / 2 - sz.width / 2))
@@ -78,7 +79,7 @@ Scope {
                 HoverHandler { onHoveredChanged: BarState.popHover = hovered }
                 Loader {
                     anchors { fill: parent; leftMargin: win.kind === "tip" ? 14 : 16; rightMargin: win.kind === "tip" ? 14 : 16; topMargin: win.kind === "tip" ? 9 : 16; bottomMargin: win.kind === "tip" ? 9 : 16 }
-                    sourceComponent: ({ tip: tipC, resources: resC, calendar: calC, weather: weatherC, system: sysC, media: mediaC, volume: volC, privacy: privC, updates: updC, windows: winsC })[win.kind] ?? null
+                    sourceComponent: ({ tip: tipC, resources: resC, calendar: calC, weather: weatherC, system: sysC, media: mediaC, volume: volC, privacy: privC, updates: updC, windows: winsC, battery: batC, bt: btC })[win.kind] ?? null
                 }
             }
         }
@@ -237,6 +238,39 @@ Scope {
                         MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                             onClicked: { Quickshell.execDetached(["hyprctl", "eval", 'hl.dispatch(hl.dsp.focus({ window = "address:' + wc.o.address + '" }))']); BarState.pop = null } }
                     }
+                }
+            }
+        }
+    }
+    Component {
+        id: batC
+        Column {
+            spacing: 6
+            width: 220
+            Row {
+                spacing: 10
+                BatteryGlyph { style: "icon"; s: 20; pct: Battery.pct; charging: Battery.charging; low: Battery.low; critical: Battery.critical; col: Theme.text; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: Math.round(Battery.pct * 100) + "%"; color: Theme.text; font.pixelSize: 22; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+            }
+            UiText { text: Battery.stateText + (Battery.etaText(Battery.eta) !== "" ? " · " + Battery.etaText(Battery.eta) + (Battery.plugged ? " para encher" : " restantes") : ""); color: Theme.muted; font.pixelSize: 12 }
+            UiText { visible: !!Battery.dev && Battery.dev.healthSupported; text: "Saúde: " + (Battery.dev ? Math.round(Battery.dev.healthPercentage) : 0) + "%"; color: Theme.muted; font.pixelSize: 12 }
+            UiText { visible: !!Battery.dev && Math.abs(Battery.dev.changeRate) > 0.05; text: (Battery.plugged ? "Carga: " : "Consumo: ") + (Battery.dev ? Math.abs(Battery.dev.changeRate).toFixed(1) : 0) + " W"; color: Theme.muted; font.pixelSize: 12 }
+        }
+    }
+    Component {
+        id: btC
+        Column {
+            spacing: 6
+            readonly property var ad: Bluetooth.defaultAdapter
+            readonly property var conn: ad ? ad.devices.values.filter(d => d.connected) : []
+            UiText { text: !ad ? "Sem Bluetooth" : !ad.enabled ? "Bluetooth desligado" : conn.length > 0 ? "Conectados" : "Nenhum aparelho conectado"; color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold }
+            Repeater {
+                model: parent.conn
+                delegate: Row {
+                    required property var modelData
+                    spacing: 8
+                    UiIcon { name: modelData.icon.indexOf("head") >= 0 || modelData.icon.indexOf("audio") >= 0 ? "headphones" : modelData.icon.indexOf("mouse") >= 0 ? "mouse" : modelData.icon.indexOf("keyboard") >= 0 ? "keyboard" : "bluetooth"; size: 14; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                    UiText { text: modelData.name + (modelData.batteryAvailable ? "  " + Math.round(modelData.battery * 100) + "%" : ""); color: Theme.text; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
                 }
             }
         }

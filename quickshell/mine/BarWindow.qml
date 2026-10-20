@@ -22,7 +22,7 @@ PanelWindow {
     readonly property bool hot: hovering || edgeHot
     property bool armed: false      // mouse parado na borda pelo tempo de Settings.showDelay (0 = na hora)
     // barsOpen: o comando "bar close" (IPC) esconde todas as barras, com ou sem autoHide
-    property bool shown: BarState.barsOpen && (!autoHide || armed || hideTimer.running)
+    property bool shown: BarState.barsOpen && (!autoHide || armed || hideTimer.running || (Settings.superReveal && BarState.superDown))
     property real prog: shown ? 1 : 0
     Behavior on prog { id: progB; MotionAnim { use: "bars"; out: progB.targetValue < 0.5 } }
     // fade dos modulos: acompanha o mesmo tempo da animacao, mas com curva propria

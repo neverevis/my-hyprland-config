@@ -22,7 +22,8 @@ Singleton {
     property alias userBarColor: adapter.barColor
     property alias userTextColor: adapter.textColor
     property alias userAccent: adapter.accent           // destaque da janela de configuracoes
-    readonly property color barColor: themeOn ? ThemeColors.background : userBarColor
+    property alias frameRole: adapter.frameRole         // papel do tema para a moldura e as barras (vazio = fundo do tema)
+    readonly property color barColor: themeOn ? (frameRole !== "" ? ThemeColors.of(frameRole) : ThemeColors.background) : userBarColor
     readonly property color textColor: themeOn ? ThemeColors.text : userTextColor
     readonly property color accent: themeOn ? ThemeColors.primary : userAccent
     // ---- tema a partir do wallpaper ----
@@ -213,6 +214,21 @@ Singleton {
     property alias nightGamma: adapter.nightGamma   // brilho (gamma) do hyprsunset, 25-100
     property alias hotCorners: adapter.hotCorners
     property alias hotCornerDelay: adapter.hotCornerDelay
+    property alias hotCornerW: adapter.hotCornerW           // tamanho da zona de cada canto (px)
+    property alias hotCornerH: adapter.hotCornerH
+    property alias hotCornerClick: adapter.hotCornerClick   // agir no clique em vez de encostar
+    property alias hotCornerWheel: adapter.hotCornerWheel   // roda no canto de baixo: brilho (esquerda) / volume (direita)
+    property alias hotCornerVisualize: adapter.hotCornerVisualize
+    // mostrar a barra escondida segurando a tecla Super (IPC bar superdown / superup)
+    property alias superReveal: adapter.superReveal
+    property alias superDelay: adapter.superDelay
+    // bateria (so aparece se o computador tiver)
+    property alias batNotify: adapter.batNotify
+    property alias batLow: adapter.batLow
+    property alias batCritical: adapter.batCritical
+    property alias batFullNotify: adapter.batFullNotify
+    property alias batAutoSuspend: adapter.batAutoSuspend
+    property alias batPeripheralLow: adapter.batPeripheralLow
     // painel de jogo (GameOverlay.qml)
     property alias overlayItems: adapter.overlayItems
     property alias overlayPinnedOpacity: adapter.overlayPinnedOpacity
@@ -540,6 +556,9 @@ Singleton {
         { type: "recorder", label: "Gravando a tela" },
         { type: "utils", label: "Captura, cor e microfone" },
         { type: "caffeine", label: "Manter acordado" },
+        { type: "battery", label: "Bateria" },
+        { type: "bluetooth", label: "Bluetooth" },
+        { type: "sysicons", label: "Ícones do sistema (som, rede, Bluetooth, bateria)" },
         { type: "launcher", label: "Botão do launcher" },
         { type: "visualizer", label: "Mini visualizador" },
         { type: "taskbar", label: "Dock (apps fixados e abertos)" },
@@ -900,6 +919,20 @@ Singleton {
             property string vpnProfile: ""
             property var hotCorners: ({})
             property int hotCornerDelay: 250
+            property int hotCornerW: 4
+            property int hotCornerH: 4
+            property bool hotCornerClick: false
+            property bool hotCornerWheel: true
+            property bool hotCornerVisualize: false
+            property bool superReveal: true
+            property int superDelay: 140
+            property bool batNotify: true
+            property int batLow: 20
+            property int batCritical: 5
+            property bool batFullNotify: true
+            property bool batAutoSuspend: false
+            property int batPeripheralLow: 15
+            property string frameRole: ""
             property var overlayItems: []
             property int overlayPinnedOpacity: 85
             property string overlayCrossColor: "#ff4f7a"

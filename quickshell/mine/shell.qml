@@ -90,6 +90,9 @@ ShellRoot {
         function toggle(): string { BarState.barsOpen = !BarState.barsOpen; return BarState.barsOpen ? "aberta" : "fechada" }
         function open(): string { BarState.barsOpen = true; return "aberta" }
         function close(): string { BarState.barsOpen = false; return "fechada" }
+        // Super segurado: revela as barras escondidas e mostra numeros nos workspaces
+        function superdown(): string { BarState.superSet(true); return "segurado" }
+        function superup(): string { BarState.superSet(false); return "solto" }
         function status(): string { return BarState.barsOpen ? "aberta" : "fechada" }
     }
 
@@ -106,7 +109,7 @@ ShellRoot {
     OnScreenKeyboard {}
     ScreenTranslator {}
     // servicos que precisam existir desde o inicio (singletons so nascem quando alguem os usa)
-    readonly property var services: [HotCorners.actions.length, NightLight.active, SystemGuard.updates, DropShelf.files.length]
+    readonly property var services: [HotCorners.actions.length, Battery.present, Brightness.available, NightLight.active, SystemGuard.updates, DropShelf.files.length]
     Home { geo: shell.geo }
     PowerMenu {}
     PhotoEditor {}

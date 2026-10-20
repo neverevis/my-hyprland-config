@@ -31,6 +31,16 @@ Singleton {
     }
     // mostrar / esconder todas as barras (IPC "bar"; nao e salvo)
     property bool barsOpen: true
+    // Super segurado (IPC "bar superdown" / "bar superup", ligados a uma tecla no Hyprland): depois de Settings.superDelay revela as barras
+    // escondidas e os workspaces mostram numeros. A trava de 20 s evita ficar preso se o "superup" nunca chegar.
+    property bool superHeld: false
+    property bool superDown: false
+    function superSet(on) {
+        superHeld = on
+        if (on) { superT.restart(); superSafe.restart() } else { superT.stop(); superSafe.stop(); superDown = false }
+    }
+    Timer { id: superT; interval: Math.max(0, Settings.superDelay); onTriggered: bs.superDown = bs.superHeld }
+    Timer { id: superSafe; interval: 20000; onTriggered: bs.superSet(false) }
     // mouse encostado na borda de cada lado (faixa fina, ver EdgeReveal em shell.qml): revela a barra escondida daquele lado
     property var edgeHover: ({ top: false, right: false, bottom: false, left: false })
     function setEdge(side, on) {

@@ -49,7 +49,7 @@ Singleton {
         shieldOutline: 0xF0499, circleSlice: 0xF0AA1, seal: 0xF047A, fan: 0xF0210, arrowUpBold: 0xF0737, ghostOutline: 0xF165D, breadSlice: 0xF0CEE,
         dotsGrid: 0xF15FC, squareOutline: 0xF0763, loading: 0xF0772,
         snowflake: 0xF0717, backspace: 0xF030D, keyboardReturn: 0xF0311, shiftKey: 0xF0632, keyboardClose: 0xF0309, keyboardTab: 0xF0312,
-        pin: 0xF0403, pinOff: 0xF0404, translate: 0xF05CA
+        battery: 0xF0079, batteryCharging: 0xF0084, batteryAlert: 0xF0083, batteryOutline: 0xF008E, batteryUnknown: 0xF0091, pin: 0xF0403, pinOff: 0xF0404, translate: 0xF05CA
     })
     function g(name: string): string { const c = map[name]; return c ? String.fromCodePoint(c) : "" }
 }

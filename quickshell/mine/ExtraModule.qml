@@ -7,6 +7,8 @@ import Quickshell.Hyprland
 import Quickshell.Services.Mpris
 import Quickshell.Services.Pipewire
 import Quickshell.Services.UPower
+import Quickshell.Bluetooth
+import Quickshell.Networking
 import QtQuick
 
 Item {
@@ -67,7 +69,7 @@ Item {
     Loader {
         id: ld
         sourceComponent: ({ weather: weatherC, media: mediaC, netspeed: netC, gpu: gpuC, temp: tempC, updates: updC, keyboard: kbC, recorder: recC,
-                            notifs: notifC, launcher: launchC, utils: utilsC, caffeine: cafC, visualizer: visC, privacy: privC, divisor: divC })[root.type] ?? null
+                            notifs: notifC, launcher: launchC, utils: utilsC, caffeine: cafC, battery: batC, bluetooth: btC, sysicons: sysC, visualizer: visC, privacy: privC, divisor: divC })[root.type] ?? null
     }
 
     // clima: icone e temperatura; clique atualiza
@@ -151,6 +153,78 @@ Item {
         text: !useDot && n > 0 ? String(n) : ""
         tip: Settings.notifDnd ? "Não perturbe ligado. Clique desliga, direito limpa." : (BarState.notifLive > 0 ? BarState.notifLive + " notificação(ões). Clique liga o não perturbe, direito limpa." : "Sem notificações. Clique liga o não perturbe.")
         onClicked: m => m.button === Qt.RightButton ? Actions.run("notifClear") : Settings.notifDnd = !Settings.notifDnd
+    } }
+    // bateria: some sozinha em PC de mesa. Estilos bar/ios/macos/windows/ring/icon/number (BatteryGlyph.qml)
+    Component { id: batC; Item {
+        visible: Battery.present
+        implicitWidth: Battery.present ? bg.implicitWidth : 0
+        implicitHeight: Battery.present ? bg.implicitHeight : 0
+        BatteryGlyph {
+            id: bg
+            style: root.opts.style ?? "bar"
+            pct: Battery.pct; charging: Battery.charging; low: Battery.low; critical: Battery.critical
+            showPct: root.opts.showPercentage !== false; showBolt: root.opts.showCharging !== false
+            col: root.fg
+            s: root.vertical ? 14 : 16
+        }
+        TipHover { text: root.hasPop || !Battery.present ? "" : Battery.stateText + " · " + Math.round(Battery.pct * 100) + "%"; side: root.side; origin: root.origin }
+    } }
+    // bluetooth: icone pelo estado; mostra o nome/carga do aparelho conectado; clique abre a aba Bluetooth do Inicio, direito liga/desliga
+    Component { id: btC; Chip {
+        readonly property var ad: Bluetooth.defaultAdapter
+        readonly property var conn: ad ? ad.devices.values.filter(d => d.connected) : []
+        visible: !!ad
+        icon: !ad || !ad.enabled ? "btOff" : conn.length > 0 ? "btConnect" : "bluetooth"
+        hot: conn.length > 0
+        text: conn.length > 0 && !root.vertical ? (conn[0].batteryAvailable ? Math.round(conn[0].battery * 100) + "%" : "") : ""
+        tip: !ad ? "" : !ad.enabled ? "Bluetooth desligado" : conn.length > 0 ? conn.map(d => d.name).join(", ") : "Bluetooth ligado, sem aparelhos conectados"
+        onClicked: m => { if (m.button === Qt.RightButton) { if (ad) ad.enabled = !ad.enabled } else Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "home", "go", "bt"]) }
+    } }
+    // icones do sistema juntos: som (roda muda o volume), microfone mudo, rede, bluetooth, aparelhos com pouca carga, bateria
+    Component { id: sysC; Grid {
+        id: sg
+        columns: root.vertical ? 1 : 99
+        spacing: root.vertical ? 8 : 10
+        readonly property var netDevs: Networking.devices.values
+        readonly property bool wifiOn: Networking.wifiEnabled
+        readonly property var wifiDev: netDevs.find(d => d.type === DeviceType.Wifi) ?? null
+        readonly property var wired: netDevs.find(d => d.type === DeviceType.Wired && d.connected) ?? null
+        readonly property bool wifiUp: !!wifiDev && wifiOn && wifiDev.networks.values.some(n => n.connected)
+        readonly property var bt: Bluetooth.defaultAdapter
+        readonly property int btN: bt ? bt.devices.values.filter(d => d.connected).length : 0
+        UiIcon {
+            size: 16; color: Osd.muted ? Theme.danger : root.fg
+            name: Osd.muted ? "volumeOff" : Osd.volume > 0.66 ? "volume" : Osd.volume > 0.25 ? "volumeMed" : "volumeLow"
+            MouseArea { anchors.fill: parent; anchors.margins: -3; cursorShape: Qt.PointingHandCursor
+                onClicked: Settings.homeOpen = !Settings.homeOpen
+                onWheel: w => { const a = Osd.sink ? Osd.sink.audio : null; if (a) a.volume = Math.max(0, Math.min(Settings.volMax / 100, a.volume + (w.angleDelta.y > 0 ? 0.05 : -0.05))) } }
+        }
+        UiIcon { visible: Osd.micMuted; name: "micOff"; size: 16; color: Theme.danger }
+        UiIcon {
+            visible: !!sg.wifiDev || !!sg.wired
+            size: 16; color: sg.wired || sg.wifiUp ? root.fg : Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.5)
+            name: sg.wired ? "ethernet" : !sg.wifiOn ? "wifiOff" : sg.wifiUp ? "wifi" : "wifi1"
+            MouseArea { anchors.fill: parent; anchors.margins: -3; cursorShape: Qt.PointingHandCursor; onClicked: Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "home", "go", "net"]) }
+        }
+        UiIcon {
+            visible: !!sg.bt
+            size: 16; color: sg.btN > 0 ? root.ac : (sg.bt && sg.bt.enabled ? root.fg : Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.5))
+            name: !sg.bt || !sg.bt.enabled ? "btOff" : sg.btN > 0 ? "btConnect" : "bluetooth"
+            MouseArea { anchors.fill: parent; anchors.margins: -3; cursorShape: Qt.PointingHandCursor; onClicked: Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "home", "go", "bt"]) }
+        }
+        Repeater {
+            model: Battery.lowDevices
+            UiIcon {
+                required property var modelData
+                size: 16; color: Theme.danger
+                name: (modelData.iconName ?? "").indexOf("mouse") >= 0 ? "mouse" : (modelData.iconName ?? "").indexOf("keyboard") >= 0 ? "keyboard"
+                    : (modelData.iconName ?? "").indexOf("head") >= 0 ? "headphones" : (modelData.iconName ?? "").indexOf("gaming") >= 0 ? "gamepad" : "battery"
+            }
+        }
+        BatteryGlyph {
+            visible: Battery.present
+            style: "icon"; s: 14; pct: Battery.pct; charging: Battery.charging; low: Battery.low; critical: Battery.critical; col: root.fg
+        }
     } }
     Component { id: launchC; Chip { icon: root.opts.icon ?? "apps"; hot: Settings.launcherOpen; tip: "Abrir o launcher"; onClicked: Settings.launcherOpen = !Settings.launcherOpen } }
     Component { id: cafC; Chip { icon: "coffee"; hot: Idle.paused; tip: Idle.paused ? "Manter acordado: ligado (clique desliga)" : "Manter acordado: desligado (clique liga)"; onClicked: Idle.paused = !Idle.paused } }

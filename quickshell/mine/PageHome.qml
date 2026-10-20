@@ -104,7 +104,12 @@ Column {
         icon: "arrow_top_left"
         title: "Cantos ativos"
         subtitle: "Encostar o mouse num canto da tela faz uma ação."
-        UiSlider { label: "Esperar antes de agir"; from: 0; to: 1000; value: Settings.hotCornerDelay; suffix: " ms"; onMoved: v => Settings.hotCornerDelay = Math.round(v / 50) * 50 }
+        UiSwitch { label: "Agir no clique"; description: "Em vez de só encostar o mouse no canto."; checked: Settings.hotCornerClick; onToggled: on => Settings.hotCornerClick = on }
+        UiSlider { visible: !Settings.hotCornerClick; label: "Esperar antes de agir"; from: 0; to: 1000; value: Settings.hotCornerDelay; suffix: " ms"; onMoved: v => Settings.hotCornerDelay = Math.round(v / 50) * 50 }
+        UiSlider { label: "Largura da zona"; from: 1; to: 250; value: Settings.hotCornerW; suffix: " px"; onMoved: v => Settings.hotCornerW = Math.round(v) }
+        UiSlider { label: "Altura da zona"; from: 1; to: 60; value: Settings.hotCornerH; suffix: " px"; onMoved: v => Settings.hotCornerH = Math.round(v) }
+        UiSwitch { label: "Mostrar as zonas"; description: "Pinta a área de cada canto ativo para você ver onde ela fica."; checked: Settings.hotCornerVisualize; onToggled: on => Settings.hotCornerVisualize = on }
+        UiSwitch { label: "Roda do mouse nos cantos de baixo"; description: "Esquerda muda o brilho da tela (só em telas com backlight), direita muda o volume."; checked: Settings.hotCornerWheel; onToggled: on => Settings.hotCornerWheel = on }
         Repeater {
             model: [["tl", "Canto de cima, esquerda"], ["tr", "Canto de cima, direita"], ["bl", "Canto de baixo, esquerda"], ["br", "Canto de baixo, direita"]]
             delegate: Column {

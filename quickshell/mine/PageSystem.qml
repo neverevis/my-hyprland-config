@@ -302,4 +302,17 @@ Column {
         }
         UiText { visible: Webapps.msg !== ""; text: Webapps.msg; color: Theme.muted; font.pixelSize: 12 }
     }
+
+    Card {
+        visible: Battery.present
+        icon: "battery"
+        title: "Bateria"
+        subtitle: "Avisos e ações quando a carga fica baixa. Só aparece em computadores com bateria."
+        UiSwitch { label: "Avisar com notificação"; checked: Settings.batNotify; onToggled: on => Settings.batNotify = on }
+        UiSlider { label: "Bateria baixa"; from: 5; to: 50; value: Settings.batLow; suffix: " %"; onMoved: v => Settings.batLow = Math.round(v) }
+        UiSlider { label: "Bateria crítica"; from: 1; to: 20; value: Settings.batCritical; suffix: " %"; onMoved: v => Settings.batCritical = Math.round(v) }
+        UiSwitch { label: "Avisar quando carregar por completo"; checked: Settings.batFullNotify; onToggled: on => Settings.batFullNotify = on }
+        UiSwitch { label: "Suspender sozinho na carga crítica"; description: "Espera 30 segundos depois do aviso."; checked: Settings.batAutoSuspend; onToggled: on => Settings.batAutoSuspend = on }
+        UiSlider { label: "Aviso de mouse, teclado e fones abaixo de"; from: 5; to: 50; value: Settings.batPeripheralLow; suffix: " %"; onMoved: v => Settings.batPeripheralLow = Math.round(v) }
+    }
 }

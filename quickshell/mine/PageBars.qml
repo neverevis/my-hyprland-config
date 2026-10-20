@@ -16,7 +16,7 @@ Column {
     readonly property var sideNames: ({ top: "Cima", bottom: "Baixo", left: "Esquerda", right: "Direita" })
     readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil",
         media: "music", weather: "wPartly", netspeed: "network", gpu: "gpuCard", temp: "temperature", updates: "download", keyboard: "keyboard",
-        notifs: "bell", recorder: "monitor", utils: "frame", caffeine: "coffee", launcher: "apps", visualizer: "wave", taskbar: "dock",
+        notifs: "bell", recorder: "monitor", utils: "frame", caffeine: "coffee", battery: "battery", bluetooth: "bluetooth", sysicons: "devices", launcher: "apps", visualizer: "wave", taskbar: "dock",
         island: "pulse", privacy: "eye", divisor: "alignVCenter", disk: "disk", swap: "swap_vertical" })
     function setBar(k, v) { Settings.setBar(idx, k, v) }
     // marca as secoes na propria barra enquanto esta pagina esta aberta
@@ -219,6 +219,8 @@ Column {
             UiSlider { label: "Esperar antes de esconder"; from: 0; to: 2000; value: Settings.hideDelay; suffix: " ms"; onMoved: v => Settings.hideDelay = v }
             UiSlider { label: "Faixa que revela a barra"; icon: "arrow_bottom_right"; from: 1; to: 16; value: Settings.barHoverStrip; suffix: " px"; onMoved: v => Settings.barHoverStrip = Math.round(v) }
             UiSwitch { label: "Revelar encostando em qualquer ponto da borda"; description: "Em vez de só no pedaço da barra, a faixa fina corre o lado inteiro da tela (vale para todas as barras escondidas daquele lado)."; checked: Settings.barEdgeReveal; onToggled: on => Settings.barEdgeReveal = on }
+            UiSwitch { label: "Revelar segurando a tecla Super"; description: "Segurar a tecla mostra as barras escondidas e vira os pontos dos workspaces em números. Precisa de uma tecla no Hyprland que chame: qs -c mine ipc call bar superdown (e superup ao soltar)."; checked: Settings.superReveal; onToggled: on => Settings.superReveal = on }
+            UiSlider { visible: Settings.superReveal; label: "Segurar por"; from: 0; to: 600; value: Settings.superDelay; suffix: " ms"; onMoved: v => Settings.superDelay = Math.round(v / 20) * 20 }
             UiLabel { text: "Animação" }
             AnimPicker { target: "bars" }
         }
@@ -472,7 +474,7 @@ Column {
                             width: parent.width
                             spacing: 6
                             Repeater {
-                                model: [["numbers", "① Números"], ["dots", "• Pontos"], ["pills", "━ Pílulas"], ["squares", "▢ Quadrados"], ["bars", "| Barras"], ["ring", "◎ Anel"], ["icons", "▣ Ícone do app"], ["roman", "Ⅳ Romanos"], ["kanji", "三 Kanji"], ["custom", "★ Símbolos"]]
+                                model: [["numbers", "① Números"], ["dots", "• Pontos"], ["pills", "━ Pílulas"], ["squares", "▢ Quadrados"], ["bars", "| Barras"], ["ring", "◎ Anel"], ["icons", "▣ Ícone do app"], ["roman", "Ⅳ Romanos"], ["kanji", "三 Kanji"], ["custom", "★ Símbolos"], ["glyphs", "◆ Ícones fixos"], ["bridge", "⬭ Pílula que viaja"]]
                                 delegate: UiButton {
                                     required property var modelData
                                     text: modelData[1]
@@ -488,11 +490,23 @@ Column {
                             placeholderText: "um símbolo por workspace, separados por espaço (ex.: ● ◆ ▲ ■ ★)"
                             onEditingFinished: Settings.setModuleOpt(page.idx, page.sec, mrow.index, "symbols", text)
                         }
+                        UiField {
+                            width: parent.width
+                            visible: wsCol.style === "glyphs"
+                            text: mrow.mod.glyphs ?? ""
+                            placeholderText: "nomes de ícones, um por workspace (ex.: home web music pencil image bell)"
+                            onEditingFinished: Settings.setModuleOpt(page.idx, page.sec, mrow.index, "glyphs", text)
+                        }
                         UiLabel { text: "Animação" }
                         AnimPicker { target: "workspaces" }
                         UiSlider { label: "Tamanho"; from: 10; to: 40; value: mrow.mod.size ?? 22; suffix: " px"; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "size", v) }
                         UiSlider { label: "Espaçamento"; from: 0; to: 24; value: mrow.mod.spacing ?? 6; suffix: " px"; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "spacing", v) }
                         UiSlider { label: "Quantidade fixa (0 = automática)"; from: 0; to: 20; value: mrow.mod.count ?? 0; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "count", v) }
+                        UiSwitch { label: "Em grupos (1-10, 11-20…)"; description: "Mostra só o grupo do workspace atual, com a quantidade fixa acima (10 se ficar em 0)."; checked: !!mrow.mod.paged; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "paged", on) }
+                        UiLabel { text: "Números nos pontos e anéis" }
+                        UiSeg { value: mrow.mod.showNumbers ?? "hold"; options: [["hold", "Com Super"], ["always", "Sempre"], ["never", "Nunca"]]; onPicked: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "showNumbers", v) }
+                        UiSwitch { label: "Ícone do app maior no canto"; checked: !!mrow.mod.appIcons; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "appIcons", on) }
+                        UiSwitch { visible: !!mrow.mod.appIcons; label: "Ícones monocromáticos"; checked: !!mrow.mod.mono; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "mono", on) }
                         UiSwitch { label: "Só os ocupados (e o atual)"; checked: !!mrow.mod.onlyOccupied; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "onlyOccupied", on) }
                         UiSwitch { label: "Roda do mouse dá a volta"; icon: "refresh"; description: "Do último workspace a roda volta ao primeiro. Desligado, ela para nas pontas."; checked: mrow.mod.wrap ?? true; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "wrap", on) }
                         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Clique troca de workspace; o botão direito abre a visão geral." }

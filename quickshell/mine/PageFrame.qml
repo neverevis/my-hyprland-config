@@ -100,6 +100,7 @@ Column {
         subtitle: "A faixa fina que contorna a tela inteira. Sem ela, só as barras e os painéis aparecem (eles continuam nascendo da borda da tela)."
         UiSwitch { label: "Contorno na tela"; description: "Desligado, só as barras e os painéis aparecem."; checked: Settings.outline; onToggled: on => Settings.outline = on }
         UiSlider { label: "Espessura"; icon: "frame"; from: 2; to: 16; value: Settings.edge; suffix: " px"; onMoved: v => Settings.edge = v }
+        RoleRow { visible: Settings.themeOn; label: "Cor da moldura e das barras"; value: Settings.frameRole; allowNone: true; roles: ["primaryContainer", "secondaryContainer", "tertiaryContainer", "surfaceHigh", "primary", "secondary", "tertiary"]; onPicked: v => Settings.frameRole = v }
         UiSlider { label: "Cantos da tela"; icon: "rounded"; from: 0; to: 40; value: Settings.cornerRadius; suffix: " px"; onMoved: v => Settings.cornerRadius = v }
     }
     Card {
