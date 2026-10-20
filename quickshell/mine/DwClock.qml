@@ -229,31 +229,84 @@ Item {
             Rectangle {
                 readonly property string ds: w.o("dateStyle")
                 readonly property bool low: mid.on
-                visible: ds !== "hide" && face.width > 110
-                x: low ? face.width / 2 - width / 2 : face.width * 0.62
-                y: low ? face.height * (marks.on ? 0.87 : 0.78) - height / 2 : face.height / 2 - height / 2
-                width: ds === "bubble" ? face.width * 0.2 : dtx.implicitWidth + face.width * 0.06
-                height: ds === "bubble" ? width : face.width * 0.13
-                radius: ds === "bubble" ? width / 2 : height * 0.3
-                color: ds === "border" ? "transparent" : (ds === "rect" ? w.ac : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.28))
-                border.width: ds === "border" ? Math.max(1.5, face.width * 0.012) : 0
-                border.color: an.ink
+                visible: ds !== "hide" && ds !== "bubble" && ds !== "border" && face.width > 110
+                x: ds === "rect" ? face.width * 0.8 : (low ? face.width / 2 - width / 2 : face.width * 0.62)
+                y: ds === "rect" ? face.height / 2 - height / 2 : (low ? face.height * (marks.on ? 0.87 : 0.78) - height / 2 : face.height / 2 - height / 2)
+                width: ds === "rect" ? face.width * 0.13 : dtx.implicitWidth + face.width * 0.06
+                height: ds === "rect" ? face.width * 0.2 : face.width * 0.13
+                radius: height * 0.3
+                color: ds === "rect" ? w.ac : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.28)
                 UiText {
                     id: dtx
                     anchors.centerIn: parent
-                    text: parent.ds === "bubble" ? String(clk.date.getDate()) : w.cap(clk.date.toLocaleDateString(w.loc, "ddd")).replace(".", "") + " " + clk.date.getDate()
+                    text: parent.ds === "rect" ? String(clk.date.getDate()).padStart(2, "0") : w.cap(clk.date.toLocaleDateString(w.loc, "ddd")).replace(".", "") + " " + clk.date.getDate()
                     color: parent.ds === "rect" ? Theme.accentText : an.ink
-                    font.pixelSize: face.width * (parent.ds === "bubble" ? 0.09 : 0.065); font.weight: Font.Bold
+                    font.pixelSize: face.width * 0.065; font.weight: Font.Bold
+                }
+            }
+            // bolha: dia num pentagono (canto de cima, a esquerda) e mes numa pilula (baixo, a direita); crescem ao ligar
+            Item {
+                id: bub
+                readonly property bool on: w.o("dateStyle") === "bubble" && face.width > 110
+                property real k: on ? 1 : 0
+                Behavior on k { MotionAnim { use: "desktop" } }
+                visible: k > 0.01
+                anchors.fill: parent
+                Flower {
+                    shape: "pentagon"; color: Theme.tertiaryContainer
+                    width: face.width * 0.24 * bub.k; height: width
+                    x: face.width * 0.2; y: face.width * 0.22
+                    UiText { anchors.centerIn: parent; text: String(clk.date.getDate()); color: Theme.tertiaryContainerInk; font.pixelSize: face.width * 0.095 * bub.k; font.weight: Font.Bold }
+                }
+                Flower {
+                    shape: "pill"; color: Theme.secondaryContainer
+                    width: face.width * 0.3 * bub.k; height: face.width * 0.17 * bub.k
+                    x: face.width * 0.55; y: face.width * 0.66
+                    UiText { anchors.centerIn: parent; text: String(clk.date.getMonth() + 1).padStart(2, "0"); color: Theme.secondaryContainerInk; font.pixelSize: face.width * 0.085 * bub.k; font.weight: Font.Bold }
+                }
+            }
+            // borda: "ddd dd" letra a letra em volta do mostrador, girando junto com os segundos
+            Item {
+                id: bord
+                readonly property bool on: w.o("dateStyle") === "border" && face.width > 110
+                property real k: on ? 1 : 0
+                Behavior on k { MotionAnim { use: "desktop" } }
+                visible: k > 0.01
+                opacity: k
+                anchors.fill: parent
+                rotation: w.secs ? face.sA : 0
+                readonly property string txt: (w.cap(clk.date.toLocaleDateString(w.loc, "ddd")).replace(".", "") + " " + String(clk.date.getDate()).padStart(2, "0")).toUpperCase()
+                Repeater {
+                    model: bord.txt.split("")
+                    delegate: Item {
+                        required property var modelData
+                        required property int index
+                        width: 0; height: 0
+                        x: face.width / 2; y: face.height / 2
+                        rotation: (index - (bord.txt.length - 1) / 2) * 12
+                        UiText {
+                            x: -width / 2; y: -face.width * (0.455 + 0.03 * (1 - bord.k))
+                            text: modelData; color: an.ink; font.pixelSize: face.width * 0.06; font.weight: Font.Bold
+                        }
+                    }
                 }
             }
             component Hand: Item {
                 id: hd
-                property real angle: 0
+                property real target: 0                 // angulo certo agora (0..360)
+                property real angle: 0                  // angulo mostrado: anima 300 ms pelo caminho mais curto (sem dar a volta no 360 -> 0)
+                property real unw: 0
+                property bool ready: false
                 property real len: 0.6
                 property real thick: 6
                 property color col: an.ink
                 property bool hollow: false
                 property bool tail: false
+                onTargetChanged: { unw += ((target - unw) % 360 + 540) % 360 - 180; angle = unw }
+                Component.onCompleted: { unw = target; angle = target; ready = true }
+                Behavior on angle { enabled: hd.ready; NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1] } }
+                Behavior on thick { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+                Behavior on col { ColorAnimation { duration: 250 } }
                 width: thick; height: face.width / 2 * len + (tail ? face.width * 0.08 : 0)
                 x: face.width / 2 - width / 2; y: face.width / 2 - face.width / 2 * len
                 transformOrigin: Item.Top
@@ -266,7 +319,7 @@ Item {
             Hand {
                 readonly property string st: w.o("hourHand")
                 visible: st !== "hide"
-                angle: face.hA; len: 0.5
+                target: face.hA; len: 0.5
                 thick: st === "classic" ? face.width * 0.035 : face.width * 0.085
                 hollow: st === "hollow"
                 col: st === "classic" ? w.fg : w.ac
@@ -274,14 +327,14 @@ Item {
             Hand {
                 readonly property string st: w.o("minuteHand")
                 visible: st !== "hide"
-                angle: face.mA; len: 0.72
+                target: face.mA; len: 0.72
                 thick: ({ classic: 0.025, thin: 0.018, medium: 0.045, bold: 0.07 })[st] * face.width
                 col: st === "classic" ? w.fg : w.ac2
             }
             Hand {
                 readonly property string st: w.o("secondHand")
                 visible: w.secs && (st === "line" || st === "classic")
-                angle: face.sA; len: 0.8; thick: Math.max(1.5, face.width * 0.012); tail: st === "classic"
+                target: face.sA; len: 0.8; thick: Math.max(1.5, face.width * 0.012); tail: st === "classic"
                 col: w.ac
             }
             // segundos como bolinha andando na borda
@@ -414,7 +467,7 @@ Item {
             "6": ["00110", "01000", "10000", "11110", "10001", "10001", "01110"], "7": ["11111", "00001", "00010", "00100", "01000", "01000", "01000"],
             "8": ["01110", "10001", "10001", "01110", "10001", "10001", "01110"], "9": ["01110", "10001", "10001", "01111", "00001", "00010", "01100"],
             ":": ["0", "1", "1", "0", "1", "1", "0"] })
-        readonly property bool vert: w.rows > w.cols
+        readonly property bool vert: { const ori = w.o("orientation"); return ori === "vertical" ? true : ori === "horizontal" ? false : w.rows > w.cols }
         readonly property var lines: vert ? [w.hh, w.mm] : [w.hh + ":" + w.mm]
         readonly property real ps: Math.min(w.o("pixelSize") * w.sc, vert ? height / 17 : Math.min(height / 8, width / ((lines[0].length - 1) * 6.2 + 2)))
         Column {
@@ -452,8 +505,32 @@ Item {
     }
 
     // ================= frase =================
+    // digital: texto solto; flor e pixel: pilula com aspas (como o chip do end4)
+    readonly property bool quoteChip: style === "analog" || style === "pixel"
+    Rectangle {
+        visible: w.quote !== "" && w.quoteChip
+        anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom }
+        height: w.quoteH
+        width: Math.min(parent.width, qrow.implicitWidth + 24)
+        radius: height / 2
+        color: Theme.secondaryContainer
+        Row {
+            id: qrow
+            anchors.centerIn: parent
+            spacing: 6
+            UiIcon { anchors.verticalCenter: parent.verticalCenter; name: "quoteClose"; size: Math.max(11, w.quoteH * 0.45); color: Theme.secondaryContainerInk }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                width: Math.min(implicitWidth, w.width - 60)
+                text: w.quote; color: Theme.secondaryContainerInk
+                font.family: w.o("quoteFont") ? w.fontFam : Theme.font
+                font.pixelSize: Math.max(11, w.quoteH * 0.42); font.italic: true
+                elide: Text.ElideRight
+            }
+        }
+    }
     UiText {
-        visible: w.quote !== ""
+        visible: w.quote !== "" && !w.quoteChip
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         height: w.quoteH
         horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter

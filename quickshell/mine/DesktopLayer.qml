@@ -11,7 +11,13 @@ Scope {
 
     PanelWindow {
         id: win
-        screen: Quickshell.screens[0]
+        // tela dos widgets: a primeira da lista Settings.desktopScreens que existir, senao a principal.
+        // (varias telas ao mesmo tempo pediriam uma DeskState.area por tela: fica para depois)
+        screen: {
+            const want = Settings.list(Settings.desktopScreens)
+            for (const n of want) { const sc = Quickshell.screens.find(x => x.name === n); if (sc) return sc }
+            return Quickshell.screens[0]
+        }
         visible: Settings.desktopOn || Settings.desktopMenu
         anchors { left: true; right: true; top: true; bottom: true }
         exclusionMode: ExclusionMode.Ignore

@@ -25,12 +25,14 @@ Singleton {
     function total(w) {
         const o = k => DeskState.opt(w, k), s = get(w.id), m = o("mode")
         if (m === "stopwatch") return 0
-        if (m === "countdown") return o("minutes") * 60000
+        if (m === "countdown") return o("minutes") * 60000 + (s.extra ?? 0)
         return (s.phase === "focus" ? o("focus") : s.phase === "long" ? o("longPause") : o("pause")) * 60000
     }
     function start(id) { const s = Object.assign({}, get(id)); if (s.running) return; s.running = true; s.startedAt = Date.now(); now = s.startedAt; put(id, s) }
     function pause(id) { const s = Object.assign({}, get(id)); if (!s.running) return; s.base += Date.now() - s.startedAt; s.running = false; put(id, s) }
     function reset(id) { put(id, { running: false, startedAt: 0, base: 0, phase: "focus", cycle: 1 }) }
+    // +N minutos na contagem regressiva (os chips +1m/+5m)
+    function addMinutes(id, n) { const s = Object.assign({}, get(id)); s.extra = (s.extra ?? 0) + n * 60000; put(id, s) }
     function skip(id) { const w = lookup(id); if (w) advance(w, false) }
     function advance(w, ring) {
         const s = Object.assign({}, get(w.id)), m = DeskState.opt(w, "mode")

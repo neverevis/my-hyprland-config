@@ -44,6 +44,13 @@ Column {
         UiSwitch { label: "Grade ao arrastar"; icon: "grid"; description: "Mostra a grade de pontos só enquanto um widget é movido."; checked: Settings.desktopGrid; onToggled: on => Settings.desktopGrid = on }
         UiSwitch { label: "Linhas de alinhamento ao soltar"; icon: "alignCenter"; description: "As bordas do widget piscam por 2 s depois de soltar."; checked: Settings.desktopSnapLines; onToggled: on => Settings.desktopSnapLines = on }
         UiSwitch { label: "Desfoque atrás dos widgets"; icon: "blur"; description: "O desfoque do Hyprland por trás dos cartões e do vidro. A intensidade é a da página Blur."; checked: Settings.desktopBlur; onToggled: on => Settings.desktopBlur = on }
+        UiLabel { text: "Mostrar widgets em" }
+        UiSeg {
+            readonly property var sc: Quickshell.screens
+            options: [["", "Principal"]].concat(sc.map(s => [s.name, s.name]))
+            value: Settings.list(Settings.desktopScreens)[0] ?? ""
+            onPicked: v => Settings.desktopScreens = v === "" ? [] : [v]
+        }
         UiSwitch { label: "Menu de clique direito na área de trabalho"; icon: "menu"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }
         Column {
             visible: Settings.desktopMenu

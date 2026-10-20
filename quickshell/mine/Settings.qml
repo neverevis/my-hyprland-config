@@ -83,6 +83,7 @@ Singleton {
     property alias desktopToneColor: adapter.desktopToneColor
     property alias desktopSnap: adapter.desktopSnap         // encaixar na grade ao arrastar
     property alias desktopMenu: adapter.desktopMenu         // menu de clique direito na area de trabalho
+    property alias desktopScreens: adapter.desktopScreens   // telas (nomes) onde os widgets aparecem; vazio = a principal
     property alias desktopMenuHidden: adapter.desktopMenuHidden // tipos que nao aparecem em "Adicionar widget" do menu
     property alias desktopLocked: adapter.desktopLocked     // trava a posicao dos widgets (salvo)
     property alias desktopAlwaysDrag: adapter.desktopAlwaysDrag // arrastar widgets sem entrar no modo de edicao
@@ -735,6 +736,7 @@ Singleton {
             property string desktopToneColor: "#ffffff"
             property bool desktopSnap: true
             property bool desktopMenu: true
+            property var desktopScreens: []
             property var desktopMenuHidden: []
             property bool desktopBlur: true
             property bool desktopLocked: false

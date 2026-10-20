@@ -58,6 +58,7 @@ Singleton {
             { sec: "Ponteiros", key: "minuteHand", label: "Minutos", type: "seg", preview: true, def: "medium", options: [["classic", "Clássico"], ["thin", "Fino"], ["medium", "Médio"], ["bold", "Grosso"], ["hide", "Sem"]], when: { style: "analog" } },
             { sec: "Ponteiros", key: "secondHand", label: "Segundos", type: "seg", preview: true, def: "dot", options: [["dot", "Bolinha"], ["line", "Linha"], ["classic", "Clássico"], ["hide", "Sem"]], when: { style: "analog" } },
             { sec: "Diário", key: "variant", label: "Variante", type: "seg", preview: true, def: "badge", options: [["badge", "Selo"], ["morning", "Saudação"], ["script", "Manuscrito"], ["bold", "Forte"]], when: { style: "daily" } },
+            { sec: "Pixel", key: "orientation", label: "Orientação", icon: "swap_vertical", type: "seg", def: "auto", options: [["auto", "Automática", "auto"], ["vertical", "Vertical", "swap_vertical"], ["horizontal", "Horizontal", "swap_horizontal"]], when: { style: "pixel" } },
             { sec: "Pixel", key: "pixelSize", label: "Tamanho do pixel", icon: "grid", type: "slider", from: 3, to: 14, step: 1, suffix: " px", def: 7, when: { style: "pixel" } },
             { sec: "Frase", key: "quote", label: "Frase embaixo", icon: "quoteClose", type: "text", def: "" },
             { sec: "Frase", key: "quoteFont", label: "Frase na fonte do relógio", icon: "font", type: "switch", def: true },
@@ -112,13 +113,14 @@ Singleton {
             { sec: "Bloco", key: "mono", label: "Fonte de código", icon: "keyboard", type: "switch", def: false },
             { sec: "Bloco", key: "size", label: "Tamanho da letra", icon: "textSize", type: "slider", from: 10, to: 28, step: 1, suffix: " px", def: 14 }
           ] },
-        { type: "timer", group: "work", name: "Timers", icon: "timer", desc: "Cronômetro, contagem regressiva e pomodoro.", sizes: [[2, 1], [2, 2], [1, 1], [3, 1]], options: [
-            { sec: "Tempos", key: "mode", label: "Modo", type: "seg", def: "pomodoro", options: [["pomodoro", "Pomodoro", "target"], ["countdown", "Regressivo", "timer"], ["stopwatch", "Cronômetro", "stopwatch"]] },
-            { sec: "Tempos", key: "focus", label: "Foco", icon: "target", type: "slider", from: 5, to: 90, step: 5, suffix: " min", def: 25, when: { mode: "pomodoro" } },
-            { sec: "Tempos", key: "pause", label: "Pausa", icon: "coffee", type: "slider", from: 1, to: 30, step: 1, suffix: " min", def: 5, when: { mode: "pomodoro" } },
-            { sec: "Tempos", key: "longPause", label: "Pausa longa", icon: "sleep", type: "slider", from: 5, to: 60, step: 5, suffix: " min", def: 15, when: { mode: "pomodoro" } },
-            { sec: "Tempos", key: "cycles", label: "Ciclos até a pausa longa", icon: "repeat", type: "slider", from: 2, to: 8, step: 1, def: 4, when: { mode: "pomodoro" } },
-            { sec: "Tempos", key: "minutes", label: "Duração", icon: "timer", type: "slider", from: 1, to: 180, step: 1, suffix: " min", def: 10, when: { mode: "countdown" } },
+        { type: "timer", group: "work", name: "Timers", icon: "timer", desc: "Cronômetro, contagem regressiva e pomodoro.", sizes: [[2, 1], [2, 2], [1, 1], [3, 1], [4, 1], [1, 3]], options: [
+            { sec: "Tempos", key: "mode", label: "Modo", type: "seg", def: "pomodoro", options: [["all", "Os três", "dashboard"], ["pomodoro", "Pomodoro", "target"], ["countdown", "Regressivo", "timer"], ["stopwatch", "Cronômetro", "stopwatch"]] },
+            { sec: "Tempos", key: "flip", label: "Tiles na vertical", icon: "dashboard", type: "switch", def: false, when: { mode: "all" } },
+            { sec: "Tempos", key: "focus", label: "Foco", icon: "target", type: "slider", from: 5, to: 90, step: 5, suffix: " min", def: 25, when: { mode: ["pomodoro", "all"] } },
+            { sec: "Tempos", key: "pause", label: "Pausa", icon: "coffee", type: "slider", from: 1, to: 30, step: 1, suffix: " min", def: 5, when: { mode: ["pomodoro", "all"] } },
+            { sec: "Tempos", key: "longPause", label: "Pausa longa", icon: "sleep", type: "slider", from: 5, to: 60, step: 5, suffix: " min", def: 15, when: { mode: ["pomodoro", "all"] } },
+            { sec: "Tempos", key: "cycles", label: "Ciclos até a pausa longa", icon: "repeat", type: "slider", from: 2, to: 8, step: 1, def: 4, when: { mode: ["pomodoro", "all"] } },
+            { sec: "Tempos", key: "minutes", label: "Duração", icon: "timer", type: "slider", from: 1, to: 180, step: 1, suffix: " min", def: 10, when: { mode: ["countdown", "all"] } },
             { sec: "Tempos", key: "notify", label: "Avisar ao terminar", icon: "bellRing", type: "switch", def: true }
           ] },
         { type: "text", group: "deco", name: "Texto", icon: "compose", desc: "Uma frase, com a fonte e a cor que quiser.", sizes: [[3, 1], [2, 1], [4, 1], [2, 2], [4, 2]], options: [

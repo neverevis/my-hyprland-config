@@ -30,10 +30,90 @@ Item {
         : (s.phase === "focus" ? "Foco" : s.phase === "long" ? "Pausa longa" : "Pausa") + " · ciclo " + s.cycle
     readonly property color phaseCol: o("mode") === "pomodoro" && s.phase !== "focus" ? w.ac2 : w.ac
 
+    // modo "all": tres tiles (pomodoro, cronometro, regressivo), cada um com o proprio estado em Timers (ids wid:p / wid:s / wid:c)
+    readonly property bool all: o("mode") === "all"
+    readonly property bool vert: o("flip") || (rows > cols)
+    readonly property var kinds: [["pomodoro", ":p", "flower", "Foco"], ["stopwatch", ":s", "sunny", "Cronômetro"], ["countdown", ":c", "bun", "Regressivo"]]
+    function subMe(k) { return { id: wid + k[1], type: "timer", opts: Object.assign({}, opts, { mode: k[0] }) } }
+    function regAll() { if (wid === "") return; for (const k of kinds) Timers.register(wid + k[1], subMe(k)) }
+    onOptsChanged: regAll()
+    onWidChanged: regAll()
+    Component.onCompleted: regAll()
+    // clique direito num tile zera o timer dele (o DeskView pergunta antes de abrir o menu; Ctrl+direito abre o menu)
+    function rightClick(x, y): bool {
+        if (!all) return false
+        const it = tiles.childAt(x - tiles.x, y - tiles.y)
+        if (!it || it.sid === undefined) return false
+        Timers.reset(it.sid); return true
+    }
+
+    component Tile: Rectangle {
+        id: t
+        required property var k
+        readonly property string sid: w.wid + k[1]
+        readonly property var ts: (Timers.st, Timers.get(sid))
+        readonly property real tel: (Timers.now, Timers.elapsed(sid))
+        readonly property real ttot: Timers.total(w.subMe(k))
+        readonly property real trem: ttot > 0 ? Math.max(0, ttot - tel) : tel
+        readonly property bool pomo: k[0] === "pomodoro"
+        readonly property bool compact: height < 100
+        radius: 22
+        color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, tm.containsMouse ? 0.12 : 0.07)
+        Behavior on color { ColorAnimation { duration: 150 } }
+        MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            onClicked: ts.running ? Timers.pause(sid) : Timers.start(sid) }
+        Column {
+            anchors.centerIn: parent
+            spacing: 4
+            ShapeIcon {
+                anchors.horizontalCenter: parent.horizontalCenter
+                shape: k[2]; size: Math.max(28, Math.min(t.width * 0.42, t.height * (t.compact ? 0.5 : 0.36), 56)); padding: size * 0.24
+                icon: t.ts.running ? "pause" : (t.pomo ? "target" : k[0] === "stopwatch" ? "stopwatch" : "timer")
+                color: t.ts.running ? w.ac : w.cont; iconColor: t.ts.running ? Theme.accentText : w.contInk
+            }
+            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.fmt(t.trem); color: w.fg; font.pixelSize: Math.max(14, Math.min(26, t.width * 0.2)); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+            UiText { anchors.horizontalCenter: parent.horizontalCenter; visible: !t.compact || t.k[0] !== "countdown"; text: t.pomo ? (t.ts.phase === "focus" ? "Foco" : "Pausa") : k[3]; color: w.dim; font.pixelSize: 11 }
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: t.k[0] === "countdown" && !t.compact
+                spacing: 4
+                Repeater {
+                    model: [1, 5]
+                    delegate: Rectangle {
+                        required property int modelData
+                        width: 34; height: 20; radius: 10
+                        color: cm.containsMouse ? Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.3) : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.16)
+                        UiText { anchors.centerIn: parent; text: "+" + modelData + "m"; color: w.fg; font.pixelSize: 11; font.weight: Font.DemiBold }
+                        MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Timers.addMinutes(t.sid, modelData) }
+                    }
+                }
+            }
+        }
+    }
+    Item {
+        id: tiles
+        visible: w.all
+        anchors.fill: parent
+        Repeater {
+            model: w.all ? w.kinds : []
+            delegate: Tile {
+                required property int index
+                required property var modelData
+                k: modelData
+                readonly property real gap: 8
+                width: w.vert ? tiles.width : (tiles.width - 2 * gap) / 3
+                height: w.vert ? (tiles.height - 2 * gap) / 3 : tiles.height
+                x: w.vert ? 0 : index * (width + gap)
+                y: w.vert ? index * (height + gap) : 0
+            }
+        }
+    }
+
     readonly property bool tiny: cols === 1 && rows === 1
     readonly property real ringS: tiny ? Math.min(width, height) : (rows > 1 ? Math.min(width, height * 0.66) : height)
     Item {
         id: ring
+        visible: !w.all
         width: w.ringS; height: w.ringS
         x: w.tiny || w.rows > 1 ? (w.width - width) / 2 : 0
         Canvas {
@@ -59,7 +139,7 @@ Item {
         MouseArea { anchors.fill: parent; visible: w.tiny; cursorShape: Qt.PointingHandCursor; onClicked: w.s.running ? Timers.pause(w.wid) : Timers.start(w.wid) }
     }
     Column {
-        visible: !w.tiny
+        visible: !w.tiny && !w.all
         anchors { left: w.rows > 1 ? parent.left : ring.right; leftMargin: w.rows > 1 ? 0 : 16; right: parent.right
                   top: w.rows > 1 ? ring.bottom : undefined; topMargin: 8; verticalCenter: w.rows > 1 ? undefined : ring.verticalCenter }
         spacing: 4

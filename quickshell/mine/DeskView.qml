@@ -196,7 +196,12 @@ Item {
                 anchors.fill: parent
                 enabled: view.editable && !DeskState.editing
                 acceptedButtons: Qt.RightButton
-                onClicked: m => { const p = mapToItem(view, m.x, m.y); DeskMenu.show(p.x, p.y, card.wid) }
+                onClicked: m => {
+                    // o widget pode tratar o clique direito (ex.: zerar o tile do timer); Ctrl+clique direito abre o menu mesmo assim
+                    const it = content.item
+                    if (it && it.rightClick && !(m.modifiers & Qt.ControlModifier)) { const q = mapToItem(it, m.x, m.y); if (it.rightClick(q.x, q.y)) return }
+                    const p = mapToItem(view, m.x, m.y); DeskMenu.show(p.x, p.y, card.wid)
+                }
             }
 
             // ---- edicao ----
