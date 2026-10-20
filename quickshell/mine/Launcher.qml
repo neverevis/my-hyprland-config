@@ -178,8 +178,11 @@ Scope {
         const hist = clips.filter(c => w === "" || norm(c.text).includes(w)).slice(0, 80).map(c => {
             const img = c.img !== "" || /^\[\[ binary data/.test(c.text)
             const txt = c.text
-            return { name: img ? "Imagem" : txt.replace(/\s+/g, " ").slice(0, 160), desc: img ? txt.replace(/^\[\[ binary data |\]\]$/g, "") : "Enter copia · clique direito fixa · Delete apaga",
-                     glyph: img ? "image" : "cards", thumb: c.img,
+            const hide = Settings.launcherClipHide && !img     // segurança no trabalho: texto escondido (so a lista; copiar funciona igual)
+            const cur = !img && txt === Quickshell.clipboardText
+            return { name: img ? "Imagem" : hide ? "•".repeat(Math.min(24, txt.length)) : txt.replace(/\s+/g, " ").slice(0, 160),
+                     desc: (img ? txt.replace(/^\[\[ binary data |\]\]$/g, "") : "Enter copia · clique direito fixa · Delete apaga") + "  ·  #" + c.line.split("\t")[0] + (cur ? "  ·  na área agora" : ""),
+                     glyph: cur ? "check" : img ? "image" : "cards", thumb: Settings.launcherClipHide ? "" : c.img,
                      act: () => Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | cliphist decode | wl-copy', "sh", c.line]),
                      alt: img ? null : () => root.pinClip(txt), altHint: "fixar",
                      del: () => { Quickshell.execDetached(["python3", root.clipScript, "delete", c.line]); root.clips = root.clips.filter(x => x.line !== c.line) } }
@@ -201,10 +204,22 @@ Scope {
     }
     property var symbols: []
     FileView { path: Qt.resolvedUrl("assets/symbols.tsv").toString().replace("file://", ""); onLoaded: root.symbols = text().split("\n").filter(l => l).map(l => l.split("\t")) }
+    // nomes do Material Symbols (para usar em QML/CSS): o indice so e lido na primeira busca com "."
+    property bool matLoad: false
+    property var matSyms: []
+    FileView {
+        path: root.matLoad ? Qt.resolvedUrl("assets/material_symbols_rounded.json").toString().replace("file://", "") : ""
+        onLoaded: { try { root.matSyms = JSON.parse(text()).map(e => [e.name, e.name.replace(/_/g, " ") + " " + (e.tags || []).join(" ").toLowerCase()]) } catch (e) { root.matSyms = [] } }
+    }
     function symbolItems(q) {
         const w = norm(q).trim().split(/\s+/).filter(x => x)
-        return symbols.filter(e => w.every(x => norm(e[1] ?? "").includes(x) || e[0] === x)).slice(0, 120)
+        const base = symbols.filter(e => w.every(x => norm(e[1] ?? "").includes(x) || e[0] === x)).slice(0, 120)
             .map(e => ({ name: e[1].charAt(0).toUpperCase() + e[1].slice(1), desc: root.pickHint, big: e[0], act: () => root.pick(e[0]) }))
+        if (!w.length) return base
+        if (!matLoad) matLoad = true
+        const mat = matSyms.filter(e => w.every(x => e[1].includes(x))).slice(0, 40)
+            .map(e => ({ name: e[0], desc: "Ícone Material Symbols · Enter copia o nome", glyph: "apps", act: () => { Quickshell.clipboardText = e[0] } }))
+        return base.concat(mat)
     }
     // atalhos do Hyprland (scripts/keybinds.py le a config em Lua)
     property var keybinds: []

@@ -110,6 +110,7 @@ Column {
             UiButton { icon: "image"; text: Settings.homeBannerImage === "" ? "Foto própria da faixa…" : "Trocar a foto da faixa…"; onClicked: Pick.image("Foto da faixa do Início", p => Settings.homeBannerImage = p) }
             UiButton { visible: Settings.homeBannerImage !== ""; icon: "close"; text: "Usar o wallpaper"; kind: "ghost"; onClicked: Settings.homeBannerImage = "" }
         }
+        UiSwitch { label: "Botões rápidos só com ícone"; description: "Estilo clássico: uma fileira compacta, sem nome nem estado."; checked: Settings.homeToggleStyle === "compact"; onToggled: on => Settings.homeToggleStyle = on ? "compact" : "tiles" }
         UiSwitch { label: "Controle de volume"; checked: Settings.homeSliderVol; onToggled: on => Settings.homeSliderVol = on }
         UiSwitch { label: "Controle do microfone"; checked: Settings.homeSliderMic; onToggled: on => Settings.homeSliderMic = on }
         UiSwitch { label: "Esconder players repetidos"; description: "Tira o playerctld e cópias do mesmo navegador."; checked: Settings.mediaDedupe; onToggled: on => Settings.mediaDedupe = on }

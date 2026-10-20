@@ -232,6 +232,8 @@ Singleton {
     property alias homeBanner: adapter.homeBanner
     property alias homeSliderVol: adapter.homeSliderVol
     property alias homeSliderMic: adapter.homeSliderMic
+    property alias idleKeep: adapter.idleKeep               // "manter acordado" ligado (lembrado)
+    property alias homeToggleStyle: adapter.homeToggleStyle   // tiles | compact
     property alias hotCornerHideFs: adapter.hotCornerHideFs   // esconde as zonas com uma janela em tela cheia
     property alias leftDocked: adapter.leftDocked             // barra lateral esquerda saindo da moldura (ou flutuante)
     property alias aiBackend: adapter.aiBackend
@@ -353,6 +355,7 @@ Singleton {
     property alias launcherFavs: adapter.launcherFavs           // apps favoritos (ids): primeiro na lista
     property alias launcherHidden: adapter.launcherHidden       // apps escondidos (ids)
     property alias launcherTerminal: adapter.launcherTerminal   // terminal do modo comando
+    property alias launcherClipHide: adapter.launcherClipHide   // esconde o texto do historico da area de transferencia
     property alias launcherClipPins: adapter.launcherClipPins   // textos fixados na area de transferencia
     property alias launcherPick: adapter.launcherPick           // emoji e simbolo: copy (copiar) | type (digitar no app)
     property alias wpPickerCount: adapter.wpPickerCount       // quantos wallpapers aparecem no seletor (1, 3 ou 5)
@@ -963,6 +966,8 @@ Singleton {
             property int hotCornerH: 4
             property bool hotCornerClick: false
             property bool hotCornerHideFs: true
+            property bool idleKeep: false
+            property string homeToggleStyle: "tiles"
             property bool mediaDedupe: true
             property string mediaPreferred: ""
             property string homeLastTab: "home"
@@ -1079,6 +1084,7 @@ Singleton {
             property var launcherHidden: []
             property string launcherTerminal: "kitty"
             property var launcherClipPins: []
+            property bool launcherClipHide: false
             property string launcherPick: "copy"
             property int wpPickerRadius: 11
             property int wpPickerFillet: 13

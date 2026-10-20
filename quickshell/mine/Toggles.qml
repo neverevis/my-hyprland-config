@@ -68,7 +68,9 @@ Singleton {
     // botoes em linhas: cada um ocupa "size" unidades e a linha fecha quando passa de "cols"
     function rows(list, cols) {
         const out = []; let cur = [], used = 0
+        const compact = Settings.homeToggleStyle === "compact"   // estilo classico: so icones
         norm(list).forEach((e, i) => {
+            if (compact) e.size = 1
             const w = Math.min(e.size, cols)
             if (used + w > cols && cur.length) { out.push(cur); cur = []; used = 0 }
             cur.push({ id: e.id, size: e.size, w: w, idx: i }); used += w

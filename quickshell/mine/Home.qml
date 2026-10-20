@@ -107,6 +107,24 @@ Scope {
         command: ["sh", "-c", "ip -4 -o addr show scope global | awk '{print $2\" \"$4}'"]
         stdout: StdioCollector { onStreamFinished: { const m = {}; text.trim().split("\n").forEach(l => { const p = l.split(" "); if (p.length > 1) m[p[0]] = p[1].split("/")[0] }); root.ips = m } }
     }
+    // gateway e IP publico: so quando a aba Conexao pede (uma consulta, guardada por 10 min)
+    property string gateway: ""
+    property string pubIp: ""
+    property real pubAt: 0
+    Process {
+        id: pGw
+        command: ["sh", "-c", "ip route show default | awk '{print $3; exit}'"]
+        stdout: StdioCollector { onStreamFinished: root.gateway = text.trim() }
+    }
+    Process {
+        id: pPub
+        command: ["curl", "-s", "-m", "5", "https://api.ipify.org"]
+        stdout: StdioCollector { onStreamFinished: { const t = text.trim(); if (/^[0-9a-fA-F:.]{3,45}$/.test(t)) { root.pubIp = t; root.pubAt = Date.now() } } }
+    }
+    function netDetails() {
+        pGw.running = false; pGw.running = true
+        if (Date.now() - pubAt > 600000 && !pPub.running) pPub.running = true
+    }
     function refresh() { pProf.running = false; pProf.running = true; pIp.running = false; pIp.running = true }
     Timer { interval: 5000; repeat: true; running: root.alive; onTriggered: root.refresh() }
     onAliveChanged: if (alive) refresh()

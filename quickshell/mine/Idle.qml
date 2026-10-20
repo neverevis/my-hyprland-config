@@ -15,7 +15,22 @@ Singleton {
     readonly property bool mediaPlaying: Mpris.players.values.some(p => p.isPlaying)
     readonly property bool held: Settings.idleMedia && mediaPlaying
     // pausar por um tempo (ex.: assistindo algo fora do navegador): ipc idle hold
-    property bool paused: false
+    property bool paused: Settings.idleKeep
+    onPausedChanged: if (Settings.idleKeep !== paused) Settings.idleKeep = paused    // lembrado entre reinicios
+    // de verdade: avisa o compositor (vale para todos os apps). Janelinha de 1 px so existe enquanto "manter acordado" esta ligado
+    LazyLoader {
+        active: root.paused
+        PanelWindow {
+            id: inhWin
+            implicitWidth: 1; implicitHeight: 1
+            color: "transparent"
+            exclusionMode: ExclusionMode.Ignore
+            WlrLayershell.layer: WlrLayer.Background
+            WlrLayershell.namespace: "mine-idle-inhibit"
+            mask: Region {}
+            IdleInhibitor { enabled: true; window: inhWin }
+        }
+    }
 
     function dispatch(lua) { proc.command = ["hyprctl", "dispatch", lua]; proc.running = false; proc.running = true }
     Process { id: proc }

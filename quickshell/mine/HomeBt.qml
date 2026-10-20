@@ -5,9 +5,11 @@ HomeScroll {
     id: pg
     property var home
     readonly property var bt: home.bt
-    readonly property var paired: home.btDevs.filter(d => d.paired || d.bonded).sort((a, b) => b.connected - a.connected)
+    readonly property var paired: home.btDevs.filter(d => d.paired || d.bonded).sort((a, b) => (b.connected || b.batteryAvailable) - (a.connected || a.batteryAvailable))
     readonly property var found: home.btDevs.filter(d => !d.paired && !d.bonded && d.name)
 
+    // abriu a aba: liga a busca; saiu: desliga (BlueZ gasta radio buscando)
+    Component.onCompleted: if (bt && bt.enabled) bt.discovering = true
     Component.onDestruction: if (bt && bt.discovering) bt.discovering = false
 
     function devIcon(i) {
@@ -21,12 +23,13 @@ HomeScroll {
         id: dr
         property var dev
         property string action
+        property bool canForget: false
         signal act()
         width: parent ? parent.width : 100; height: 44; radius: 10
         color: dev && dev.connected ? Theme.tint(0.16) : (dm.containsMouse ? Theme.cardHi : "transparent")
         UiIcon { id: di; anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: pg.devIcon(dr.dev ? dr.dev.icon : ""); size: 18; color: dr.dev && dr.dev.connected ? Theme.accent : Theme.text }
         Column {
-            anchors { left: di.right; leftMargin: 10; right: ab.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
+            anchors { left: di.right; leftMargin: 10; right: fgb.visible ? fgb.left : ab.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
             UiText { width: parent.width; text: dr.dev ? (dr.dev.name || dr.dev.address) : ""; color: Theme.text; font.pixelSize: 13; font.weight: Font.Medium; elide: Text.ElideRight }
             UiText {
                 width: parent.width
@@ -36,6 +39,7 @@ HomeScroll {
             }
         }
         MouseArea { id: dm; anchors.fill: parent; hoverEnabled: true }
+        UiButton { id: fgb; visible: dr.canForget; anchors { right: ab.left; rightMargin: 2; verticalCenter: parent.verticalCenter } icon: "trash"; kind: "ghost"; onClicked: dr.dev.forget() }
         UiButton { id: ab; anchors { right: parent.right; rightMargin: 5; verticalCenter: parent.verticalCenter } text: dr.action; kind: dr.dev && dr.dev.connected ? "normal" : "accent"; onClicked: dr.act() }
     }
 
@@ -68,6 +72,7 @@ HomeScroll {
                 delegate: DevRow {
                     required property var modelData
                     dev: modelData
+                    canForget: true
                     action: modelData.connected ? "Desconectar" : "Conectar"
                     onAct: modelData.connected ? modelData.disconnect() : modelData.connect()
                 }

@@ -1,4 +1,5 @@
 // Aba "Conexao": conexao atual (cabo ou Wi-Fi) e redes Wi-Fi ao alcance (conectar, senha, desconectar).
+import Quickshell
 import Quickshell.Networking
 import QtQuick
 
@@ -10,7 +11,7 @@ HomeScroll {
     readonly property var wifi: home.wifiDev
     readonly property var nets: home.wifiNets.slice().sort((a, b) => (b.connected - a.connected) || (b.known - a.known) || (b.signalStrength - a.signalStrength))
 
-    Component.onCompleted: if (wifi && Networking.wifiEnabled) wifi.scannerEnabled = true
+    Component.onCompleted: { if (wifi && Networking.wifiEnabled) wifi.scannerEnabled = true; home.netDetails() }
     Component.onDestruction: if (wifi) wifi.scannerEnabled = false
 
     function sigIcon(s) { return s > 0.75 ? "wifi4" : (s > 0.5 ? "wifi3" : (s > 0.25 ? "wifi2" : "wifi1")) }
@@ -18,7 +19,7 @@ HomeScroll {
     // ---- conexao atual ----
     HomeCard {
         id: cur
-        width: pg.width; height: 104
+        width: pg.width; height: 126
         title: "Conexão atual"; icon: "link"
         readonly property bool viaWired: !!pg.wired && pg.wired.connected
         readonly property var dev: viaWired ? pg.wired : (pg.home.wifiCur ? pg.wifi : null)
@@ -39,6 +40,17 @@ HomeScroll {
                 text: !cur.dev ? "Conecte um cabo ou escolha uma rede abaixo" : ((pg.home.ips[cur.dev.name] ?? "sem IP") + (cur.viaWired && cur.dev.linkSpeed ? " · " + cur.dev.linkSpeed + " Mb/s" : "") + (!cur.viaWired && pg.home.wifiCur ? " · sinal " + Math.round(pg.home.wifiCur.signalStrength * 100) + "%" : ""))
                 color: Theme.muted; font.pixelSize: 12
             }
+            UiText {
+                visible: !!cur.dev && (pg.home.gateway !== "" || pg.home.pubIp !== "")
+                text: (pg.home.gateway !== "" ? "Gateway " + pg.home.gateway : "") + (pg.home.gateway !== "" && pg.home.pubIp !== "" ? " · " : "") + (pg.home.pubIp !== "" ? "IP público " + pg.home.pubIp : "")
+                color: Theme.muted; font.pixelSize: 12
+            }
+        }
+        UiButton {   // rede aberta conectada: pode pedir login (portal cativo)
+            visible: !!cur.dev && !cur.viaWired && !!pg.home.wifiCur && pg.home.wifiCur.security === WifiSecurityType.Open
+            anchors { right: parent.right; rightMargin: 4; verticalCenter: ci.verticalCenter }
+            icon: "web"; text: "Abrir portal"; kind: "ghost"
+            onClicked: Quickshell.execDetached(["xdg-open", "https://nmcheck.gnome.org/"])
         }
     }
 
@@ -93,7 +105,8 @@ HomeScroll {
                                 color: Theme.muted; font.pixelSize: 11
                             }
                         }
-                        UiIcon { visible: nr.secure; anchors { right: act.left; rightMargin: 8; verticalCenter: parent.verticalCenter } name: "lock"; size: 13; color: Theme.muted }
+                        UiButton { id: fg; visible: nr.modelData.known && !nr.modelData.connected; anchors { right: act.left; rightMargin: 4; verticalCenter: parent.verticalCenter } icon: "trash"; kind: "ghost"; onClicked: nr.modelData.forget() }
+                        UiIcon { visible: nr.secure && !fg.visible; anchors { right: act.left; rightMargin: 8; verticalCenter: parent.verticalCenter } name: "lock"; size: 13; color: Theme.muted }
                         MouseArea { id: nm; anchors.fill: parent; hoverEnabled: true }
                         UiButton {
                             id: act

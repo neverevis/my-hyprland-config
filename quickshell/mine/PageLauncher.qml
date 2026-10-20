@@ -184,6 +184,7 @@ Column {
         title: "Comandos, emoji e símbolos"
         UiLabel { text: "Ao escolher um emoji ou símbolo" }
         UiSeg { options: [["copy", "Copiar", "cards"], ["type", "Digitar no app", "keyboard"]]; value: Settings.launcherPick; onPicked: v => Settings.launcherPick = v }
+        UiSwitch { label: "Esconder o texto da área de transferência"; description: "Na busca com ;  os textos viram bolinhas e as miniaturas somem (útil com gente olhando a tela)."; checked: Settings.launcherClipHide; onToggled: on => Settings.launcherClipHide = on }
         Row {
             spacing: 10
             UiText { anchors.verticalCenter: parent.verticalCenter; text: "Terminal do modo comando"; color: Theme.text; font.pixelSize: 13 }
