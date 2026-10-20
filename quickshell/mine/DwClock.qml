@@ -2,6 +2,7 @@
 // ponteiros e data em varios estilos), daily (selo / saudacao / manuscrito / forte), pixel (matriz de pontos).
 // "auto": flor nos tamanhos quadrados, digital nos outros. Frase opcional embaixo. Opcoes: ver DeskState.catalog (clock).
 import Quickshell
+import Quickshell.Services.UPower
 import QtQuick
 
 Item {
@@ -42,6 +43,19 @@ Item {
     readonly property string greet: { const h = clk.date.getHours(); return h < 5 ? "Boa noite" : h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite" }
 
     readonly property real bodyH: height - quoteH
+
+    // dados do estilo diario: clima (so busca enquanto esse estilo esta em uso) e bateria
+    readonly property bool wantWx: style === "daily"
+    property bool wxOn: false
+    onWantWxChanged: syncWx()
+    Component.onCompleted: syncWx()
+    Component.onDestruction: if (wxOn) Weather.release()
+    function syncWx() { if (wantWx && !wxOn) { wxOn = true; Weather.use() } else if (!wantWx && wxOn) { wxOn = false; Weather.release() } }
+    readonly property var bat: UPower.displayDevice
+    readonly property bool hasBat: !!bat && bat.ready && bat.isLaptopBattery
+    readonly property string wxDesc: Weather.ready ? Weather.describe(Weather.now.code).toLowerCase() : ""
+    readonly property string wxSentence: Weather.ready ? "Agora " + wxDesc + " com umidade de " + Weather.now.humidity + "% e vento de " + Math.round(Weather.now.wind) + " " + Weather.windUnit + "." : ""
+    readonly property string wxTemp: Weather.ready ? Math.round(Weather.now.temp) + "°" : ""
 
     // ================= digital =================
     Item {
@@ -289,51 +303,101 @@ Item {
         visible: w.style === "daily"
         width: parent.width; height: w.bodyH
         readonly property string v: w.o("variant")
-        readonly property real fs: Math.min(height * 0.5, width / 4.2) * w.sc
         readonly property int al: w.alignFlag
-        Column {
+        // unidade: tudo no bloco e medido em u (cabe no tamanho do widget)
+        readonly property real u: Math.max(0.3, Math.min(height / (v === "bold" ? 150 : 132), width / (v === "bold" ? 300 : 250))) * w.sc
+        readonly property string wday: w.cap(clk.date.toLocaleDateString(w.loc, "dddd"))
+        readonly property string timeS: w.hh + ":" + w.mm + (w.h12 ? " " + w.ampm : "")
+        readonly property string greetS: w.greet + ", " + Profile.name.split(" ")[0]
+        readonly property bool wxOk: Weather.ready
+        readonly property var wx: wxOk ? Weather.now : ({})
+        Item {
+            id: blk
             anchors.verticalCenter: parent.verticalCenter
-            width: parent.width
-            spacing: dl.fs * 0.06
-            // selo com o dia da semana
-            Rectangle {
-                visible: dl.v === "badge"
-                anchors.horizontalCenter: dl.al === Text.AlignHCenter ? parent.horizontalCenter : undefined
-                anchors.right: dl.al === Text.AlignRight ? parent.right : undefined
-                height: dl.fs * 0.34; width: bt.implicitWidth + height; radius: height / 2
-                color: w.ac
-                UiText { id: bt; anchors.centerIn: parent; text: w.cap(clk.date.toLocaleDateString(w.loc, "dddd")); color: Theme.accentText; font.family: w.fontFam; font.pixelSize: parent.height * 0.55; font.weight: Font.Bold }
-            }
-            UiText {
-                visible: dl.v === "morning"
-                width: parent.width; horizontalAlignment: dl.al
-                text: w.greet + ", " + Profile.name.split(" ")[0]
-                color: w.dim; font.family: w.fontFam; font.pixelSize: dl.fs * 0.26; font.weight: Font.Medium; elide: Text.ElideRight
-            }
-            UiText {
-                visible: dl.v === "bold"
-                width: parent.width; horizontalAlignment: dl.al
-                text: clk.date.toLocaleDateString(w.loc, "dddd").toUpperCase()
-                color: "transparent"; style: Text.Outline; styleColor: w.ac
-                font.family: w.fontFam; font.pixelSize: dl.fs * 0.55; font.weight: Font.Black; font.letterSpacing: dl.fs * 0.02
-                fontSizeMode: Text.HorizontalFit; minimumPixelSize: 10
-            }
-            UiText {
-                width: parent.width; horizontalAlignment: dl.al
-                text: w.hh + ":" + w.mm + (w.h12 ? " " + w.ampm : "")
-                color: w.fg
-                font.family: dl.v === "script" ? DeskWidgets.script : w.fontFam
-                font.pixelSize: dl.v === "script" ? dl.fs * 1.15 : dl.fs; font.weight: dl.v === "script" ? Font.Normal : w.o("weight")
-                font.features: { "tnum": 1 }; font.variableAxes: dl.v === "script" ? ({}) : w.axes
-            }
-            UiText {
-                visible: w.o("date")
-                width: parent.width; horizontalAlignment: dl.al
-                text: dl.v === "script" ? clk.date.toLocaleDateString(w.loc, "d 'de' MMMM") : w.dateText
-                color: dl.v === "badge" ? w.dim : w.ac
-                font.family: dl.v === "script" ? DeskWidgets.script : w.fontFam
-                font.pixelSize: dl.fs * (dl.v === "script" ? 0.36 : 0.24); font.weight: Font.Medium
-                elide: Text.ElideRight
+            width: Math.min(parent.width, col.implicitWidth)
+            height: col.implicitHeight
+            x: dl.al === Text.AlignHCenter ? (parent.width - width) / 2 : dl.al === Text.AlignRight ? parent.width - width : 0
+            Column {
+                id: col
+                spacing: 4 * dl.u
+
+                // ---------- selo ----------
+                Row {
+                    visible: dl.v === "badge"
+                    spacing: 10 * dl.u
+                    ShapeIcon { visible: dl.wxOk; anchors.verticalCenter: parent.verticalCenter; shape: "cookie12"; icon: Weather.icon(dl.wx.code, dl.wx.day); size: 50 * dl.u; padding: 12 * dl.u; color: w.ac; iconColor: Theme.accentText }
+                    UiText { anchors.verticalCenter: parent.verticalCenter; text: String(clk.date.getDate()).padStart(2, "0"); color: w.fg; font.family: w.fontFam; font.pixelSize: 44 * dl.u; font.weight: Font.Bold }
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        UiText { text: w.cap(clk.date.toLocaleDateString(w.loc, "ddd")).replace(".", ""); color: w.ac; font.family: w.fontFam; font.pixelSize: 17 * dl.u; font.weight: Font.Bold }
+                        UiText { text: w.cap(clk.date.toLocaleDateString(w.loc, "MMMM")); color: w.dim; font.family: w.fontFam; font.pixelSize: 14 * dl.u }
+                    }
+                }
+                UiText { visible: dl.v === "badge"; text: dl.greetS; color: w.fg; font.family: w.fontFam; font.pixelSize: 19 * dl.u; font.weight: Font.Light }
+                UiText { visible: dl.v === "badge" && dl.wxOk; width: Math.min(270 * dl.u, implicitWidth); wrapMode: Text.WordWrap
+                    text: w.wxSentence; color: w.dim; font.family: w.fontFam; font.pixelSize: 12 * dl.u }
+                Row {
+                    visible: dl.v === "badge"
+                    spacing: 8 * dl.u
+                    ShapeIcon { anchors.verticalCenter: parent.verticalCenter; shape: "cookie9"; icon: "clockOutline"; size: 32 * dl.u; padding: 7 * dl.u; color: w.cont; iconColor: w.contInk }
+                    Rectangle {
+                        anchors.verticalCenter: parent.verticalCenter
+                        height: 32 * dl.u; width: bt.implicitWidth + 26 * dl.u; radius: height / 2; color: w.ac
+                        UiText { id: bt; anchors.centerIn: parent; text: dl.timeS; color: Theme.accentText; font.family: w.fontFam; font.pixelSize: 19 * dl.u; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                    }
+                }
+
+                // ---------- saudacao ----------
+                UiText { visible: dl.v === "morning"; text: dl.greetS; color: w.ac; font.family: DeskWidgets.script; font.pixelSize: 44 * dl.u; font.italic: true }
+                UiText { visible: dl.v === "morning"; width: Math.min(290 * dl.u, implicitWidth); wrapMode: Text.WordWrap
+                    text: ("Hoje é " + clk.date.toLocaleDateString(w.loc, "dddd, d 'de' MMMM") + (dl.wxOk ? ", com " + w.wxDesc : "")).toUpperCase()
+                    color: w.dim; font.family: w.fontFam; font.pixelSize: 11 * dl.u; font.weight: Font.Medium; font.letterSpacing: 1.2 * dl.u }
+                Rectangle { visible: dl.v === "morning"; width: 64 * dl.u; height: Math.max(1, 2 * dl.u); radius: 1; color: Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.6) }
+                UiText { visible: dl.v === "morning" && w.hasBat; text: "Bateria " + Math.round((w.bat?.percentage ?? 0) * 100) + "%"; color: w.dim; font.family: w.fontFam; font.pixelSize: 12 * dl.u }
+                Row {
+                    visible: dl.v === "morning"
+                    spacing: 10 * dl.u
+                    ShapeIcon { anchors.verticalCenter: parent.verticalCenter; shape: "cookie9"; icon: "clockOutline"; size: 34 * dl.u; padding: 8 * dl.u; color: w.cont; iconColor: w.contInk }
+                    UiText { anchors.verticalCenter: parent.verticalCenter; text: dl.timeS; color: w.fg; font.family: w.fontFam; font.pixelSize: 26 * dl.u; font.weight: w.o("weight"); font.letterSpacing: 2 * dl.u; font.features: { "tnum": 1 }; font.variableAxes: w.axes }
+                }
+
+                // ---------- manuscrito ----------
+                Row {
+                    visible: dl.v === "script"
+                    spacing: 8 * dl.u
+                    ShapeIcon { anchors.verticalCenter: parent.verticalCenter; shape: "cookie9"; icon: "clockOutline"; size: 32 * dl.u; padding: 7 * dl.u; color: w.cont; iconColor: w.contInk }
+                    UiText { anchors.verticalCenter: parent.verticalCenter; text: dl.timeS; color: w.fg; font.family: w.fontFam; font.pixelSize: 24 * dl.u; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
+                }
+                UiText { visible: dl.v === "script"; text: dl.wday.split("-")[0] + "."; color: w.ac; font.family: DeskWidgets.script; font.pixelSize: 62 * dl.u; font.italic: true }
+                Rectangle {
+                    visible: dl.v === "script" && w.o("date")
+                    height: 26 * dl.u; width: sdt.implicitWidth + 24 * dl.u; radius: height / 2; color: w.cont
+                    UiText { id: sdt; anchors.centerIn: parent; text: clk.date.toLocaleDateString(w.loc, "d MMM yyyy").replace(".", "."); color: w.contInk; font.family: w.fontFam; font.pixelSize: 13 * dl.u; font.weight: Font.Medium }
+                }
+                UiText { visible: dl.v === "script" && dl.wxOk; width: Math.min(260 * dl.u, implicitWidth); wrapMode: Text.WordWrap
+                    text: w.wxSentence; color: w.dim; font.family: w.fontFam; font.pixelSize: 11 * dl.u }
+
+                // ---------- forte: cartao colorido ----------
+                Rectangle {
+                    visible: dl.v === "bold"
+                    width: 290 * dl.u; height: 138 * dl.u; radius: 28 * dl.u; color: w.ac
+                    readonly property color ink: Theme.accentText
+                    Column {
+                        anchors { left: parent.left; leftMargin: 20 * dl.u; verticalCenter: parent.verticalCenter }
+                        spacing: -2 * dl.u
+                        UiText { text: String(clk.date.getDate()).padStart(2, "0"); color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 22 * dl.u; font.weight: Font.Medium }
+                        UiText { text: clk.date.toLocaleDateString(w.loc, "MMM").replace(".", "").toUpperCase() + "."; color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 60 * dl.u; font.weight: Font.Black }
+                        UiText { text: "Hoje é " + dl.wday.toLowerCase(); color: Qt.rgba(parent.parent.ink.r, parent.parent.ink.g, parent.parent.ink.b, 0.75); font.family: w.fontFam; font.pixelSize: 13 * dl.u }
+                    }
+                    Column {
+                        anchors { right: parent.right; rightMargin: 18 * dl.u; verticalCenter: parent.verticalCenter }
+                        spacing: 2 * dl.u
+                        UiText { visible: dl.wxOk; anchors.right: parent.right; text: w.wxTemp; color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 30 * dl.u; font.weight: Font.Bold }
+                        UiText { visible: dl.wxOk; anchors.right: parent.right; text: w.cap(w.wxDesc); color: Qt.rgba(parent.parent.ink.r, parent.parent.ink.g, parent.parent.ink.b, 0.75); font.family: w.fontFam; font.pixelSize: 11 * dl.u }
+                        UiText { anchors.right: parent.right; text: dl.timeS; color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 24 * dl.u; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                        Rectangle { anchors.right: parent.right; width: 34 * dl.u; height: Math.max(1, 3 * dl.u); radius: 2; color: Qt.rgba(parent.parent.ink.r, parent.parent.ink.g, parent.parent.ink.b, 0.6) }
+                    }
+                }
             }
         }
     }

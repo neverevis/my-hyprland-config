@@ -29,13 +29,26 @@ Item {
     function isoWeek(d) { const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const day = t.getUTCDay() || 7; t.setUTCDate(t.getUTCDate() + 4 - day); const y0 = new Date(Date.UTC(t.getUTCFullYear(), 0, 1)); return Math.ceil(((t - y0) / 86400000 + 1) / 7) }
     function dayCol(d, inMonth) { const base = w.o("weekends") && weekend(d) ? Qt.tint(w.fg, Qt.rgba(w.ac2.r, w.ac2.g, w.ac2.b, 0.7)) : w.fg; return inMonth ? base : Qt.rgba(base.r, base.g, base.b, 0.35) }
 
-    // 1x1
-    Column {
+    // 1x1: cracha com a faixa colorida (MES + dia da semana) e o dia grande
+    Item {
         visible: w.cols === 1
-        anchors.centerIn: parent
-        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.ac; font.pixelSize: 14; font.weight: Font.DemiBold }
-        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.today.getDate(); color: w.fg; font.pixelSize: 64; font.weight: Font.Bold; lineHeight: 0.9 }
-        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM")); color: w.dim; font.pixelSize: 13 }
+        anchors.fill: parent
+        Rectangle {
+            id: band
+            width: parent.width; height: parent.height * 0.36
+            color: w.ac
+            topLeftRadius: w.bare ? 18 : 0; topRightRadius: w.bare ? 18 : 0
+            Row {
+                anchors.centerIn: parent
+                spacing: 6
+                UiText { text: w.today.toLocaleDateString(w.loc, "MMM").replace(".", "").toUpperCase(); color: Theme.accentText; font.pixelSize: 15; font.weight: Font.Bold; font.letterSpacing: 1 }
+                UiText { text: w.today.toLocaleDateString(w.loc, "ddd").replace(".", "").toUpperCase(); color: Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.7); font.pixelSize: 15; font.weight: Font.DemiBold; font.letterSpacing: 1 }
+            }
+        }
+        UiText {
+            anchors { horizontalCenter: parent.horizontalCenter; verticalCenter: parent.verticalCenter; verticalCenterOffset: band.height / 2 }
+            text: w.today.getDate(); color: w.fg; font.pixelSize: Math.min(60, (parent.height - band.height) * 0.9); font.weight: Font.Bold
+        }
     }
 
     // 2x1: semana
@@ -43,7 +56,11 @@ Item {
         visible: w.cols > 1 && w.rows === 1
         anchors.fill: parent
         spacing: 10
-        UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM 'de' yyyy")) + (w.o("weekNumbers") ? "  ·  semana " + w.isoWeek(w.today) : ""); color: w.fg; font.pixelSize: 16; font.weight: Font.Bold }
+        Rectangle {
+            height: 28; width: ptxt.implicitWidth + 28; radius: 14
+            color: w.ac
+            UiText { id: ptxt; anchors.centerIn: parent; text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM yyyy")) + (w.o("weekNumbers") ? "  ·  semana " + w.isoWeek(w.today) : ""); color: Theme.accentText; font.pixelSize: 14; font.weight: Font.Bold }
+        }
         Row {
             width: parent.width
             readonly property real cw: width / 7
@@ -67,10 +84,25 @@ Item {
         }
     }
 
+    // painel lateral (3x2 ou maior): icone em gema, mes, dia da semana e o dia grande
+    Column {
+        id: side
+        readonly property bool on: w.cols >= 3 && w.rows >= 2
+        visible: on
+        width: 104
+        anchors { left: parent.left; verticalCenter: parent.verticalCenter }
+        spacing: 2
+        ShapeIcon { shape: "gem"; icon: "calendar"; size: 46; padding: 11; color: w.ac; iconColor: Theme.accentText }
+        Item { width: 1; height: 6 }
+        UiText { text: w.today.toLocaleDateString(w.loc, "MMMM").toUpperCase(); color: w.dim; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 1 }
+        UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.fg; font.pixelSize: 17; font.weight: Font.Medium }
+        UiText { text: w.today.getDate(); color: w.ac; font.pixelSize: 58; font.weight: Font.Bold; lineHeight: 0.9 }
+    }
+
     // mes
     Item {
         visible: w.rows > 1
-        anchors.fill: parent
+        anchors { fill: parent; leftMargin: side.on ? side.width + 12 : 0 }
         Item {
             id: head
             width: parent.width; height: 30

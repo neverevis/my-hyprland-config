@@ -20,9 +20,47 @@ Item {
     Component.onDestruction: Weather.release()
 
     readonly property var n: Weather.now
-    readonly property string show: { const s = o("show"); return s !== "auto" ? s : (rows > 1 ? (cols >= 3 ? "days" : "hours") : (cols >= 3 ? "hours" : "now")) }
+    readonly property string show: { const s = o("show"); return s !== "auto" ? s : (rows > 1 ? "tiles" : (cols >= 3 ? "hours" : "now")) }
     function t(v) { return v === undefined || v === null ? "--" : Math.round(v) + "°" }
     readonly property var loc: Qt.locale("pt_BR")
+    readonly property bool tilesOn: show === "tiles" && rows > 1
+    function hm(d) { return d ? Qt.formatDateTime(d, "HH:mm") : "--" }
+    function vis(m) { if (m === undefined || m === null) return "--"; return Weather.imperial ? (m / 1609.34).toFixed(1) + " mi" : (m >= 10000 ? Math.round(m / 1000) : (m / 1000).toFixed(1)) + " km" }
+    // blocos de detalhe: icone, rotulo, valor (nascer e por do sol so nos largos)
+    readonly property var metrics: {
+        const d0 = Weather.days.length ? Weather.days[0] : null
+        const l = [["humidity", "Umidade", (n.humidity ?? "--") + "%"], ["wRain", "Chuva", (d0 ? d0.rain : "--") + "%"],
+                   ["wWind", "Vento", Math.round(n.wind ?? 0) + " " + Weather.windUnit], ["eye", "Visibilidade", vis(n.vis)]]
+        if (cols >= 3) l.push(["sunrise", "Nascer do sol", hm(d0 ? d0.sunrise : null)], ["sunset", "Pôr do sol", hm(d0 ? d0.sunset : null)])
+        return l
+    }
+
+    // bloco de detalhe (a "surfaceVariant" arredondada do end4); compact = so icone e valor
+    component Tile: Rectangle {
+        id: tl
+        property string icon: ""
+        property string label: ""
+        property string value: ""
+        property bool compact: false
+        radius: Math.min(18, Math.min(width, height) * 0.3)
+        color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, w.bare ? 0.1 : 0.07)
+        Row {
+            visible: tl.compact
+            anchors.centerIn: parent
+            spacing: 5
+            UiIcon { anchors.verticalCenter: parent.verticalCenter; name: tl.icon; size: 14; color: w.ac }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: tl.value; color: w.fg; font.pixelSize: 12; font.weight: Font.DemiBold }
+        }
+        Column {
+            visible: !tl.compact
+            anchors.centerIn: parent
+            width: parent.width - 12
+            spacing: 1
+            UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: tl.icon; size: Math.min(20, tl.height * 0.3); color: w.ac }
+            UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: tl.value; color: w.fg; font.pixelSize: Math.min(15, tl.height * 0.22); font.weight: Font.Bold }
+            UiText { visible: tl.height > 58; width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: tl.label; color: w.dim; font.pixelSize: 10 }
+        }
+    }
 
     // sem dados
     Column {
@@ -49,7 +87,7 @@ Item {
                 visible: parent.parent.tiny
                 anchors.centerIn: parent
                 spacing: 2
-                UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: Weather.icon(w.n.code, w.n.day); size: 46; color: w.ac }
+                ShapeIcon { anchors.horizontalCenter: parent.horizontalCenter; shape: "cookie12"; icon: Weather.icon(w.n.code, w.n.day); size: 52; padding: 11; color: w.ac; iconColor: Theme.accentText }
                 UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold }
                 UiText { anchors.horizontalCenter: parent.horizontalCenter; text: Weather.place; color: w.dim; font.pixelSize: 11; width: w.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight }
             }
@@ -57,7 +95,7 @@ Item {
                 visible: !parent.parent.tiny
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 14
-                UiIcon { anchors.verticalCenter: parent.verticalCenter; name: Weather.icon(w.n.code, w.n.day); size: Math.min(nowBox.height * 0.7, 72); color: w.ac }
+                ShapeIcon { anchors.verticalCenter: parent.verticalCenter; shape: "cookie12"; icon: Weather.icon(w.n.code, w.n.day); size: Math.min(nowBox.height * 0.7, 72); padding: size * 0.22; color: w.ac; iconColor: Theme.accentText }
                 Column {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 0
@@ -71,6 +109,7 @@ Item {
                         }
                     }
                     UiText { text: Weather.describe(w.n.code); color: w.fg; font.pixelSize: 14; font.weight: Font.Medium }
+                    UiText { visible: w.rows > 1; text: "Sensação " + w.t(w.n.feels); color: w.dim; font.pixelSize: 12 }
                     Row {
                         spacing: 4
                         UiIcon { name: "mapMarker"; size: 12; color: w.dim; anchors.verticalCenter: parent.verticalCenter }
@@ -78,21 +117,33 @@ Item {
                     }
                 }
             }
-            // detalhes a direita (2x1 sem previsao, ou em cima nos altos)
-            Column {
-                visible: w.o("details") && !parent.parent.tiny && (w.show === "now" || w.rows > 1) && nowBox.width > 300
+            // detalhes a direita (2x1 sem previsao, ou em cima nos altos sem blocos): quatro blocos pequenos
+            Grid {
+                visible: w.o("details") && !parent.parent.tiny && !w.tilesOn && (w.show === "now" || w.rows > 1) && nowBox.width > 300
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                spacing: 4
+                columns: 2; spacing: 6
                 Repeater {
-                    model: [["temperature", "Sensação " + w.t(w.n.feels)], ["humidity", (w.n.humidity ?? "--") + "% umidade"], ["wWind", Math.round(w.n.wind ?? 0) + " " + Weather.windUnit],
-                            ["umbrella", (Weather.days.length ? Weather.days[0].rain : "--") + "% chuva"]]
-                    delegate: Row {
-                        required property var modelData
-                        anchors.right: parent.right
-                        spacing: 6
-                        UiText { text: modelData[1]; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
-                        UiIcon { name: modelData[0]; size: 13; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
-                    }
+                    model: w.metrics.slice(0, 4)
+                    delegate: Tile { required property var modelData; width: 88; height: 34; compact: true; icon: modelData[0]; value: modelData[2] }
+                }
+            }
+        }
+
+        // ---- blocos de detalhe (2x2: 4, 3x2: 6) ----
+        Grid {
+            visible: w.tilesOn
+            y: parent.topH + 6
+            width: parent.width; height: parent.height - parent.topH - 6
+            columns: w.cols >= 3 ? 3 : 2
+            spacing: 8
+            readonly property int rowsN: Math.ceil(w.metrics.length / columns)
+            Repeater {
+                model: w.metrics
+                delegate: Tile {
+                    required property var modelData
+                    width: (parent.width - parent.spacing * (parent.columns - 1)) / parent.columns
+                    height: (parent.height - parent.spacing * (parent.rowsN - 1)) / parent.rowsN
+                    icon: modelData[0]; label: modelData[1]; value: modelData[2]
                 }
             }
         }
@@ -100,7 +151,7 @@ Item {
         // ---- previsao ----
         Row {
             id: fc
-            visible: w.show !== "now" && !parent.tiny
+            visible: w.show !== "now" && !w.tilesOn && !parent.tiny
             readonly property bool side: w.rows === 1
             x: side ? parent.width - width : 0
             y: side ? (parent.height - height) / 2 : parent.topH + 6

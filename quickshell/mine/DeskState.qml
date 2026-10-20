@@ -64,7 +64,7 @@ Singleton {
             { sec: "Tela de bloqueio", key: "lockStyle", label: "Estilo na tela de bloqueio", type: "seg", preview: true, previewAs: "style", def: "same", options: [["same", "O mesmo", "check"], ["digital", "Digital", "clockDigital"], ["analog", "Flor", "flowerOutline"], ["daily", "Diário", "calendar"], ["pixel", "Pixel", "grid"]], when: { lock: true } }
           ] },
         { type: "weather", group: "time", name: "Clima", icon: "sun", desc: "Agora e a previsão (Open-Meteo, sem chave).", sizes: [[2, 1], [1, 1], [3, 1], [2, 2], [3, 2]], options: [
-            { sec: "Mostrar", key: "show", label: "Conteúdo", type: "seg", preview: true, def: "auto", options: [["auto", "Conforme o tamanho", "auto"], ["now", "Só agora", "cloudSun"], ["hours", "Próximas horas", "clockOutline"], ["days", "Próximos dias", "calendarWeek"]] },
+            { sec: "Mostrar", key: "show", label: "Conteúdo", type: "seg", preview: true, def: "auto", options: [["auto", "Conforme o tamanho", "auto"], ["now", "Só agora", "cloudSun"], ["tiles", "Blocos de detalhes", "view_grid"], ["hours", "Próximas horas", "clockOutline"], ["days", "Próximos dias", "calendarWeek"]] },
             { sec: "Mostrar", key: "details", label: "Detalhes (sensação, vento, umidade)", icon: "info", type: "switch", def: true }
           ] },
         { type: "world", group: "time", name: "Relógio mundial", icon: "web", desc: "Várias cidades ao mesmo tempo.", sizes: [[2, 1], [2, 2], [3, 1], [1, 2]], options: [

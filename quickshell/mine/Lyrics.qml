@@ -24,6 +24,9 @@ Singleton {
     readonly property int index: { let i = -1; for (let k = 0; k < lines.length; k++) { if (lines[k].t <= pos + 0.25) i = k; else break } return i }
     onKeyChanged: if (users > 0) look()
 
+    // tentar de novo (clique no indicador)
+    function restart() { loadedKey = ""; look() }
+
     function look() {
         if (!player || key === loadedKey || !player.trackTitle) return
         loadedKey = key; lines = []; plain = false; status = "buscando"

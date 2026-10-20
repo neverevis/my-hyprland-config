@@ -17,6 +17,7 @@ Item {
     property color cont: Theme.primaryContainer
     property color contInk: Theme.primaryContainerInk
     property bool bare: false
+    property string wid: ""
     function o(k) { return DeskState.opt({ type: "media", opts: w.opts }, k) }
     readonly property bool lyr: o("lyrics")
     onLyrChanged: lyr ? Lyrics.use() : Lyrics.release()
@@ -69,12 +70,12 @@ Item {
             Flower { anchors.fill: parent; visible: !parent.ready; shape: parent.shape; color: w.bare ? w.cont : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.2)
                 UiIcon { anchors.centerIn: parent; name: "music"; size: parent.width * 0.35; color: w.ac } }
         }
-        Rectangle {
+        ShapeIcon {
             visible: body.tiny
             anchors.centerIn: cover
-            width: 52; height: 52; radius: 26
-            color: Qt.rgba(0, 0, 0, 0.5)
-            UiIcon { anchors.centerIn: parent; name: w.p && w.p.isPlaying ? "pause" : "play"; size: 26; color: "white" }
+            shape: "cookie12"; size: 56; padding: 14
+            icon: w.p && w.p.isPlaying ? "pause" : "play"
+            color: w.ac; iconColor: Theme.accentText
             MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: if (w.p) w.p.togglePlaying() }
         }
         Column {
@@ -108,13 +109,23 @@ Item {
                 spacing: 6
                 Repeater {
                     model: [["prev", () => w.p.previous()], [w.p && w.p.isPlaying ? "pause" : "play", () => w.p.togglePlaying()], ["next", () => w.p.next()]]
+                        .concat(w.cols >= 2 ? [["quoteClose", () => DeskState.setOpt(w.wid, "lyrics", !w.lyr)]] : [])
                     delegate: Rectangle {
                         required property var modelData
                         required property int index
-                        width: index === 1 ? 40 : 34; height: width; radius: width / 2
-                        color: index === 1 ? w.ac : (bm.containsMouse ? Qt.rgba(w.tfg.r, w.tfg.g, w.tfg.b, 0.16) : Qt.rgba(w.tfg.r, w.tfg.g, w.tfg.b, 0.08))
-                        UiIcon { anchors.centerIn: parent; name: modelData[0]; size: index === 1 ? 20 : 17; color: index === 1 ? Theme.accentText : w.tfg }
-                        MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: if (w.p) modelData[1]() }
+                        readonly property bool play: index === 1
+                        readonly property bool lyBtn: index === 3
+                        width: play ? 46 : 34; height: play ? 46 : 34; radius: width / 2
+                        anchors.verticalCenter: parent ? parent.verticalCenter : undefined
+                        color: play ? "transparent" : lyBtn && w.lyr ? Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.28) : (bm.containsMouse ? Qt.rgba(w.tfg.r, w.tfg.g, w.tfg.b, 0.16) : Qt.rgba(w.tfg.r, w.tfg.g, w.tfg.b, 0.08))
+                        ShapeIcon { visible: parent.play; anchors.fill: parent; shape: "cookie12"; size: parent.width; padding: 12; icon: modelData[0]; color: w.ac; iconColor: Theme.accentText }
+                        UiIcon { visible: !parent.play; anchors.centerIn: parent; name: modelData[0]; size: 17; color: parent.lyBtn && w.lyr ? w.ac : w.tfg }
+                        MouseArea {
+                            id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            // botao direito no "proxima" volta a anterior (como no end4)
+                            onClicked: m => { if (!w.p) return; if (m.button === Qt.RightButton && index === 2) w.p.previous(); else modelData[1]() }
+                        }
                     }
                 }
             }
@@ -141,7 +152,10 @@ Item {
                 font.pixelSize: index === Lyrics.index ? 15 : 13; font.weight: index === Lyrics.index ? Font.Bold : Font.Normal
                 Behavior on color { ColorAnimation { duration: 250 } }
             }
-            UiText { visible: lyrics.count === 0; anchors.centerIn: parent; text: Lyrics.status === "buscando" ? "Buscando a letra…" : "Sem letra para esta música"; color: w.tdim; font.pixelSize: 12 }
+            // buscando: blob de carregamento; sem letra: clique para tentar de novo
+            LoadingBlob { visible: lyrics.count === 0 && Lyrics.status === "buscando"; anchors.centerIn: parent; size: 44; color: w.contInk; bg: w.cont }
+            UiText { visible: lyrics.count === 0 && Lyrics.status !== "buscando"; anchors.centerIn: parent; text: "Sem letra para esta música\nToque para tentar de novo"; horizontalAlignment: Text.AlignHCenter; color: w.tdim; font.pixelSize: 12
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Lyrics.restart() } }
         }
     }
 }
