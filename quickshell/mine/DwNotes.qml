@@ -143,7 +143,7 @@ Item {
                 width: fl.width
                 height: Math.max(fl.height, contentHeight)   // o bloco inteiro aceita o clique (nao so a primeira linha)
                 wrapMode: TextEdit.Wrap
-                color: w.fg; font.pixelSize: w.o("size"); font.family: w.o("mono") ? Theme.mono : Theme.font
+                color: w.fg; font.pixelSize: w.o("size"); font.family: w.o("mono") ? Theme.mono : Theme.fontReading
                 selectionColor: Theme.accent; selectedTextColor: Theme.accentText
                 selectByMouse: true
                 function load() { const n = w.notes.find(x => x.id === w.shown); text = n ? n.text : "" }

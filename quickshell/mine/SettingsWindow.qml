@@ -20,6 +20,7 @@ Scope {
     IpcHandler {
         target: "settings"
         function toggle(): void { Settings.settingsOpen = !Settings.settingsOpen }
+        function open(): void { Settings.settingsOpen = true }
         function close(): void { Settings.settingsOpen = false }
         function isopen(): bool { return root.open }
         function go(p: string): void { Settings.settingsPage = p; Settings.settingsOpen = true }   // abre numa pagina (bars, look, wall...)
@@ -61,7 +62,9 @@ Scope {
         ] }
     ]
     readonly property var allPages: groups.reduce((a, g) => a.concat(g.pages), [])
-    function pageInfo(id) { return allPages.find(p => p.id === id) ?? null }
+    // pagina escondida (so se chega pelo cabecalho da barra lateral)
+    readonly property var profilePage: ({ id: "profile", label: "Perfil", icon: "account", desc: "Seu nome, a descrição do cabeçalho, a foto de perfil e o nome da máquina." })
+    function pageInfo(id) { return id === "profile" ? profilePage : (allPages.find(p => p.id === id) ?? null) }
 
     // ---- busca: indice montado a partir das proprias paginas (titulos dos cartoes, interruptores e controles) ----
     // cada pagina e criada uma vez escondida (assincrono), percorrida e destruida; assim o indice nunca fica desatualizado
@@ -86,10 +89,10 @@ Scope {
     }
     signal searchFor(string q)
     signal findFor(string q)
-    readonly property var cur: groups.reduce((a, g) => a.concat(g.pages), []).find(p => p.id === Settings.settingsPage) ?? groups[0].pages[0]
+    readonly property var cur: pageInfo(Settings.settingsPage) ?? groups[0].pages[0]
 
     // ---- paginas e indice de busca (fora da janela: o launcher tambem procura opcoes com ela fechada) ----
-    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC, system: systemC, about: aboutC, overview: overviewC })
+    readonly property var comps: ({ bars: barsC, home: homeC, notifications: notifC, launcher: launcherC, frame: frameC, blur: blurC, anim: animC, wall: wallC, look: lookC, session: sessionC, desktop: desktopC, looks: looksC, hypr: hyprC, tools: toolsC, system: systemC, about: aboutC, profile: profileC, overview: overviewC })
     Item { id: indexHost; visible: false; width: 900; height: 10 }
     Component { id: barsC; PageBars { geo: root.geo } }
     Component { id: homeC; PageHome {} }
@@ -107,6 +110,7 @@ Scope {
     Component { id: toolsC; PageTools {} }
     Component { id: systemC; PageSystem {} }
     Component { id: aboutC; PageAbout {} }
+    Component { id: profileC; PageProfile {} }
     Component { id: overviewC; PageOverview { pages: root.groups } }
     function walk(o, card, out, pg) {
         if (!o) return
@@ -120,7 +124,7 @@ Scope {
     function buildIndex() {
         if (root.index.length || root.indexing) return
         root.indexing = true
-        const pages = root.allPages.slice()
+        const pages = root.allPages.concat([root.profilePage])
         const out = []
         const next = () => {
             const pg = pages.shift()
@@ -185,7 +189,23 @@ Scope {
             }
         }
         Keys.onEscapePressed: { if (root.query !== "") { root.query = ""; search.text = "" } else Settings.settingsOpen = false }
-        Keys.onPressed: e => { if ((e.modifiers & Qt.ControlModifier) && e.key === Qt.Key_F) { search.forceActiveFocus(); e.accepted = true } }
+        // teclado: Ctrl+F busca; Tab / Shift+Tab (ou Ctrl+PageDown / PageUp) trocam de pagina; setas e PageUp/PageDown rolam
+        function stepPage(d) {
+            const ids = root.allPages.map(p => p.id)
+            const i = Math.max(0, ids.indexOf(Settings.settingsPage))
+            Settings.settingsPage = ids[(i + d + ids.length) % ids.length]
+        }
+        function scrollBy(dy) { const f = pageFlick; f.contentY = Math.max(0, Math.min(Math.max(0, f.contentHeight - f.height), f.contentY + dy)) }
+        Keys.onPressed: e => {
+            const ctrl = e.modifiers & Qt.ControlModifier
+            if (ctrl && e.key === Qt.Key_F) { search.forceActiveFocus(); e.accepted = true }
+            else if (e.key === Qt.Key_Tab || (ctrl && e.key === Qt.Key_PageDown)) { stepPage(1); e.accepted = true }
+            else if (e.key === Qt.Key_Backtab || (ctrl && e.key === Qt.Key_PageUp)) { stepPage(-1); e.accepted = true }
+            else if (e.key === Qt.Key_Down) { scrollBy(90); e.accepted = true }
+            else if (e.key === Qt.Key_Up) { scrollBy(-90); e.accepted = true }
+            else if (e.key === Qt.Key_PageDown) { scrollBy(pageFlick.height * 0.85); e.accepted = true }
+            else if (e.key === Qt.Key_PageUp) { scrollBy(-pageFlick.height * 0.85); e.accepted = true }
+        }
 
         // contorno desenhado por cima de tudo (senao a barra lateral cobre a borda)
         Rectangle { visible: !root.windowed; anchors.fill: parent; radius: 22; color: "transparent"; border.width: 1; border.color: Theme.border; z: 100 }
@@ -205,7 +225,7 @@ Scope {
                 anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16; topMargin: 20 }
                 spacing: 4
 
-                // cabecalho: foto, nome e a distro; o clique leva a foto de perfil (pagina Sessao)
+                // cabecalho: foto, nome e a descricao; o clique leva a pagina Perfil
                 Item {
                     width: parent.width; height: 62
                     Row {
@@ -216,10 +236,10 @@ Scope {
                         Column {
                             anchors.verticalCenter: parent.verticalCenter
                             UiText { text: Profile.name; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
-                            UiText { text: SysInfo.info.distro || "Configurações"; color: Theme.muted; font.pixelSize: 12 }
+                            UiText { text: Profile.desc || "Configurações"; color: Theme.muted; font.pixelSize: 12 }
                         }
                     }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.settingsPage = "session" }
+                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.settingsPage = "profile" }
                     Component.onCompleted: SysInfo.use()
                     Component.onDestruction: SysInfo.release()
                 }

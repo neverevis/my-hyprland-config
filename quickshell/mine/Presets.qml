@@ -2,6 +2,7 @@
 pragma Singleton
 
 import Quickshell
+import Quickshell.Io
 import QtQuick
 
 Singleton {
@@ -30,10 +31,39 @@ Singleton {
         { id: "solarized", name: "Solarized Dark", dark: true, bg: "#002b36", lowest: "#001e26", low: "#00252e", s1: "#073642", s2: "#0d4452", text: "#93a1a1", muted: "#839496", outline: "#586e75", primary: "#268bd2", secondary: "#2aa198", tertiary: "#d33682", error: "#dc322f", term: ["#073642","#dc322f","#859900","#b58900","#268bd2","#d33682","#2aa198","#eee8d5","#586e75","#cb4b16","#859900","#b58900","#268bd2","#6c71c4","#2aa198","#fdf6e3"] }
     ]
 
-    function find(id: string): var { return list.find(p => p.id === id) ?? list[0] }
+    // esquemas do usuario: arquivos .json em schemes/ (scripts/schemes.py valida e completa)
+    property var userList: []
+    readonly property var all: list.concat(userList)
+    readonly property string dir: Qt.resolvedUrl("schemes").toString().replace("file://", "")
+    readonly property string schemesPy: Qt.resolvedUrl("scripts/schemes.py").toString().replace("file://", "")
+    property string importMsg: ""
+    function reload(): void { loader.running = false; loader.running = true }
+    function importFile(path: string): void { importMsg = ""; imp.command = ["python3", schemesPy, dir, "--import", path]; imp.running = false; imp.running = true }
+    Component.onCompleted: reload()
+    Process {
+        id: loader
+        command: ["python3", root.schemesPy, root.dir]
+        stdout: StdioCollector { onStreamFinished: { try { root.userList = JSON.parse(text) } catch (e) { root.userList = [] } } }
+    }
+    Process {
+        id: imp
+        stdout: StdioCollector { onStreamFinished: { root.importMsg = text.trim() === "ok" ? "Esquema importado." : text.trim().replace(/^erro: /, "Não deu: "); if (text.trim() === "ok") root.reload() } }
+    }
+
+    // cores de destaque do esquema (as cores ANSI nomeadas + a principal dele), para trocar a principal/secundaria
+    function accents(p: var): var {
+        const n = [["Padrão", p.primary], ["Vermelho", p.term[1]], ["Verde", p.term[2]], ["Amarelo", p.term[3]], ["Azul", p.term[4]], ["Magenta", p.term[5]], ["Ciano", p.term[6]]]
+        return n.map(x => ({ name: x[0], color: x[1] }))
+    }
+
+    function find(id: string): var { return all.find(p => p.id === id) ?? list[0] }
 
     // papeis do Material derivados das cores base (mesmos nomes que o scripts/material.py devolve)
-    function toMaterial(p: var): var {
+    function toMaterial(p0: var, pri: string, sec: string): var {
+        // principal/secundaria escolhidas por cima do esquema (vazio = as dele)
+        const p = Object.assign({}, p0)
+        if (pri) p.primary = pri
+        if (sec) p.secondary = sec
         const m = {
             primary: p.primary, onPrimary: p.bg, secondary: p.secondary, tertiary: p.tertiary,
             primaryContainer: mix(p.primary, p.bg, 0.72), secondaryContainer: mix(p.secondary, p.bg, 0.72), tertiaryContainer: mix(p.tertiary, p.bg, 0.72),

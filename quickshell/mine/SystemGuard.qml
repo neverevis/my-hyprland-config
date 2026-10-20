@@ -68,8 +68,9 @@ Singleton {
     Process {
         id: busyProc
         property var cb: null
-        command: ["sh", "-c", "pgrep -x 'pacman|yay|paru|makepkg' >/dev/null && echo 1 || echo 0"]
-        stdout: StdioCollector { onStreamFinished: { const f = busyProc.cb; busyProc.cb = null; if (f) f(text.trim() === "1") } }
+        // pkg = gerenciador de pacotes rodando (ou db.lck); dl = download em andamento (wget, aria2c, yt-dlp ou .part/.crdownload recente em Downloads)
+        command: ["sh", "-c", "if pgrep -x 'pacman|yay|paru|makepkg' >/dev/null || [ -e /var/lib/pacman/db.lck ]; then echo pkg; elif pgrep -x 'wget|aria2c|yt-dlp' >/dev/null || find \"$HOME/Downloads\" \"$HOME/Transferências\" -maxdepth 1 \\( -name '*.part' -o -name '*.crdownload' \\) -mmin -2 2>/dev/null | grep -q .; then echo dl; else echo 0; fi"]
+        stdout: StdioCollector { onStreamFinished: { const f = busyProc.cb; busyProc.cb = null; const k = text.trim(); if (f) f(k === "pkg" || k === "dl", k) } }
     }
 
     // ---- conflitos: outros daemons de notificacao ----

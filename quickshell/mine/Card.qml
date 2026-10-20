@@ -45,7 +45,7 @@ Rectangle {
                 width: parent.width - (badge.visible ? badge.width + 12 : 0)
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 2
-                UiText { text: c.title; color: Theme.text; font.pixelSize: 15; font.weight: Font.DemiBold }
+                UiText { text: c.title; font.family: Theme.fontTitle; color: Theme.text; font.pixelSize: 15; font.weight: Font.DemiBold }
                 UiText { visible: c.subtitle !== ""; text: c.subtitle; color: Theme.muted; font.pixelSize: 12; wrapMode: Text.WordWrap; width: parent.width }
             }
         }

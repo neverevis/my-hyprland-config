@@ -1,4 +1,5 @@
 // Pagina "Aparencia": vidro, tema de cores (wallpaper ou esquemas prontos) e cores manuais.
+import Quickshell
 import QtQuick
 
 Column {
@@ -111,7 +112,7 @@ Column {
                 columns: 3
                 spacing: 8
                 Repeater {
-                    model: Presets.list
+                    model: Presets.all
                     delegate: Rectangle {
                         id: pc
                         required property var modelData
@@ -139,9 +140,51 @@ Column {
                             width: 20; height: 20; radius: 10; color: Theme.accent
                             UiIcon { anchors.centerIn: parent; name: "check"; size: 13; color: Theme.accentText }
                         }
-                        MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.themePreset = pc.modelData.id }
+                        MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.themePreset = pc.modelData.id; Settings.themePresetPrimary = ""; Settings.themePresetSecondary = "" } }
                     }
                 }
+            }
+
+            // cor principal e secundaria do esquema escolhido (as cores nomeadas dele)
+            Column {
+                visible: Settings.themeSource === "preset"
+                width: parent.width
+                spacing: 6
+                Repeater {
+                    model: [["Principal", "themePresetPrimary"], ["Secundária", "themePresetSecondary"]]
+                    delegate: Row {
+                        id: acRow
+                        required property var modelData
+                        spacing: 8
+                        UiText { width: 84; anchors.verticalCenter: parent.verticalCenter; text: acRow.modelData[0]; color: Theme.muted; font.pixelSize: 12 }
+                        Repeater {
+                            model: Presets.accents(Presets.find(Settings.themePreset)).filter((a, i) => acRow.modelData[1] === "themePresetPrimary" || i > 0)
+                            delegate: Rectangle {
+                                id: sw
+                                required property var modelData
+                                required property int index
+                                readonly property string key: acRow.modelData[1]
+                                readonly property bool sel: (Settings[key] || "") === (index === 0 && key === "themePresetPrimary" ? "" : modelData.color)
+                                width: 26; height: 26; radius: 13; color: modelData.color
+                                border.width: sel ? 2 : 1; border.color: sel ? Theme.accent : Qt.rgba(1, 1, 1, 0.2)
+                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings[sw.key] = (sw.index === 0 && sw.key === "themePresetPrimary") ? "" : sw.modelData.color }
+                            }
+                        }
+                    }
+                }
+                Row {
+                    spacing: 8
+                    UiButton { icon: "folderOpen"; text: "Pasta dos esquemas"; kind: "ghost"; onClicked: Quickshell.execDetached(["sh", "-c", 'mkdir -p "$1" && xdg-open "$1"', "sh", Presets.dir]) }
+                    UiButton { icon: "refresh"; text: "Recarregar"; kind: "ghost"; onClicked: Presets.reload() }
+                }
+                Row {
+                    spacing: 8
+                    UiField { id: schF; width: 300; placeholderText: "Importar um .json (caminho)"; onAccepted: schB.clicked() }
+                    UiButton { id: schB; icon: "plus"; text: "Importar"; onClicked: if (schF.text.trim() !== "") { Presets.importFile(schF.text.trim()); schF.text = "" } }
+                }
+                UiText { visible: Presets.importMsg !== ""; text: Presets.importMsg; color: Theme.muted; font.pixelSize: 12 }
+                UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 11
+                    text: "Seus esquemas: arquivos .json na pasta (veja exemplo.json.txt). Mínimo: name, dark, bg, text, primary, secondary, tertiary, error." }
             }
 
             UiLabel { text: "Paleta atual" }
@@ -206,16 +249,17 @@ Column {
         }
         UiSwitch { icon: "desktop"; label: "kitty"; description: "Cores do terminal (16 cores, fundo e cursor)."; checked: Settings.themeKitty; onToggled: on => Settings.themeKitty = on }
         UiSwitch { icon: "apps"; label: "Apps GTK"; description: "GTK 3 e 4 (Nautilus, configurações do GNOME…)."; checked: Settings.themeGtk; onToggled: on => Settings.themeGtk = on }
+        UiSwitch { icon: "apps"; label: "Apps Qt / KDE"; description: "Gera o esquema de cores em ~/.cache/quickshell-mine/qt/quickshell.colors. Para valer, aponte o colorScheme do qtengine (config.json) para esse arquivo."; checked: Settings.themeQt; onToggled: on => Settings.themeQt = on }
         UiSwitch { icon: "web"; label: "Brave"; description: "Cor do tema do navegador."; checked: Settings.themeBrave; onToggled: on => Settings.themeBrave = on }
     }
 
     Card {
         icon: "textBox"
         title: "Fontes"
-        subtitle: "Do shell inteiro: barras, painéis, widgets e esta janela. Vazio usa a fonte do sistema."
+        subtitle: "Do shell inteiro: barras, painéis, widgets e esta janela. Vazio usa a fonte do sistema (os papéis vazios usam a da interface)."
         OptionsForm {
             width: parent.width
-            schema: [{ key: "fontUi", label: "Interface", type: "font" }, { key: "fontMono", label: "Monoespaçada (código, notas, contas)", type: "font" }]
+            schema: [{ key: "fontUi", label: "Interface", type: "font" }, { key: "fontNumbers", label: "Números (relógios)", type: "font" }, { key: "fontTitle", label: "Títulos dos cartões", type: "font" }, { key: "fontReading", label: "Leitura (notas)", type: "font" }, { key: "fontExpressive", label: "Textos decorativos dos widgets", type: "font" }, { key: "fontMono", label: "Monoespaçada (código, notas, contas)", type: "font" }]
             get: k => Settings[k]
             set: (k, v) => Settings[k] = v
         }

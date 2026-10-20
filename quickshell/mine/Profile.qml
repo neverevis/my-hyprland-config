@@ -9,7 +9,18 @@ import QtQuick
 Singleton {
     id: root
     readonly property string user: Quickshell.env("USER") || "?"
-    readonly property string name: user.charAt(0).toUpperCase() + user.slice(1)
+    readonly property string name: Settings.displayName.trim() !== "" ? Settings.displayName.trim() : user.charAt(0).toUpperCase() + user.slice(1)
+    // descricao do cabecalho das configuracoes: distro, tempo ligado ou um texto livre
+    property int uptimeS: 0
+    readonly property string desc: Settings.profileDesc === "text" ? Settings.profileDescText
+        : Settings.profileDesc === "uptime" ? "Ligado há " + upText(uptimeS) : (SysInfo.info.distro || "")
+    function upText(s) {
+        const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60)
+        return d > 0 ? d + " d " + h + " h" : h > 0 ? h + " h " + m + " min" : m + " min"
+    }
+    FileView { id: upf; path: "/proc/uptime" }
+    Timer { interval: 60000; repeat: true; running: Settings.profileDesc === "uptime" && Settings.settingsOpen; triggeredOnStart: true
+        onTriggered: { upf.reload(); root.uptimeS = Math.floor(parseFloat(upf.text())) || 0 } }
     readonly property string initial: user.charAt(0).toUpperCase()
     readonly property string facePath: Quickshell.env("HOME") + "/.face"
     property int version: 0   // muda a cada troca: forca as imagens a recarregar (sem cache)

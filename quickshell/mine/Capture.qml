@@ -22,7 +22,7 @@ Singleton {
     readonly property string file: Quickshell.env("HOME") + "/.cache/quickshell-mine/frozen.png"
     readonly property string script: Qt.resolvedUrl("scripts/capture.py").toString().replace("file://", "")
     readonly property var actions: [
-        { id: "copy", label: "Copiar", icon: "frame", hint: "Copia e salva em Imagens/Screenshots" },
+        { id: "copy", label: "Copiar", icon: "frame", hint: "Copia e salva (pasta em Ferramentas)" },
         { id: "ocr", label: "Texto", icon: "textBox", hint: "Copia o texto da área (OCR)" },
         { id: "translate", label: "Traduzir", icon: "earth", hint: "Lê o texto e copia a tradução para o português" },
         { id: "annotate", label: "Anotar", icon: "pencil", hint: "Abre no satty para desenhar e escrever" },
@@ -60,6 +60,7 @@ Singleton {
     }
     Process {
         id: proc
+        environment: ({ QS_SHOTDIR: Settings.shotDir })
         stdout: StdioCollector { id: out }
         onExited: {
             root.busy = ""

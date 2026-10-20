@@ -18,6 +18,11 @@ Column {
                 delegate: UiButton { required property var modelData; icon: modelData.icon; text: modelData.label; onClicked: { Settings.settingsOpen = false; Qt.callLater(() => Capture.start(modelData.id)) } }
             }
         }
+        Row {
+            spacing: 10
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Pasta das capturas"; color: Theme.text; font.pixelSize: 13 }
+            UiField { width: 320; text: Settings.shotDir; placeholderText: "Vazio = só copiar, não salvar"; onEditingFinished: Settings.shotDir = text.trim() }
+        }
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
             text: "Para o Print Screen abrir este seletor, troque nos atalhos do Hyprland o comando por:  qs -c mine ipc call region open copy" }
         UiText { visible: Capture.lastMsg !== ""; width: parent.width; wrapMode: Text.WordWrap; text: "Última: " + Capture.lastMsg; color: Theme.text; font.pixelSize: 12 }

@@ -44,6 +44,7 @@ HomeScroll {
         height: pcol.implicitHeight + 52
         title: "Dispositivos"; icon: "bluetooth"
         headerRight: [
+            UiButton { icon: "cog"; kind: "ghost"; onClicked: AppCmds.run("bluetooth") },
             UiSwitch {
                 width: 50
                 visible: !!pg.bt

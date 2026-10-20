@@ -26,7 +26,7 @@ Item {
         text: w.o("text") || (DeskState.editing ? "Duplo clique para escrever…" : "")
         opacity: w.o("text") ? 1 : 0.5
         color: w.fg
-        font.family: w.o("font") || Theme.font
+        font.family: w.o("font") || Theme.fontExpressive
         font.pixelSize: w.o("size")
         font.weight: w.o("weight")
         font.italic: w.o("italic")

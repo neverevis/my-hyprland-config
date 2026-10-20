@@ -22,6 +22,10 @@ Item {
     readonly property string source: Settings.themeSource
     readonly property string preset: Settings.themePreset
     onSourceChanged: if (Settings.themeOn) load()
+    readonly property string presetPri: Settings.themePresetPrimary
+    readonly property string presetSec: Settings.themePresetSecondary
+    onPresetPriChanged: if (Settings.themeOn && source === "preset") load()
+    onPresetSecChanged: if (Settings.themeOn && source === "preset") load()
     onPresetChanged: if (Settings.themeOn && source === "preset") load()
     onSrcChanged: if (Settings.themeOn && source === "wallpaper") load()
     onModeChanged: if (Settings.themeOn) load()
@@ -31,7 +35,7 @@ Item {
     Component.onCompleted: if (Settings.themeOn) load()
 
     function load() {
-        if (source === "preset") { apply(Presets.toMaterial(Presets.find(preset))); return }
+        if (source === "preset") { apply(Presets.toMaterial(Presets.find(preset), presetPri, presetSec)); return }
         if (!src && !seed) return
         if (pyOk) {
             const key = (seed ? "seed" : src) + "|" + mode + "|" + variant + "|" + seed

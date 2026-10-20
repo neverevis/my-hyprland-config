@@ -25,7 +25,7 @@ Item {
     readonly property bool secs: o("seconds")
     readonly property bool h12: o("h12")
     readonly property real sc: o("scale") / 100
-    readonly property string fontFam: o("font") || Theme.font
+    readonly property string fontFam: o("font") || Theme.fontNumbers
     // eixos de fontes variaveis (largura e arredondamento); fontes comuns ignoram
     readonly property var axes: { const a = {}, fw = o("fwidth"), fr = o("fround"); if (fw !== 100) a.wdth = fw; if (fr > 0) a.ROND = fr; return a }
     readonly property int alignFlag: { let a = o("align"); if (a === "auto") a = posX < 0.34 ? "left" : posX > 0.66 ? "right" : "center"

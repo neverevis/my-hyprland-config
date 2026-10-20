@@ -106,6 +106,12 @@ Column {
             value: monCard.mon ? monCard.mon.scale : 1
             onPicked: v => monCard.apply({ scale: v })
         }
+        UiLabel { text: "Orientação" }
+        UiSeg {
+            options: [[0, "Normal"], [1, "90°"], [2, "180°"], [3, "270°"]]
+            value: monCard.mon ? (Settings.hyprMonitor && Settings.hyprMonitor.transform !== undefined ? Settings.hyprMonitor.transform : monCard.mon.transform) : 0
+            onPicked: v => monCard.apply({ transform: v })
+        }
     }
 
     // ---- apps ao iniciar ----

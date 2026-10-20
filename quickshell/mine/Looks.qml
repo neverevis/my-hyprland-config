@@ -21,7 +21,7 @@ Singleton {
         { id: "bars", label: "Barras e moldura", icon: "bars", def: true,
           keys: ["bars", "edge", "cornerRadius", "fillet", "topRadius", "outline", "barsPanelMode", "hideDelay", "showDelay"] },
         { id: "colors", label: "Cores e vidro", icon: "palette", def: true,
-          keys: ["themeOn", "themeMode", "themeSource", "themePreset", "themeVariant", "userAccent", "userBarColor", "userTextColor",
+          keys: ["themeOn", "themeMode", "themeSource", "themePreset", "themePresetPrimary", "themePresetSecondary", "themeVariant", "userAccent", "userBarColor", "userTextColor",
                  "glass", "glassOpacity", "glassAuto", "glassSplit", "glassContent", "uiOled", "cornerMode", "shellBlur", "shellGrain", "shellIgnoreAlpha",
                  "themeBorders", "themeBorderA", "themeBorderB", "themeBorderIn", "themeBorderAngle", "themeBorderAlpha", "themeBorderInAlpha"] },
         { id: "anims", label: "Animações", icon: "animation", def: true, keys: ["animCfg"] },
@@ -34,7 +34,7 @@ Singleton {
         { id: "lock", label: "Tela de bloqueio", icon: "lock", def: true, keys: ["lockBlur", "lockDim", "lockMedia", "lockSeconds", "lockClock", "lockClockPos", "lockChars", "lockWallpaper"] },
         { id: "hypr", label: "Hyprland (blur)", icon: "blur", def: false,
           keys: ["blurManaged", "blurEnabled", "blurSize", "blurPasses", "blurNoise", "blurContrast", "blurBrightness", "blurVibrancy"] },
-        { id: "fonts", label: "Fontes", icon: "textBox", def: false, keys: ["fontUi", "fontMono"] }
+        { id: "fonts", label: "Fontes", icon: "textBox", def: false, keys: ["fontUi", "fontMono", "fontNumbers", "fontTitle", "fontReading", "fontExpressive"] }
     ]
     readonly property var allKeys: groups.reduce((a, g) => a.concat(g.keys), [])
     function group(id) { return groups.find(g => g.id === id) ?? null }
@@ -61,10 +61,10 @@ Singleton {
         return n
     }
     function defaultGroups() { return groups.filter(g => g.def).map(g => g.id) }
-    function save(name, gids) {
+    function save(name, gids, desc) {
         name = uniqueName((name || "").trim() || "Meu visual")
         const l = clone(Settings.presets || [])
-        l.push({ name: name, created: Date.now(), data: snapshot(gids && gids.length ? gids : defaultGroups()) })
+        l.push({ name: name, desc: (desc || "").trim(), created: Date.now(), data: snapshot(gids && gids.length ? gids : defaultGroups()) })
         Settings.presets = l
         current = name
         return name
@@ -141,7 +141,7 @@ Singleton {
     function exportZip(name) {
         const p = (Settings.presets || []).find(x => x.name === name)
         if (!p || busy) return
-        tmpFile.setText(JSON.stringify({ app: "quickshell-mine", version: 1, name: p.name, created: p.created, data: p.data }))
+        tmpFile.setText(JSON.stringify({ app: "quickshell-mine", version: 1, name: p.name, desc: p.desc || "", created: p.created, data: p.data }))
         busy = "export"
         proc.command = ["python3", script, "export", tmpJson]
         proc.running = true

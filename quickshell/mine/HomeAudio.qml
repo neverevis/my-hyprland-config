@@ -39,6 +39,7 @@ HomeScroll {
         width: pg.width
         height: outCol.implicitHeight + 52
         title: "Saída"; icon: "speaker"
+        headerRight: [ UiButton { icon: "cog"; kind: "ghost"; onClicked: AppCmds.run("mixer") } ]
         Column {
             id: outCol
             width: parent.width

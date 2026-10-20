@@ -37,9 +37,10 @@ Column {
         Row {
             width: parent.width
             spacing: 8
-            UiField { id: nameF; width: Math.min(320, parent.width - 140); placeholderText: "Nome (ex.: Noite, Foco, Rosa…)"; onAccepted: saveB.clicked() }
+            UiField { id: nameF; width: Math.min(200, parent.width - 140); placeholderText: "Nome (ex.: Noite, Foco, Rosa…)"; onAccepted: saveB.clicked() }
+            UiField { id: descF; width: Math.min(260, parent.width - 140); placeholderText: "Descrição (opcional)"; onAccepted: saveB.clicked() }
             UiButton { id: saveB; icon: "plus"; text: "Salvar"; kind: "accent"; enabled: page.pick.length > 0
-                onClicked: { const n = Looks.save(nameF.text, page.pick); nameF.text = ""; page.say("Salvo como “" + n + "”") } }
+                onClicked: { const n = Looks.save(nameF.text, page.pick, descF.text); nameF.text = ""; descF.text = ""; page.say("Salvo como “" + n + "”") } }
         }
         UiLabel { text: "O que entra" }
         Flow {
@@ -105,6 +106,11 @@ Column {
                         text: lc.modelData.name
                         onVisibleChanged: if (visible) { forceActiveFocus(); selectAll() }
                         onEditingFinished: { Looks.rename(lc.modelData.name, text); lc.renaming = false }
+                    }
+                    UiText {
+                        visible: !lc.renaming && !!lc.modelData.desc
+                        anchors { left: parent.left; leftMargin: 12; right: parent.right; rightMargin: 12; top: pv.bottom; topMargin: 58 }
+                        elide: Text.ElideRight; text: lc.modelData.desc || ""; color: Theme.muted; font.pixelSize: 11
                     }
                     // grupos guardados
                     Row {

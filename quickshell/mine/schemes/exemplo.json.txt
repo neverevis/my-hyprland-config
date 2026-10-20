@@ -1,0 +1,1 @@
+{ "name": "Meu esquema", "dark": true, "bg": "#1b1b24", "text": "#e6e1e9", "primary": "#d0bcff", "secondary": "#ccc2dc", "tertiary": "#efb8c8", "error": "#f2b8b5" }

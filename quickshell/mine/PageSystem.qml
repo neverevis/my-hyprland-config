@@ -248,4 +248,58 @@ Column {
         UiText { width: dl.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 11
             text: "Abre um terminal com o comando (pacman pede a sua senha lá" + (SysTheme.hasYay ? "; os do AUR usam o yay" : "") + "). Ao fechar, a lista acima atualiza." }
     }
+
+    // ---- comandos dos apps padrao ----
+    Card {
+        icon: "apps"
+        title: "Aplicativos padrão"
+        subtitle: "O que abre quando você clica em configurar a rede, o Bluetooth, o volume etc. (botões do painel Início e ações do launcher). Vazio usa o padrão mostrado."
+        Repeater {
+            model: AppCmds.items
+            delegate: Row {
+                id: ar
+                required property var modelData
+                spacing: 10
+                UiIcon { name: ar.modelData.icon; size: 16; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                UiText { width: 170; anchors.verticalCenter: parent.verticalCenter; text: ar.modelData.label; color: Theme.text; font.pixelSize: 13; elide: Text.ElideRight }
+                UiField {
+                    width: Math.max(200, page.width - 330)
+                    text: (Settings.appCmds || ({}))[ar.modelData.id] || ""
+                    placeholderText: ar.modelData.def
+                    onAccepted: AppCmds.set(ar.modelData.id, text)
+                    onEditingFinished: AppCmds.set(ar.modelData.id, text)
+                }
+            }
+        }
+    }
+
+    // ---- webapps ----
+    Card {
+        id: wa
+        icon: "web"
+        title: "Webapps"
+        subtitle: "Transforme sites em aplicativos: cada endereço vira um atalho (abre numa janela sem abas) que também aparece no launcher."
+        Component.onCompleted: Webapps.refresh()
+        Repeater {
+            model: Webapps.apps
+            delegate: Rectangle {
+                id: wr
+                required property var modelData
+                width: parent.width; height: 44; radius: 10; color: Theme.track
+                UiText { x: 12; anchors.verticalCenter: parent.verticalCenter; width: parent.width - 150; elide: Text.ElideRight; text: wr.modelData.name + "  ·  " + wr.modelData.url; color: Theme.text; font.pixelSize: 13 }
+                Row {
+                    anchors { right: parent.right; rightMargin: 4; verticalCenter: parent.verticalCenter }
+                    UiButton { icon: "play"; kind: "ghost"; onClicked: Quickshell.execDetached(["gtk-launch", "shell-webapp-" + wr.modelData.id]) }
+                    UiButton { icon: "trash"; kind: "danger"; onClicked: Webapps.remove(wr.modelData.id) }
+                }
+            }
+        }
+        UiText { visible: Webapps.apps.length === 0; text: "Nenhum webapp ainda."; color: Theme.muted; font.pixelSize: 12 }
+        Row {
+            spacing: 8
+            UiField { id: waF; width: 420; placeholderText: "Endereços (separe por espaço), ex.: web.whatsapp.com"; onAccepted: waB.clicked() }
+            UiButton { id: waB; icon: "plus"; text: Webapps.busy ? "Criando…" : "Criar"; enabled: !Webapps.busy; onClicked: { Webapps.add(waF.text); waF.text = "" } }
+        }
+        UiText { visible: Webapps.msg !== ""; text: Webapps.msg; color: Theme.muted; font.pixelSize: 12 }
+    }
 }

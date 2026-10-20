@@ -2,6 +2,7 @@
 //   kitty: grava ~/.config/kitty/themes/quickshell.conf (incluido no kitty.conf) e manda SIGUSR1 para recarregar as janelas abertas.
 //   GTK: grava quickshell.css em ~/.config/gtk-3.0 e gtk-4.0 (importado pelo gtk.css) e ajusta o esquema claro/escuro.
 //   Brave: grava a cor-semente na politica gerenciada (/etc/brave/policies/managed/caelestia.json, que e seu); o Brave aplica ao vivo.
+//   Qt (KDE/qtengine/Kvantum-like): grava so o esquema de cores ~/.cache/quickshell-mine/qt/quickshell.colors; para os apps Qt usarem, aponte o colorScheme do qtengine para ele (arquivo seu, o shell nao mexe).
 // Desligado (tema ou kitty): o arquivo fica so com um comentario e o kitty volta as cores de antes.
 pragma Singleton
 
@@ -43,6 +44,46 @@ Singleton {
         t += d("theme_base_color", m.surface) + d("theme_text_color", m.onSurface)
         return t
     }
+    readonly property bool qtOn: Settings.themeOn && Settings.themeQt && ThemeColors.m.primary !== undefined
+    readonly property string qtFile: root.home + "/.cache/quickshell-mine/qt/quickshell.colors"
+    function rgbOf(c): string { const q = Qt.color(c); return Math.round(q.r * 255) + "," + Math.round(q.g * 255) + "," + Math.round(q.b * 255) }
+    function qtColors(): string {
+        const m = ThemeColors.m
+        if (!qtOn) return "# Gerado pelo Quickshell. Tema Qt desligado.\n"
+        const sec = (name, bg, alt, fg, inactive, sel) => "[" + name + "]\nBackgroundAlternate=" + rgbOf(alt) + "\nBackgroundNormal=" + rgbOf(bg)
+            + "\nDecorationFocus=" + rgbOf(m.primary) + "\nDecorationHover=" + rgbOf(m.primary) + "\nForegroundActive=" + rgbOf(m.primary)
+            + "\nForegroundInactive=" + rgbOf(inactive) + "\nForegroundLink=" + rgbOf(m.primary) + "\nForegroundNegative=" + rgbOf(m.error)
+            + "\nForegroundNeutral=" + rgbOf(m.tertiary) + "\nForegroundNormal=" + rgbOf(fg) + "\nForegroundPositive=" + rgbOf(m.secondary)
+            + "\nForegroundVisited=" + rgbOf(m.tertiary) + "\n\n"
+        let t = "# Gerado pelo Quickshell (tema do wallpaper). Nao edite a mao.\n"
+        t += "[ColorEffects:Disabled]\nColor=" + rgbOf(m.surface) + "\nColorAmount=0.5\nColorEffect=3\nContrastAmount=0\nContrastEffect=0\nIntensityAmount=0\nIntensityEffect=0\n\n"
+        t += "[ColorEffects:Inactive]\nChangeSelectionColor=true\nColor=0,0,0\nColorAmount=0.025\nColorEffect=0\nContrastAmount=0.1\nContrastEffect=0\nEnable=true\nIntensityAmount=0\nIntensityEffect=0\n\n"
+        t += sec("Colors:Button", m.surfaceContainer, m.surfaceContainerHigh, m.onSurface, m.onSurfaceVariant)
+        t += sec("Colors:Complementary", m.surfaceContainerLow, m.surfaceContainerLowest, m.onSurface, m.onSurfaceVariant)
+        t += sec("Colors:Header", m.surfaceContainerLow, m.surfaceContainerLow, m.onSurface, m.onSurfaceVariant)
+        t += sec("Colors:Selection", m.primary, m.primaryContainer, m.onPrimary, m.onPrimary)
+        t += sec("Colors:Tooltip", m.surfaceContainerHigh, m.surfaceContainer, m.onSurface, m.onSurfaceVariant)
+        t += sec("Colors:View", m.surface, m.surfaceContainerLow, m.onSurface, m.onSurfaceVariant)
+        t += sec("Colors:Window", m.surface, m.surfaceContainerLow, m.onSurface, m.onSurfaceVariant)
+        t += "[General]\nColorScheme=QuickshellMine\nName=Quickshell Mine\n\n"
+        t += "[WM]\nactiveBackground=" + rgbOf(m.surfaceContainerLow) + "\nactiveForeground=" + rgbOf(m.onSurface) + "\ninactiveBackground=" + rgbOf(m.surface) + "\ninactiveForeground=" + rgbOf(m.onSurfaceVariant) + "\n"
+        return t
+    }
+    readonly property string qtSig: qtOn + "/" + (qtOn ? qtColors() : "")
+    onQtSigChanged: qtTimer.restart()
+    FileView { id: qtOut; path: root.qtFile; printErrors: false }
+    Process { id: qtDir; command: ["mkdir", "-p", root.home + "/.cache/quickshell-mine/qt"] }
+    Timer {
+        id: qtTimer
+        interval: 500
+        onTriggered: {
+            if (Wallpaper.busy) { restart(); return }
+            qtDir.running = false; qtDir.running = true
+            qtWrite.restart()
+        }
+    }
+    Timer { id: qtWrite; interval: 250; onTriggered: qtOut.setText(root.qtColors()) }
+
     function braveJson(): string {
         return JSON.stringify({ BrowserThemeColor: ThemeColors.m._source ?? ThemeColors.m.primary, BrowserColorScheme: Settings.themeModeEff === "light" ? "light" : "dark" })
     }

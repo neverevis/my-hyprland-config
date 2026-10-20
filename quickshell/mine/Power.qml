@@ -24,10 +24,10 @@ Singleton {
     function run(id: string): void {
         menuOpen = false
         if (Settings.sessionGuard && (id === "logout" || id === "reboot" || id === "poweroff") && Date.now() > forceUntil) {
-            SystemGuard.busy(b => {
+            SystemGuard.busy((b, kind) => {
                 if (b) {
                     root.forceUntil = Date.now() + 15000
-                    Quickshell.execDetached(["notify-send", "-u", "critical", "-a", "Sessão", "-i", "dialog-warning", "Uma atualização está rodando", "Espere o pacman terminar. Para " + (id === "poweroff" ? "desligar" : id === "reboot" ? "reiniciar" : "sair") + " mesmo assim, peça de novo em 15 segundos."])
+                    Quickshell.execDetached(["notify-send", "-u", "critical", "-a", "Sessão", "-i", "dialog-warning", kind === "dl" ? "Um download está em andamento" : "Uma atualização está rodando", (kind === "dl" ? "Espere o download terminar. Para " : "Espere o pacman terminar. Para ") + (id === "poweroff" ? "desligar" : id === "reboot" ? "reiniciar" : "sair") + " mesmo assim, peça de novo em 15 segundos."])
                 } else { root.forceUntil = Date.now() + 2000; root.run(id) }
             })
             return

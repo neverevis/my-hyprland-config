@@ -8,7 +8,9 @@ import json, os, shutil, subprocess, sys, time
 from PIL import Image, ImageDraw
 
 HOME = os.path.expanduser("~")
-SHOTS = os.path.join(HOME, "Imagens", "Screenshots")
+# QS_SHOTDIR (Ferramentas > Captura): pasta das capturas; definido e vazio = so copia, nao salva
+SHOTS = os.environ.get("QS_SHOTDIR", os.path.join(HOME, "Imagens", "Screenshots"))
+if SHOTS.startswith("~"): SHOTS = os.path.expanduser(SHOTS)
 
 def out(**kw):
     print(json.dumps(kw, ensure_ascii=False))
@@ -40,13 +42,17 @@ def main():
     x, y, w, h = map(float, sys.argv[3:7])
     circle = len(sys.argv) > 7 and sys.argv[7] == "circle"
     im = crop(src, x, y, w, h, circle)
-    os.makedirs(SHOTS, exist_ok=True)
     stamp = time.strftime("%Y%m%d_%H-%M-%S")
-    path = os.path.join(SHOTS, f"screenshot_{stamp}.png")
+    if SHOTS: os.makedirs(SHOTS, exist_ok=True)
+    path = os.path.join(SHOTS or os.path.join(HOME, ".cache", "quickshell-mine"), f"screenshot_{stamp}.png")
     if act == "copy":
         im.save(path)
         with open(path, "rb") as f:
             subprocess.run(["wl-copy", "-t", "image/png"], stdin=f, timeout=5)
+        if not SHOTS:
+            os.remove(path)
+            notify("Captura copiada", "Na área de transferência (sem salvar)", "")
+            out(ok=True, msg="Copiada")
         notify("Captura salva", path, path)
         out(ok=True, msg="Copiada e salva", path=path)
     tmp = os.path.join(HOME, ".cache", "quickshell-mine", "capture.png")

@@ -29,15 +29,22 @@ Singleton {
     property alias themeOn: adapter.themeOn
     property alias themeMode: adapter.themeMode          // dark | light | auto (claro de dia, escuro a noite)
     property alias themeSource: adapter.themeSource      // wallpaper | preset (esquemas prontos da aba Integradas)
+    property alias themePresetPrimary: adapter.themePresetPrimary     // cor principal escolhida por cima do esquema pronto (vazio = a do esquema)
+    property alias themePresetSecondary: adapter.themePresetSecondary
     property alias themePreset: adapter.themePreset      // id do esquema pronto (ver Presets.qml)
     property int clockHour: new Date().getHours()
     Timer { interval: 60000; repeat: true; running: true; onTriggered: Settings.clockHour = new Date().getHours() }
     readonly property string themeModeEff: themeMode === "auto" ? (clockHour >= 7 && clockHour < 18 ? "light" : "dark") : themeMode
     property alias themeVariant: adapter.themeVariant    // wallpaper | tonalspot | vibrant | expressive | fidelity | content | neutral | monochrome | rainbow | fruitsalad
     property alias themeKitty: adapter.themeKitty        // gera o tema do kitty
+    property alias themeQt: adapter.themeQt              // esquema de cores para apps Qt/KDE (arquivo gerado no cache)
     property alias themeGtk: adapter.themeGtk            // cores nos apps GTK3/GTK4
     property alias themeBrave: adapter.themeBrave        // cor do tema do Brave (politica gerenciada)
     property alias fontUi: adapter.fontUi                // fonte da interface ("" = a do sistema)
+    property alias fontNumbers: adapter.fontNumbers
+    property alias fontTitle: adapter.fontTitle
+    property alias fontReading: adapter.fontReading
+    property alias fontExpressive: adapter.fontExpressive
     property alias fontMono: adapter.fontMono            // fonte monoespacada ("" = monospace)
     property alias themeBorders: adapter.themeBorders    // aplica as cores nas bordas das janelas do Hyprland
     // cores da borda (ids da paleta, ver ThemeColors.roles): ativa = A (+ B em gradiente; "" = cor unica), inativa; opacidades em %
@@ -155,6 +162,10 @@ Singleton {
     property alias wpVideoPause: adapter.wpVideoPause   // pausa o video com janela em tela cheia
     property alias wpVideos: adapter.wpVideos   // videos da pasta entram na lista
     property alias lockWallpaper: adapter.lockWallpaper
+    property alias appCmds: adapter.appCmds             // comandos dos apps padrao (ver AppCmds.qml); so o que foi trocado
+    property alias displayName: adapter.displayName     // nome mostrado no shell (vazio = nome do usuario)
+    property alias profileDesc: adapter.profileDesc     // descricao no cabecalho: distro | uptime | text
+    property alias profileDescText: adapter.profileDescText
     property alias shelfFiles: adapter.shelfFiles       // prateleira de arquivos
     // sistema (SystemGuard.qml): volume, atualizacoes, conflitos, sons, aviso ao desligar, relogio 24 h
     property alias volGuard: adapter.volGuard
@@ -212,6 +223,7 @@ Singleton {
     property alias overlayImage: adapter.overlayImage
     property alias overlayImageScale: adapter.overlayImageScale
     property alias recAudio: adapter.recAudio           // gravacao: none | system | mic
+    property alias shotDir: adapter.shotDir             // pasta das capturas (vazio = so copiar)
     property alias recDir: adapter.recDir
     property alias recFps: adapter.recFps               // 0 = do monitor
     property alias lockClock: adapter.lockClock         // big | analog (flor) | digital | daily | pixel
@@ -627,6 +639,8 @@ Singleton {
         adapter.themeMode = "dark"
         adapter.themeSource = "wallpaper"
         adapter.themePreset = "mocha"
+        adapter.themePresetPrimary = ""
+        adapter.themePresetSecondary = ""
         adapter.themeKitty = true
         adapter.themeGtk = true
         adapter.themeBrave = true
@@ -840,6 +854,10 @@ Singleton {
             property bool wpVideoPause: true
             property bool wpVideos: true
             property string lockWallpaper: ""
+            property string displayName: ""
+            property var appCmds: ({})
+            property string profileDesc: "distro"
+            property string profileDescText: ""
             property string lockClock: "big"
             property string recAudio: "none"
             property var shelfFiles: []
@@ -883,6 +901,7 @@ Singleton {
             property string overlayNotes: ""
             property string overlayImage: ""
             property int overlayImageScale: 50
+            property string shotDir: "~/Imagens/Screenshots"
             property string recDir: "~/Vídeos/Gravações"
             property int recFps: 0
             property string lockClockPos: "top"
@@ -956,15 +975,22 @@ Singleton {
             property int wpCardRadius: 14
             property bool themeKitty: true
             property bool themeGtk: true
+            property bool themeQt: false
             property bool themeBrave: true
             property bool themeOn: false
             property string themeMode: "dark"
             property string themeSource: "wallpaper"
             property string themePreset: "mocha"
+            property string themePresetPrimary: ""
+            property string themePresetSecondary: ""
             property string themeVariant: "tonalspot"
             property bool themeBorders: true
             property string fontUi: ""
             property string fontMono: ""
+            property string fontNumbers: ""
+            property string fontTitle: ""
+            property string fontReading: ""
+            property string fontExpressive: ""
             property string themeBorderA: "primary"
             property string themeBorderB: "secondary"
             property string themeBorderIn: "outline"

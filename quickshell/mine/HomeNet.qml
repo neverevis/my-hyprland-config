@@ -48,6 +48,7 @@ HomeScroll {
         height: wcol.implicitHeight + 52
         title: "Wi-Fi"; icon: "wifi"
         headerRight: [
+            UiButton { icon: "cog"; kind: "ghost"; onClicked: AppCmds.run("network") },
             UiButton {
                 visible: !!pg.wifi && Networking.wifiEnabled
                 icon: "refresh"; kind: "ghost"

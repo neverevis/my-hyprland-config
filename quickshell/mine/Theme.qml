@@ -16,6 +16,11 @@ Singleton {
     // fontes (Aparencia > Fontes): vazio = a do sistema
     readonly property string sysFont: Qt.application.font.family
     readonly property string font: Settings.fontUi !== "" ? Settings.fontUi : sysFont
+    // papeis de fonte (Aparencia > Fontes): vazio = a da interface
+    readonly property string fontNumbers: Settings.fontNumbers !== "" ? Settings.fontNumbers : font      // relogios e numeros grandes
+    readonly property string fontTitle: Settings.fontTitle !== "" ? Settings.fontTitle : font          // titulos dos cartoes
+    readonly property string fontReading: Settings.fontReading !== "" ? Settings.fontReading : font    // texto longo (notas)
+    readonly property string fontExpressive: Settings.fontExpressive !== "" ? Settings.fontExpressive : font   // textos decorativos dos widgets
     readonly property string mono: Settings.fontMono !== "" ? Settings.fontMono : "monospace"
     readonly property color accentText: Settings.themeOn ? ThemeColors.primaryInk : "#15131a"
     readonly property color danger: Settings.themeOn ? ThemeColors.error : "#f7768e"
