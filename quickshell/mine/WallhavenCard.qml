@@ -1,91 +1,96 @@
-// Busca de wallpapers no Wallhaven (wallhaven.cc, API publica, so conteudo seguro): digitar e Enter busca; clique
-// numa miniatura baixa a imagem para a sua pasta de wallpapers e aplica. Ordenar por relevancia, mais vistos, recentes
-// ou aleatorio; categorias geral / anime / pessoas; resolucao minima da sua tela.
+// Busca de wallpapers no Wallhaven (wallhaven.cc, API publica; a logica fica em Wallhaven.qml, a mesma do seletor):
+// digitar e Enter busca; clique numa miniatura baixa a imagem para a pasta de wallpapers e aplica, clique direito so baixa.
+// Filtros (ordem, periodo, proporcao, categorias, pureza, cor) ficam salvos. Sketchy / nsfw pedem a chave da API.
 import Quickshell
-import Quickshell.Io
 import QtQuick
 
 Card {
     id: wc
     icon: "web"
     title: "Wallhaven"
-    subtitle: "Busque wallpapers online (só conteúdo seguro). Clique numa imagem para baixar para a sua pasta e aplicar."
-    property var results: []
-    property string status: ""
-    property int page: 1
-    property string sorting: "relevance"
-    property var cats: ({ general: true, anime: true, people: false })
-    property string downloading: ""
-
-    function search(more) {
-        page = more ? page + 1 : 1
-        status = "Buscando…"
-        const c = (cats.general ? "1" : "0") + (cats.anime ? "1" : "0") + (cats.people ? "1" : "0")
-        const scr = Quickshell.screens[0]
-        const url = "https://wallhaven.cc/api/v1/search?q=" + encodeURIComponent(q.text.trim()) + "&categories=" + c + "&purity=100&sorting=" + sorting
-            + "&order=desc&atleast=" + (scr ? scr.width + "x" + scr.height : "1920x1080") + "&page=" + page + (sorting === "toplist" ? "&topRange=1M" : "")
-        const x = new XMLHttpRequest()
-        x.onreadystatechange = () => {
-            if (x.readyState !== XMLHttpRequest.DONE) return
-            if (x.status !== 200) { status = "Não consegui buscar (" + x.status + ")"; return }
-            try {
-                const d = JSON.parse(x.responseText).data || []
-                results = (more ? results : []).concat(d.map(w => ({ id: w.id, url: w.path, thumb: w.thumbs.small, res: w.resolution, size: w.file_size })))
-                status = results.length ? "" : "Nada encontrado"
-            } catch (e) { status = "Resposta inválida" }
-        }
-        x.open("GET", url)
-        x.send()
-    }
-    function take(w) {
-        if (downloading) return
-        downloading = w.id
-        const ext = w.url.split(".").pop()
-        const dest = Wallpaper.dir + "/wallhaven-" + w.id + "." + ext
-        dl.dest = dest
-        dl.command = ["sh", "-c", 'mkdir -p "$(dirname "$2")" && [ -s "$2" ] || curl -fsSL --max-time 60 -o "$2" "$1"', "sh", w.url, dest]
-        dl.running = true
-    }
-    Process {
-        id: dl
-        property string dest: ""
-        onExited: code => {
-            wc.downloading = ""
-            if (code === 0) { Wallpaper.set(dest); wc.status = "Aplicado: " + dest.split("/").pop() }
-            else wc.status = "Falhou ao baixar"
-        }
-    }
+    subtitle: "Busque wallpapers online. Clique numa imagem para baixar e aplicar; clique direito só baixa. O seletor (Super + W) também busca aqui."
 
     Row {
         width: parent.width
         spacing: 8
-        UiField { id: q; width: parent.width - 110; placeholderText: "O que procurar (ex.: montanhas, cyberpunk, sakura)…"; onAccepted: wc.search(false) }
-        UiButton { icon: "search"; text: "Buscar"; kind: "accent"; onClicked: wc.search(false) }
+        UiField { id: q; width: parent.width - 110; text: Wallhaven.query; placeholderText: "O que procurar (ex.: montanhas, cyberpunk, sakura)…"; onTextEdited: Wallhaven.query = text; onAccepted: Wallhaven.newSearch() }
+        UiButton { icon: "search"; text: "Buscar"; kind: "accent"; onClicked: Wallhaven.newSearch() }
     }
+    UiLabel { text: "Ordenar por" }
     Flow {
         width: parent.width
         spacing: 6
         Repeater {
-            model: [["relevance", "Relevância"], ["toplist", "Mais vistos do mês"], ["date_added", "Recentes"], ["random", "Aleatório"]]
-            delegate: UiButton { required property var modelData; text: modelData[1]; kind: wc.sorting === modelData[0] ? "accent" : "ghost"; onClicked: { wc.sorting = modelData[0]; wc.search(false) } }
+            model: Wallhaven.sortings
+            delegate: UiButton { required property var modelData; text: modelData[1]; kind: Wallhaven.pref("sorting") === modelData[0] ? "accent" : "ghost"; onClicked: { Wallhaven.setPref("sorting", modelData[0]); Wallhaven.newSearch() } }
+        }
+    }
+    UiLabel { visible: Wallhaven.pref("sorting") === "toplist"; text: "Período do Top" }
+    Flow {
+        visible: Wallhaven.pref("sorting") === "toplist"
+        width: parent.width
+        spacing: 6
+        Repeater {
+            model: Wallhaven.ranges
+            delegate: UiButton { required property var modelData; text: modelData[1]; kind: Wallhaven.pref("topRange") === modelData[0] ? "accent" : "ghost"; onClicked: { Wallhaven.setPref("topRange", modelData[0]); Wallhaven.newSearch() } }
+        }
+    }
+    UiSeg { options: [["desc", "Maior primeiro", "arrowDown"], ["asc", "Menor primeiro", "arrowUp"]]; value: Wallhaven.pref("order"); onPicked: v => { Wallhaven.setPref("order", v); Wallhaven.newSearch() } }
+    UiLabel { text: "Proporção" }
+    Flow {
+        width: parent.width
+        spacing: 6
+        Repeater {
+            model: Wallhaven.ratioList
+            delegate: UiButton { required property var modelData; text: modelData[1]; kind: Wallhaven.pref("ratios") === modelData[0] ? "accent" : "ghost"; onClicked: { Wallhaven.setPref("ratios", modelData[0]); Wallhaven.newSearch() } }
+        }
+    }
+    UiLabel { text: "Categorias e pureza" }
+    Flow {
+        width: parent.width
+        spacing: 6
+        Repeater {
+            model: [["cats", 0, "Geral"], ["cats", 1, "Anime"], ["cats", 2, "Pessoas"]]
+            delegate: UiButton { required property var modelData; icon: Wallhaven.flag(modelData[0], modelData[1]) ? "check" : ""; text: modelData[2]; kind: "ghost"; onClicked: Wallhaven.toggleFlag(modelData[0], modelData[1]) }
         }
         Item { width: 12; height: 1 }
         Repeater {
-            model: [["general", "Geral"], ["anime", "Anime"], ["people", "Pessoas"]]
-            delegate: UiButton {
-                required property var modelData
-                icon: wc.cats[modelData[0]] ? "check" : ""
-                text: modelData[1]; kind: "ghost"
-                onClicked: { const c = Object.assign({}, wc.cats); c[modelData[0]] = !c[modelData[0]]; wc.cats = c }
+            model: [["purity", 0, "Seguro"], ["purity", 1, "Sugestivo"], ["purity", 2, "Adulto"]]
+            delegate: UiButton { required property var modelData; icon: Wallhaven.flag(modelData[0], modelData[1]) ? "check" : ""; text: modelData[2]; kind: "ghost"; onClicked: Wallhaven.toggleFlag(modelData[0], modelData[1]) }
+        }
+    }
+    Row {
+        visible: Wallhaven.pref("purity") !== "100"
+        width: parent.width
+        spacing: 8
+        UiText { anchors.verticalCenter: parent.verticalCenter; text: "Chave da API"; color: Theme.text; font.pixelSize: 13 }
+        UiField { width: parent.width - 120; text: Settings.whApiKey; placeholderText: "wallhaven.cc > Conta > API (necessária para sugestivo e adulto)"; onEditingFinished: Settings.whApiKey = text.trim() }
+    }
+    UiLabel { text: "Cor" }
+    Flow {
+        width: parent.width
+        spacing: 6
+        Rectangle {
+            width: 26; height: 26; radius: 13; color: "transparent"; border.width: 1; border.color: Theme.border
+            UiIcon { anchors.centerIn: parent; name: "close"; size: 14; color: Theme.muted }
+            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { Wallhaven.setPref("colors", ""); Wallhaven.newSearch() } }
+        }
+        Repeater {
+            model: Wallhaven.palette
+            delegate: Rectangle {
+                required property string modelData
+                width: 26; height: 26; radius: 13; color: "#" + modelData
+                border.width: Wallhaven.pref("colors") === modelData ? 3 : 1; border.color: Wallhaven.pref("colors") === modelData ? Theme.accent : Theme.border
+                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { Wallhaven.setPref("colors", modelData); Wallhaven.newSearch() } }
             }
         }
     }
-    UiText { visible: wc.status !== ""; text: wc.status; color: Theme.muted; font.pixelSize: 12 }
+    UiText { visible: Wallhaven.status !== ""; text: Wallhaven.status; color: Theme.muted; font.pixelSize: 12 }
     Flow {
         width: parent.width
         spacing: 8
         Repeater {
-            model: wc.results
+            model: Wallhaven.results
             delegate: Rectangle {
                 required property var modelData
                 width: (parent.width - 3 * 8) / 4; height: width * 0.62; radius: 10; color: Theme.track; clip: true
@@ -94,11 +99,18 @@ Card {
                 Rectangle {
                     anchors { left: parent.left; bottom: parent.bottom; margins: 6 }
                     width: rl.implicitWidth + 10; height: 18; radius: 9; color: Qt.rgba(0, 0, 0, 0.6)
-                    UiText { id: rl; anchors.centerIn: parent; text: wc.downloading === modelData.id ? "Baixando…" : modelData.res; color: "white"; font.pixelSize: 9; font.weight: Font.DemiBold }
+                    UiText { id: rl; anchors.centerIn: parent; text: Wallhaven.downloading === modelData.id ? "Baixando…" : modelData.res; color: "white"; font.pixelSize: 9; font.weight: Font.DemiBold }
                 }
-                MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: wc.take(parent.modelData) }
+                MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: mouse => Wallhaven.take(parent.modelData, mouse.button === Qt.LeftButton) }
             }
         }
     }
-    UiButton { visible: wc.results.length > 0; icon: "plus"; text: "Mais"; kind: "ghost"; onClicked: wc.search(true) }
+    Row {
+        visible: Wallhaven.results.length > 0
+        spacing: 8
+        UiButton { icon: "arrowLeft"; kind: "ghost"; enabled: Wallhaven.page > 1; onClicked: Wallhaven.go(-1) }
+        UiText { anchors.verticalCenter: parent.verticalCenter; text: "Página " + Wallhaven.page + " / " + Wallhaven.lastPage; color: Theme.muted; font.pixelSize: 12 }
+        UiButton { icon: "arrowRight"; kind: "ghost"; enabled: Wallhaven.page < Wallhaven.lastPage; onClicked: Wallhaven.go(1) }
+    }
 }

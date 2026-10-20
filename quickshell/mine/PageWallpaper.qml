@@ -163,6 +163,11 @@ Column {
         SidePick { value: Settings.wpPickerSide; onPicked: v => Settings.wpPickerSide = v }
         UiSlider { label: "Deslocamento"; from: -1000; to: 1000; value: Settings.wpPickerOffset; suffix: " px"; onMoved: v => Settings.wpPickerOffset = v }
         UiSlider { visible: !Settings.wpPickerDocked; label: "Distância da borda"; from: 0; to: 80; value: Settings.wpPickerGap; suffix: " px"; onMoved: v => Settings.wpPickerGap = v }
+        UiSwitch { label: "Fechar ao escolher"; description: "Enter ou clique aplica o wallpaper e fecha o seletor."; checked: Settings.wpCloseAfter; onToggled: on => Settings.wpCloseAfter = on }
+        UiSwitch { label: "Usar o navegador de arquivos"; description: "Em vez do carrossel, o atalho do seletor abre o navegador de imagens do shell."; checked: Settings.wpSystemDialog; onToggled: on => Settings.wpSystemDialog = on }
+        UiLabel { text: "Ordem das imagens" }
+        UiSeg { options: [["name", "Nome", "sortName"], ["time", "Data", "sortTime"], ["size", "Tamanho", "disk"]]; value: Settings.wpSort; onPicked: v => Settings.wpSort = v }
+        UiSwitch { label: "Ordem invertida"; checked: Settings.wpSortRev; onToggled: on => Settings.wpSortRev = on }
         UiLabel { text: "Wallpapers visíveis" }
         UiSeg {
             options: [[1, "1"], [3, "3"], [5, "5"]]

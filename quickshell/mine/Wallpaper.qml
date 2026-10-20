@@ -12,7 +12,21 @@ Singleton {
 
     readonly property string home: Quickshell.env("HOME")
     readonly property string dir: Settings.wpDir.replace(/^~/, home)
-    property var files: []   // [{ path, name }]
+    property var files: []   // [{ path, name }] imagens (e videos) da pasta que esta sendo vista
+    property var dirs: []    // subpastas da pasta vista (so o seletor mostra)
+    property string browse: ""   // pasta vista no seletor ("" = a pasta de wallpapers das configuracoes); volta ao fechar o seletor
+    property string filter: ""   // filtro por nome no seletor
+    readonly property string viewDir: browse !== "" ? browse : dir
+    readonly property var entries: {
+        const w = norm(filter).trim().split(/\s+/).filter(x => x)
+        if (!w.length) return dirs.concat(files)
+        return files.filter(f => { const n = norm(f.name); return w.every(x => n.includes(x)) })
+    }
+    function norm(t) { return String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() }
+    function enter(p) { filter = ""; browse = p }
+    function up() { if (viewDir.length > 1) { filter = ""; browse = viewDir.replace(/\/[^/]*\/?$/, "") || "/" } }
+    function reset() { filter = ""; browse = "" }
+    Connections { target: Settings; function onWpPickerOpenChanged() { if (!Settings.wpPickerOpen) root.reset() } }
 
     readonly property string current: Settings.wallpaper !== "" ? Settings.wallpaper : (files.length ? files[0].path : "")
     // ---- videos (mp4, webm, mkv, mov): o primeiro quadro vira um jpg em ~/.cache/quickshell-mine/vidframe (transicoes,
@@ -104,18 +118,24 @@ Singleton {
     }
 
     function refresh(): void {
-        const out = []
-        for (let i = 0; i < model.count; i++)
-            out.push({ path: model.get(i, "filePath"), name: model.get(i, "fileBaseName") })
+        const out = [], d = []
+        for (let i = 0; i < model.count; i++) {
+            if (model.get(i, "fileIsDir")) d.push({ path: model.get(i, "filePath"), name: model.get(i, "fileName"), dir: true })
+            else out.push({ path: model.get(i, "filePath"), name: model.get(i, "fileBaseName") })
+        }
+        dirs = d
         files = out
     }
 
     FolderListModel {
         id: model
-        folder: "file://" + root.dir
+        folder: "file://" + root.viewDir
         nameFilters: ["*.png", "*.jpg", "*.jpeg", "*.webp", "*.bmp", "*.PNG", "*.JPG", "*.JPEG", "*.WEBP"].concat(Settings.wpVideos ? ["*.mp4", "*.webm", "*.mkv", "*.mov", "*.m4v", "*.MP4", "*.WEBM"] : [])
-        showDirs: false
-        sortField: FolderListModel.Name
+        showDirs: true
+        showDirsFirst: true
+        showDotAndDotDot: false
+        sortField: Settings.wpSort === "time" ? FolderListModel.Time : (Settings.wpSort === "size" ? FolderListModel.Size : FolderListModel.Name)
+        sortReversed: Settings.wpSortRev
         onCountChanged: root.refresh()
         onStatusChanged: if (status === FolderListModel.Ready) root.refresh()
     }

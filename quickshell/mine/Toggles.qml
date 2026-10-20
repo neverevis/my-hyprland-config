@@ -32,7 +32,7 @@ Singleton {
 
     // tudo o que os textos e estados dependem (o Inicio le isto dentro dos bindings para se atualizar)
     function deps() { return [Recorder.elapsed, Idle.paused, Settings.notifDnd, Settings.desktopOn, root.gameMode, Osd.micMuted, Osd.muted, Osd.volume,
-        root.eeRunning, Wallpaper.videoPaused, Wallpaper.current, NightLight.active, Settings.nightGamma, Settings.nightTemp] }
+        root.eeRunning, Vpn.connected, Vpn.busy, Vpn.profiles.length, Wallpaper.videoPaused, Wallpaper.current, NightLight.active, Settings.nightGamma, Settings.nightTemp] }
 
     // campos de cada botao: id, label, icon (iconNow() = icone que muda), sub(), on(), click(); opcionais:
     //   alt = clique direito / seta ("tab:<aba do Inicio>", "dialog:night" ou uma funcao), avail() = existe neste PC, tip() = dica
@@ -44,6 +44,7 @@ Singleton {
         { id: "dark", label: "Modo escuro", icon: "night", sub: () => Settings.themeMode === "auto" ? "Automático" : (Settings.themeModeEff === "dark" ? "Ligado" : "Desligado"), on: () => Settings.themeModeEff === "dark", click: () => Settings.themeMode = Settings.themeModeEff === "dark" ? "light" : "dark" },
         { id: "glass", label: "Vidro", icon: "glass", sub: () => Settings.glass ? Settings.glassOpacityEff + "% de opacidade" : "Desligado", on: () => Settings.glass, click: () => Settings.glass = !Settings.glass },
         { id: "caffeine", label: "Manter acordado", icon: "coffee", sub: () => Idle.paused ? "Sem bloqueio automático" : "Normal", on: () => Idle.paused, click: () => Idle.paused = !Idle.paused },
+        { id: "vpn", label: "VPN", icon: "shield", iconNow: () => Vpn.connected ? "shieldLock" : "shield", sub: () => Vpn.connected ? Vpn.activeProfile.name : (Vpn.has ? (Vpn.selectedProfile ? Vpn.selectedProfile.name : "Desligada") : "Nenhum perfil"), on: () => Vpn.connected, click: () => { if (!Vpn.toggle()) Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "home", "go", "vpn"]) }, alt: "tab:vpn" },
         { id: "mic", label: "Microfone", icon: "mic", sub: () => Osd.micMuted ? "Mudo" : "Ligado", on: () => !Osd.micMuted, click: () => { if (Osd.source && Osd.source.audio) Osd.source.audio.muted = !Osd.source.audio.muted }, alt: "tab:audio" },
         { id: "audio", label: "Som", icon: "volume", iconNow: () => Osd.muted ? "volumeOff" : (Osd.volume > 0.66 ? "volume" : (Osd.volume > 0.25 ? "volumeMed" : "volumeLow")), sub: () => Osd.muted ? "Mudo" : Math.round(Osd.volume * 100) + "%", on: () => !Osd.muted, click: () => { if (Osd.sink && Osd.sink.audio) Osd.sink.audio.muted = !Osd.sink.audio.muted }, alt: "tab:audio" },
         { id: "easyeffects", label: "EasyEffects", icon: "equalizer", sub: () => !root.eeInstalled ? "Não instalado" : (root.eeRunning ? "Ligado" : "Desligado"), on: () => root.eeRunning, click: () => root.eeToggle(), alt: () => Quickshell.execDetached(["easyeffects"]), avail: () => root.eeInstalled },

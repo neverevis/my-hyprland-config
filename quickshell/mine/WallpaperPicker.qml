@@ -12,10 +12,12 @@ import QtQuick.Effects
 Scope {
     id: root
     property var geo: ({ picker: null })   // resultado de Geometry.compute (vem do shell.qml)
+    property string src: "local"           // fonte do seletor: local (pasta) | wh (Wallhaven)
 
     IpcHandler {
         target: "wallpaper"
-        function pick(): void { if (!Settings.wpPickerOpen) { Settings.launcherOpen = false; Settings.homeOpen = false } Settings.wpPickerOpen = !Settings.wpPickerOpen }
+        function pick(): void { if (!Settings.wpPickerOpen && Settings.wpSystemDialog) { Pick.image("Escolha o wallpaper", p => Wallpaper.set(p)); return }
+            if (!Settings.wpPickerOpen) { Settings.launcherOpen = false; Settings.homeOpen = false } Settings.wpPickerOpen = !Settings.wpPickerOpen }
         function close(): void { Settings.wpPickerOpen = false }
         function next(): void { Wallpaper.step(1) }
         function prev(): void { Wallpaper.step(-1) }
@@ -153,18 +155,53 @@ Scope {
                     width: win.width; height: win.height
                     opacity: Math.max(0, Math.min(1, win.pp * 4))
 
+                // ---- barra de ferramentas: fonte, pastas, ordem, tema, busca ----
+                Row {
+                    id: tools
+                    x: win.box.x + Geometry.pickerPad; y: win.box.y + 4
+                    width: win.box.width - 2 * Geometry.pickerPad
+                    height: 34
+                    spacing: 4
+                    readonly property bool wh: root.src === "wh"
+                    readonly property int nBtn: wh ? 4 : 5
+                    UiButton { icon: "web"; kind: "ghost"; checked: tools.wh; onClicked: root.src = tools.wh ? "local" : "wh" }
+                    UiButton { visible: !tools.wh; icon: "arrowUp"; kind: "ghost"; onClicked: Wallpaper.up() }
+                    UiButton { visible: !tools.wh; icon: "folderHome"; kind: "ghost"; onClicked: Wallpaper.reset() }
+                    UiButton {
+                        visible: !tools.wh; icon: Settings.wpSort === "name" ? "sortName" : (Settings.wpSort === "time" ? "sortTime" : "disk"); kind: "ghost"; checked: Settings.wpSortRev
+                        onClicked: {
+                            const o = ["name", "time", "size"]
+                            if (!Settings.wpSortRev) Settings.wpSortRev = true
+                            else { Settings.wpSortRev = false; Settings.wpSort = o[(o.indexOf(Settings.wpSort) + 1) % 3] }
+                        }
+                    }
+                    UiButton { visible: tools.wh; icon: "sortName"; kind: "ghost"; onClicked: { Wallhaven.nextSort(); Wallhaven.newSearch() } }
+                    UiButton { visible: tools.wh; icon: "arrowLeft"; kind: "ghost"; enabled: Wallhaven.page > 1; onClicked: Wallhaven.go(-1) }
+                    UiButton { visible: tools.wh; icon: "arrowRight"; kind: "ghost"; enabled: Wallhaven.page < Wallhaven.lastPage; onClicked: Wallhaven.go(1) }
+                    UiButton { visible: !tools.wh; icon: Settings.themeModeEff === "dark" ? "night" : "sun"; kind: "ghost"; onClicked: Settings.themeMode = Settings.themeModeEff === "dark" ? "light" : "dark" }
+                    UiField {
+                        id: sfield
+                        width: Math.max(70, tools.width - tools.nBtn * 38 - 4)
+                        placeholderText: tools.wh ? "Buscar no Wallhaven…" : "Filtrar ( / )"
+                        text: tools.wh ? Wallhaven.query : Wallpaper.filter
+                        onTextEdited: if (!tools.wh) Wallpaper.filter = text
+                        onAccepted: { if (tools.wh) { Wallhaven.query = text; Wallhaven.newSearch() } list.forceActiveFocus() }
+                        Keys.onEscapePressed: { if (!tools.wh) { Wallpaper.filter = ""; text = "" } list.forceActiveFocus() }
+                    }
+                }
+
                 // ---- fila de imagens ----
                 PathView {
                     id: list
                     // a lista mostra exatamente N cartoes (a folga das margens fica fora dela: sem lasca do proximo wallpaper)
-                    x: win.box.x + (win.vert ? 0 : Geometry.pickerPad); y: win.box.y + (win.vert ? Geometry.pickerPad : 0)
-                    width: win.box.width - (win.vert ? 0 : 2 * Geometry.pickerPad); height: win.box.height - (win.vert ? 2 * Geometry.pickerPad : 0)
-                    model: Wallpaper.files
+                    x: win.box.x + (win.vert ? 0 : Geometry.pickerPad); y: win.box.y + 40 + (win.vert ? Geometry.pickerPad : 0)
+                    width: win.box.width - (win.vert ? 0 : 2 * Geometry.pickerPad); height: win.box.height - 40 - (win.vert ? 2 * Geometry.pickerPad : 0)
+                    model: root.src === "wh" ? Wallhaven.results : Wallpaper.entries
                     focus: true
                     clip: true
                     // carrossel circular: ao passar do ultimo volta ao primeiro (e vice-versa). Os itens correm por uma reta centrada
                     readonly property real span: (win.vert ? height : width)
-                    pathItemCount: Math.min(Wallpaper.files.length, Math.ceil(span / win.cellLen) + 2)
+                    pathItemCount: Math.min(list.count, Math.ceil(span / win.cellLen) + 2)
                     readonly property real runLen: pathItemCount * win.cellLen
                     path: Path {
                         startX: win.vert ? list.width / 2 : list.width / 2 - list.runLen / 2
@@ -179,8 +216,8 @@ Scope {
                     highlightRangeMode: PathView.StrictlyEnforceRange
                     highlightMoveDuration: 280
                     interactive: false          // so a roda do mouse / setas movem
-                    function onOpen() { currentIndex = Wallpaper.indexOfCurrent(); positionViewAtIndex(currentIndex, PathView.Center); forceActiveFocus(); syncFocus() }
-                    function syncFocus() { Wallpaper.pickerFocus = currentIndex >= 0 && currentIndex < Wallpaper.files.length ? Wallpaper.files[currentIndex].path : "" }
+                    function onOpen() { currentIndex = Math.max(0, Wallpaper.entries.findIndex(f => f.path === Wallpaper.current)); positionViewAtIndex(currentIndex, PathView.Center); forceActiveFocus(); Qt.callLater(forceActiveFocus); syncFocus() }
+                    function syncFocus() { const it = root.src === "local" && currentIndex >= 0 && currentIndex < count ? Wallpaper.entries[currentIndex] : null; Wallpaper.pickerFocus = it && !it.dir ? it.path : "" }
                     Connections {
                         target: root
                         function onAliveChanged() { if (root.alive) list.onOpen(); else Wallpaper.pickerFocus = "" }
@@ -190,6 +227,8 @@ Scope {
                     Component.onDestruction: Wallpaper.pickerFocus = ""
 
                     Keys.onEscapePressed: Settings.wpPickerOpen = false
+                    Connections { target: Wallpaper; function onEntriesChanged() { if (root.alive && root.src === "local") { list.currentIndex = 0; list.syncFocus() } } }
+                    Connections { target: root; function onSrcChanged() { list.currentIndex = 0; list.syncFocus() } }
                     // segurar a tecla: movimento curto por passo (senao cada repeticao reinicia a animacao longa e o carrossel arrasta)
                     function step(d, fast) {
                         highlightMoveDuration = fast ? 70 : 260
@@ -204,16 +243,23 @@ Scope {
                     Keys.onSpacePressed: apply()
                     Keys.onPressed: e => {
                         if (e.key === Qt.Key_Home) { highlightMoveDuration = 260; currentIndex = 0 }
-                        else if (e.key === Qt.Key_End) { highlightMoveDuration = 260; currentIndex = Wallpaper.files.length - 1 }
-                        else if (e.key === Qt.Key_R && Wallpaper.files.length > 1) {   // R: vai para um aleatorio (Enter aplica)
+                        else if (e.key === Qt.Key_End) { highlightMoveDuration = 260; currentIndex = count - 1 }
+                        else if (e.key === Qt.Key_Slash || e.key === Qt.Key_F) { sfield.forceActiveFocus(); sfield.selectAll() }
+                        else if (e.key === Qt.Key_Backspace && root.src === "local") Wallpaper.up()
+                        else if (e.key === Qt.Key_R && count > 1) {   // R: vai para um aleatorio (Enter aplica)
                             let n = currentIndex
-                            while (n === currentIndex) n = Math.floor(Math.random() * Wallpaper.files.length)
+                            while (n === currentIndex) n = Math.floor(Math.random() * count)
                             highlightMoveDuration = 380; currentIndex = n
                         } else return
                         e.accepted = true
                     }
-                    function apply() {
-                        if (currentIndex >= 0 && currentIndex < Wallpaper.files.length) Wallpaper.set(Wallpaper.files[currentIndex].path)
+                    function apply() { if (currentIndex >= 0 && currentIndex < count) choose(root.src === "wh" ? Wallhaven.results[currentIndex] : Wallpaper.entries[currentIndex]) }
+                    // dir: entra na pasta; Wallhaven: baixa e aplica; senao aplica (e fecha, se "fechar ao escolher")
+                    function choose(it) {
+                        if (!it) return
+                        if (root.src === "wh") Wallhaven.take(it, true)
+                        else if (it.dir) Wallpaper.enter(it.path)
+                        else { Wallpaper.set(it.path); if (Settings.wpCloseAfter) Settings.wpPickerOpen = false }
                     }
 
                     Timer { id: wheelT; interval: 160 }   // rolagem seguida = passos rapidos
@@ -227,7 +273,9 @@ Scope {
                         required property int index
                         required property var modelData
                         readonly property bool cur: PathView.isCurrentItem
-                        readonly property bool applied: modelData.path === Wallpaper.current
+                        readonly property bool isDir: !!modelData.dir
+                        readonly property bool isWh: root.src === "wh"
+                        readonly property bool applied: !isWh && !isDir && modelData.path === Wallpaper.current
                         width: win.vert ? list.width : win.cellLen
                         height: win.vert ? win.cellLen : list.height
 
@@ -250,11 +298,17 @@ Scope {
                             Image {
                                 id: thumb
                                 anchors.fill: parent
-                                source: "file://" + card.modelData.path
+                                source: card.isDir ? "" : (card.isWh ? card.modelData.thumb : "file://" + card.modelData.path)
                                 sourceSize: Qt.size(480, 270)
                                 fillMode: Image.PreserveAspectCrop
                                 asynchronous: true
                                 visible: false
+                            }
+                            Rectangle {   // pasta: cartao com icone
+                                visible: card.isDir
+                                anchors.fill: parent; radius: Settings.wpCardRadius; color: Theme.card
+                                border.width: 1; border.color: Theme.border
+                                UiIcon { anchors.centerIn: parent; anchors.verticalCenterOffset: -8; name: "folder"; size: 48; color: Theme.accent }
                             }
                             Rectangle { id: round; anchors.fill: parent; radius: Settings.wpCardRadius; x: -width - 20; layer.enabled: true; layer.smooth: true; layer.textureSize: Qt.size(width * 2, height * 2) }
                             MultiEffect {
@@ -279,14 +333,14 @@ Scope {
                                 }
                                 UiText {
                                     anchors { left: parent.left; leftMargin: 10; right: count.left; rightMargin: 6; bottom: parent.bottom; bottomMargin: 7 }
-                                    text: card.modelData.path.split("/").pop().replace(/\.[^.]+$/, "").replace(/[-_]+/g, " ")
+                                    text: card.isWh ? card.modelData.res + (Wallhaven.downloading === card.modelData.id ? "  ·  baixando…" : "") : (card.isDir ? card.modelData.name : card.modelData.path.split("/").pop().replace(/\.[^.]+$/, "").replace(/[-_]+/g, " "))
                                     color: "white"; font.pixelSize: 11; font.weight: Font.DemiBold
                                     elide: Text.ElideRight
                                 }
                                 UiText {
                                     id: count
                                     anchors { right: parent.right; rightMargin: 10; bottom: parent.bottom; bottomMargin: 7 }
-                                    text: (card.index + 1) + " / " + Wallpaper.files.length
+                                    text: (card.index + 1) + " / " + list.count
                                     color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 10
                                 }
                             }
@@ -303,18 +357,18 @@ Scope {
                                 anchors.fill: parent
                                 hoverEnabled: true
                                 cursorShape: Qt.PointingHandCursor
-                                onClicked: { list.currentIndex = card.index; Wallpaper.set(card.modelData.path) }
+                                onClicked: { list.currentIndex = card.index; list.choose(card.modelData) }
                             }
                         }
                     }
                 }
 
                 UiText {
-                    visible: Wallpaper.files.length === 0
-                    x: win.box.x; y: win.box.y + win.box.height / 2 - height / 2; width: win.box.width
+                    visible: list.count === 0
+                    x: win.box.x; y: win.box.y + 40 + (win.box.height - 40) / 2 - height / 2; width: win.box.width
                     horizontalAlignment: Text.AlignHCenter
                     color: Theme.muted; font.pixelSize: 14
-                    text: "Nenhuma imagem em " + Wallpaper.dir
+                    text: root.src === "wh" ? (Wallhaven.loading ? "Buscando…" : (Wallhaven.status || "Digite algo e Enter para buscar no Wallhaven")) : (Wallpaper.filter !== "" ? "Nada com esse nome" : "Nenhuma imagem em " + Wallpaper.viewDir)
                 }
                 }
             }

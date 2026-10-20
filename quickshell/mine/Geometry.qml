@@ -8,7 +8,7 @@ import QtQuick
 
 Singleton {
     // profundidade do conteudo do seletor de wallpaper (so as miniaturas, sem titulos)
-    function pickerDepth(vertical: bool): real { return vertical ? 296 : 186 }
+    function pickerDepth(vertical: bool): real { return vertical ? 336 : 226 }
     // comprimento do painel do seletor: N cartoes (passo 256 na horizontal, 142 na vertical) + folga + margens internas
     function pickerLen(vertical: bool, W: real, H: real): real {
         const n = Math.max(1, Math.min(5, Settings.wpPickerCount))

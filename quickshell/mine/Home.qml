@@ -28,6 +28,7 @@ Scope {
         { id: "audio", label: "Áudio", icon: "volume" },
         { id: "system", label: "Sistema", icon: "chip" },
         { id: "net", label: "Conexão", icon: "wifi" },
+        { id: "vpn", label: "VPN", icon: "shield" },
         { id: "bt", label: "Bluetooth", icon: "bluetooth" }
     ]
 
@@ -294,7 +295,7 @@ Scope {
                         Loader {
                             id: pageL
                             anchors { left: rail.right; leftMargin: 12; right: parent.right; rightMargin: 12; top: header.bottom; topMargin: 10; bottom: parent.bottom; bottomMargin: 12 }
-                            sourceComponent: ({ home: pHome, media: pMedia, notifs: pNotifs, agenda: pAgenda, audio: pAudio, system: pSystem, net: pNet, bt: pBt })[root.tab] ?? pHome
+                            sourceComponent: ({ home: pHome, media: pMedia, notifs: pNotifs, agenda: pAgenda, audio: pAudio, system: pSystem, net: pNet, vpn: pVpn, bt: pBt })[root.tab] ?? pHome
                             opacity: 0
                             onLoaded: fadeIn.restart()
                             Connections { target: root; function onScrollReqChanged() { if (pageL.item && pageL.item.contentY !== undefined) pageL.item.contentY = root.scrollReq } }
@@ -322,6 +323,7 @@ Scope {
                         Component { id: pAudio; HomeAudio { home: root } }
                         Component { id: pSystem; HomeSystem { home: root } }
                         Component { id: pNet; HomeNet { home: root } }
+                        Component { id: pVpn; HomeVpn { home: root } }
                         Component { id: pBt; HomeBt { home: root } }
                         Component { id: pNotifs; HomeNotifs { home: root } }
                         Component { id: pAgenda; HomeAgenda { home: root } }

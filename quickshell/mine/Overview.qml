@@ -21,10 +21,11 @@ Scope {
     function hypr(lua) { Quickshell.execDetached(["hyprctl", "eval", "hl.dispatch(" + lua + ")"]) }
     function goWs(id) { hypr('hl.dsp.focus({ workspace = ' + id + ' })'); open = false }
     function goWin(addr) { hypr('hl.dsp.focus({ window = "address:' + addr + '" })'); open = false }
+    function closeWin(addr) { hypr('hl.dsp.window.close({ window = "address:' + addr + '" })'); Qt.callLater(Hyprland.refreshToplevels) }
     function moveWin(addr, ws) { hypr('hl.dsp.window.move({ workspace = ' + ws + ', window = "address:' + addr + '" })'); Qt.callLater(Hyprland.refreshToplevels) }
 
     LazyLoader {
-        active: root.open
+        active: root.open && Settings.overviewOn
 
         PanelWindow {
             id: win
@@ -44,7 +45,9 @@ Scope {
             readonly property int cols: Settings.overviewCols
             readonly property int rows: Settings.overviewRows
             readonly property real gap: 16
-            readonly property real cardW: Math.min((width * 0.9 - (cols - 1) * gap) / cols, ((height * 0.82 - (rows - 1) * gap) / rows) * mw / mh)
+            readonly property real fitW: Math.min((width * 0.9 - (cols - 1) * gap) / cols, ((height * 0.82 - (rows - 1) * gap) / rows) * mw / mh)
+            readonly property real cardW: Settings.overviewScale > 0 ? Math.min(fitW, mw * Settings.overviewScale / 100) : fitW
+            function wsAt(r, c) { return base + (Settings.overviewBtt ? rows - 1 - r : r) * cols + (Settings.overviewRtl ? cols - 1 - c : c) + 1 }
             readonly property real cardH: cardW * mh / mw
             readonly property real sc: cardW / mw
             readonly property int activeWs: mon && mon.activeWorkspace ? mon.activeWorkspace.id : 1
@@ -58,7 +61,11 @@ Scope {
             Item {
                 focus: true
                 Keys.onEscapePressed: root.open = false
-                Keys.onPressed: e => { const n = e.key - Qt.Key_1; if (n >= 0 && n < 9) { root.goWs(win.base + n + 1); e.accepted = true } }
+                Keys.onPressed: e => {
+                    const n = e.key - Qt.Key_1
+                    if (n >= 0 && n < 9) { root.goWs(win.base + n + 1); e.accepted = true }
+                    else if (e.key === Qt.Key_Left || e.key === Qt.Key_Right) { root.hypr('hl.dsp.focus({ workspace = ' + Math.max(1, win.activeWs + (e.key === Qt.Key_Left ? -1 : 1)) + ' })'); e.accepted = true }
+                }
             }
 
             Grid {
@@ -73,7 +80,7 @@ Scope {
                     delegate: Rectangle {
                         id: ws
                         required property int index
-                        readonly property int wsId: win.base + index + 1
+                        readonly property int wsId: win.wsAt(Math.floor(index / win.cols), index % win.cols)
                         readonly property bool cur: wsId === win.activeWs
                         readonly property var mine: win.wins.filter(t => t.lastIpcObject.workspace.id === wsId)
                         width: win.cardW; height: win.cardH
@@ -123,15 +130,16 @@ Scope {
                                     id: dm
                                     anchors.fill: parent
                                     hoverEnabled: true
+                                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
                                     drag.target: wr
                                     cursorShape: drag.active ? Qt.ClosedHandCursor : Qt.PointingHandCursor
                                     onPressed: win.dragAddr = wr.o.address
-                                    onPositionChanged: if (drag.active) { const p = mapToItem(grid, mouseX, mouseY); const c = Math.floor(p.x / (win.cardW + win.gap)), r = Math.floor(p.y / (win.cardH + win.gap)); win.dropWs = c >= 0 && c < win.cols && r >= 0 && r < win.rows ? win.base + r * win.cols + c + 1 : -1 }
+                                    onPositionChanged: if (drag.active) { const p = mapToItem(grid, mouseX, mouseY); const c = Math.floor(p.x / (win.cardW + win.gap)), r = Math.floor(p.y / (win.cardH + win.gap)); win.dropWs = c >= 0 && c < win.cols && r >= 0 && r < win.rows ? win.wsAt(r, c) : -1 }
                                     onReleased: {
                                         if (drag.active || win.dropWs > 0) { if (win.dropWs > 0 && win.dropWs !== ws.wsId) root.moveWin(wr.o.address, win.dropWs); wr.x = Qt.binding(() => wr.ox); wr.y = Qt.binding(() => wr.oy) }
                                         win.dropWs = -1; win.dragAddr = ""
                                     }
-                                    onClicked: root.goWin(wr.o.address)
+                                    onClicked: mouse => { if (mouse.button === Qt.MiddleButton) root.closeWin(wr.o.address); else root.goWin(wr.o.address) }
                                 }
                                 HoverHandler { id: wm }
                             }
@@ -142,7 +150,7 @@ Scope {
             UiText {
                 anchors { horizontalCenter: parent.horizontalCenter; top: grid.bottom; topMargin: 18 }
                 opacity: Math.min(1, win.k)
-                text: "Clique para ir · arraste uma janela para outro workspace · 1–9 escolhem · Esc fecha"
+                text: "Clique para ir · arraste uma janela para outro workspace · 1–9 e ←/→ trocam · botão do meio fecha a janela · Esc fecha"
                 color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12
             }
         }

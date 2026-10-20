@@ -194,6 +194,18 @@ Column {
     }
 
     Card {
+        icon: "layers"
+        title: "Visão geral"
+        subtitle: "A grade de workspaces (ação “Visão geral” ou ipc overview toggle)."
+        UiSwitch { label: "Ligada"; checked: Settings.overviewOn; onToggled: v => Settings.overviewOn = v }
+        UiSlider { label: "Linhas"; from: 1; to: 4; value: Settings.overviewRows; onMoved: v => Settings.overviewRows = Math.round(v) }
+        UiSlider { label: "Colunas"; from: 1; to: 8; value: Settings.overviewCols; onMoved: v => Settings.overviewCols = Math.round(v) }
+        UiSlider { label: "Tamanho de cada workspace (0 = automático)"; from: 0; to: 40; value: Settings.overviewScale; suffix: " %"; onMoved: v => Settings.overviewScale = Math.round(v) }
+        UiSwitch { label: "Grade da direita para a esquerda"; checked: Settings.overviewRtl; onToggled: v => Settings.overviewRtl = v }
+        UiSwitch { label: "Grade de baixo para cima"; checked: Settings.overviewBtt; onToggled: v => Settings.overviewBtt = v }
+    }
+
+    Card {
         icon: "animation"
         title: "Animação"
         subtitle: "As animações são criadas e editadas na página Animações."

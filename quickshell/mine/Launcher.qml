@@ -102,13 +102,51 @@ Scope {
     function arr(v) { return Settings.list(v) }
     function toggleFav(id) { const l = arr(Settings.launcherFavs).slice(), i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else l.push(id); Settings.launcherFavs = l }
     function norm(t) { return String(t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase() }
+    // acoes com argumento (como no end4): "todo texto", "dark", "light", "wipeclipboard"
+    function argActions(q) {
+        const m = q.trim().match(/^(\S+)\s*(.*)$/)
+        if (!m) return []
+        const c = norm(m[1]), a = m[2].trim(), out = []
+        if (c.length >= 2 && ("todo".startsWith(c) || "tarefa".startsWith(c)) && a !== "")
+            out.push({ name: "Nova tarefa: " + a, desc: "Adiciona à lista da Agenda", glyph: "check", act: () => { Settings.homeTodo = Array.from(Settings.homeTodo ?? []).concat([{ text: a, done: false }]) } })
+        if (c.length >= 2 && "dark".startsWith(c) && a === "") out.push({ name: "Tema escuro", desc: "Ação do shell", glyph: "themeAuto", act: () => Settings.themeMode = "dark" })
+        if (c.length >= 2 && "light".startsWith(c) && a === "") out.push({ name: "Tema claro", desc: "Ação do shell", glyph: "themeAuto", act: () => Settings.themeMode = "light" })
+        if (c.length >= 3 && ("wipeclipboard".startsWith(c) || "limparareadetransferencia".startsWith(c)) && a === "")
+            out.push({ name: "Apagar todo o histórico da área de transferência", desc: "cliphist wipe", glyph: "trash", act: () => Quickshell.execDetached(["cliphist", "wipe"]) })
+        return out
+    }
     function actionItems(q) {
         const w = norm(q).trim().split(/\s+/).filter(x => x)
-        return Actions.list.filter(a => w.every(x => norm(a.name + " " + a.keys).includes(x)))
-            .map(a => ({ name: a.name + (a.toggle ? (a.on() ? "  (ligado)" : "  (desligado)") : ""), desc: a.desc ?? "Ação do shell", glyph: a.icon, act: () => a.run() }))
+        return argActions(q).concat(Actions.list.filter(a => w.every(x => norm(a.name + " " + a.keys).includes(x)))
+            .map(a => ({ name: a.name + (a.toggle ? (a.on() ? "  (ligado)" : "  (desligado)") : ""), desc: a.desc ?? "Ação do shell", glyph: a.icon, act: () => a.run() })))
+    }
+    // qalc (unidades, moedas, porcentagens): roda 30 ms depois de parar de digitar; a conta simples em JS continua instantanea
+    property string qalcQ: ""
+    property string qalcOut: ""
+    readonly property string qalcWant: {
+        const t = (mode === "math" ? rest : (mode === "" ? query : "")).trim()
+        if (t === "" || t.length > 80 || !/[0-9]/.test(t)) return ""
+        if (mode === "math") return t
+        return /\d\s*[a-zA-Z°€$µ]+\s+(to|in|em|para)\s+[a-zA-Z€$°µ]+/i.test(t) || /%\s*(of|de)\s+\d/i.test(t) ? t : ""
+    }
+    onQalcWantChanged: { qalcT.stop(); if (qalcWant !== "") qalcT.start() }
+    Timer { id: qalcT; interval: 30; onTriggered: { qalcProc.running = false; qalcProc.running = true } }
+    Process {
+        id: qalcProc
+        command: ["qalc", "-t", root.qalcWant]
+        property string asked: ""
+        onStarted: asked = root.qalcWant
+        stdout: StdioCollector { onStreamFinished: { root.qalcQ = qalcProc.asked; root.qalcOut = text.trim() } }
+    }
+    function qalcItem(t) {
+        const o = qalcOut
+        if (qalcQ !== t || o === "" || /error|warning|unknown/i.test(o) || o === t) return []
+        return [{ name: "= " + o, desc: t + "  ·  Enter copia o resultado", glyph: "calc", act: () => { Quickshell.clipboardText = o } }]
     }
     function mathItems(q, forced) {
         const t = q.trim()
+        const qi = qalcItem(t)
+        if (qi.length) return qi
         if (t === "" || (!forced && !/[0-9]/.test(t)) || (!forced && !/[-+*/^%()]|sqrt|sin|cos|log/.test(t))) return []
         if (!/^[0-9a-z+\-*/%^().,\s]+$/i.test(t)) return []
         let ex = t.replace(/,/g, ".").replace(/\^/g, "**").replace(/\bpi\b/g, "Math.PI").replace(/\be\b/g, "Math.E")
@@ -252,7 +290,8 @@ Scope {
         const u = Object.assign({}, Settings.launcherUsage ?? {})
         u[e.id] = (u[e.id] ?? 0) + 1
         Settings.launcherUsage = u
-        e.execute()
+        if (e.runInTerminal && e.command && e.command.length) Quickshell.execDetached({ command: [Settings.launcherTerminal || "kitty", "-e"].concat(Array.from(e.command)), workingDirectory: e.workingDirectory || "" })
+        else e.execute()
     }
 
     // a janela e criada uma vez (ao iniciar) e so mostrada/escondida: criar na hora custava 1-2 quadros no inicio da animacao

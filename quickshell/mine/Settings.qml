@@ -117,6 +117,10 @@ Singleton {
     property alias dockPinned: adapter.dockPinned         // apps fixados no dock (ids .desktop)
     property alias overviewRows: adapter.overviewRows     // visao geral: linhas x colunas de workspaces
     property alias overviewCols: adapter.overviewCols
+    property alias overviewOn: adapter.overviewOn           // visao geral ligada
+    property alias overviewScale: adapter.overviewScale     // tamanho de cada workspace em % da tela (0 = automatico)
+    property alias overviewRtl: adapter.overviewRtl         // grade espelhada: da direita para a esquerda
+    property alias overviewBtt: adapter.overviewBtt         // grade espelhada: de baixo para cima
     property alias polkitOn: adapter.polkitOn             // o shell e o agente de polkit (pedidos de senha de administrador)
     property bool polkitRegistered: false                 // conseguiu registrar (falha se outro agente ja estiver rodando)     // segundos de contagem antes de sair/reiniciar/desligar (0 = na hora)
     property alias showDelay: adapter.showDelay         // ms com o mouse na borda antes de mostrar (evita abrir sem querer)
@@ -167,6 +171,7 @@ Singleton {
     property alias antiFlashStrength: adapter.antiFlashStrength
     property alias homeCols: adapter.homeCols
     property alias homeColumns: adapter.homeColumns   // unidades por linha dos botoes rapidos do Inicio (1-8); cada botao ocupa 1 a 3 unidades
+    property alias vpnProfile: adapter.vpnProfile   // uuid do perfil de VPN escolhido para o botao
     property alias nightGamma: adapter.nightGamma   // brilho (gamma) do hyprsunset, 25-100
     property alias hotCorners: adapter.hotCorners
     property alias hotCornerDelay: adapter.hotCornerDelay
@@ -261,6 +266,12 @@ Singleton {
     property alias wpPickerCount: adapter.wpPickerCount       // quantos wallpapers aparecem no seletor (1, 3 ou 5)
     property alias wpPickerRadius: adapter.wpPickerRadius     // arredondamento dos cantos do painel (topo)
     property alias wpPickerFillet: adapter.wpPickerFillet     // curva onde o painel encontra a moldura
+    property alias wpSort: adapter.wpSort                     // ordem no seletor: name | time | size
+    property alias wpSortRev: adapter.wpSortRev
+    property alias wpCloseAfter: adapter.wpCloseAfter         // fechar o seletor ao escolher
+    property alias wpSystemDialog: adapter.wpSystemDialog     // super + W abre o navegador de arquivos em vez do carrossel
+    property alias whPrefs: adapter.whPrefs                   // filtros do Wallhaven { sorting, topRange, order, ratios, cats, purity, colors }
+    property alias whApiKey: adapter.whApiKey                 // chave da API do Wallhaven (sketchy / nsfw)
     property alias wpCardRadius: adapter.wpCardRadius         // arredondamento das miniaturas
     property alias wpPickerGap: adapter.wpPickerGap           // distancia da borda quando flutuante (px)
     property bool wpPickerOpen: false                   // seletor aberto (nao e salvo)
@@ -752,6 +763,16 @@ Singleton {
             property bool polkitOn: false
             property int overviewRows: 2
             property var dockPinned: ["kitty", "brave-browser", "thunar"]
+            property bool overviewOn: true
+            property int overviewScale: 0
+            property bool overviewRtl: false
+            property bool overviewBtt: false
+            property string wpSort: "name"
+            property bool wpSortRev: false
+            property bool wpCloseAfter: false
+            property bool wpSystemDialog: false
+            property var whPrefs: ({})
+            property string whApiKey: ""
             property int overviewCols: 5
             property string barsPanelMode: "push"
             property string wpDir: "~/Imagens/Wallpapers"
@@ -801,6 +822,7 @@ Singleton {
             property int homeCols: 3
             property int homeColumns: 6
             property int nightGamma: 100
+            property string vpnProfile: ""
             property var hotCorners: ({})
             property int hotCornerDelay: 250
             property var overlayItems: []
