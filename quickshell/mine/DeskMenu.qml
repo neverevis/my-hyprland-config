@@ -9,7 +9,7 @@ Singleton {
     property real x: 0
     property real y: 0
     property string wid: ""
-    property string sub: ""          // "add" | "presets" | ""
+    property string sub: ""          // "add" | "widgets" | "wpstyle" | "presets" | ""
     function show(px, py, id) { x = px; y = py; wid = id ?? ""; sub = ""; open = true }
     function close() { open = false; sub = "" }
 }

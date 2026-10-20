@@ -1,12 +1,14 @@
 // Prateleira de arquivos (como o "dropover" do end4): um cartao na lateral da tela onde voce solta arquivos vindos de
 // qualquer app e depois arrasta de volta para outro lugar (outro app, outra pasta). A lista fica salva ate limpar.
 // Abrir: acao "Prateleira de arquivos" no launcher, ou qs -c mine ipc call shelf toggle.
+pragma Singleton
+
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
 import QtQuick
 
-Scope {
+Singleton {
     id: root
     property bool open: false
     IpcHandler {

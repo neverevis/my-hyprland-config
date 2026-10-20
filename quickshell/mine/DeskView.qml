@@ -16,6 +16,20 @@ Item {
     property alias count: rep.count
     function itemAt(i) { return rep.itemAt(i) }
     signal guides(bool gx, bool gy)
+    signal dropped(rect r)                 // widget solto (retangulo final): a camada pisca as linhas de alinhamento
+    // fim do arrasto em grupo: todos os selecionados ganham a mesma mudanca (uma gravacao so)
+    function commitGroup(dx, dy) {
+        const a = area, ps = []
+        for (let i = 0; i < rep.count; i++) {
+            const it = rep.itemAt(i)
+            if (!it || !DeskState.inSel(it.wid)) continue
+            ps.push({ id: it.wid, fx: Math.max(0, Math.min(1, (it.bx + dx - a.x) / Math.max(1, a.width - it.width))), fy: Math.max(0, Math.min(1, (it.by + dy - a.y) / Math.max(1, a.height - it.height))) })
+        }
+        DeskState.setPosMany(ps)
+    }
+    function finishDying(id) {
+        for (let i = 0; i < slots.count; i++) if (slots.get(i).wid === id) { if (slots.get(i).dying) slots.remove(i); return }
+    }
 
     // lista estavel de ids: quem continua no layout nao e recriado (assim pode animar ate o novo lugar)
     ListModel { id: slots }
@@ -25,10 +39,15 @@ Item {
     onWantedChanged: sync()
     function sync() {
         const ids = wanted
-        for (let i = slots.count - 1; i >= 0; i--) if (!ids.includes(slots.get(i).wid)) slots.remove(i)
+        // quem saiu da lista some com animacao (dying) e so depois e removido
+        for (let i = slots.count - 1; i >= 0; i--) {
+            const keep = ids.includes(slots.get(i).wid)
+            if (!keep && !slots.get(i).dying) slots.setProperty(i, "dying", true)
+            else if (keep && slots.get(i).dying) slots.setProperty(i, "dying", false)
+        }
         const have = []
         for (let i = 0; i < slots.count; i++) have.push(slots.get(i).wid)
-        for (const id of ids) if (!have.includes(id)) slots.append({ wid: id })
+        for (const id of ids) if (!have.includes(id)) slots.append({ wid: id, dying: false })
     }
     Component.onCompleted: sync()
 
@@ -39,7 +58,11 @@ Item {
             id: card
             required property string wid
             required property int index
-            readonly property var w: { Settings.desktopWidgets; return DeskState.find(wid) }
+            required property bool dying
+            readonly property var wNow: { Settings.desktopWidgets; return DeskState.find(wid) }
+            property var wKeep: null          // ultimo estado: o widget continua desenhado enquanto some
+            onWNowChanged: if (wNow) wKeep = wNow
+            readonly property var w: wNow ?? wKeep
             readonly property string cardStyle: { const c = w ? DeskState.opt(w, "card") : "auto"; return c === "auto" ? Settings.desktopCardStyle : c }
             // arrastando a alca do canto: dw/dh valem ate soltar
             property real dw: -1
@@ -53,18 +76,22 @@ Item {
             property real ox: 0
             property real oy: 0
             property bool moving: false
-            x: bx + ox; y: by + oy
+            // arrasto em grupo: quem esta selecionado junto acompanha o widget arrastado
+            readonly property bool follower: DeskState.editing && DeskState.dragging !== "" && DeskState.dragging !== wid && DeskState.inSel(wid) && DeskState.inSel(DeskState.dragging)
+            x: bx + (follower ? DeskState.gdx : ox); y: by + (follower ? DeskState.gdy : oy)
             width: tw; height: th
-            z: (Settings.desktopWidgets || []).findIndex(x => x.id === wid) + (moving ? 100 : 0) + (DeskState.selected === wid ? 50 : 0)
-            Behavior on x { enabled: !card.moving && !card.resizing; MotionAnim { use: "desktop" } }
-            Behavior on y { enabled: !card.moving && !card.resizing; MotionAnim { use: "desktop" } }
+            z: (Settings.desktopWidgets || []).findIndex(x => x.id === wid) + (moving ? 100 : 0) + (DeskState.selected === wid || DeskState.inSel(wid) ? 50 : 0)
+            Behavior on x { enabled: !card.moving && !card.resizing && !card.follower; MotionAnim { use: "desktop" } }
+            Behavior on y { enabled: !card.moving && !card.resizing && !card.follower; MotionAnim { use: "desktop" } }
             Behavior on width { enabled: !card.resizing; MotionAnim { use: "desktop" } }
             Behavior on height { enabled: !card.resizing; MotionAnim { use: "desktop" } }
             property real born: 0
-            Component.onCompleted: born = 1
+            Component.onCompleted: { wKeep = wNow; born = 1 }
+            onDyingChanged: born = dying ? 0 : 1
+            Timer { interval: 340; running: card.dying; onTriggered: view.finishDying(card.wid) }
             Behavior on born { NumberAnimation { duration: Motion.durationOf("desktop", false) + 120; easing.type: Easing.OutBack; easing.overshoot: 1.2 } }
-            opacity: Math.min(1, born) * (!view.lockMode && w && DeskState.opt(w, "lock") && DeskState.opt(w, "lockOnly") ? 0.45 : 1)   // so da tela de bloqueio: apagado editando
-            scale: (0.85 + 0.15 * born) * (moving ? 1.03 : 1)
+            opacity: Math.max(0, Math.min(1, born)) * (!view.lockMode && w && DeskState.opt(w, "lock") && DeskState.opt(w, "lockOnly") ? 0.45 : 1)   // so da tela de bloqueio: apagado editando
+            scale: Math.max(0.5, 0.85 + 0.15 * born) * (moving ? 1.05 : 1)
             Behavior on scale { enabled: card.born >= 1; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 
             // ---- cores do conteudo ----
@@ -178,11 +205,62 @@ Item {
                 anchors.margins: -3
                 radius: bg.radius + 3
                 color: card.moving ? Theme.tint(0.1) : "transparent"
-                border.width: DeskState.selected === card.wid ? 3 : 2
+                border.width: DeskState.selected === card.wid || DeskState.inSel(card.wid) ? 3 : 2
                 border.color: Theme.accent
-                opacity: view.editable && DeskState.editing ? (dragArea.containsMouse || card.moving || DeskState.selected === card.wid ? 1 : 0.5) : 0
+                opacity: view.editable && DeskState.editing ? (dragArea.containsMouse || card.moving || card.follower || DeskState.selected === card.wid || DeskState.inSel(card.wid) ? 1 : 0.5) : 0
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 160 } }
+            }
+            // ---- arrasto (edicao: MouseArea; fora dela: DragHandler, que so assume depois de mover um pouco) ----
+            property bool didDrag: false
+            function dragStart(ctrl) {
+                if (DeskState.locked) return
+                const l = Settings.desktopWidgets || []
+                if (l.length && l[l.length - 1].id !== wid) DeskState.bringToFront(wid)   // traz para a frente ao pressionar
+                if (DeskState.editing && !ctrl && !DeskState.inSel(wid)) DeskState.selection = [wid]
+                card.moving = true; DeskState.dragging = wid; DeskState.gdx = 0; DeskState.gdy = 0
+            }
+            function dragMove(dx, dy) {
+                if (!card.moving) return
+                if (Math.abs(dx) + Math.abs(dy) > 4) didDrag = true
+                const a = view.area
+                let nx = Math.max(a.x, Math.min(a.x + a.width - card.width, card.bx + dx))
+                let ny = Math.max(a.y, Math.min(a.y + a.height - card.height, card.by + dy))
+                if (Settings.desktopSnap) { nx = a.x + Math.round((nx - a.x) / 24) * 24; ny = a.y + Math.round((ny - a.y) / 24) * 24 }
+                const cxs = a.x + (a.width - card.width) / 2, cys = a.y + (a.height - card.height) / 2
+                const gx = Math.abs(nx - cxs) < 18, gy = Math.abs(ny - cys) < 18
+                if (gx) nx = cxs
+                if (gy) ny = cys
+                view.guides(gx, gy)
+                card.ox = nx - card.bx; card.oy = ny - card.by
+                DeskState.gdx = card.ox; DeskState.gdy = card.oy
+            }
+            function dragEnd() {
+                if (!card.moving) return
+                if (didDrag) {
+                    const a = view.area
+                    view.dropped(Qt.rect(card.bx + card.ox, card.by + card.oy, card.width, card.height))
+                    if (DeskState.editing && DeskState.selection.length > 1 && DeskState.inSel(card.wid)) view.commitGroup(card.ox, card.oy)
+                    else {
+                        const fx = Math.max(0, Math.min(1, (card.bx + card.ox - a.x) / Math.max(1, a.width - card.width)))
+                        const fy = Math.max(0, Math.min(1, (card.by + card.oy - a.y) / Math.max(1, a.height - card.height)))
+                        DeskState.setPos(card.wid, fx, fy)
+                    }
+                }
+                card.ox = 0; card.oy = 0
+                card.moving = false; DeskState.dragging = ""; DeskState.gdx = 0; DeskState.gdy = 0
+                view.guides(false, false)
+            }
+            DragHandler {
+                enabled: view.editable && !DeskState.editing && Settings.desktopAlwaysDrag && !DeskState.locked
+                target: null
+                dragThreshold: 10
+                acceptedButtons: Qt.LeftButton
+                onActiveChanged: {
+                    if (active) { card.didDrag = false; card.dragStart(false) }
+                    else { card.dragEnd() }
+                }
+                onCentroidChanged: if (active) card.dragMove(centroid.scenePosition.x - centroid.scenePressPosition.x, centroid.scenePosition.y - centroid.scenePressPosition.y)
             }
             MouseArea {
                 id: dragArea
@@ -194,40 +272,28 @@ Item {
                 cursorShape: card.moving && !DeskState.locked ? Qt.ClosedHandCursor : Qt.ArrowCursor
                 property real sx: 0
                 property real sy: 0
-                property bool dragged: false
+                property bool ctrl: false
                 onPressed: m => {
                     if (m.button === Qt.RightButton) { const q = mapToItem(view, m.x, m.y); DeskMenu.show(q.x, q.y, card.wid); return }
-                    const p = mapToItem(view, m.x, m.y); sx = p.x; sy = p.y; dragged = false
-                    if (!DeskState.locked) { card.moving = true; DeskState.dragging = card.wid }
+                    const p = mapToItem(view, m.x, m.y); sx = p.x; sy = p.y; card.didDrag = false
+                    ctrl = (m.modifiers & Qt.ControlModifier) !== 0
+                    card.dragStart(ctrl)
                 }
                 onPositionChanged: m => {
                     if (!pressed || !card.moving) return
                     const p = mapToItem(view, m.x, m.y)
-                    if (Math.abs(p.x - sx) + Math.abs(p.y - sy) > 4) dragged = true
-                    const a = view.area
-                    let nx = Math.max(a.x, Math.min(a.x + a.width - card.width, card.bx + p.x - sx))
-                    let ny = Math.max(a.y, Math.min(a.y + a.height - card.height, card.by + p.y - sy))
-                    if (Settings.desktopSnap) { nx = a.x + Math.round((nx - a.x) / 24) * 24; ny = a.y + Math.round((ny - a.y) / 24) * 24 }
-                    const cxs = a.x + (a.width - card.width) / 2, cys = a.y + (a.height - card.height) / 2
-                    const gx = Math.abs(nx - cxs) < 18, gy = Math.abs(ny - cys) < 18
-                    if (gx) nx = cxs
-                    if (gy) ny = cys
-                    view.guides(gx, gy)
-                    card.ox = nx - card.bx; card.oy = ny - card.by
+                    card.dragMove(p.x - sx, p.y - sy)
                 }
                 onReleased: m => {
                     if (m.button === Qt.RightButton) return
-                    if (card.moving && dragged) {
-                        const a = view.area
-                        const fx = Math.max(0, Math.min(1, (card.bx + card.ox - a.x) / Math.max(1, a.width - card.width)))
-                        const fy = Math.max(0, Math.min(1, (card.by + card.oy - a.y) / Math.max(1, a.height - card.height)))
-                        DeskState.setPos(card.wid, fx, fy)
-                    } else DeskState.selected = DeskState.selected === card.wid ? "" : card.wid   // clique: abre/fecha as opcoes
-                    card.ox = 0; card.oy = 0
-                    card.moving = false; DeskState.dragging = ""
-                    view.guides(false, false)
+                    const was = card.didDrag
+                    card.dragEnd()
+                    if (was) return
+                    if (ctrl) DeskState.toggleSel(card.wid)                       // Ctrl+clique: poe/tira da selecao
+                    else if (DeskState.selected === card.wid) { DeskState.selected = ""; DeskState.selection = [] }
+                    else { DeskState.selected = card.wid; DeskState.selection = [card.wid] }   // clique: abre as opcoes
                 }
-                onDoubleClicked: DeskState.selected = card.wid
+                onDoubleClicked: { DeskState.selected = card.wid; DeskState.selection = [card.wid] }
             }
             // ---- alca do canto: tamanho arrastando (imagem: livre; os outros encaixam na grade) ----
             Rectangle {
@@ -238,7 +304,7 @@ Item {
                 z: 20
                 color: rszM.pressed || rszM.containsMouse ? Theme.accent : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.95)
                 border.width: 2; border.color: Theme.accent
-                opacity: view.editable && DeskState.editing && !card.moving && (dragArea.containsMouse || rszM.containsMouse || card.resizing || DeskState.selected === card.wid) ? 1 : 0
+                opacity: view.editable && DeskState.editing && !DeskState.locked && !card.moving && (dragArea.containsMouse || rszM.containsMouse || card.resizing || DeskState.selected === card.wid) ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 140 } }
                 UiIcon { anchors.centerIn: parent; name: "resize"; size: 12; color: rszM.pressed || rszM.containsMouse ? Theme.accentText : Theme.accent }
@@ -287,7 +353,7 @@ Item {
                 anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.top; bottomMargin: 2 }
                 width: 24; height: 34
                 z: 20
-                opacity: rot.can && view.editable && DeskState.editing && !card.moving && (dragArea.containsMouse || rotM.containsMouse || rotM.pressed || DeskState.selected === card.wid) ? 1 : 0
+                opacity: rot.can && view.editable && DeskState.editing && !DeskState.locked && !card.moving && (dragArea.containsMouse || rotM.containsMouse || rotM.pressed || DeskState.selected === card.wid) ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 140 } }
                 Rectangle { anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom } width: 2; height: 12; color: Theme.accent }
@@ -327,6 +393,7 @@ Item {
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 160 } }
                 Rectangle {
+                    visible: !DeskState.locked
                     height: 28; width: sz.implicitWidth + 34; radius: 14
                     color: szm.containsMouse ? Theme.accent : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.92)
                     border.width: 1; border.color: Theme.border

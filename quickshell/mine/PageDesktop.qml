@@ -19,7 +19,7 @@ Column {
         Row {
             spacing: 8
             UiButton { icon: DeskState.editing ? "check" : "pencil"; text: DeskState.editing ? "Terminar edição" : "Editar na tela"; kind: "accent"; onClicked: { DeskState.editing = !DeskState.editing; if (DeskState.editing) Settings.settingsOpen = false } }
-            UiButton { icon: DeskState.locked ? "lockOpen" : "lock"; text: DeskState.locked ? "Destravar posições" : "Travar posições"; kind: "ghost"; onClicked: DeskState.locked = !DeskState.locked }
+            UiButton { icon: DeskState.locked ? "lockOpen" : "lock"; text: DeskState.locked ? "Destravar posições" : "Travar posições"; kind: "ghost"; onClicked: Settings.desktopLocked = !Settings.desktopLocked }
             UiText { anchors.verticalCenter: parent.verticalCenter; text: (Settings.desktopWidgets || []).length + " widget(s) na tela"; color: Theme.muted; font.pixelSize: 12 }
         }
         UiLabel { text: "Fundo padrão dos widgets" }
@@ -40,6 +40,9 @@ Column {
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Cada widget pode ter a própria cor nas opções dele (ou seguir esta, em \"Padrão\")." }
         UiSwitch { label: "Sombra nos widgets"; icon: "layers"; description: "Deixa o texto legível em cima de qualquer wallpaper. Estilo, intensidade e tamanho: Aparência › Sombras e brilhos."; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }
         UiSwitch { label: "Encaixar na grade ao arrastar"; description: "Grade de 24 px e guias no centro da tela."; checked: Settings.desktopSnap; onToggled: on => Settings.desktopSnap = on }
+        UiSwitch { label: "Arrastar sem modo de edição"; icon: "cursorMove"; description: "Mover os widgets direto na área de trabalho (clique direito abre o menu). Travar posições desliga."; checked: Settings.desktopAlwaysDrag; onToggled: on => Settings.desktopAlwaysDrag = on }
+        UiSwitch { label: "Grade ao arrastar"; icon: "grid"; description: "Mostra a grade de pontos só enquanto um widget é movido."; checked: Settings.desktopGrid; onToggled: on => Settings.desktopGrid = on }
+        UiSwitch { label: "Linhas de alinhamento ao soltar"; icon: "alignCenter"; description: "As bordas do widget piscam por 2 s depois de soltar."; checked: Settings.desktopSnapLines; onToggled: on => Settings.desktopSnapLines = on }
         UiSwitch { label: "Desfoque atrás dos widgets"; icon: "blur"; description: "O desfoque do Hyprland por trás dos cartões e do vidro. A intensidade é a da página Blur."; checked: Settings.desktopBlur; onToggled: on => Settings.desktopBlur = on }
         UiSwitch { label: "Menu de clique direito na área de trabalho"; icon: "menu"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }
         Column {

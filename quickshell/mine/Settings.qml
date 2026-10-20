@@ -84,6 +84,10 @@ Singleton {
     property alias desktopSnap: adapter.desktopSnap         // encaixar na grade ao arrastar
     property alias desktopMenu: adapter.desktopMenu         // menu de clique direito na area de trabalho
     property alias desktopMenuHidden: adapter.desktopMenuHidden // tipos que nao aparecem em "Adicionar widget" do menu
+    property alias desktopLocked: adapter.desktopLocked     // trava a posicao dos widgets (salvo)
+    property alias desktopAlwaysDrag: adapter.desktopAlwaysDrag // arrastar widgets sem entrar no modo de edicao
+    property alias desktopSnapLines: adapter.desktopSnapLines   // linhas de alinhamento que piscam ao soltar
+    property alias desktopGrid: adapter.desktopGrid         // grade de pontos enquanto arrasta
     property alias desktopBlur: adapter.desktopBlur         // desfoque do Hyprland atras dos cartoes
     property alias sysCursor: adapter.sysCursor             // tema do cursor escolhido no shell ("" = o shell nao mexe)
     // sombras: janelas (cor do Hyprland: "" = a da sua config, dark, theme = uma cor do tema, custom) e widgets
@@ -733,6 +737,10 @@ Singleton {
             property bool desktopMenu: true
             property var desktopMenuHidden: []
             property bool desktopBlur: true
+            property bool desktopLocked: false
+            property bool desktopAlwaysDrag: true
+            property bool desktopSnapLines: true
+            property bool desktopGrid: true
             property string sysCursor: ""
             property string winShadowMode: ""
             property string winShadowRole: "primary"

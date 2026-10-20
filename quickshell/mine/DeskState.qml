@@ -226,7 +226,7 @@ Singleton {
         mutate(l => l.push(c))
         selected = c.id
     }
-    function remove(id) { if (selected === id) selected = ""; mutate(l => { const i = l.findIndex(w => w.id === id); if (i >= 0) l.splice(i, 1) }) }
+    function remove(id) { if (selected === id) selected = ""; selection = selection.filter(x => x !== id); mutate(l => { const i = l.findIndex(w => w.id === id); if (i >= 0) l.splice(i, 1) }) }
     function setPos(id, fx, fy) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.fx = fx; w.fy = fy; if (w.opts && w.opts.place && w.opts.place !== "free") w.opts.place = "free" } }) }
     function setOpt(id, k, v) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.opts = w.opts || {}; w.opts[k] = v } }) }
     // tamanho e lugar de uma vez (alca do canto); tamanhos quebrados so nos widgets "free" (imagem)
@@ -244,7 +244,19 @@ Singleton {
     }
     function bringToFront(id) { mutate(l => { const i = l.findIndex(w => w.id === id); if (i >= 0 && i < l.length - 1) l.push(l.splice(i, 1)[0]) }) }
     property string selected: ""          // widget com as opcoes abertas (inspetor na area de trabalho)
-    property bool locked: false           // trava o arrasto (nao e salvo)
+    property bool locked: Settings.desktopLocked   // trava o arrasto (salvo em Settings.desktopLocked)
+    // selecao multipla (marquee / Ctrl+clique): ids; selected (inspetor) so quando e um
+    property var selection: []
+    property real gdx: 0                  // deslocamento do grupo durante o arrasto em grupo
+    property real gdy: 0
+    function inSel(id) { return selection.indexOf(id) >= 0 }
+    function toggleSel(id) { selection = inSel(id) ? selection.filter(x => x !== id) : selection.concat([id]); selected = selection.length === 1 ? selection[0] : "" }
+    function removeMany(ids) { selected = ""; selection = []; mutate(l => { for (const id of ids) { const i = l.findIndex(w => w.id === id); if (i >= 0) l.splice(i, 1) } }) }
+    function setPosMany(ps) { mutate(l => { for (const p of ps) { const w = l.find(x => x.id === p.id); if (w) { w.fx = p.fx; w.fy = p.fy; if (w.opts && w.opts.place && w.opts.place !== "free") w.opts.place = "free" } } }) }
+    onEditingChanged: if (!editing) selection = []
+    // liga/desliga um tipo (menu Widgets): se ja existe tira todos, senao poe um no tamanho padrao
+    function hasType(t) { return (Settings.desktopWidgets || []).some(w => w.type === t) }
+    function toggleType(t) { if (hasType(t)) mutate(l => { for (let i = l.length - 1; i >= 0; i--) if (l[i].type === t) l.splice(i, 1) }); else { const e = editing; add(t); editing = e; selected = "" } }
 
     // ---------------- posicao automatica e cor do texto (scripts/desk_place.py) ----------------
     // auto = { id: { fx, fy, lum } }: lugar escolhido pela analise do wallpaper e o brilho embaixo de cada widget
@@ -323,9 +335,11 @@ Singleton {
         function toggle(): void { Settings.desktopOn = !Settings.desktopOn }
         function peek(): void { root.peek = !root.peek }
         function add(type: string): void { Settings.desktopOn = true; root.add(type) }
-        function lock(): void { root.locked = !root.locked }
+        function lock(): void { Settings.desktopLocked = !Settings.desktopLocked }
         function select(id: string): void { root.editing = true; root.selected = id }   // abre as opcoes de um widget
         function menu(x: int, y: int): void { DeskMenu.show(x, y, "") }                   // menu de clique direito nesse ponto
+        function menuclose(): void { DeskMenu.close() }
+        function menucenter(): void { DeskMenu.show(root.screenSize.width / 2 - 145, root.screenSize.height / 2 - 160, "") }   // menu no meio da tela (atalho)
         function state(): string { return JSON.stringify({ editing: root.editing, selected: root.selected, locked: root.locked, peek: root.peek }) }
         function stop(): void { root.editing = false; root.selected = ""; root.peek = false }   // sai da edicao (testes)
     }
