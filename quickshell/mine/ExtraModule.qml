@@ -10,6 +10,7 @@ import Quickshell.Services.UPower
 import Quickshell.Bluetooth
 import Quickshell.Networking
 import QtQuick
+import QtQuick.Shapes
 
 Item {
     id: root
@@ -35,10 +36,14 @@ Item {
         property bool hot: false
         property bool dot: false
         property bool spin: false
+        property real ring: -1       // progresso em volta do icone (0..1); -1 = sem anel
+        property real textMax: 0     // largura maxima do texto em px (0 = sem limite)
+        property real textMin: 0
+        property bool nav: false     // aceita os botoes voltar / avancar do mouse
         signal clicked(var mouse)
         signal wheel(int dy)
         readonly property bool hovered: ma.containsMouse
-        implicitWidth: root.vertical ? Math.max(ic.implicitWidth, tx.implicitWidth) : ic.implicitWidth + (tx.text !== "" ? tx.implicitWidth + 6 : 0)
+        implicitWidth: root.vertical ? Math.max(ic.implicitWidth, tx.width) : ic.implicitWidth + (tx.text !== "" ? tx.width + 6 : 0)
         implicitHeight: root.vertical ? ic.implicitHeight + (tx.text !== "" ? tx.implicitHeight + 2 : 0) : Math.max(ic.implicitHeight, tx.implicitHeight)
         // fundo de passar o mouse: pilula suave atras do botao
         Rectangle {
@@ -50,6 +55,15 @@ Item {
         UiIcon { id: ic; name: ch.icon; size: 16; color: ch.hot ? root.ac : ch.tint; visible: ch.icon !== ""
             x: root.vertical ? (ch.width - width) / 2 : 0; y: root.vertical ? 0 : (ch.height - height) / 2
             NumberAnimation on rotation { running: ch.spin; from: 0; to: 360; duration: 900; loops: Animation.Infinite; onRunningChanged: if (!running) ic.rotation = 0 }
+            Shape {   // anel de progresso (musica)
+                visible: ch.ring >= 0
+                anchors.centerIn: parent
+                width: 1; height: 1
+                ShapePath { strokeColor: Qt.rgba(ch.tint.r, ch.tint.g, ch.tint.b, 0.22); fillColor: "transparent"; strokeWidth: 1.8
+                    PathAngleArc { centerX: 0; centerY: 0; radiusX: 11; radiusY: 11; startAngle: -90; sweepAngle: 360 } }
+                ShapePath { strokeColor: ch.hot ? root.ac : ch.tint; fillColor: "transparent"; strokeWidth: 1.8; capStyle: ShapePath.RoundCap
+                    PathAngleArc { centerX: 0; centerY: 0; radiusX: 11; radiusY: 11; startAngle: -90; sweepAngle: 359.9 * Math.max(0, Math.min(1, ch.ring)) } }
+            }
             Rectangle {   // pontinho de aviso
                 visible: ch.dot
                 x: parent.width - 6; y: 1
@@ -59,9 +73,10 @@ Item {
             }
         }
         UiText { id: tx; text: ch.text; color: ch.tint; font.pixelSize: root.vertical ? 10 : 13; font.features: { "tnum": 1 }
+            width: ch.textMax > 0 ? Math.max(ch.textMin, Math.min(implicitWidth, ch.textMax)) : implicitWidth; elide: Text.ElideRight
             x: root.vertical ? (ch.width - width) / 2 : (ic.visible ? ic.width + 6 : 0); y: root.vertical ? ic.height + 2 : (ch.height - height) / 2 }
         MouseArea { id: ma; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+            acceptedButtons: ch.nav ? Qt.LeftButton | Qt.RightButton | Qt.MiddleButton | Qt.BackButton | Qt.ForwardButton : Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
             onClicked: m => { if (!root.hasPop) BarState.popLeave(); ch.clicked(m) }; onWheel: w => ch.wheel(w.angleDelta.y) }
         TipHover { text: root.hasPop ? "" : ch.tip; side: root.side; origin: root.origin }
     }
@@ -69,7 +84,7 @@ Item {
     Loader {
         id: ld
         sourceComponent: ({ weather: weatherC, media: mediaC, netspeed: netC, gpu: gpuC, temp: tempC, updates: updC, keyboard: kbC, recorder: recC,
-                            notifs: notifC, launcher: launchC, utils: utilsC, caffeine: cafC, battery: batC, bluetooth: btC, sysicons: sysC, visualizer: visC, privacy: privC, divisor: divC })[root.type] ?? null
+                            notifs: notifC, launcher: launchC, utils: utilsC, caffeine: cafC, battery: batC, bluetooth: btC, sysicons: sysC, visualizer: visC, privacy: privC, divisor: divC, aiusage: aiC, avatar: avC, livewall: lwC })[root.type] ?? null
     }
 
     // clima: icone e temperatura; clique atualiza
@@ -79,22 +94,65 @@ Item {
         text: Weather.ready ? Math.round(Weather.now.temp) + "°" : "--"
         onClicked: Weather.refresh()
     } }
-    // midia: icone + titulo; clique toca/pausa, direito proxima, roda troca de faixa
+    // midia: icone com anel de progresso + titulo. Esquerdo toca/pausa (ou abre a aba Midia), meio anterior, direito proxima,
+    // voltar/avancar do mouse trocam de faixa, roda troca de faixa. Opcoes: artist, clean, ring, lyrics, preferredPlayer,
+    // alwaysVisible, minW, maxW, leftClick (toggle | panel)
     Component { id: mediaC; Chip {
-        readonly property var p: Mpris.players.values.find(x => x.isPlaying) ?? Mpris.players.values[0] ?? null
-        visible: !!p
+        id: mc
+        readonly property string pref: String(root.opts.preferredPlayer ?? "").trim().toLowerCase()
+        readonly property var plist: Mpris.players.values
+        readonly property var p: (pref !== "" ? plist.find(x => ((x.identity || "") + " " + (x.dbusName || "")).toLowerCase().indexOf(pref) >= 0) : null) ?? plist.find(x => x.isPlaying) ?? plist[0] ?? null
+        readonly property bool lyr: root.opts.lyrics === true
+        onLyrChanged: lyr ? Lyrics.use() : Lyrics.release()
+        Component.onCompleted: if (lyr) Lyrics.use()
+        Component.onDestruction: if (lyr) Lyrics.release()
+        function clean(t) {
+            return (t || "").replace(/\s*[\(\[][^\)\]]*(official|video|audio|lyrics?|visuali[sz]er|hd|4k|remaster)[^\)\]]*[\)\]]/ig, "").replace(/\s*[-|]\s*YouTube( Music)?$/i, "").replace(/\s{2,}/g, " ").trim()
+        }
+        readonly property string title: root.opts.clean === false ? (p ? p.trackTitle : "") : clean(p ? p.trackTitle : "")
+        readonly property string line: {
+            if (!p) return "Sem mídia"
+            if (lyr && Lyrics.index >= 0 && !Lyrics.plain && Lyrics.lines[Lyrics.index]) return "♪ " + Lyrics.lines[Lyrics.index].text
+            const t = title || p.identity
+            return root.opts.artist === true && p.trackArtist ? p.trackArtist + " • " + t : t
+        }
+        visible: !!p || root.opts.alwaysVisible === true
+        nav: true
         icon: p && p.isPlaying ? "music" : "pause"
         hot: !!p && p.isPlaying
-        text: !p || root.vertical ? "" : (p.trackTitle || p.identity).slice(0, root.opts.max ?? 28) + ((p.trackTitle || "").length > (root.opts.max ?? 28) ? "…" : "")
-        onClicked: m => { if (!p) return; if (m.button === Qt.RightButton) p.next(); else if (m.button === Qt.MiddleButton) p.previous(); else p.togglePlaying() }
+        ring: root.opts.ring !== false && p && p.lengthSupported && p.length > 0 ? p.position / p.length : -1
+        text: root.vertical ? "" : line
+        textMax: root.opts.maxW ?? 280
+        textMin: root.opts.minW ?? 0
+        Timer { interval: 1000; repeat: true; running: mc.visible && !!mc.p && mc.p.isPlaying && mc.ring >= 0; onTriggered: mc.p.positionChanged() }
+        onClicked: m => {
+            if (!p) return
+            if (m.button === Qt.RightButton || m.button === Qt.ForwardButton) p.next()
+            else if (m.button === Qt.MiddleButton || m.button === Qt.BackButton) p.previous()
+            else if (root.opts.leftClick === "panel") Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "home", "go", "media"])
+            else p.togglePlaying()
+        }
         onWheel: dy => { if (p) { if (dy < 0) p.next(); else p.previous() } }
     } }
-    // rede: download (e upload) por segundo
-    Component { id: netC; Chip {
+    // rede: duas linhas (envio em cima, download embaixo) com largura fixa; esmaece quando parado. Clique abre a aba Rede do Inicio
+    Component { id: netC; Item {
+        id: nsp
         Component.onCompleted: SysInfo.use(); Component.onDestruction: SysInfo.release()
         function s(b) { return SysInfo.bytes(b ?? 0).replace(" ", "") }
-        icon: "network"
-        text: root.vertical ? s(SysInfo.d.rx) : "↓" + s(SysInfo.d.rx) + "  ↑" + s(SysInfo.d.tx)
+        readonly property real fs: root.vertical ? 9 : 11
+        TextMetrics { id: nm; font.pixelSize: nsp.fs; font.family: Theme.font; text: "↓ 000MB" }
+        implicitWidth: Math.ceil(nm.advanceWidth) + (root.vertical ? 0 : 20)
+        implicitHeight: col2.implicitHeight
+        UiIcon { visible: !root.vertical; name: "network"; size: 15; color: root.fg; anchors.verticalCenter: parent.verticalCenter }
+        Column {
+            id: col2
+            x: root.vertical ? 0 : 20
+            spacing: -2
+            UiText { text: "↑ " + nsp.s(SysInfo.d.tx); color: Theme.tertiary; font.pixelSize: nsp.fs; font.features: { "tnum": 1 }; opacity: (SysInfo.d.tx ?? 0) > 1024 ? 1 : 0.5 }
+            UiText { text: "↓ " + nsp.s(SysInfo.d.rx); color: root.ac; font.pixelSize: nsp.fs; font.features: { "tnum": 1 }; opacity: (SysInfo.d.rx ?? 0) > 1024 ? 1 : 0.5 }
+        }
+        MouseArea { anchors.fill: parent; anchors.margins: -4; cursorShape: Qt.PointingHandCursor
+            onClicked: { BarState.popLeave(); Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "home", "go", "net"]) } }
     } }
     Component { id: gpuC; Chip {
         Component.onCompleted: SysInfo.use(); Component.onDestruction: SysInfo.release()
@@ -300,6 +358,31 @@ Item {
                 color: root.ac
             }
         }
+    } }
+    // uso da IA (Claude Code, lido dos arquivos locais): % da janela de 5 h; vermelho acima de 90 %. Clique le de novo
+    Component { id: aiC; Chip {
+        Component.onCompleted: ClaudeUsage.use(); Component.onDestruction: ClaudeUsage.release()
+        visible: ClaudeUsage.available || root.opts.alwaysVisible === true
+        icon: ClaudeUsage.busyN > 0 ? "creation" : "robot"
+        hot: ClaudeUsage.busyN > 0
+        text: !ClaudeUsage.ready ? "…" : !ClaudeUsage.available ? "--" : Math.round(ClaudeUsage.frac * 100) + "%"
+        tint: ClaudeUsage.frac >= 0.9 ? Theme.danger : root.fg
+        onClicked: ClaudeUsage.refresh()
+    } }
+    // foto de perfil redonda; clique abre o Inicio. Passar o mouse mostra o cartao do perfil
+    Component { id: avC; Item {
+        implicitWidth: root.vertical ? 24 : 26; implicitHeight: implicitWidth
+        Avatar { anchors.centerIn: parent; size: 20; ring: 1.5
+            scale: avm.containsMouse ? 1.1 : 0.96; Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } } }
+        MouseArea { id: avm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { BarState.popLeave(); Settings.homeOpen = !Settings.homeOpen } }
+    } }
+    // pausar / continuar o wallpaper animado: so aparece quando o wallpaper atual e um video
+    Component { id: lwC; Chip {
+        visible: Wallpaper.isVideo(Wallpaper.current)
+        icon: Wallpaper.videoPaused ? "play" : "pause"
+        hot: !Wallpaper.videoPaused
+        tip: Wallpaper.videoPaused ? "Continuar o wallpaper animado" : "Pausar o wallpaper animado"
+        onClicked: Wallpaper.videoPaused = !Wallpaper.videoPaused
     } }
     // divisor: uma linha fina, um ponto ou so um espaco entre modulos (style: rect | dot | space; spacing = folga em px)
     Component { id: divC; Item {

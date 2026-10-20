@@ -83,7 +83,7 @@ Singleton {
     }
     function fetch() {
         const u = "https://api.open-meteo.com/v1/forecast?latitude=" + lat + "&longitude=" + lon
-            + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day,visibility"
+            + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day,visibility,surface_pressure,precipitation"
             + "&hourly=temperature_2m,weather_code,precipitation_probability,is_day&forecast_hours=24"
             + "&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset&forecast_days=7&timezone=auto"
             + (imperial ? "&temperature_unit=fahrenheit&wind_speed_unit=mph" : "")
@@ -95,7 +95,7 @@ Singleton {
         stdout: StdioCollector { onStreamFinished: {
             try {
                 const j = JSON.parse(text), c = j.current
-                root.now = { temp: c.temperature_2m, feels: c.apparent_temperature, humidity: c.relative_humidity_2m, wind: c.wind_speed_10m, vis: c.visibility, code: c.weather_code, day: c.is_day === 1 }
+                root.now = { temp: c.temperature_2m, feels: c.apparent_temperature, humidity: c.relative_humidity_2m, wind: c.wind_speed_10m, vis: c.visibility, pressure: c.surface_pressure, precip: c.precipitation, code: c.weather_code, day: c.is_day === 1 }
                 const h = j.hourly
                 root.hours = h.time.map((t, i) => ({ time: new Date(t), temp: h.temperature_2m[i], code: h.weather_code[i], rain: h.precipitation_probability[i], day: h.is_day[i] === 1 }))
                 const d = j.daily

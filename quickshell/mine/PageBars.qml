@@ -9,6 +9,7 @@ Column {
     property int cur: 0
     property int openMod: -1   // modulo com o painel de opcoes aberto
     property int curSec: 0     // secao selecionada da barra
+    property int openStyle: -1 // modulo com o painel de fundo / pilula aberto
     readonly property var sections: Settings.sectionsOf(bar)
     readonly property int sec: Math.max(0, Math.min(curSec, sections.length - 1))
     readonly property int idx: Math.max(0, Math.min(cur, Settings.bars.length - 1))
@@ -17,8 +18,43 @@ Column {
     readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil",
         media: "music", weather: "wPartly", netspeed: "network", gpu: "gpuCard", temp: "temperature", updates: "download", keyboard: "keyboard",
         notifs: "bell", recorder: "monitor", utils: "frame", caffeine: "coffee", battery: "battery", bluetooth: "bluetooth", sysicons: "devices", launcher: "apps", visualizer: "wave", taskbar: "dock",
-        island: "pulse", privacy: "eye", divisor: "alignVCenter", disk: "disk", swap: "swap_vertical" })
+        island: "pulse", privacy: "eye", divisor: "alignVCenter", disk: "disk", swap: "swap_vertical", aiusage: "robot", avatar: "account", livewall: "wallpaper" })
     function setBar(k, v) { Settings.setBar(idx, k, v) }
+    // estilos prontos: cada um e um conjunto de opcoes da barra e das secoes dela
+    readonly property var styles: [
+        { id: "hug", label: "Na moldura", icon: "frame", desc: "Sai da moldura com as curvas" },
+        { id: "plain", label: "Reta", icon: "squareRounded", desc: "Retângulo reto, sem curvas" },
+        { id: "float", label: "Solta", icon: "cards", desc: "Flutua com contorno" },
+        { id: "panel", label: "Painel", icon: "dock", desc: "Solta, sombra e cantos menores" },
+        { id: "islands", label: "Ilhas", icon: "dotsGrid", desc: "Sem fundo, um módulo por pílula" },
+        { id: "m3", label: "Cores M3", icon: "palette", desc: "Sem fundo, pílulas na cor do tema" }
+    ]
+    function applyStyle(id) {
+        Settings.mutate(b => {
+            const x = b[idx]; if (!x) return
+            delete x.fillet; delete x.topRadius
+            x.detached = false; x.noBg = false; x.border = false; x.shadow = false
+            for (const sc of x.sections) { sc.bg = false; sc.groupStyle = "section"; sc.bgRole = ""; delete sc.bgAlpha }
+            if (id === "plain") { x.fillet = 0; x.topRadius = 0 }
+            else if (id === "float") { x.detached = true; x.gap = 8; x.radius = 14; x.border = true }
+            else if (id === "panel") { x.detached = true; x.gap = 6; x.radius = 12; x.border = true; x.shadow = true }
+            else if (id === "islands") { x.noBg = true; for (const sc of x.sections) { sc.groupStyle = "pills"; sc.bgRole = "surfaceHigh"; sc.bgAlpha = 85 } }
+            else if (id === "m3") { x.noBg = true; for (const sc of x.sections) { sc.groupStyle = "pills"; sc.bgRole = "primaryContainer"; sc.bgAlpha = 100 } }
+        })
+    }
+    // o mesmo que o estilo "abas" do end4: cada secao vira uma barrinha propria (inicio / centro / fim), presa na moldura
+    function splitTabs() {
+        Settings.mutate(b => {
+            const x = b[idx]; if (!x) return
+            const sc = x.sections, n = sc.length
+            const pos = n === 1 ? [50] : n === 2 ? [0, 100] : [0, 50, 100]
+            const groups = [[]]
+            if (n <= 3) { groups.length = 0; sc.forEach(q => groups.push([q])) }
+            else { groups.length = 0; groups.push([sc[0]], sc.slice(1, n - 1), [sc[n - 1]]) }
+            const nb = groups.map((g, k) => Object.assign({}, x, { name: (x.name || "Barra") + " " + (k + 1), fit: true, full: false, pos: pos[k], corner: "", sections: g.map(q => Object.assign({}, q, { anchor: "center", offset: 0, width: 0 })) }))
+            b.splice(idx, 1, ...nb)
+        })
+    }
     // marca as secoes na propria barra enquanto esta pagina esta aberta
     // so a pagina de verdade (a copia escondida que a busca cria para montar o indice nao mexe na depuracao)
     Binding { target: Settings; property: "barDebugBar"; value: page.idx; when: page.visible }
@@ -196,6 +232,44 @@ Column {
 
     Card {
         visible: !!page.bar
+        icon: "brush"
+        title: "Estilo da barra"
+        subtitle: "Estilos prontos: mexem nas curvas, no fundo e nas pílulas desta barra de uma vez. Depois dá para ajustar cada coisa."
+        Flow {
+            width: parent.width
+            spacing: 8
+            Repeater {
+                model: page.styles
+                delegate: Rectangle {
+                    id: sg
+                    required property var modelData
+                    width: 132; height: 74; radius: 14
+                    color: sgm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1)
+                    border.width: 1; border.color: sgm.containsMouse ? Theme.accent : Theme.border
+                    Column {
+                        anchors { fill: parent; margins: 10 }
+                        spacing: 3
+                        Row { spacing: 6
+                            UiIcon { name: sg.modelData.icon; size: 16; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                            UiText { text: sg.modelData.label; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
+                        UiText { width: parent.width; wrapMode: Text.WordWrap; text: sg.modelData.desc; color: Theme.muted; font.pixelSize: 10 }
+                    }
+                    MouseArea { id: sgm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: page.applyStyle(sg.modelData.id) }
+                }
+            }
+        }
+        UiSwitch { label: "Sem fundo (só os módulos)"; description: "A barra deixa de desenhar o fundo; os módulos ficam soltos na tela. Combine com pílulas nas seções."; checked: page.bar ? !!page.bar.noBg : false; onToggled: on => page.setBar("noBg", on) }
+        UiSwitch { visible: page.bar ? !!page.bar.detached : false; label: "Contorno fino"; checked: page.bar ? !!page.bar.border : false; onToggled: on => page.setBar("border", on) }
+        UiSwitch { visible: page.bar ? !!page.bar.detached : false; label: "Sombra"; checked: page.bar ? !!page.bar.shadow : false; onToggled: on => page.setBar("shadow", on) }
+        Row {
+            spacing: 8
+            UiButton { icon: "view_column"; text: "Dividir em 3 abas"; kind: "ghost"; enabled: page.sections.length > 0; onClicked: { page.splitTabs(); page.curSec = 0; page.openMod = -1 } }
+        }
+        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "\"Dividir em 3 abas\" transforma cada seção desta barra numa barrinha própria (início, centro e fim) presa na moldura, como as abas do end4." }
+    }
+
+    Card {
+        visible: !!page.bar
         icon: "eye"
         title: "Esconder"
         subtitle: "A barra some e reaparece quando o mouse encosta na borda."
@@ -307,9 +381,28 @@ Column {
         UiSlider { label: "Largura (0 = automática)"; from: 0; to: 3000; value: page.sections[page.sec] ? (page.sections[page.sec].width ?? 0) : 0; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "width", v) }
         UiSlider { label: "Deslocamento"; from: -1500; to: 1500; value: page.sections[page.sec] ? (page.sections[page.sec].offset ?? 0) : 0; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "offset", v) }
         UiSlider { label: "Espaço entre módulos"; from: 0; to: 40; value: page.sections[page.sec] ? (page.sections[page.sec].spacing ?? 14) : 14; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "spacing", v) }
-        UiSwitch { label: "Fundo em pílula"; description: "Um fundo arredondado atrás dos módulos desta seção (grupos, como no end4)."; checked: page.sections[page.sec] ? !!page.sections[page.sec].bg : false; onToggled: on => Settings.setSection(page.idx, page.sec, "bg", on) }
-        UiSlider { visible: page.sections[page.sec] ? !!page.sections[page.sec].bg : false; label: "Opacidade do fundo"; from: 4; to: 40; value: page.sections[page.sec] ? (page.sections[page.sec].bgAlpha ?? 10) : 10; suffix: " %"; onMoved: v => Settings.setSection(page.idx, page.sec, "bgAlpha", Math.round(v)) }
-        UiSwitch { visible: page.sections[page.sec] ? !!page.sections[page.sec].bg : false; label: "Contorno na cor de destaque"; checked: page.sections[page.sec] ? !!page.sections[page.sec].bgBorder : false; onToggled: on => Settings.setSection(page.idx, page.sec, "bgBorder", on) }
+        UiLabel { text: "Estilo do grupo" }
+        UiSeg {
+            fill: true
+            options: [["section", "Uma pílula", "circleOutline"], ["pills", "Uma por módulo", "dotsGrid"], ["segmented", "Segmentado", "view_column"]]
+            value: page.sections[page.sec] ? (page.sections[page.sec].groupStyle ?? "section") : "section"
+            onPicked: v => Settings.setSection(page.idx, page.sec, "groupStyle", v)
+        }
+        UiSwitch { visible: (page.sections[page.sec] ? (page.sections[page.sec].groupStyle ?? "section") : "section") === "section"; label: "Fundo em pílula"; description: "Um fundo arredondado atrás dos módulos desta seção (grupos, como no end4)."; checked: page.sections[page.sec] ? !!page.sections[page.sec].bg : false; onToggled: on => Settings.setSection(page.idx, page.sec, "bg", on) }
+        Column {
+            readonly property bool has: page.sections[page.sec] ? (!!page.sections[page.sec].bg || (page.sections[page.sec].groupStyle ?? "section") !== "section") : false
+            visible: has
+            width: parent.width
+            spacing: 12
+            RoleRow {
+                label: "Cor do fundo (sem escolher, usa a cor do texto)"
+                allowNone: true
+                value: page.sections[page.sec] ? (page.sections[page.sec].bgRole ?? "") : ""
+                onPicked: v => Settings.setSection(page.idx, page.sec, "bgRole", v)
+            }
+            UiSlider { label: "Opacidade do fundo"; from: 4; to: 100; value: page.sections[page.sec] ? (page.sections[page.sec].bgAlpha ?? 10) : 10; suffix: " %"; onMoved: v => Settings.setSection(page.idx, page.sec, "bgAlpha", Math.round(v)) }
+            UiSwitch { label: "Contorno na cor de destaque"; checked: page.sections[page.sec] ? !!page.sections[page.sec].bgBorder : false; onToggled: on => Settings.setSection(page.idx, page.sec, "bgBorder", on) }
+        }
         UiButton { visible: page.sections.length > 1; icon: "trash"; text: "Remover esta seção"; kind: "danger"; onClicked: { Settings.removeSection(page.idx, page.sec); page.curSec = 0; page.openMod = -1 } }
     }
 
@@ -330,6 +423,7 @@ Column {
                 readonly property var schema: BarModules.schema(mtype)
                 readonly property bool hasOpts: mtype === "workspaces" || isMeter || mtype === "tray" || mtype === "palette" || schema.length > 0
                 readonly property bool optsOpen: hasOpts && page.openMod === index
+                readonly property bool styleOpen: page.openStyle === index
                 width: parent.width
                 spacing: 6
 
@@ -363,11 +457,34 @@ Column {
                         id: btns
                         anchors { right: parent.right; rightMargin: 7; verticalCenter: parent.verticalCenter }
                         spacing: 4
-                        UiButton { visible: mrow.hasOpts; icon: "tune"; text: "Opções"; pad: 10; checked: mrow.optsOpen; onClicked: page.openMod = mrow.optsOpen ? -1 : mrow.index }
+                        UiButton { visible: mrow.hasOpts; icon: "tune"; text: "Opções"; pad: 10; checked: mrow.optsOpen; onClicked: { page.openStyle = -1; page.openMod = mrow.optsOpen ? -1 : mrow.index } }
+                        UiButton { icon: "brush"; pad: 10; checked: mrow.styleOpen; onClicked: { page.openMod = -1; page.openStyle = mrow.styleOpen ? -1 : mrow.index } }
                         UiButton { visible: page.sections.length > 1; icon: "swap_horizontal"; pad: 10; text: "Seção " + (((page.sec + 1) % page.sections.length) + 1); onClicked: { page.openMod = -1; Settings.moveModuleTo(page.idx, page.sec, mrow.index, (page.sec + 1) % page.sections.length) } }
                         UiButton { icon: "arrowUp"; kind: "ghost"; enabled: mrow.index > 0; onClicked: Settings.moveModule(page.idx, page.sec, mrow.index, -1) }
                         UiButton { icon: "arrowDown"; kind: "ghost"; enabled: mrow.index < page.sections[page.sec].modules.length - 1; onClicked: Settings.moveModule(page.idx, page.sec, mrow.index, 1) }
                         UiButton { icon: "trash"; kind: "danger"; onClicked: { page.openMod = -1; Settings.removeModule(page.idx, page.sec, mrow.index) } }
+                    }
+                }
+
+                // fundo deste modulo: pilula propria, cor, opacidade, arredondamento e folga
+                Rectangle {
+                    visible: mrow.styleOpen
+                    width: parent.width
+                    height: visible ? stCol.implicitHeight + 28 : 0
+                    radius: 12
+                    color: Theme.track; border.width: 1; border.color: Theme.border
+                    Column {
+                        id: stCol
+                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14 }
+                        spacing: 12
+                        function set(k, v) { Settings.setModuleOpt(page.idx, page.sec, mrow.index, k, v) }
+                        UiSwitch { label: "Pílula própria"; description: "Um fundo só deste módulo. Nas seções com \"Uma por módulo\" todos já têm; desligue aqui para tirar este."; checked: mrow.mod.group ?? ((page.sections[page.sec].groupStyle ?? "section") === "pills"); onToggled: on => stCol.set("group", on) }
+                        RoleRow { label: "Cor da pílula (sem escolher, vale a da seção)"; allowNone: true; value: mrow.mod.bgRole ?? ""; onPicked: v => stCol.set("bgRole", v) }
+                        UiSlider { label: "Opacidade"; from: 4; to: 100; value: mrow.mod.bgAlpha ?? (page.sections[page.sec].bgAlpha ?? 14); suffix: " %"; onMoved: v => stCol.set("bgAlpha", Math.round(v)) }
+                        UiSlider { label: "Folga nas laterais"; from: 2; to: 24; value: mrow.mod.bgPad ?? 9; suffix: " px"; onMoved: v => stCol.set("bgPad", Math.round(v)) }
+                        UiSlider { label: "Arredondamento (0 = redonda)"; from: 0; to: 24; value: mrow.mod.bgRadius ?? 0; suffix: " px"; onMoved: v => stCol.set("bgRadius", v > 0 ? Math.round(v) : undefined) }
+                        UiSwitch { label: "Contorno"; checked: !!mrow.mod.bgBorder; onToggled: on => stCol.set("bgBorder", on) }
+                        UiButton { icon: "restore"; text: "Voltar ao padrão"; kind: "ghost"; onClicked: Settings.mutate(b => { const m = b[page.idx].sections[page.sec].modules[mrow.index]; for (const k of ["group", "bgRole", "bgAlpha", "bgPad", "bgRadius", "bgBorder"]) delete m[k] }) }
                     }
                 }
 
@@ -542,6 +659,9 @@ Column {
         UiSwitch { label: "Detalhes ao passar o mouse"; checked: Settings.barPopups; onToggled: on => Settings.barPopups = on }
         UiSwitch { label: "Dicas de texto"; icon: "tag"; description: "Um balãozinho com o nome do botão, do ícone da bandeja ou do app do dock ao parar o mouse em cima."; checked: Settings.barTips; onToggled: on => Settings.barTips = on }
         UiSlider { visible: Settings.barPopups; label: "Esperar antes de mostrar"; from: 100; to: 1500; value: Settings.barPopupDelay; suffix: " ms"; onMoved: v => Settings.barPopupDelay = Math.round(v / 50) * 50 }
+        UiSlider { label: "Uso da IA: limite da janela de 5 h"; icon: "robot"; from: 100; to: 5000; value: Math.round(Settings.aiLimit / 1000); suffix: " mil tokens"; onMoved: v => Settings.aiLimit = Math.round(v / 50) * 50000 }
+        UiSlider { label: "Uso da IA: ler de novo a cada"; icon: "refresh"; from: 30; to: 600; value: Settings.aiInterval; suffix: " s"; onMoved: v => Settings.aiInterval = Math.round(v / 10) * 10 }
+        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "O módulo \"Uso da IA\" lê só os arquivos do Claude Code que já estão neste PC (~/.claude): nada vai para a internet e nenhuma chave é usada. Sem esses arquivos ele some sozinho." }
         UiLabel { text: "Animação dos detalhes" }
         AnimPicker { target: "popups" }
         UiLabel { text: "Animação da ilha (ao mudar de forma)" }

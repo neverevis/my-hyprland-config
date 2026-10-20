@@ -3,6 +3,7 @@
 // Com autoHide, a barra recolhe para a faixa fina e volta quando o mouse passa pela borda (animacao em Settings.anim*).
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import QtQuick
 
 PanelWindow {
@@ -22,7 +23,10 @@ PanelWindow {
     readonly property bool hot: hovering || edgeHot
     property bool armed: false      // mouse parado na borda pelo tempo de Settings.showDelay (0 = na hora)
     // barsOpen: o comando "bar close" (IPC) esconde todas as barras, com ou sem autoHide
-    property bool shown: BarState.barsOpen && (!autoHide || armed || hideTimer.running || (Settings.superReveal && BarState.superDown))
+    // dock com "revealEmpty": aparece sozinho quando o workspace nao tem janela (e nunca por conta propria com tela cheia)
+    readonly property bool wantEmpty: autoHide && sections.some(sc => (sc.modules || []).some(m => m.type === "taskbar" && m.revealEmpty))
+    readonly property bool emptyWs: wantEmpty && !Hyprland.activeToplevel && !!Hyprland.focusedWorkspace && Hyprland.focusedWorkspace.toplevels.values.length === 0
+    property bool shown: BarState.barsOpen && (!autoHide || armed || hideTimer.running || emptyWs || (Settings.superReveal && BarState.superDown))
     property real prog: shown ? 1 : 0
     Behavior on prog { id: progB; MotionAnim { use: "bars"; out: progB.targetValue < 0.5 } }
     // fade dos modulos: acompanha o mesmo tempo da animacao, mas com curva propria
@@ -135,7 +139,11 @@ PanelWindow {
                     readonly property real total: vert ? win.height : win.width          // comprimento da barra
                     // o Repeater tambem conta como filho do Grid e soma um espacamento a mais: tira esse espacamento
                     readonly property real gridLen: vert ? grid.implicitHeight : grid.implicitWidth
-                    readonly property real contentLen: Math.max(0, gridLen - (sec.cfg.modules && sec.cfg.modules.length > 0 ? (sec.cfg.spacing ?? 14) : 0))
+                    // estilo do grupo: section (uma pilula da secao, se "bg"), pills (uma pilula por modulo), segmented (capsula unica com divisorias)
+                    readonly property string gs: cfg.groupStyle ?? "section"
+                    readonly property real gsp: gs === "segmented" ? 0 : (cfg.spacing ?? 14)
+                    function roleColor(role, a) { const c = role ? ThemeColors.of(role) : Settings.textColor; return Qt.rgba(c.r, c.g, c.b, a) }
+                    readonly property real contentLen: Math.max(0, gridLen - (sec.cfg.modules && sec.cfg.modules.length > 0 ? gsp : 0))
                     readonly property real len: (cfg.width ?? 0) > 0 ? Math.min(cfg.width, total - 2 * pad) : contentLen
                     readonly property real off: cfg.offset ?? 0
                     readonly property real start: cfg.anchor === "start" ? pad + off
@@ -180,20 +188,20 @@ PanelWindow {
 
                     // fundo da secao (opcao "bg"): pilula atras dos modulos, como os grupos do end4
                     Rectangle {
-                        visible: !!sec.cfg.bg && sec.contentLen > 0
-                        readonly property real pad: sec.cfg.bgPad ?? 9
+                        visible: (sec.gs === "segmented" || (sec.gs === "section" && !!sec.cfg.bg)) && sec.contentLen > 0
+                        readonly property real pad: sec.gs === "segmented" ? 3 : (sec.cfg.bgPad ?? 9)
                         x: (sec.vert ? 0 : grid.x) - pad
                         y: (sec.vert ? grid.y : 0) - pad * 0.55
                         width: (sec.vert ? grid.implicitWidth : sec.contentLen) + pad * 2
                         height: (sec.vert ? sec.contentLen : grid.implicitHeight) + pad * 1.1
                         radius: Math.min(width, height) / 2
-                        color: Qt.rgba(Settings.textColor.r, Settings.textColor.g, Settings.textColor.b, (sec.cfg.bgAlpha ?? 10) / 100)
-                        border.width: sec.cfg.bgBorder ? 1 : 0
+                        color: sec.roleColor(sec.cfg.bgRole, (sec.cfg.bgAlpha ?? 10) / 100)
+                        border.width: sec.cfg.bgBorder || sec.gs === "segmented" ? 1 : 0
                         border.color: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, 0.45)
                     }
                     Grid {
                         id: grid
-                        spacing: sec.cfg.spacing ?? 14
+                        spacing: sec.gsp
                         columns: sec.vert ? 1 : 99
                         horizontalItemAlignment: Grid.AlignHCenter
                         verticalItemAlignment: Grid.AlignVCenter
@@ -205,14 +213,41 @@ PanelWindow {
 
                         Repeater {
                             model: sec.cfg.modules ? sec.cfg.modules.length : 0
-                            delegate: ModuleView {
+                            delegate: Item {
+                                id: cw
                                 required property int index
                                 readonly property var m: sec.cfg.modules[index] ?? ({})
-                                type: m.type ?? ""
-                                opts: m
-                                vertical: sec.vert
-                                side: win.side
-                                origin: Qt.point(win.margins.left, win.margins.top)
+                                // pilula propria deste modulo: estilo "pills", ou a opcao "group" do modulo (group = false desliga)
+                                readonly property bool own: m.group === false ? false : (sec.gs === "pills" || m.group === true)
+                                readonly property real padA: own ? (m.bgPad ?? 9) : (sec.gs === "segmented" ? 9 : 0)
+                                readonly property real padB: own ? 4 : 0
+                                readonly property bool present: mv.itemVisible && mv.implicitWidth > 0
+                                width: present ? mv.implicitWidth + (sec.vert ? padB * 2 : padA * 2) : 0
+                                height: present ? mv.implicitHeight + (sec.vert ? padA * 2 : padB * 2) : 0
+                                Rectangle {   // pilula do modulo
+                                    visible: cw.own && cw.present
+                                    anchors.fill: parent
+                                    radius: cw.m.bgRadius !== undefined ? cw.m.bgRadius : Math.min(width, height) / 2
+                                    color: sec.roleColor(cw.m.bgRole ?? sec.cfg.bgRole, (cw.m.bgAlpha ?? sec.cfg.bgAlpha ?? 14) / 100)
+                                    border.width: (cw.m.bgBorder ?? sec.cfg.bgBorder) ? 1 : 0
+                                    border.color: Qt.rgba(Settings.accent.r, Settings.accent.g, Settings.accent.b, 0.45)
+                                }
+                                Rectangle {   // divisoria do estilo "segmented"
+                                    visible: sec.gs === "segmented" && cw.index > 0 && cw.present
+                                    x: sec.vert ? 6 : 0; y: sec.vert ? 0 : 5
+                                    width: sec.vert ? parent.width - 12 : 1; height: sec.vert ? 1 : parent.height - 10
+                                    color: Qt.rgba(Settings.textColor.r, Settings.textColor.g, Settings.textColor.b, 0.22)
+                                }
+                                ModuleView {
+                                    id: mv
+                                    anchors.centerIn: parent
+                                    type: cw.m.type ?? ""
+                                    opts: cw.m
+                                    vertical: sec.vert
+                                    side: win.side
+                                    barIdx: win.modelData
+                                    origin: Qt.point(win.margins.left, win.margins.top)
+                                }
                             }
                         }
                     }

@@ -191,6 +191,7 @@ Singleton {
 
         const res = new Array(bars.length).fill(null)
         let extra = ""
+        let detBorder = "", detShadow = ""   // contorno / sombra das barras soltas (opcoes border / shadow)
         let d = "M0 0 L0 " + H + " L" + W + " " + H + " L" + W + " 0 Z "   // retangulo da tela em sentido anti-horario (o buraco e horario; fill WindingFill)
 
         // ---- passo 1: posicao das barras de cada lado ----
@@ -230,7 +231,8 @@ Singleton {
                     lo = zero + Math.max(-slack, Math.min(slack, b.offset || 0)) - bw / 2
                 }
                 if (slide[i] !== undefined) lo += slide[i] * qv
-                const te = full ? inset[s] : inset[s] + (t - inset[s]) * p
+                const nb = !!b.noBg && !full   // "noBg": sem fundo, so os modulos (a janela da barra continua com a profundidade inteira)
+                const te = full || nb ? inset[s] : inset[s] + (t - inset[s]) * p
                 const dr = Math.max(0, te - inset[s])
                 const sc = (f + g) > 0 ? Math.min(1, dr / (f + g)) : 1
                 const pri = i >= nUser ? -1000 + i : i   // menor = mais importante
@@ -340,10 +342,13 @@ Singleton {
                 const v1 = v1f - (1 - it.p) * (v1f + 6)   // p > 1 (curva elastica) passa um pouco do lugar
                 const v0 = v1 - th
                 const rr = Math.min(th / 2, bars[it.i].radius ?? 14)
-                if (v1 <= 0.5) continue
-                extra += "M" + P(a + rr, v0) + " L" + P(b - rr, v0) + " " + arc(rr, b, v0 + rr, 1)
+                if (v1 <= 0.5 || bars[it.i].noBg) continue
+                const rp = "M" + P(a + rr, v0) + " L" + P(b - rr, v0) + " " + arc(rr, b, v0 + rr, 1)
                     + "L" + P(b, v1 - rr) + " " + arc(rr, b - rr, v1, 1) + "L" + P(a + rr, v1) + " " + arc(rr, a, v1 - rr, 1)
                     + "L" + P(a, v0 + rr) + " " + arc(rr, a + rr, v0, 1) + "Z "
+                extra += rp
+                if (bars[it.i].border) detBorder += rp
+                if (bars[it.i].shadow) detShadow += rp
             }
             // canto ate o inicio do proximo lado (sai do topo da barra encostada, se houver)
             const nx = (u, v) => pt(next, u, v, W, H)
@@ -351,6 +356,6 @@ Singleton {
             d += r > 0.01 ? "A" + r + " " + r + " 0 0 1 " + q + " " : "L" + q + " "
         }
         d += "Z"
-        return { path: d + extra, extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, osd: oIdx >= 0 ? res[oIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null, home: panel && panel.kind === "home" ? res[pIdx] : null }
+        return { path: d + extra, detBorder: detBorder !== "" ? detBorder : "M0 0", detShadow: detShadow !== "" ? detShadow : "M0 0", extra: extra !== "" ? extra : "M0 0", bars: res, zone: zone, inset: inset, notif: nIdx >= 0 ? res[nIdx] : null, osd: oIdx >= 0 ? res[oIdx] : null, picker: panel && panel.kind === "picker" ? res[pIdx] : null, launcher: panel && panel.kind === "launcher" ? res[pIdx] : null, home: panel && panel.kind === "home" ? res[pIdx] : null }
     }
 }

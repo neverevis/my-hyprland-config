@@ -131,6 +131,18 @@ ShellRoot {
 
         PaletteExtractor {}   // gera a paleta do tema a partir do wallpaper (so age com o tema ligado)
 
+        // sombra das barras soltas (opcao "shadow"): fica por baixo do desenho da moldura
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.GeometryRenderer
+            layer.enabled: true
+            layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#99000000"; shadowBlur: 0.9; shadowVerticalOffset: 4; shadowScale: 1.0 }
+            ShapePath {
+                fillColor: "black"
+                strokeColor: "transparent"
+                PathSvg { path: frame.geo.detShadow }
+            }
+        }
         Shape {
             anchors.fill: parent
             // GeometryRenderer + camada em 2x: o CurveRenderer (mais leve) gera artefatos onde as formas se sobrepoem
@@ -143,6 +155,20 @@ ShellRoot {
                 strokeColor: "transparent"
                 fillRule: ShapePath.WindingFill
                 PathSvg { path: frame.geo.path }
+            }
+        }
+        // contorno fino das barras soltas (opcao "border")
+        Shape {
+            anchors.fill: parent
+            preferredRendererType: Shape.GeometryRenderer
+            layer.enabled: true
+            layer.smooth: true
+            layer.textureSize: Qt.size(width * 2, height * 2)
+            ShapePath {
+                fillColor: "transparent"
+                strokeColor: Theme.border
+                strokeWidth: 1
+                PathSvg { path: frame.geo.detBorder }
             }
         }
 

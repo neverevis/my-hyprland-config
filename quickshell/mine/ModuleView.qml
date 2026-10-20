@@ -12,11 +12,12 @@ Item {
     property var opts: ({})
     property bool vertical: false
     property string side: "bottom"
+    property int barIdx: -1
     property point origin: Qt.point(0, 0)   // canto da janela da barra na tela (para os detalhes ao passar o mouse)
 
     // detalhes ao passar o mouse: que cartao cada modulo abre (opcao "popup" desliga)
     readonly property string popKind: root.opts.popup === false ? "" : ({ clock: "calendar", weather: "weather", cpu: "resources", memory: "resources", disk: "resources", swap: "resources", gpu: "system",
-        temp: "system", netspeed: "system", media: "media", volume: "volume", privacy: "privacy", updates: "updates", battery: "battery", bluetooth: "bt" })[root.type] ?? ""
+        temp: "system", netspeed: "net", aiusage: "ai", avatar: "profile", media: "media", volume: "volume", privacy: "privacy", updates: "updates", battery: "battery", bluetooth: "bt" })[root.type] ?? ""
     readonly property bool hasPop: popKind !== ""
     HoverHandler {
         enabled: root.popKind !== ""
@@ -28,6 +29,7 @@ Item {
         }
     }
 
+    readonly property bool itemVisible: loader.item ? loader.item.visible : false   // modulos que se escondem (atualizacoes, bateria...) nao deixam vao
     implicitWidth: loader.item ? loader.item.implicitWidth : 0
     implicitHeight: loader.item ? loader.item.implicitHeight : 0
 
@@ -118,7 +120,7 @@ Item {
 
     Component {
         id: taskbarC
-        TaskbarModule { opts: root.opts; vertical: root.vertical; side: root.side; origin: root.origin }
+        TaskbarModule { opts: root.opts; vertical: root.vertical; side: root.side; origin: root.origin; barIdx: root.barIdx }
     }
     Component {
         id: islandC

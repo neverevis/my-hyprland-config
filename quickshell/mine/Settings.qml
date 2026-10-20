@@ -311,6 +311,9 @@ Singleton {
     property alias settingsWindowed: adapter.settingsWindowed   // configuracoes numa janela normal do Hyprland (senao, camada do shell)
     property alias barPopups: adapter.barPopups                 // detalhes ao passar o mouse nos modulos da barra
     property alias barPopupDelay: adapter.barPopupDelay
+    property alias trayHidden: adapter.trayHidden               // ids de icones da bandeja que vao para o cartao de mais icones
+    property alias aiLimit: adapter.aiLimit                     // limite de tokens da janela de 5 h (modulo de uso da IA)
+    property alias aiInterval: adapter.aiInterval               // segundos entre leituras do uso da IA
     property alias barTips: adapter.barTips                     // dicas de texto ao passar o mouse (bandeja, botoes, dock)
     property alias barHoverStrip: adapter.barHoverStrip         // espessura (px) da faixa que revela a barra escondida
     property alias barEdgeReveal: adapter.barEdgeReveal         // encostar em qualquer ponto da borda revela a barra escondida daquele lado
@@ -471,6 +474,7 @@ Singleton {
     }
     readonly property bool islandNotifs: { bars; return islandHas("notifs") }
     readonly property bool islandOsd: { bars; return islandHas("osd") }
+    function toggleTrayHidden(id: string): void { const l = list(trayHidden).slice(), i = l.indexOf(id); if (i >= 0) l.splice(i, 1); else l.push(id); trayHidden = l }
     function list(v: var): var { if (!v || typeof v === "string") return []; try { return Array.from(v) } catch (e) { return [] } }
     readonly property int schemaNow: 2
     function migrate(): void {
@@ -566,7 +570,10 @@ Singleton {
         { type: "privacy", label: "Privacidade (microfone / tela em uso)" },
         { type: "divisor", label: "Divisor" },
         { type: "disk", label: "Disco" },
-        { type: "swap", label: "Swap" }
+        { type: "swap", label: "Swap" },
+        { type: "aiusage", label: "Uso da IA (Claude Code)" },
+        { type: "avatar", label: "Foto de perfil" },
+        { type: "livewall", label: "Pausar wallpaper animado" }
     ]
 
     function reset(): void {
@@ -1005,6 +1012,9 @@ Singleton {
             property var hyprAutostart: []
             property int barPopupDelay: 450
             property bool barTips: true
+            property var trayHidden: []
+            property int aiLimit: 1000000
+            property int aiInterval: 60
             property int barHoverStrip: 8
             property bool barEdgeReveal: false
             property int updStrong: 0

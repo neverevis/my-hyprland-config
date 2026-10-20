@@ -1,7 +1,7 @@
 // Bandeja do sistema (StatusNotifier): icones dos apps; clique esquerdo ativa, direito abre o menu, meio = acao secundaria,
 // roda do mouse rola; passar o mouse mostra o nome (dica). Opcoes: size (px), spacing (px), hidePassive (esconde os icones
 // parados; padrao ligado), mono (icones na cor do texto; padrao ligado), showItemId (mostra o id do app na dica),
-// hidden (ids escondidos: clique do meio + Shift esconde; a pagina Barras mostra de volta).
+// overflow (botao de mais icones: os escondidos com Shift + clique do meio ficam num cartao, padrao ligado).
 import QtQuick.Effects
 import Quickshell
 import Quickshell.Services.SystemTray
@@ -18,7 +18,8 @@ Grid {
     spacing: opts.spacing ?? 8
     columns: vertical ? 1 : 99
 
-    readonly property var hiddenIds: Settings.list(opts.hidden)
+    readonly property var hiddenIds: Settings.list(opts.hidden).concat(Settings.list(Settings.trayHidden))
+    readonly property var hiddenItems: SystemTray.items.values.filter(m => hiddenIds.indexOf(m.id) >= 0)
     Repeater {
         model: SystemTray.items
         delegate: Item {
@@ -67,12 +68,33 @@ Grid {
                 cursorShape: Qt.PointingHandCursor
                 onClicked: m => {
                     BarState.popLeave()
-                    if (m.button === Qt.MiddleButton) cell.modelData.secondaryActivate()
+                    if (m.button === Qt.MiddleButton && (m.modifiers & Qt.ShiftModifier)) Settings.toggleTrayHidden(cell.modelData.id)   // manda para o cartao de mais icones
+                    else if (m.button === Qt.MiddleButton) cell.modelData.secondaryActivate()
                     else if (m.button === Qt.RightButton || cell.modelData.onlyMenu) { if (cell.modelData.hasMenu) menuAnchor.open() }
                     else cell.modelData.activate()
                 }
                 onWheel: w => cell.modelData.scroll(w.angleDelta.y, false)
             }
+        }
+    }
+    // botao de mais icones: abre o cartao com os escondidos (passar o mouse ou clicar)
+    Item {
+        id: more
+        visible: root.opts.overflow !== false && root.hiddenItems.length > 0
+        width: visible ? root.size : 0; height: visible ? root.size : 0
+        UiIcon { anchors.centerIn: parent; name: root.vertical ? "chevDown" : (root.side === "top" ? "chevDown" : "chevUp"); size: root.size * 0.9; color: Settings.textColor
+            scale: mm.containsMouse ? 1.12 : 1; Behavior on scale { NumberAnimation { duration: 100 } } }
+        MouseArea {
+            id: mm
+            anchors.fill: parent; anchors.margins: -3
+            hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+            function ask(now) {
+                const p = more.mapToItem(null, 0, 0)
+                const req = { kind: "tray", opts: root.opts, side: root.side, type: "tray", rect: { x: p.x + root.origin.x, y: p.y + root.origin.y, w: more.width, h: more.height } }
+                if (now) { BarState.popPending = req; BarState.pop = req } else BarState.popEnter(req)
+            }
+            onContainsMouseChanged: { if (containsMouse) ask(false); else BarState.popLeave() }
+            onClicked: ask(true)
         }
     }
 }
