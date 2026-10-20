@@ -66,16 +66,34 @@ def disks():
     return out
 
 GPU = bool(shutil.which("nvidia-smi"))
+# um nvidia-smi so, de longa duracao (-lms): abrir um processo novo a cada leitura reinicia o NVML toda vez,
+# o que custa CPU e pode causar engasgos de quadro na NVIDIA. Uma thread le a ultima linha.
+_gpu_last = None
+def _gpu_reader():
+    global _gpu_last
+    import threading
+    def run():
+        global _gpu_last
+        while True:
+            try:
+                p = subprocess.Popen(["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu",
+                                      "--format=csv,noheader,nounits", "-lms", "2000"],
+                                     stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
+                for line in p.stdout:
+                    try:
+                        n, u, mu, mt, t = [x.strip() for x in line.strip().split(",")]
+                        _gpu_last = {"name": n, "usage": int(u), "memUsed": int(mu) * 1048576, "memTotal": int(mt) * 1048576, "temp": int(t)}
+                    except Exception:
+                        pass
+                p.wait()
+            except Exception:
+                pass
+            time.sleep(10)   # nvidia-smi saiu (driver recarregado?): tenta de novo depois
+    threading.Thread(target=run, daemon=True).start()
+if GPU:
+    _gpu_reader()
 def gpu():
-    if not GPU:
-        return None
-    try:
-        r = subprocess.run(["nvidia-smi", "--query-gpu=name,utilization.gpu,memory.used,memory.total,temperature.gpu", "--format=csv,noheader,nounits"],
-                           capture_output=True, text=True, timeout=3)
-        n, u, mu, mt, t = [x.strip() for x in r.stdout.strip().split("\n")[0].split(",")]
-        return {"name": n, "usage": int(u), "memUsed": int(mu) * 1048576, "memTotal": int(mt) * 1048576, "temp": int(t)}
-    except Exception:
-        return None
+    return _gpu_last
 
 def static():
     model = ""

@@ -123,7 +123,8 @@ Variants {
             id: splitMask
             x: -win.width - 120      // fora da tela, mas visivel (item invisivel nao atualiza a textura)
             width: win.width; height: win.height
-            layer.enabled: true
+            visible: win.splitOn            // sem desfoque dividido: nem desenha a mascara de tela cheia
+            layer.enabled: win.splitOn
             readonly property real a: Math.max(0, (win.core - win.feather) / Math.max(1, win.width))
             readonly property real b: Math.min(1, win.core / Math.max(1, win.width))
             readonly property bool atLeft: Settings.wpBlurSide !== "right"

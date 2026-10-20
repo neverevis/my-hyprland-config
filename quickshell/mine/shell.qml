@@ -134,8 +134,10 @@ ShellRoot {
         // sombra das barras soltas (opcao "shadow"): fica por baixo do desenho da moldura
         Shape {
             anchors.fill: parent
+            // sem barra com sombra: nao cria a camada nem o efeito (eram duas texturas de tela cheia compostas a cada quadro)
+            visible: frame.geo.detShadow !== "M0 0"
             preferredRendererType: Shape.GeometryRenderer
-            layer.enabled: true
+            layer.enabled: visible
             layer.effect: MultiEffect { shadowEnabled: true; shadowColor: "#99000000"; shadowBlur: 0.9; shadowVerticalOffset: 4; shadowScale: 1.0 }
             ShapePath {
                 fillColor: "black"
@@ -160,8 +162,9 @@ ShellRoot {
         // contorno fino das barras soltas (opcao "border")
         Shape {
             anchors.fill: parent
+            visible: frame.geo.detBorder !== "M0 0"   // sem contorno: sem a camada em 2x
             preferredRendererType: Shape.GeometryRenderer
-            layer.enabled: true
+            layer.enabled: visible
             layer.smooth: true
             layer.textureSize: Qt.size(width * 2, height * 2)
             ShapePath {
