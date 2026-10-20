@@ -73,6 +73,16 @@ Singleton {
         stdout: StdioCollector { onStreamFinished: { const f = busyProc.cb; busyProc.cb = null; const k = text.trim(); if (f) f(k === "pkg" || k === "dl", k) } }
     }
 
+    // avisos no menu de energia: pacman rodando / download em andamento (atualiza ao abrir o menu)
+    property bool warnPkg: false
+    property bool warnDl: false
+    function refreshWarnings() { warnProc.running = false; warnProc.running = true }
+    Process {
+        id: warnProc
+        command: ["sh", "-c", "if pgrep -x 'pacman|yay|paru|makepkg' >/dev/null || [ -e /var/lib/pacman/db.lck ]; then echo pkg; fi; if pgrep -x 'curl|wget|aria2c|yt-dlp' >/dev/null || find \"$HOME/Downloads\" \"$HOME/Transferências\" -maxdepth 1 \\( -name '*.part' -o -name '*.crdownload' \\) -mmin -2 2>/dev/null | grep -q .; then echo dl; fi"]
+        stdout: StdioCollector { onStreamFinished: { root.warnPkg = text.indexOf("pkg") >= 0; root.warnDl = text.indexOf("dl") >= 0 } }
+    }
+
     // ---- conflitos: outros daemons de notificacao ----
     property var conflicts: []
     function scan() { conf.running = false; conf.running = true }

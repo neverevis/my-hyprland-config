@@ -12,7 +12,7 @@ Singleton {
     id: root
     property bool open: false
     property string action: "copy"
-    property string shape: "rect"          // rect | circle
+    property string shape: "rect"          // rect | circle | free (traco livre: recorta a caixa do desenho)
     property string frozen: ""             // caminho da tela congelada (pronta)
     property string monitor: ""
     property string busy: ""
@@ -26,7 +26,7 @@ Singleton {
         { id: "ocr", label: "Texto", icon: "textBox", hint: "Copia o texto da área (OCR)" },
         { id: "translate", label: "Traduzir", icon: "earth", hint: "Lê o texto e copia a tradução para o português" },
         { id: "annotate", label: "Anotar", icon: "pencil", hint: "Abre no satty para desenhar e escrever" },
-        { id: "lens", label: "Buscar", icon: "search", hint: "Google Lens (a imagem vai para o litterbox.catbox.moe e some em 1 h)" },
+        { id: "lens", label: "Buscar", icon: "search", hint: "Busca por imagem (a imagem vai para o litterbox.catbox.moe e some em 1 h)" },
         { id: "record", label: "Gravar", icon: "monitor", hint: "Grava a área escolhida" }
     ]
 
@@ -56,12 +56,12 @@ Singleton {
         }
         busy = action
         lastAction = action
-        proc.command = ["python3", script, action, frozen, String(x), String(y), String(w), String(h)].concat(shape === "circle" ? ["circle"] : ["rect"])
+        proc.command = ["python3", script, action, frozen, String(x), String(y), String(w), String(h)].concat(shape === "circle" ? ["circle"] : ["rect"])   // "free" chega aqui como retangulo do traco
         proc.running = true
     }
     Process {
         id: proc
-        environment: ({ QS_SHOTDIR: Settings.shotDir })
+        environment: ({ QS_SHOTDIR: Settings.shotDir, QS_SEARCHURL: Settings.imageSearchUrl, QS_TRANSTO: Settings.translateTarget })
         stdout: StdioCollector { id: out }
         onExited: {
             root.busy = ""

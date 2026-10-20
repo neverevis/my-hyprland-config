@@ -24,8 +24,11 @@ Scope {
         { type: "image", label: "Imagem", icon: "image" },
         { type: "recorder", label: "Gravar", icon: "monitor" },
         { type: "mixer", label: "Volume por app", icon: "volume" },
-        { type: "resources", label: "Sistema", icon: "chip" }
+        { type: "resources", label: "Sistema", icon: "chip" },
+        { type: "fps", label: "Limite de FPS", icon: "lightning" }
     ]
+    readonly property string notesPath: Quickshell.env("HOME") + "/.local/share/quickshell-mine/overlay-notes.txt"
+    Component.onCompleted: Quickshell.execDetached(["mkdir", "-p", Quickshell.env("HOME") + "/.local/share/quickshell-mine"])
     readonly property var items: Settings.list(Settings.overlayItems)
     function find(t) { return items.find(i => i.type === t) ?? null }
     function mutate(fn) { const l = JSON.parse(JSON.stringify(items)); fn(l); Settings.overlayItems = l }
@@ -44,11 +47,26 @@ Scope {
             color: "transparent"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.layer: WlrLayer.Overlay
-            WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+            WlrLayershell.keyboardFocus: root.open ? WlrKeyboardFocus.Exclusive : (win.clicks.length ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None)
             WlrLayershell.namespace: "mine-overlay"
-            // fechado: nao pega o mouse (o jogo continua recebendo tudo)
-            mask: root.open ? null : noInput
-            Region { id: noInput }
+            // fechado: nao pega o mouse (o jogo continua recebendo tudo), exceto as fixadas marcadas como clicaveis
+            mask: root.open ? null : clickMask
+            property var clicks: []
+            function rebuild() {
+                const l = []
+                for (let i = 0; i < rep.count; i++) { const x = rep.itemAt(i); if (x && x.clickable) l.push(x) }
+                clicks = l
+            }
+            Region {
+                id: clickMask
+                Region { item: win.clicks[0] ?? null }
+                Region { item: win.clicks[1] ?? null }
+                Region { item: win.clicks[2] ?? null }
+                Region { item: win.clicks[3] ?? null }
+                Region { item: win.clicks[4] ?? null }
+                Region { item: win.clicks[5] ?? null }
+                Region { item: win.clicks[6] ?? null }
+            }
             property real k: root.open ? 1 : 0
             Behavior on k { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
@@ -79,10 +97,14 @@ Scope {
                             Row { id: tr; anchors.centerIn: parent; spacing: 6
                                 UiIcon { name: modelData.icon; size: 15; color: parent.parent.on ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter }
                                 UiText { text: modelData.label; color: parent.parent.on ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
-                            MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.toggleType(modelData.type) }
+                            // clique direito: recentraliza a mini-janela
+                            MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; acceptedButtons: Qt.LeftButton | Qt.RightButton; cursorShape: Qt.PointingHandCursor
+                                onClicked: m => { if (m.button === Qt.RightButton) { if (parent.on) root.setItem(modelData.type, { x: 0.5, y: 0.5 }) } else root.toggleType(modelData.type) } }
                         }
                     }
                     Rectangle { width: 1; height: 26; color: Theme.border; anchors.verticalCenter: parent.verticalCenter }
+                    SystemClock { id: tbClk; precision: SystemClock.Minutes }
+                    UiText { text: Qt.formatTime(tbClk.date, "HH:mm"); color: Theme.text; font.pixelSize: 13; font.weight: Font.Bold; font.features: { "tnum": 1 }; anchors.verticalCenter: parent.verticalCenter; leftPadding: 6; rightPadding: 6 }
                     Rectangle {
                         height: 38; width: gr.implicitWidth + 20; radius: 19
                         color: Toggles.gameMode ? Theme.tint(0.25) : (gm.containsMouse ? Theme.cardHi : "transparent")
@@ -96,10 +118,14 @@ Scope {
 
             // mini-janelas
             Repeater {
+                id: rep
                 model: root.items
+                onItemAdded: Qt.callLater(win.rebuild)
+                onItemRemoved: Qt.callLater(win.rebuild)
                 delegate: Item {
                     id: it
                     required property var modelData
+                    readonly property bool clickable: !!modelData.pinned && !!modelData.click && !cross
                     readonly property bool cross: modelData.type === "crosshair"
                     readonly property bool shownNow: root.open || modelData.pinned
                     visible: shownNow
@@ -145,6 +171,12 @@ Scope {
                             Row {
                                 anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
                                 spacing: 2
+                                Rectangle { visible: !it.cross; width: 26; height: 26; radius: 13; color: cn.containsMouse ? Theme.cardHi : "transparent"
+                                    UiIcon { anchors.centerIn: parent; name: "target"; size: 13; color: Theme.muted }
+                                    MouseArea { id: cn; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.setItem(it.modelData.type, { x: 0.5, y: 0.5 }) } }
+                                Rectangle { visible: it.modelData.pinned && !it.cross; width: 26; height: 26; radius: 13; color: it.modelData.click ? Theme.tint(0.25) : (ck.containsMouse ? Theme.cardHi : "transparent")
+                                    UiIcon { anchors.centerIn: parent; name: "tap"; size: 13; color: it.modelData.click ? Theme.accent : Theme.muted }
+                                    MouseArea { id: ck; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.setItem(it.modelData.type, { click: !it.modelData.click }) } }
                                 Rectangle { width: 26; height: 26; radius: 13; color: it.modelData.pinned ? Theme.tint(0.25) : (pm.containsMouse ? Theme.cardHi : "transparent")
                                     UiIcon { anchors.centerIn: parent; name: "tag"; size: 13; color: it.modelData.pinned ? Theme.accent : Theme.muted }
                                     MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.setItem(it.modelData.type, { pinned: !it.modelData.pinned }) } }
@@ -156,7 +188,9 @@ Scope {
                         Loader {
                             id: ld
                             x: 12; y: root.open ? 40 : 12
-                            sourceComponent: ({ notes: notesC, image: imageC, recorder: recC, mixer: mixC, resources: resC })[it.modelData.type] ?? null
+                            sourceComponent: ({ notes: notesC, image: imageC, recorder: recC, mixer: mixC, resources: resC, fps: fpsC })[it.modelData.type] ?? null
+                            // painel aberto ou fixada clicavel: os controles funcionam
+                            onLoaded: if (item && item.live !== undefined) item.live = Qt.binding(() => root.open || it.clickable)
                         }
                     }
                 }
@@ -166,18 +200,29 @@ Scope {
 
     Component {
         id: notesC
-        Rectangle {
-            implicitWidth: 260; implicitHeight: 160
-            color: "transparent"
+        Item {
+            id: nt
+            property bool live: root.open
+            property string stat: ""
+            implicitWidth: 260; implicitHeight: 190
+            // notas num arquivo (nao no settings.json), salvas 500 ms depois da ultima tecla
+            FileView {
+                id: nf
+                path: root.notesPath
+                onLoaded: if (!te.activeFocus) te.text = text()
+                onLoadFailed: if (!te.activeFocus) te.text = Settings.overlayNotes
+            }
+            Timer { id: deb; interval: 500; onTriggered: { nf.setText(te.text); nt.stat = "Salvo" } }
             TextEdit {
-                anchors.fill: parent
-                text: Settings.overlayNotes
+                id: te
+                anchors { left: parent.left; right: parent.right; top: parent.top; bottom: sl.top; bottomMargin: 4 }
                 color: Theme.text; font.pixelSize: 13; font.family: Theme.font
                 wrapMode: TextEdit.Wrap; selectByMouse: true
-                readOnly: !root.open
-                onTextChanged: if (activeFocus) Settings.overlayNotes = text
+                readOnly: !nt.live
+                onTextChanged: if (activeFocus) { nt.stat = "Salvando…"; deb.restart() }
                 UiText { visible: !parent.text; text: "Anotações rápidas…"; color: Theme.muted; font.pixelSize: 13 }
             }
+            UiText { id: sl; anchors { right: parent.right; bottom: parent.bottom } text: nt.stat; color: Theme.muted; font.pixelSize: 10 }
         }
     }
     Component {
@@ -186,17 +231,33 @@ Scope {
             readonly property string src: Settings.overlayImage
             implicitWidth: src ? Math.max(120, img.implicitWidth * Settings.overlayImageScale / 100) : 220
             implicitHeight: src ? Math.max(80, img.implicitHeight * Settings.overlayImageScale / 100) : 60
-            Image { id: img; anchors.fill: parent; visible: !!parent.src; source: parent.src ? "file://" + parent.src : ""; fillMode: Image.PreserveAspectFit; sourceSize: Qt.size(1200, 1200) }
+            AnimatedImage { id: img; anchors.fill: parent; visible: !!parent.src; source: parent.src ? "file://" + parent.src : ""; fillMode: Image.PreserveAspectFit; playing: true }
+            // roda do mouse muda o tamanho (10 a 150 %)
+            WheelHandler { enabled: !!parent.src; onWheel: e => Settings.overlayImageScale = Math.max(10, Math.min(150, Settings.overlayImageScale + (e.angleDelta.y > 0 ? 5 : -5))) }
             UiButton { visible: !parent.src || root.open; anchors.centerIn: parent; icon: "folderOpen"; text: parent.src ? "" : "Escolher imagem"; onClicked: Pick.image("Imagem flutuante", p => Settings.overlayImage = p) }
         }
     }
     Component {
         id: recC
-        Row {
+        Column {
+            id: rc
+            property bool live: root.open
             spacing: 10
-            Rectangle { width: 12; height: 12; radius: 6; color: Recorder.active ? Theme.danger : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-            UiText { text: Recorder.active ? Recorder.elapsed : "Parado"; color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold; font.features: { "tnum": 1 }; anchors.verticalCenter: parent.verticalCenter }
-            UiButton { visible: root.open; icon: Recorder.active ? "pause" : "monitor"; text: Recorder.active ? "Parar" : "Gravar"; kind: Recorder.active ? "danger" : "accent"; onClicked: Recorder.active ? Recorder.stop() : Recorder.start(false) }
+            Row {
+                spacing: 10
+                Rectangle { width: 12; height: 12; radius: 6; color: Recorder.active ? Theme.danger : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: Recorder.active ? Recorder.elapsed : "Parado"; color: Theme.text; font.pixelSize: 15; font.weight: Font.Bold; font.features: { "tnum": 1 }; anchors.verticalCenter: parent.verticalCenter }
+                UiButton { visible: rc.live; icon: Recorder.active ? "pause" : "monitor"; text: Recorder.active ? "Parar" : "Tela toda"; kind: Recorder.active ? "danger" : "accent"; onClicked: Recorder.active ? Recorder.stop() : Recorder.start(false) }
+            }
+            // capturas: fecham o painel antes (para a tela congelada nao pegar o overlay)
+            Row {
+                visible: rc.live
+                spacing: 6
+                UiButton { icon: "frame"; text: "Área"; kind: "ghost"; onClicked: { root.open = false; Capture.start("copy") } }
+                UiButton { icon: "camera"; text: "Tela"; kind: "ghost"; onClicked: { root.open = false; Quickshell.execDetached(["sh", "-c", "sleep 0.3; grim - | wl-copy -t image/png"]) } }
+                UiButton { icon: "monitor"; text: "Gravar área"; kind: "ghost"; onClicked: { root.open = false; Capture.start("record") } }
+                UiButton { icon: "folderOpen"; kind: "ghost"; onClicked: Qt.openUrlExternally("file://" + Recorder.dir) }
+            }
         }
     }
     Component {
@@ -206,6 +267,11 @@ Scope {
             spacing: 8
             readonly property var streams: Pipewire.nodes.values.filter(n => n.type === PwNodeType.AudioOutStream)
             PwObjectTracker { objects: mixCol.streams }
+            readonly property var sink: Pipewire.defaultAudioSink
+            PwObjectTracker { objects: [mixCol.sink] }
+            UiSlider { width: 260; label: "Geral"; icon: mixCol.sink && mixCol.sink.audio && mixCol.sink.audio.muted ? "volumeOff" : "volume"; from: 0; to: 100; suffix: " %"
+                value: mixCol.sink && mixCol.sink.audio ? Math.round(mixCol.sink.audio.volume * 100) : 0
+                onMoved: v => { if (mixCol.sink && mixCol.sink.audio) mixCol.sink.audio.volume = v / 100 } }
             UiText { visible: !parent.streams.length; text: "Nenhum app tocando som"; color: Theme.muted; font.pixelSize: 12 }
             Repeater {
                 model: parent.streams
@@ -213,7 +279,12 @@ Scope {
                     required property var modelData
                     width: 260; spacing: 2
                     readonly property var p: modelData.properties || {}
-                    UiText { width: parent.width; elide: Text.ElideRight; text: p["application.name"] || modelData.description || modelData.name; color: Theme.text; font.pixelSize: 12 }
+                    Row {
+                        width: parent.width; spacing: 6
+                        UiText { width: parent.width - 28; anchors.verticalCenter: parent.verticalCenter; elide: Text.ElideRight; text: p["application.name"] || modelData.description || modelData.name; color: Theme.text; font.pixelSize: 12 }
+                        UiIcon { anchors.verticalCenter: parent.verticalCenter; name: modelData.audio && modelData.audio.muted ? "volumeOff" : "volume"; size: 16; color: modelData.audio && modelData.audio.muted ? Theme.danger : Theme.muted
+                            MouseArea { anchors.fill: parent; anchors.margins: -4; cursorShape: Qt.PointingHandCursor; onClicked: { if (modelData.audio) modelData.audio.muted = !modelData.audio.muted } } }
+                    }
                     UiSlider { width: parent.width; label: ""; from: 0; to: 100; suffix: " %"; value: modelData.audio ? Math.round(modelData.audio.volume * 100) : 0
                         onMoved: v => { if (modelData.audio) modelData.audio.volume = v / 100 } }
                 }
@@ -223,19 +294,46 @@ Scope {
     Component {
         id: resC
         Column {
-            spacing: 4
+            id: rs
+            spacing: 6
+            property int tab: 0   // 0 CPU, 1 RAM, 2 Swap
+            readonly property real swapU: SysInfo.d.swapTotal ? SysInfo.d.swapUsed / SysInfo.d.swapTotal : 0
+            readonly property real val: tab === 0 ? SysInfo.cpu : tab === 1 ? SysInfo.mem : swapU
+            readonly property string of: tab === 1 ? "de " + (SysInfo.d.memTotal / 1048576).toFixed(1) + " GB" : tab === 2 ? "de " + ((SysInfo.d.swapTotal || 0) / 1048576).toFixed(1) + " GB" : (SysInfo.temp !== null ? SysInfo.temp + "°C" : "")
             Component.onCompleted: SysInfo.use()
             Component.onDestruction: SysInfo.release()
-            Repeater {
-                model: [["CPU", Math.round(SysInfo.cpu * 100) + "%" + (SysInfo.temp !== null ? "  " + SysInfo.temp + "°" : "")], ["RAM", Math.round(SysInfo.mem * 100) + "%"],
-                        ["GPU", SysInfo.d.gpu ? Math.round(SysInfo.gpu * 100) + "%" + (SysInfo.gpuTemp ? "  " + SysInfo.gpuTemp + "°" : "") : "--"]]
-                delegate: Row {
-                    required property var modelData
-                    spacing: 10
-                    UiText { width: 40; text: modelData[0]; color: Theme.muted; font.pixelSize: 12; font.weight: Font.DemiBold }
-                    UiText { text: modelData[1]; color: Theme.text; font.pixelSize: 13; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+            Row {
+                spacing: 4
+                Repeater {
+                    model: ["CPU", "RAM", "Swap"]
+                    delegate: Rectangle {
+                        required property string modelData
+                        required property int index
+                        width: tl.implicitWidth + 18; height: 24; radius: 12
+                        color: rs.tab === index ? Theme.accent : Theme.track
+                        UiText { id: tl; anchors.centerIn: parent; text: modelData; font.pixelSize: 11; font.weight: Font.DemiBold; color: rs.tab === index ? Theme.accentText : Theme.text }
+                        MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: rs.tab = index }
+                    }
                 }
             }
+            Row {
+                spacing: 8
+                UiText { text: Math.round(rs.val * 100) + "%"; color: Theme.text; font.pixelSize: 26; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                UiText { text: rs.of; color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+            }
+            MiniGraph { visible: rs.tab < 2; width: 220; height: 46; max: 1; values: rs.tab === 0 ? SysInfo.hist.cpu : SysInfo.hist.mem }
+            UiText { visible: SysInfo.d.gpu; text: "GPU " + Math.round(SysInfo.gpu * 100) + "%" + (SysInfo.gpuTemp ? "  " + SysInfo.gpuTemp + "°" : ""); color: Theme.muted; font.pixelSize: 12 }
+        }
+    }
+    Component {
+        id: fpsC
+        Row {
+            id: fr
+            property bool live: root.open
+            spacing: 8
+            UiField { id: fv; width: 70; placeholderText: "FPS"; enabled: fr.live; validator: IntValidator { bottom: 10; top: 1000 } }
+            UiButton { enabled: fr.live; icon: "check"; text: "Aplicar"; kind: "accent"; onClicked: if (fv.text !== "") Quickshell.execDetached(["sh", "-c", 'f="$HOME/.config/MangoHud/MangoHud.conf"; mkdir -p "$(dirname "$f")"; touch "$f"; if grep -q "^fps_limit=" "$f"; then sed -i "s/^fps_limit=.*/fps_limit=$1/" "$f"; else echo "fps_limit=$1" >> "$f"; fi; pkill -SIGUSR2 mangohud', "sh", fv.text]) }
+            UiText { text: "MangoHud"; color: Theme.muted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
         }
     }
 }

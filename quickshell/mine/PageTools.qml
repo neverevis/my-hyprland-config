@@ -9,7 +9,7 @@ Column {
     Card {
         icon: "frame"
         title: "Captura"
-        subtitle: "O seletor congela a tela: arraste uma área ou clique numa janela. Teclas 1-6 trocam a ação, C alterna círculo, Enter pega a tela inteira."
+        subtitle: "O seletor congela a tela: arraste uma área ou clique numa janela. Teclas 1-6 trocam a ação, C alterna retângulo, círculo e traço livre, Enter pega a tela inteira."
         Flow {
             width: parent.width
             spacing: 6
@@ -22,6 +22,18 @@ Column {
             spacing: 10
             UiText { anchors.verticalCenter: parent.verticalCenter; text: "Pasta das capturas"; color: Theme.text; font.pixelSize: 13 }
             UiField { width: 320; text: Settings.shotDir; placeholderText: "Vazio = só copiar, não salvar"; onEditingFinished: Settings.shotDir = text.trim() }
+        }
+        UiSwitch { label: "Contornar todas as janelas no seletor"; icon: "window"; checked: Settings.regionOutlines; onToggled: on => Settings.regionOutlines = on }
+        UiSwitch { label: "Linhas-guia seguindo o cursor"; icon: "cursorMove"; checked: Settings.regionAimLines; onToggled: on => Settings.regionAimLines = on }
+        Row {
+            spacing: 10
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Buscar por imagem (URL base)"; color: Theme.text; font.pixelSize: 13 }
+            UiField { width: 320; text: Settings.imageSearchUrl; placeholderText: "https://lens.google.com/uploadbyurl?url="; onEditingFinished: Settings.imageSearchUrl = text.trim() }
+        }
+        Row {
+            spacing: 10
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Traduzir para (código)"; color: Theme.text; font.pixelSize: 13 }
+            UiField { width: 80; text: Settings.translateTarget; placeholderText: "pt"; onEditingFinished: Settings.translateTarget = text.trim() || "pt" }
         }
         UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
             text: "Para o Print Screen abrir este seletor, troque nos atalhos do Hyprland o comando por:  qs -c mine ipc call region open copy" }

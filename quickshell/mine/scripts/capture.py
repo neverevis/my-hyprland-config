@@ -2,7 +2,8 @@
 # Acoes do seletor de area (RegionSelector.qml) sobre a tela congelada:
 #   capture.py <acao> <tela.png> x y w h [circle]
 # acoes: copy (copia e salva em ~/Imagens/Screenshots), ocr (copia o texto), translate (texto traduzido para o
-# portugues), annotate (abre no satty), lens (envia para o litterbox.catbox.moe, apaga em 1 h, e abre o Google Lens)
+# portugues), annotate (abre no satty), lens (envia para o litterbox.catbox.moe, apaga em 1 h, e abre QS_SEARCHURL + url; padrao Google Lens)
+# translate usa QS_TRANSTO (codigo do idioma, padrao pt)
 # Imprime uma linha JSON {ok, msg, text?, path?}.
 import json, os, shutil, subprocess, sys, time
 from PIL import Image, ImageDraw
@@ -37,7 +38,59 @@ def ocr(path):
     r = subprocess.run(["tesseract", path, "-", "-l", "por+eng", "--psm", "6"], capture_output=True, text=True, timeout=60)
     return r.stdout.strip()
 
+def boxes(src, target):
+    # traducao no lugar: OCR por paragrafo (tesseract tsv), cada paragrafo traduzido com o trans, mais cor de fundo/texto
+    from concurrent.futures import ThreadPoolExecutor
+    r = subprocess.run(["tesseract", src, "-", "-l", "por+eng", "--psm", "3", "tsv"], capture_output=True, text=True, timeout=120)
+    rows = [l.split("\t") for l in r.stdout.splitlines()[1:]]
+    pars = {}
+    for c in rows:
+        if len(c) < 12 or c[0] != "5" or not c[11].strip():
+            continue
+        try:
+            conf = float(c[10])
+        except ValueError:
+            continue
+        if conf < 35:
+            continue
+        key = (c[2], c[3], c[4])   # bloco, paragrafo
+        l, t, w, h = int(c[6]), int(c[7]), int(c[8]), int(c[9])
+        d = pars.setdefault(key, {"x0": l, "y0": t, "x1": l + w, "y1": t + h, "lines": {}})
+        d["x0"] = min(d["x0"], l); d["y0"] = min(d["y0"], t); d["x1"] = max(d["x1"], l + w); d["y1"] = max(d["y1"], t + h)
+        d["lines"].setdefault(c[5], []).append(c[11].strip())
+    im = Image.open(src).convert("RGB")
+    lst = []
+    for d in pars.values():
+        text = " ".join(" ".join(v) for _, v in sorted(d["lines"].items(), key=lambda kv: int(kv[0])))
+        if len(text) < 2 or not any(ch.isalpha() for ch in text):
+            continue
+        lst.append({"x": d["x0"], "y": d["y0"], "w": d["x1"] - d["x0"], "h": d["y1"] - d["y0"], "text": text, "lines": len(d["lines"])})
+    lst = lst[:80]
+    def tr(b):
+        try:
+            p = subprocess.run(["trans", "-b", "-no-autocorrect", ":" + target, b["text"]], capture_output=True, text=True, timeout=25)
+            return p.stdout.strip()
+        except Exception:
+            return ""
+    with ThreadPoolExecutor(8) as ex:
+        res = list(ex.map(tr, lst))
+    for b, t in zip(lst, res):
+        b["tr"] = t or b["text"]
+        x, y, w, h = b["x"], b["y"], b["w"], b["h"]
+        edge = []
+        for xx in range(x, x + w, max(1, w // 16)):
+            edge += [im.getpixel((min(im.width - 1, xx), max(0, y - 2))), im.getpixel((min(im.width - 1, xx), min(im.height - 1, y + h + 2)))]
+        for yy in range(y, y + h, max(1, h // 8)):
+            edge += [im.getpixel((max(0, x - 2), min(im.height - 1, yy))), im.getpixel((min(im.width - 1, x + w + 2), min(im.height - 1, yy)))]
+        bg = tuple(sorted(c[i] for c in edge)[len(edge) // 2] for i in range(3)) if edge else (255, 255, 255)
+        lum = 0.2126 * bg[0] + 0.7152 * bg[1] + 0.0722 * bg[2]
+        b["bg"] = "#%02x%02x%02x" % bg
+        b["fg"] = "#111111" if lum > 140 else "#f2f2f2"
+    out(ok=True, msg="%d trechos" % len(lst), boxes=lst, size=[im.width, im.height], translated=any(b["tr"] != b["text"] for b in lst))
+
 def main():
+    if sys.argv[1] == "ocrboxes":
+        boxes(sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "pt")
     act, src = sys.argv[1], sys.argv[2]
     x, y, w, h = map(float, sys.argv[3:7])
     circle = len(sys.argv) > 7 and sys.argv[7] == "circle"
@@ -74,7 +127,7 @@ def main():
         t = ocr(tmp)
         if not t:
             out(ok=False, msg="Nenhum texto encontrado")
-        r = subprocess.run(["trans", "-b", "-no-autocorrect", ":" + (sys.argv[8] if len(sys.argv) > 8 else "pt"), t], capture_output=True, text=True, timeout=30)
+        r = subprocess.run(["trans", "-b", "-no-autocorrect", ":" + (os.environ.get("QS_TRANSTO") or "pt"), t], capture_output=True, text=True, timeout=30)
         tr = r.stdout.strip()
         if not tr:
             out(ok=False, msg="Não consegui traduzir (sem internet?)", text=t)
@@ -87,14 +140,18 @@ def main():
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         out(ok=True, msg="Aberto no satty", path=path)
     if act == "lens":
+        base = os.environ.get("QS_SEARCHURL") or "https://lens.google.com/uploadbyurl?url="
         r = subprocess.run(["curl", "-fsS", "--max-time", "60", "-F", "reqtype=fileupload", "-F", "time=1h", "-F", "fileToUpload=@" + tmp,
                             "https://litterbox.catbox.moe/resources/internals/api.php"], capture_output=True, text=True)
         url = r.stdout.strip()
+        if not url.startswith("http"):   # reserva: uguu.se
+            r = subprocess.run(["curl", "-fsS", "--max-time", "60", "-F", "files[]=@" + tmp, "https://uguu.se/upload?output=text"], capture_output=True, text=True)
+            url = r.stdout.strip()
         if not url.startswith("http"):
             out(ok=False, msg="Falhou ao enviar a imagem")
-        subprocess.Popen(["xdg-open", "https://lens.google.com/uploadbyurl?url=" + url], start_new_session=True,
+        subprocess.Popen(["xdg-open", base + url], start_new_session=True,
                          stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        out(ok=True, msg="Abrindo o Google Lens", path=url)
+        out(ok=True, msg="Abrindo a busca por imagem", path=url)
     out(ok=False, msg="Ação desconhecida: " + act)
 
 main()

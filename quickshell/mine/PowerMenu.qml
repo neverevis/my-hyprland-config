@@ -1,5 +1,5 @@
 // Menu de energia: tela cheia com fundo escurecido (e desfocado pelo Hyprland), foto, saudacao e as acoes.
-// Teclado: setas/Tab escolhem, Enter confirma, letras (B S L R D) vao direto, Esc fecha.
+// Teclado: setas/Tab escolhem (grade de ate 4 colunas), Enter confirma, letras (B S H L T R F D) vao direto, Esc fecha.
 // Sair/Reiniciar/Desligar pedem confirmacao: contagem de 3 s (clique de novo = agora; Esc ou clique fora = cancela).
 import Quickshell
 import Quickshell.Io
@@ -11,7 +11,7 @@ Scope {
     readonly property bool open: Power.menuOpen
     property bool alive: false
     onOpenChanged: {
-        if (open) { closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; alive = true }
+        if (open) { SystemGuard.refreshWarnings(); closeTimer.stop(); Settings.launcherOpen = false; Settings.wpPickerOpen = false; Settings.homeOpen = false; alive = true }
         else closeTimer.restart()
     }
     Timer { id: closeTimer; interval: Motion.durationOf("power", true) + 120; onTriggered: root.alive = false }
@@ -35,6 +35,7 @@ Scope {
             Behavior on p { id: pB; MotionAnim { use: "power"; out: pB.targetValue < 0.5 } }
 
             property int sel: 0
+            readonly property int cols: Power.actions.length > 5 ? 4 : Power.actions.length
             property string pending: ""     // acao esperando a contagem
             property real count: 0          // 0..1 da contagem
             onVisibleChanged: if (!visible) pending = ""
@@ -82,6 +83,8 @@ Scope {
                 Keys.onPressed: e => {
                     const n = Power.actions.length
                     if (e.key === Qt.Key_Escape) { if (win.pending !== "") win.pending = ""; else Power.menuOpen = false }
+                    else if (e.key === Qt.Key_Up) { win.pending = ""; if (win.sel - win.cols >= 0) win.sel -= win.cols }
+                    else if (e.key === Qt.Key_Down) { win.pending = ""; if (win.sel + win.cols < n) win.sel += win.cols }
                     else if (e.key === Qt.Key_Left || e.key === Qt.Key_Backtab || (e.key === Qt.Key_Tab && (e.modifiers & Qt.ShiftModifier))) { win.pending = ""; win.sel = (win.sel + n - 1) % n }
                     else if (e.key === Qt.Key_Right || e.key === Qt.Key_Tab) { win.pending = ""; win.sel = (win.sel + 1) % n }
                     else if (e.key === Qt.Key_Return || e.key === Qt.Key_Enter || e.key === Qt.Key_Space) win.act(win.sel)
@@ -122,8 +125,9 @@ Scope {
                     }
 
                     // acoes
-                    Row {
+                    Grid {
                         anchors.horizontalCenter: parent.horizontalCenter
+                        columns: win.cols
                         spacing: 14
                         Repeater {
                             model: Power.actions
@@ -212,11 +216,34 @@ Scope {
                         }
                     }
 
+                    // avisos: download em andamento / gerenciador de pacotes rodando
+                    Row {
+                        anchors.horizontalCenter: parent.horizontalCenter
+                        spacing: 10
+                        visible: SystemGuard.warnDl || SystemGuard.warnPkg
+                        Repeater {
+                            model: [{ on: SystemGuard.warnDl, icon: "download", text: "Pode haver um download em andamento" }, { on: SystemGuard.warnPkg, icon: "package", text: "O gerenciador de pacotes está rodando" }]
+                            delegate: Rectangle {
+                                required property var modelData
+                                visible: modelData.on
+                                width: chipRow.implicitWidth + 24; height: 34; radius: 17
+                                color: Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.28)
+                                border.width: 1; border.color: Theme.danger
+                                Row {
+                                    id: chipRow
+                                    anchors.centerIn: parent; spacing: 8
+                                    UiIcon { name: modelData.icon; size: 16; color: "white"; anchors.verticalCenter: parent.verticalCenter }
+                                    UiText { text: modelData.text; color: "white"; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                                }
+                            }
+                        }
+                    }
+
                     // dica / confirmacao
                     UiText {
                         anchors.horizontalCenter: parent.horizontalCenter
                         readonly property var pa: Power.actions.find(a => a.id === win.pending)
-                        text: pa ? pa.verb + "… clique de novo para agora · Esc cancela" : "← → escolhe · Enter confirma · Esc fecha"
+                        text: pa ? pa.verb + "… clique de novo para agora · Esc cancela" : "← ↑ ↓ → escolhe · Enter confirma · Esc fecha"
                         color: pa ? "white" : Qt.rgba(1, 1, 1, 0.5)
                         font.pixelSize: 13
                     }

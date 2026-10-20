@@ -223,6 +223,12 @@ Singleton {
     property alias overlayImage: adapter.overlayImage
     property alias overlayImageScale: adapter.overlayImageScale
     property alias recAudio: adapter.recAudio           // gravacao: none | system | mic
+    property alias imageSearchUrl: adapter.imageSearchUrl   // busca por imagem: URL base que recebe a imagem enviada
+    property alias translateTarget: adapter.translateTarget // idioma da traducao de tela (codigo do trans: pt, en, es...)
+    property alias regionAimLines: adapter.regionAimLines
+    property alias regionOutlines: adapter.regionOutlines   // contorno de todas as janelas no seletor de area
+    property alias oskPinned: adapter.oskPinned
+    property alias oskLayout: adapter.oskLayout
     property alias shotDir: adapter.shotDir             // pasta das capturas (vazio = so copiar)
     property alias recDir: adapter.recDir
     property alias recFps: adapter.recFps               // 0 = do monitor
@@ -902,6 +908,12 @@ Singleton {
             property string overlayNotes: ""
             property string overlayImage: ""
             property int overlayImageScale: 50
+            property string imageSearchUrl: "https://lens.google.com/uploadbyurl?url="
+            property string translateTarget: "pt"
+            property bool regionAimLines: true
+            property bool regionOutlines: true
+            property bool oskPinned: false
+            property string oskLayout: "abnt2"
             property string shotDir: "~/Imagens/Screenshots"
             property string recDir: "~/Vídeos/Gravações"
             property int recFps: 0
