@@ -6,8 +6,8 @@ import QtQuick.Effects
 Rectangle {
     id: pv
     property var w: null                       // { type, cols, rows, opts }
-    readonly property real nw: w ? DeskState.px(w.cols) : 300
-    readonly property real nh: w ? DeskState.px(w.rows) : 150
+    readonly property real nw: w ? DeskState.pxW(w.cols) : 300
+    readonly property real nh: w ? DeskState.pxH(w.rows) : 150
     readonly property real k: Math.min((width - 40) / nw, (height - 32) / nh, 1)
     readonly property string cardStyle: { const c = w ? DeskState.opt(w, "card") : "auto"; return c === "auto" ? Settings.desktopCardStyle : c }
     radius: 16
@@ -34,7 +34,7 @@ Rectangle {
             anchors.fill: parent
             radius: Math.min(30, Math.min(width, height) * 0.2)
             color: pv.cardStyle === "card" ? Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Settings.desktopCard / 100)
-                : pv.cardStyle === "glass" ? Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Math.max(0.32, Settings.desktopCard / 100 * 0.55)) : "transparent"
+                : (pv.cardStyle === "glass" || pv.cardStyle === "frost") ? Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Math.max(0.32, Settings.desktopCard / 100 * 0.55)) : "transparent"
             border.width: pv.cardStyle === "none" ? 0 : 1
             border.color: Qt.rgba(1, 1, 1, 0.14)
         }

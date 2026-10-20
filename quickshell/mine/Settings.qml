@@ -86,7 +86,7 @@ Singleton {
     property alias desktopOn: adapter.desktopOn             // mostra os widgets da area de trabalho
     property alias desktopWidgets: adapter.desktopWidgets   // [{ id, type, fx, fy, cols, rows, opts }]
     property alias desktopCard: adapter.desktopCard         // opacidade do fundo dos cartoes (0..100)
-    property alias desktopCardStyle: adapter.desktopCardStyle // fundo padrao: card | glass | none
+    property alias desktopCardStyle: adapter.desktopCardStyle // fundo padrao: card | glass | frost | none
     property alias desktopShadow: adapter.desktopShadow     // sombra nos widgets sem fundo
     property alias desktopTone: adapter.desktopTone         // tom padrao dos widgets: auto | primary | secondary | tertiary | neutral | custom
     property alias desktopToneColor: adapter.desktopToneColor
@@ -97,6 +97,7 @@ Singleton {
     property alias desktopLocked: adapter.desktopLocked     // trava a posicao dos widgets (salvo)
     property alias desktopAlwaysDrag: adapter.desktopAlwaysDrag // arrastar widgets sem entrar no modo de edicao
     property alias desktopSnapLines: adapter.desktopSnapLines   // linhas de alinhamento que piscam ao soltar
+    property alias desktopGridSize: adapter.desktopGridSize   // tamanho da grade: default | compact
     property alias desktopGrid: adapter.desktopGrid         // grade de pontos enquanto arrasta
     property alias desktopBlur: adapter.desktopBlur         // desfoque do Hyprland atras dos cartoes
     property alias sysCursor: adapter.sysCursor             // tema do cursor escolhido no shell ("" = o shell nao mexe)
@@ -855,6 +856,7 @@ Singleton {
             property bool desktopLocked: false
             property bool desktopAlwaysDrag: true
             property bool desktopSnapLines: true
+            property string desktopGridSize: "default"
             property bool desktopGrid: true
             property string sysCursor: ""
             property string winShadowMode: ""

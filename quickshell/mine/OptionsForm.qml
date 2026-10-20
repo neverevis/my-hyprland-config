@@ -141,8 +141,8 @@ Column {
             id: pc
             readonly property var dd: parent ? parent.def : ({})
             readonly property var vv: parent ? parent.val : undefined
-            readonly property real nw: DeskState.px(form.previewCols) - 36
-            readonly property real nh: DeskState.px(form.previewRows) - 36
+            readonly property real nw: DeskState.pxW(form.previewCols) - 36
+            readonly property real nh: DeskState.pxH(form.previewRows) - 36
             readonly property real tw: form.compact ? 82 : 100
             readonly property real th: Math.round(tw * Math.max(0.58, Math.min(1, nh / nw)))
             spacing: 8

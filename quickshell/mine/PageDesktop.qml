@@ -23,7 +23,9 @@ Column {
             UiText { anchors.verticalCenter: parent.verticalCenter; text: (Settings.desktopWidgets || []).length + " widget(s) na tela"; color: Theme.muted; font.pixelSize: 12 }
         }
         UiLabel { text: "Fundo padrão dos widgets" }
-        UiSeg { options: [["card", "Cartão", "cards"], ["glass", "Vidro", "glass"], ["none", "Sem fundo", "image"]]; value: Settings.desktopCardStyle; onPicked: v => Settings.desktopCardStyle = v }
+        CardStylePicker { width: parent.width; withAuto: false; value: Settings.desktopCardStyle; onPicked: v => Settings.desktopCardStyle = v }
+        UiLabel { text: "Tamanho da grade" }
+        UiSeg { options: [["default", "Padrão", "view_grid"], ["compact", "Compacta", "grid"]]; value: Settings.desktopGridSize; onPicked: v => Settings.desktopGridSize = v }
         UiSlider { label: "Opacidade do cartão"; icon: "glass"; from: 0; to: 100; value: Settings.desktopCard; suffix: " %"; onMoved: v => Settings.desktopCard = v }
         ToneSwatches {
             width: parent.width

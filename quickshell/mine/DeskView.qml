@@ -15,6 +15,39 @@ Item {
     property bool darkBg: false            // fundo escurecido (tela de bloqueio): texto sempre claro nos sem fundo
     property alias count: rep.count
     function itemAt(i) { return rep.itemAt(i) }
+    // fundo fosco: UMA textura do wallpaper desfocado, so existe se algum cartao visivel usa "frost"; cada cartao mostra a sua regiao
+    readonly property bool anyFrost: {
+        const l = Settings.desktopWidgets || []
+        for (let i = 0; i < l.length; i++) {
+            if (view.lockMode && !DeskState.opt(l[i], "lock")) continue
+            const c = DeskState.opt(l[i], "card")
+            if ((c === "auto" ? Settings.desktopCardStyle : c) === "frost") return true
+        }
+        return false
+    }
+    readonly property bool frostOk: frostLoader.status === Loader.Ready && Wallpaper.still !== ""
+    readonly property var frostTex: frostLoader.item ? frostLoader.item.tex : null
+    Loader {
+        id: frostLoader
+        active: view.anyFrost && view.visible && Wallpaper.still !== "" && view.width > 0
+        sourceComponent: Item {
+            id: fh
+            property alias tex: ftex
+            width: 640; height: Math.max(1, Math.round(640 * view.height / Math.max(1, view.width)))
+            Image {
+                id: fimg
+                anchors.fill: parent
+                source: "file://" + Wallpaper.still
+                sourceSize: Qt.size(640, 360)
+                fillMode: Image.PreserveAspectCrop
+                asynchronous: true
+                cache: true
+            }
+            ShaderEffectSource { id: fsrc; sourceItem: fimg; hideSource: true; live: true }
+            MultiEffect { id: fblur; anchors.fill: parent; source: fsrc; blurEnabled: true; blurMax: 64; blur: 1.0; autoPaddingEnabled: false }
+            ShaderEffectSource { id: ftex; sourceItem: fblur; hideSource: true; live: true; width: fh.width; height: fh.height }
+        }
+    }
     signal guides(bool gx, bool gy)
     signal dropped(rect r)                 // widget solto (retangulo final): a camada pisca as linhas de alinhamento
     // fim do arrasto em grupo: todos os selecionados ganham a mesma mudanca (uma gravacao so)
@@ -68,10 +101,12 @@ Item {
             property real dw: -1
             property real dh: -1
             property bool resizing: false
+            property int pvC: 0               // contorno do tamanho (alca): colunas e linhas, 0 = nao esta arrastando
+            property int pvR: 0
             readonly property bool docked: !!w && w.type === "visualizer" && DeskState.opt(w, "dock") === true
             readonly property real freeSz: w && w.type === "image" && DeskState.opt(w, "kind") === "photo" ? DeskState.opt(w, "size") : 0
-            readonly property real tw: docked ? view.area.width : dw > 0 ? dw : freeSz > 0 ? freeSz : (w ? DeskState.px(w.cols) : 150)
-            readonly property real th: dh > 0 ? dh : freeSz > 0 ? freeSz : (w ? DeskState.px(w.rows) : 150)
+            readonly property real tw: docked ? view.area.width : dw > 0 ? dw : freeSz > 0 ? freeSz : (w ? DeskState.pxW(w.cols) : 150)
+            readonly property real th: dh > 0 ? dh : freeSz > 0 ? freeSz : (w ? DeskState.pxH(w.rows) : 150)
             readonly property var pos: w ? (DeskState.auto, DeskState.posOf(w)) : ({ fx: 0, fy: 0 })
             readonly property real bx: docked ? view.area.x : view.area.x + pos.fx * Math.max(0, view.area.width - tw)
             readonly property real by: docked ? view.area.y + view.area.height - th : view.area.y + pos.fy * Math.max(0, view.area.height - th)
@@ -111,6 +146,8 @@ Item {
             readonly property bool fam: tone === "primary" || tone === "secondary" || tone === "tertiary"
             readonly property var pal: Theme.family(fam ? tone : "primary")
             readonly property bool bare: cardStyle === "none"
+            readonly property bool frosted: cardStyle === "frost" && view.frostOk && !!view.frostTex
+            readonly property bool glassy: cardStyle === "glass" || (cardStyle === "frost" && !frosted)   // fosco sem wallpaper cai no vidro
             readonly property bool light: lum > 0.62 && !view.darkBg   // wallpaper claro embaixo: texto escuro
             readonly property color ink: light ? "#16151b" : "#f6f3fa"
             // sobre wallpaper claro (sem fundo) as cores da paleta escurecem para continuar legiveis
@@ -158,17 +195,28 @@ Item {
                 anchors.fill: parent
                 radius: Math.min(30, Math.min(width, height) * 0.2)
                 color: card.cardStyle === "card" ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Settings.desktopCard / 100)
-                    : card.cardStyle === "glass" ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.32, Settings.desktopCard / 100 * 0.55))
+                    : card.glassy ? Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.32, Settings.desktopCard / 100 * 0.55))
                     : "transparent"
                 border.width: card.bare ? 0 : 1
-                border.color: card.cardStyle === "glass" ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.6)
+                border.color: card.glassy ? Qt.rgba(1, 1, 1, 0.14) : card.frosted ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(Theme.border.r, Theme.border.g, Theme.border.b, 0.6)
                 clip: !card.bare
                 Behavior on radius { MotionAnim { use: "desktop" } }
                 Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 220 } }
                 // vidro como lente: bruma, brilho diagonal e aro de luz (so estatico, so no estilo vidro)
+                // fosco: a regiao do cartao na textura compartilhada, tingida com a cor do cartao (um ShaderEffect pequeno, sem camada propria)
+                ShaderEffect {
+                    anchors.fill: parent
+                    visible: card.frosted
+                    property var source: card.frosted ? view.frostTex : null
+                    property vector4d region: Qt.vector4d(card.x / Math.max(1, view.width), card.y / Math.max(1, view.height), card.width / Math.max(1, view.width), card.height / Math.max(1, view.height))
+                    property color tint: Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.28, Settings.desktopCard / 100 * 0.6))
+                    property vector2d size: Qt.vector2d(width, height)
+                    property real radius: bg.radius
+                    fragmentShader: Qt.resolvedUrl("shaders/frost.frag.qsb")
+                }
                 Loader {
                     anchors.fill: parent
-                    active: card.cardStyle === "glass"
+                    active: card.glassy
                     sourceComponent: Item {
                         Rectangle { anchors.fill: parent; radius: bg.radius
                             gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.10) } GradientStop { position: 0.55; color: Qt.rgba(1, 1, 1, 0.02) } GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 0.06) } } }
@@ -322,14 +370,13 @@ Item {
                 id: rsz
                 readonly property bool free: card.w ? !!DeskState.info(card.w.type).free : false
                 anchors { right: parent.right; bottom: parent.bottom; margins: -7 }
-                width: 22; height: 22; radius: 11
+                width: 14; height: 14; radius: 7
                 z: 20
-                color: rszM.pressed || rszM.containsMouse ? Theme.accent : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.95)
-                border.width: 2; border.color: Theme.accent
-                opacity: view.editable && DeskState.editing && !DeskState.locked && !card.moving && (dragArea.containsMouse || rszM.containsMouse || card.resizing || DeskState.selected === card.wid) ? 1 : 0
+                color: Theme.accent
+                border.width: 2; border.color: Theme.accentText
+                opacity: view.editable && DeskState.editing && !DeskState.locked && !card.moving && (dragArea.containsMouse || rszM.containsMouse || rszM.pressed || card.resizing || DeskState.selected === card.wid) ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 140 } }
-                UiIcon { anchors.centerIn: parent; name: "resize"; size: 12; color: rszM.pressed || rszM.containsMouse ? Theme.accentText : Theme.accent }
                 MouseArea {
                     id: rszM
                     anchors.fill: parent
@@ -343,23 +390,42 @@ Item {
                     property real sh: 0
                     property real x0: 0
                     property real y0: 0
-                    function cells(px) { return (px + DeskState.gap) / (DeskState.cell + DeskState.gap) }
+                    function cellsW(px) { return (px + DeskState.gap) / (DeskState.cellW + DeskState.gap) }
+                    function cellsH(px) { return (px + DeskState.gap) / (DeskState.cellH + DeskState.gap) }
                     onPressed: m => {
                         const p = mapToItem(view, m.x, m.y); sx = p.x; sy = p.y; sw = card.width; sh = card.height; x0 = card.x; y0 = card.y
-                        card.resizing = true
+                        card.pvC = 0; card.pvR = 0
+                        if (rsz.free) card.resizing = true
                     }
                     onPositionChanged: m => {
                         if (!pressed) return
                         const p = mapToItem(view, m.x, m.y), a = view.area
-                        let c = cells(Math.max(60, Math.min(a.x + a.width - x0, sw + p.x - sx)))
-                        let r = cells(Math.max(60, Math.min(a.y + a.height - y0, sh + p.y - sy)))
-                        c = rsz.free ? Math.max(0.5, Math.round(c * 20) / 20) : Math.max(1, Math.round(c))
-                        r = rsz.free ? Math.max(0.5, Math.round(r * 20) / 20) : Math.max(1, Math.round(r))
-                        card.dw = DeskState.px(Math.min(6, c)); card.dh = DeskState.px(Math.min(5, r))
+                        if (!rsz.free) {
+                            // tamanhos permitidos do catalogo: o contorno mostra o mais proximo do arrastado
+                            const rw = sw + p.x - sx, rh = sh + p.y - sy
+                            let best = -1, bd = 1e9
+                            const ss = Array.from(DeskState.info(card.w.type).sizes)
+                            for (let i = 0; i < ss.length; i++) {
+                                const d = Math.hypot(rw - DeskState.pxW(ss[i][0]), rh - DeskState.pxH(ss[i][1]))
+                                if (d < bd) { bd = d; best = i }
+                            }
+                            if (best >= 0) { card.pvC = ss[best][0]; card.pvR = ss[best][1] }
+                            return
+                        }
+                        let c = cellsW(Math.max(60, Math.min(a.x + a.width - x0, sw + p.x - sx)))
+                        let r = cellsH(Math.max(60, Math.min(a.y + a.height - y0, sh + p.y - sy)))
+                        c = Math.max(0.5, Math.round(c * 20) / 20)
+                        r = Math.max(0.5, Math.round(r * 20) / 20)
+                        card.dw = DeskState.pxW(Math.min(6, c)); card.dh = DeskState.pxH(Math.min(5, r))
                         card.ox = x0 - card.bx; card.oy = y0 - card.by   // canto de cima parado
                     }
                     onReleased: {
-                        const a = view.area, c = cells(card.dw), r = cells(card.dh)
+                        if (!rsz.free) {
+                            if (card.pvC > 0 && (card.pvC !== card.w.cols || card.pvR !== card.w.rows)) DeskState.setSize(card.wid, card.pvC, card.pvR)
+                            card.pvC = 0; card.pvR = 0
+                            return
+                        }
+                        const a = view.area, c = cellsW(card.dw), r = cellsH(card.dh)
                         const fx = Math.max(0, Math.min(1, (x0 - a.x) / Math.max(1, a.width - card.dw)))
                         const fy = Math.max(0, Math.min(1, (y0 - a.y) / Math.max(1, a.height - card.dh)))
                         DeskState.setGeom(card.wid, Math.round(c * 100) / 100, Math.round(r * 100) / 100, fx, fy)
@@ -367,6 +433,13 @@ Item {
                         Qt.callLater(() => card.resizing = false)
                     }
                 }
+            }
+            // contorno do tamanho que a alca vai aplicar ao soltar
+            Rectangle {
+                visible: card.pvC > 0
+                width: card.pvC > 0 ? DeskState.pxW(card.pvC) : 0; height: card.pvC > 0 ? DeskState.pxH(card.pvR) : 0
+                radius: bg.radius; color: Theme.tint(0.08); border.width: 2; border.color: Theme.accent
+                z: 19
             }
             // ---- alca de girar (imagem: foto e adesivo): arraste em volta do centro ----
             Item {

@@ -64,7 +64,7 @@ Item {
             required property var modelData
             readonly property real aw: (1920 - 44) * lp.k
             readonly property real ah: (1080 - 80) * lp.k
-            width: DeskState.px(modelData.cols) * lp.k; height: DeskState.px(modelData.rows) * lp.k
+            width: DeskState.pxW(modelData.cols) * lp.k; height: DeskState.pxH(modelData.rows) * lp.k
             x: 22 * lp.k + (modelData.fx ?? 0) * (aw - width)
             y: 40 * lp.k + (modelData.fy ?? 0) * (ah - height)
             radius: Math.min(width, height) * 0.2

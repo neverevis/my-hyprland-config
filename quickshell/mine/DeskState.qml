@@ -14,9 +14,13 @@ Singleton {
     property bool peek: false             // traz a camada para a frente das janelas (para conferir/capturar)
     property bool editing: false          // modo de edicao (arrastar, trocar tamanho, remover)
     property string dragging: ""          // id do widget sendo arrastado (para as guias)
-    readonly property real cell: 150      // lado de uma celula da grade
-    readonly property real gap: 14        // espaco entre celulas
-    function px(n) { return n * cell + (n - 1) * gap }
+    // grade: "default" = celulas 150x150, "compact" = proporcoes do end4 (132x120); os widgets guardam fracoes e colunas/linhas
+    readonly property bool compact: Settings.desktopGridSize === "compact"
+    readonly property real cellW: compact ? 132 : 150
+    readonly property real cellH: compact ? 120 : 150
+    readonly property real gap: compact ? 12 : 14        // espaco entre celulas
+    function pxW(n) { return n * cellW + (n - 1) * gap }
+    function pxH(n) { return n * cellH + (n - 1) * gap }
 
     // ---------------- catalogo ----------------
     // cada widget: tamanhos (cols x rows, o primeiro e o padrao), grupo, opcoes proprias (esquema que o OptionsForm desenha)
@@ -166,7 +170,7 @@ Singleton {
     ]
     // opcoes que todo widget tem
     readonly property var commonOptions: [
-        { sec: "Visual", key: "card", label: "Fundo", type: "seg", def: "auto", options: [["auto", "Padrão", "auto"], ["card", "Cartão", "cards"], ["glass", "Vidro", "glass"], ["none", "Sem fundo", "image"]] },
+        { sec: "Visual", key: "card", label: "Fundo", type: "seg", def: "auto", options: [["auto", "Padrão", "auto"], ["card", "Cartão", "cards"], ["glass", "Vidro", "glass"], ["frost", "Fosco", "blur"], ["none", "Sem fundo", "image"]] },
         { sec: "Visual", key: "tone", label: "Cor", type: "tone", def: "global" },
         { sec: "Visual", key: "fgColor", label: "Minha cor", type: "color", def: "#ffffff", when: { tone: "custom" } },
         { sec: "Posição", key: "place", label: "Posição", type: "seg", def: "free", options: [["free", "Onde eu deixar", "cursorMove"], ["calm", "Área calma", "leaf"], ["busy", "Área movimentada", "sparkle"]] },
@@ -289,7 +293,7 @@ Singleton {
         if (!ws.length || Wallpaper.still === "") return
         const ar = area
         const list = ws.map(w => {
-            const pw = px(w.cols), ph = px(w.rows)
+            const pw = pxW(w.cols), ph = pxH(w.rows)
             return { id: w.id, w: pw, h: ph, mode: opt(w, "place"), x: ar.x + w.fx * Math.max(0, ar.width - pw), y: ar.y + w.fy * Math.max(0, ar.height - ph) }
         })
         placer.command = ["python3", Qt.resolvedUrl("scripts/desk_place.py").toString().replace("file://", ""), Wallpaper.still, String(Math.round(screenSize.width)), String(Math.round(screenSize.height)),

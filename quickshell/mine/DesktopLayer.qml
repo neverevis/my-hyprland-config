@@ -239,6 +239,17 @@ Scope {
                         }
                         UiButton { icon: "close"; kind: "ghost"; onClicked: DeskState.selected = "" }
                     }
+                    CardStylePicker {
+                        width: parent.width
+                        value: insp.w ? (insp.w.opts && insp.w.opts.card !== undefined ? insp.w.opts.card : "auto") : "auto"
+                        onPicked: v => DeskState.setOpt(insp.w.id, "card", v)
+                    }
+                    Row {
+                        spacing: 8
+                        UiIcon { name: "view_grid"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                        UiText { text: "Grade"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                        UiSeg { options: [["default", "Padrão", "view_grid"], ["compact", "Compacta", "grid"]]; value: Settings.desktopGridSize; onPicked: v => Settings.desktopGridSize = v }
+                    }
                     SizePicker {
                         width: parent.width
                         sizes: insp.info ? insp.info.sizes : []
@@ -254,7 +265,7 @@ Scope {
                         previewOpts: insp.w ? (insp.w.opts || {}) : ({})
                         previewCols: insp.w ? insp.w.cols : 2
                         previewRows: insp.w ? insp.w.rows : 2
-                        schema: insp.w ? DeskState.optionsOf(insp.w.type) : []
+                        schema: insp.w ? DeskState.optionsOf(insp.w.type).filter(d => d.key !== "card") : []
                         get: k => insp.w ? DeskState.opt(insp.w, k) : undefined
                         set: (k, v) => DeskState.setOpt(insp.w.id, k, v)
                         isShown: d => insp.w ? DeskState.shown(insp.w, d) : false
@@ -276,29 +287,8 @@ Scope {
             anchors.fill: parent
             visible: DeskMenu.open
             readonly property var w: DeskMenu.wid !== "" ? DeskState.find(DeskMenu.wid) : null
-            // carrossel do topo: o wallpaper atual + 5 da mesma pasta, sorteados cada vez que o menu abre
-            property var carList: []
-            property var carPool: []      // todas as outras, sorteadas; a roda do mouse desliza a janela de 5 sobre elas
-            property int carOff: 0
-            function scrollCar(d) {
-                const n = carPool.length
-                if (n < 1) return
-                carOff = ((carOff + d) % n + n) % n
-                const cur = Wallpaper.current, out = cur ? [cur] : []
-                for (let i = 0; i < Math.min(5, n); i++) out.push(carPool[(carOff + i) % n])
-                carList = out
-            }
-            function buildCar() {
-                const cur = Wallpaper.current
-                const others = Wallpaper.files.filter(f => f.path !== cur).map(f => f.path)
-                for (let i = others.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = others[i]; others[i] = others[j]; others[j] = t }
-                carPool = others; carOff = 0
-                carList = (cur ? [cur] : []).concat(others.slice(0, 5))
-            }
-            Connections { target: DeskMenu; function onOpenChanged() { if (DeskMenu.open) menu.buildCar() } }
             readonly property var items: {
                 const out = []
-                if (!w && menu.carList.length > 1) { out.push({ carousel: true }); out.push({ sep: true }) }
                 if (w) {
                     const nm = DeskState.info(w.type).name
                     out.push({ icon: "tune", label: "Opções de " + nm.toLowerCase(), act: () => { DeskState.editing = true; DeskState.selected = w.id } })
@@ -313,8 +303,7 @@ Scope {
                 out.push({ icon: Settings.desktopOn ? "eyeOff" : "eye", label: Settings.desktopOn ? "Esconder os widgets" : "Mostrar os widgets", act: () => Settings.desktopOn = !Settings.desktopOn })
                 out.push({ sep: true })
                 out.push({ icon: "palette", label: "Wallpaper e estilo", sub: "wpstyle" })
-                out.push({ icon: "wallpaper", label: "Trocar o wallpaper…", act: () => Settings.wpPickerOpen = true })
-                out.push({ icon: "next", label: "Próximo wallpaper", act: () => Wallpaper.step(1) })
+                out.push({ icon: "wallpaper", label: "Seletor de wallpaper", act: () => Settings.wpPickerOpen = true })
                 out.push({ icon: "folder", label: "Prateleira de arquivos" + (DropShelf.files.length ? " (" + DropShelf.files.length + ")" : ""), act: () => DropShelf.open = true })
                 out.push({ icon: "layers", label: "Visuais e layouts", sub: "presets" })
                 out.push({ sep: true })
@@ -325,7 +314,7 @@ Scope {
                 ? DeskState.groups.reduce((acc, g) => { const cs = DeskState.catalog.filter(c => c.group === g.id && Settings.list(Settings.desktopMenuHidden).indexOf(c.type) < 0)
                     return cs.length ? acc.concat([{ head: g.label }], cs.map(c => ({ icon: c.icon, label: c.name, act: () => {
                     Settings.desktopOn = true
-                    const a = win.area, pw = DeskState.px(c.sizes[0][0]), ph = DeskState.px(c.sizes[0][1])
+                    const a = win.area, pw = DeskState.pxW(c.sizes[0][0]), ph = DeskState.pxH(c.sizes[0][1])
                     DeskState.add(c.type, { fx: Math.max(0, Math.min(1, (DeskMenu.x - pw / 2 - a.x) / Math.max(1, a.width - pw))), fy: Math.max(0, Math.min(1, (DeskMenu.y - ph / 2 - a.y) / Math.max(1, a.height - ph))) })
                 } }))) : acc }, [])
                 : DeskMenu.sub === "widgets" ? [
@@ -360,46 +349,11 @@ Scope {
                         delegate: Item {
                             required property var modelData
                             width: mcol.width
-                            height: modelData.sep ? 9 : modelData.head ? 26 : modelData.carousel ? 88 : 32
-                            Item {
-                                id: car
-                                visible: !!modelData.carousel
-                                anchors.fill: parent
-                                property int hov: -1
-                                readonly property int n: menu.carList.length
-                                Repeater {
-                                    model: car.visible ? menu.carList : []
-                                    delegate: Item {
-                                        id: ci
-                                        required property string modelData
-                                        required property int index
-                                        readonly property real wt: car.n < 2 ? 1 : (car.hov >= 0 ? (ci.index === car.hov ? 0.52 : 0.48 / (car.n - 1)) : (ci.index === 0 ? 0.4 : 0.6 / (car.n - 1)))
-                                        readonly property real before: { let a = 0; for (let k = 0; k < ci.index; k++) a += (car.n < 2 ? 1 : (car.hov >= 0 ? (k === car.hov ? 0.52 : 0.48 / (car.n - 1)) : (k === 0 ? 0.4 : 0.6 / (car.n - 1)))); return a }
-                                        readonly property real tot: car.width - 4 - (car.n - 1) * 4
-                                        x: 2 + before * tot + ci.index * 4
-                                        y: 4; width: wt * tot; height: car.height - 8
-                                        Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                                        Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
-                                        RoundImage {
-                                            anchors.fill: parent
-                                            radius: 10
-                                            sourceSize: Qt.size(240, 160)
-                                            source: Wallpaper.isVideo(ci.modelData) ? Wallpaper.stillUrl(ci.modelData) : "file://" + ci.modelData
-                                        }
-                                        Rectangle { anchors.fill: parent; radius: 10; color: "transparent"; border.width: ci.index === 0 ? 2 : 0; border.color: Theme.accent }
-                                        MouseArea {
-                                            anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                            onEntered: car.hov = ci.index
-                                            onExited: if (car.hov === ci.index) car.hov = -1
-                                            onClicked: { Wallpaper.set(ci.modelData); DeskMenu.close() }
-                                        }
-                                    }
-                                }
-                            }
+                            height: modelData.sep ? 9 : modelData.head ? 26 : 32
                             Rectangle { visible: !!modelData.sep; anchors.centerIn: parent; width: parent.width - 16; height: 1; color: Theme.border }
                             UiText { visible: !!modelData.head; x: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData.head ?? ""; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
                             Rectangle {
-                                visible: !modelData.sep && !modelData.head && !modelData.carousel
+                                visible: !modelData.sep && !modelData.head
                                 anchors.fill: parent; radius: 9
                                 color: im.containsMouse || (modelData.sub && DeskMenu.sub === modelData.sub) ? (modelData.danger ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.cardHi) : "transparent"
                                 UiIcon { id: mi; x: 10; anchors.verticalCenter: parent.verticalCenter; name: modelData.icon ?? ""; size: 16; color: modelData.danger ? Theme.danger : (modelData.checked ? Theme.accent : Theme.muted) }
