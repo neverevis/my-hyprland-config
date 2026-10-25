@@ -31,7 +31,7 @@ Item {
     HomeScroll {
         anchors { top: top.bottom; topMargin: 10; left: parent.left; right: parent.right; bottom: parent.bottom }
         spacing: 8
-        UiText { visible: NotifHistory.items.length === 0; text: "Nenhuma notificação por enquanto."; color: Theme.muted; font.pixelSize: 13; topPadding: 20 }
+        UiText { visible: NotifHistory.items.length === 0; text: "Nenhuma notificação. As novas aparecem aqui."; color: Theme.muted; font.pixelSize: 13; topPadding: 20 }
         Repeater {
             model: pg.groups
             delegate: Column {
@@ -70,7 +70,7 @@ Item {
                             id: ib
                             x: 12; y: 12
                             width: 38; height: 38; radius: 10; clip: true
-                            color: Theme.tint(0.16)
+                            color: Theme.track
                             Image {
                                 anchors.fill: parent; anchors.margins: card.modelData.image ? 0 : 6
                                 source: card.modelData.image ? card.modelData.image : Icons.path(card.modelData.icon, "dialog-information")
@@ -85,7 +85,7 @@ Item {
                             Row {
                                 width: parent.width
                                 UiText { width: parent.width - when.width; text: card.modelData.app; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
-                                UiText { id: when; text: NotifHistory.ago(card.modelData.time); color: Theme.muted; font.pixelSize: 11 }
+                                UiText { id: when; text: NotifHistory.ago(card.modelData.time); color: Theme.muted; font.pixelSize: 11; font.features: { "tnum": 1 } }
                             }
                             UiText { width: parent.width; text: card.modelData.summary; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
                             UiText {

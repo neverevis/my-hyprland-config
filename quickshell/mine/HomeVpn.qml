@@ -23,9 +23,10 @@ HomeScroll {
             }
             Column {
                 anchors.verticalCenter: parent.verticalCenter
+                width: Math.max(80, pg.width - 28 - 40 - 12 - 12)
                 spacing: 2
-                UiText { text: Vpn.connected ? "Conectado" : (Vpn.has ? "Desconectado" : "Nenhum perfil"); color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold }
-                UiText { text: Vpn.connected ? Vpn.activeProfile.name : (Vpn.has ? "Escolha um perfil abaixo" : "Importe um arquivo .conf (WireGuard) ou .ovpn (OpenVPN)"); color: Theme.muted; font.pixelSize: 12 }
+                UiText { width: parent.width; elide: Text.ElideRight; text: Vpn.connected ? "Conectado" : (Vpn.has ? "Desconectado" : "Nenhum perfil"); color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold }
+                UiText { width: parent.width; elide: Text.ElideRight; text: Vpn.connected ? Vpn.activeProfile.name : (Vpn.has ? "Escolha um perfil abaixo" : "Importe um arquivo .conf (WireGuard) ou .ovpn (OpenVPN)"); color: Theme.muted; font.pixelSize: 12 }
             }
         }
         Row {

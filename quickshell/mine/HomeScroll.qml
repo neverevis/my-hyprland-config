@@ -5,7 +5,7 @@ Flickable {
     id: f
     default property alias content: col.data
     property alias spacing: col.spacing
-    contentHeight: col.implicitHeight
+    contentHeight: col.implicitHeight + 8   // folga embaixo: o ultimo cartao nao encosta na borda
     clip: true
     boundsBehavior: Flickable.StopAtBounds
     interactive: false

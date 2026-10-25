@@ -48,7 +48,7 @@ Item {
                 width: 16; height: 16; radius: 8
                 color: Theme.text
                 scale: ma.pressed ? 1.2 : (ma.containsMouse ? 1.08 : 1)
-                Behavior on scale { NumberAnimation { duration: 100 } }
+                Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
             }
             MouseArea {
                 id: ma
@@ -67,7 +67,7 @@ Item {
             width: 40
             horizontalAlignment: Text.AlignRight
             text: Math.round((s.muted ? 0 : s.value) * 100) + "%"
-            color: Theme.text; font.pixelSize: 13; font.weight: Font.Medium
+            color: Theme.text; font.pixelSize: 13; font.weight: Font.Medium; font.features: { "tnum": 1 }
         }
     }
 }

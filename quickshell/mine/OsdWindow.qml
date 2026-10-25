@@ -122,7 +122,7 @@ Scope {
             }
             UiText {
                 id: val
-                text: c.label; color: c.fg; font.pixelSize: 12; font.weight: Font.DemiBold
+                text: c.label; color: c.fg; font.pixelSize: 12; font.weight: Font.DemiBold; font.features: { "tnum": 1 }
                 horizontalAlignment: Text.AlignHCenter
                 width: c.vertical ? parent.width : 40
                 x: c.vertical ? 0 : parent.width - width
@@ -145,8 +145,8 @@ Scope {
                     width: c.vertical ? parent.width : parent.width * track.f
                     height: c.vertical ? parent.height * track.f : parent.height
                     y: c.vertical ? parent.height - height : 0
-                    Behavior on width { enabled: !c.vertical; NumberAnimation { duration: 90 } }
-                    Behavior on height { enabled: c.vertical; NumberAnimation { duration: 90 } }
+                    Behavior on width { enabled: !c.vertical; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
+                    Behavior on height { enabled: c.vertical; NumberAnimation { duration: 90; easing.type: Easing.OutCubic } }
                 }
             }
         }

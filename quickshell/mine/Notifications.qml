@@ -165,7 +165,7 @@ Scope {
                             Behavior on x { enabled: !root.vert; NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
                             Behavior on y { enabled: root.vert; NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
                             opacity: shown ? 1 : 0
-                            Behavior on opacity { NumberAnimation { duration: 200 } }
+                            Behavior on opacity { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
                             visible: opacity > 0.01
 
                             // ---- tempo ate sumir ----
@@ -187,7 +187,7 @@ Scope {
                                 border.width: 1
                                 border.color: card.critical ? Theme.danger : Theme.border
                                 scale: hover.hovered ? 1.015 : 1
-                                Behavior on scale { NumberAnimation { duration: 120 } }
+                                Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                 clip: true
                                 // arrastar de lado mais de 70 px dispensa o aviso
                                 transform: Translate { x: root.vert ? card.dragOff : 0; y: root.vert ? 0 : card.dragOff }
@@ -216,9 +216,9 @@ Scope {
                                     id: iconBox
                                     anchors { left: parent.left; leftMargin: 14; verticalCenter: parent.verticalCenter; verticalCenterOffset: root.anyActions ? -18 : 0 }
                                     width: 52; height: 52; radius: 12
-                                    color: Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.16)
+                                    color: Theme.track
                                     clip: true
-                                    UiIcon { visible: card.guess !== ""; anchors.centerIn: parent; name: card.guess; size: 28; color: Theme.accent }
+                                    UiIcon { visible: card.guess !== ""; anchors.centerIn: parent; name: card.guess; size: 28; color: Theme.muted }
                                     Image {
                                         visible: card.guess === ""
                                         anchors.fill: parent

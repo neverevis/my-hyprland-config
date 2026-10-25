@@ -355,7 +355,7 @@ Scope {
                                     id: count
                                     anchors { right: parent.right; rightMargin: 10; bottom: parent.bottom; bottomMargin: 7 }
                                     text: (card.index + 1) + " / " + win.items.length
-                                    color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 10
+                                    color: Qt.rgba(1, 1, 1, 0.8); font.pixelSize: 11; font.features: { "tnum": 1 }
                                 }
                             }
                             // marca do wallpaper aplicado
@@ -428,7 +428,7 @@ Scope {
                                 visible: gcell.isDir
                                 anchors.fill: parent; radius: Settings.wpCardRadius; color: Theme.card; border.width: 1; border.color: Theme.border
                                 UiIcon { anchors.centerIn: parent; anchors.verticalCenterOffset: -6; name: "folder"; size: 36; color: Theme.accent }
-                                UiText { anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 6 } horizontalAlignment: Text.AlignHCenter; text: gcell.modelData.name || ""; color: Theme.muted; font.pixelSize: 10; elide: Text.ElideRight }
+                                UiText { anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 6 } horizontalAlignment: Text.AlignHCenter; text: gcell.modelData.name || ""; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
                             }
                             RoundImage {
                                 visible: !gcell.isDir
@@ -458,8 +458,8 @@ Scope {
                     visible: win.items.length === 0
                     x: win.box.x; y: win.box.y + 40 + (win.box.height - 40) / 2 - height / 2; width: win.box.width
                     horizontalAlignment: Text.AlignHCenter
-                    color: Theme.muted; font.pixelSize: 14
-                    text: root.src === "wh" ? (Wallhaven.loading ? "Buscando…" : (Wallhaven.status || "Digite algo e Enter para buscar no Wallhaven")) : (Wallpaper.filter !== "" ? "Nada com esse nome" : "Nenhuma imagem em " + Wallpaper.viewDir)
+                    color: Theme.muted; font.pixelSize: 14; wrapMode: Text.Wrap; leftPadding: 24; rightPadding: 24
+                    text: root.src === "wh" ? (Wallhaven.loading ? "Buscando…" : (Wallhaven.status || "Digite algo e Enter para buscar no Wallhaven")) : (Wallpaper.filter !== "" ? "Nada com esse nome. Limpe a busca para ver tudo." : "Nenhuma imagem em " + Wallpaper.viewDir + ". Escolha outra pasta ou adicione imagens nela.")
                 }
                 }
             }

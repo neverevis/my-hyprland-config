@@ -120,7 +120,7 @@ Scope {
                             anchors.horizontalCenter: parent.horizontalCenter
                             spacing: 6
                             UiIcon { name: "clock"; size: 14; color: Qt.rgba(1, 1, 1, 0.7); anchors.verticalCenter: parent.verticalCenter }
-                            UiText { text: "Ligado há " + win.uptime; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                            UiText { text: "Ligado há " + win.uptime; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 13; font.features: { "tnum": 1 }; anchors.verticalCenter: parent.verticalCenter }
                         }
                     }
 
@@ -195,13 +195,13 @@ Scope {
                                     UiText {
                                         anchors { horizontalCenter: parent.horizontalCenter; top: ic.bottom; topMargin: 12 }
                                         text: cell.waiting ? Math.max(1, Math.ceil(Settings.powerConfirm * (1 - win.count))) + " s" : cell.modelData.label
-                                        color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold
+                                        color: "white"; font.pixelSize: 14; font.weight: Font.DemiBold; font.features: { "tnum": 1 }
                                     }
                                     Rectangle {   // atalho de teclado
                                         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 10 }
-                                        width: 20; height: 18; radius: 5
+                                        width: 22; height: 20; radius: 6
                                         color: Qt.rgba(1, 1, 1, 0.08)
-                                        UiText { anchors.centerIn: parent; text: cell.modelData.key; color: Qt.rgba(1, 1, 1, 0.55); font.pixelSize: 10; font.weight: Font.Bold }
+                                        UiText { anchors.centerIn: parent; text: cell.modelData.key; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11; font.weight: Font.Bold }
                                     }
                                     MouseArea {
                                         id: cm
@@ -244,7 +244,7 @@ Scope {
                         anchors.horizontalCenter: parent.horizontalCenter
                         readonly property var pa: Power.actions.find(a => a.id === win.pending)
                         text: pa ? pa.verb + "… clique de novo para agora · Esc cancela" : "← ↑ ↓ → escolhe · Enter confirma · Esc fecha"
-                        color: pa ? "white" : Qt.rgba(1, 1, 1, 0.5)
+                        color: pa ? "white" : Qt.rgba(1, 1, 1, 0.7)
                         font.pixelSize: 13
                     }
                 }

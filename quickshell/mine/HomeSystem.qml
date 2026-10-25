@@ -15,7 +15,7 @@ Item {
         property var values2: []
         property real max: 100
         property color color2: Theme.muted
-        UiText { anchors { right: parent.right; top: parent.top; topMargin: -34 } text: sc.value; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold }
+        UiText { anchors { right: parent.right; top: parent.top; topMargin: -34 } text: sc.value; color: Theme.text; font.pixelSize: 18; font.weight: Font.Bold; font.features: { "tnum": 1 } }
         MiniGraph {
             anchors { left: parent.left; right: parent.right; top: parent.top; bottom: dt.top; bottomMargin: 6 }
             values: sc.values; values2: sc.values2; max: sc.max; color2: sc.color2

@@ -46,7 +46,7 @@ HomeScroll {
         Column {
             anchors { right: parent.right; rightMargin: 22; verticalCenter: parent.verticalCenter }
             spacing: 0
-            UiText { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: "white"; font.pixelSize: 36; font.weight: Font.Bold }
+            UiText { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: "white"; font.pixelSize: 36; font.weight: Font.Bold; font.features: { "tnum": 1 } }
             UiText {
                 anchors.right: parent.right
                 text: DateTime.long(clk.date)
@@ -232,7 +232,7 @@ HomeScroll {
             sourceSize: Qt.size(200, 200)
             blur: 1; dim: 0.55
         }
-        UiText { visible: !media.pl; anchors.centerIn: parent; text: "Nada tocando"; color: Theme.muted; font.pixelSize: 13 }
+        UiText { visible: !media.pl; anchors.centerIn: parent; width: parent.width - 28; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.Wrap; text: "Nada tocando. Inicie um player e ele aparece aqui."; color: Theme.muted; font.pixelSize: 13 }
         Item {
             visible: !!media.pl
             anchors.fill: parent
@@ -292,9 +292,9 @@ HomeScroll {
                 Rectangle {
                     anchors { left: ml.right; right: mv.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
                     height: 6; radius: 3; color: Theme.cardHi
-                    Rectangle { width: parent.width * Math.max(0, Math.min(1, me.ratio)); height: parent.height; radius: 3; color: me.ratio > 0.85 ? Theme.danger : Theme.accent; Behavior on width { NumberAnimation { duration: 400 } } }
+                    Rectangle { width: parent.width * Math.max(0, Math.min(1, me.ratio)); height: parent.height; radius: 3; color: me.ratio > 0.85 ? Theme.danger : Theme.accent; Behavior on width { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } } }
                 }
-                UiText { id: mv; anchors { right: parent.right; verticalCenter: parent.verticalCenter } text: me.value; color: Theme.muted; font.pixelSize: 12; width: 42; horizontalAlignment: Text.AlignRight }
+                UiText { id: mv; anchors { right: parent.right; verticalCenter: parent.verticalCenter } text: me.value; color: Theme.muted; font.pixelSize: 12; width: 42; horizontalAlignment: Text.AlignRight; font.features: { "tnum": 1 } }
             }
             Meter { icon: "chip"; label: "CPU"; ratio: (sysCard.s.cpu ?? 0) / 100; value: Math.round(sysCard.s.cpu ?? 0) + "%" }
             Meter { icon: "memory"; label: "RAM"; ratio: sysCard.s.memTotal ? sysCard.s.memUsed / sysCard.s.memTotal : 0; value: sysCard.s.memTotal ? Math.round(sysCard.s.memUsed / sysCard.s.memTotal * 100) + "%" : "–" }

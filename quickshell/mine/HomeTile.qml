@@ -20,8 +20,9 @@ Rectangle {
     readonly property bool compact: size < 2
     radius: on ? 14 : Math.min(height / 2, 22)
     Behavior on radius { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
-    opacity: avail ? 1 : 0.45
-    color: on ? Theme.tint(ma.pressed ? 0.38 : ma.containsMouse ? 0.30 : 0.22) : (ma.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1.15))
+    scale: ma.pressed && !editing ? 0.97 : 1
+    Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+    color: on ? Theme.tint(ma.pressed ? 0.38 : ma.containsMouse ? 0.30 : 0.22) : (ma.containsMouse && t.avail ? Theme.cardHi : Theme.glc(Theme.card, 1.15))
     border.width: 1
     border.color: on ? Theme.tint(0.55) : Theme.border
     Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
@@ -32,6 +33,7 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         width: 36; height: 36; radius: 18
         color: t.on ? Theme.accent : Theme.track
+        opacity: t.avail ? 1 : 0.45
         Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
         UiIcon { anchors.centerIn: parent; name: t.icon; size: 18; color: t.on ? Theme.accentText : Theme.text }
     }
@@ -39,7 +41,7 @@ Rectangle {
         visible: !t.compact
         anchors { left: dot.right; leftMargin: 10; right: moreBtn.visible ? moreBtn.left : parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
         spacing: 1
-        UiText { width: parent.width; text: t.label; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
+        UiText { width: parent.width; text: t.label; color: t.avail ? Theme.text : Theme.muted; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
         UiText { width: parent.width; visible: t.sub !== ""; text: t.sub; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
     }
     MouseArea {

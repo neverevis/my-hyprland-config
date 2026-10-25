@@ -73,7 +73,8 @@ Singleton {
     property real launcherDepth: 64
     // painel Inicio: tamanho fixo do conteudo e progresso
     readonly property real homeW: 700
-    readonly property real homeH: 556
+    // altura: a aba Inicio cabe inteira (cada slider de volume/microfone ligado soma ~40)
+    readonly property real homeH: 556 + (Settings.homeSliderVol ? 56 : 0) + (Settings.homeSliderMic ? 40 : 0)
     property real homeRaw: Settings.homeOpen && !(homeDockedAll && ((pickerDockedAll && pickerProg > 0.02) || (launcherDockedAll && launcherProg > 0.02) || (leftDockedAll && leftProg > 0.02))) ? 1 : 0
     Behavior on homeRaw { id: b_homeProg; MotionAnim { use: "home"; out: b_homeProg.targetValue < 0.5 } }
     readonly property real homeProg: homeRaw

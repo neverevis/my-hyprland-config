@@ -31,16 +31,20 @@ HomeScroll {
         }
         Column {
             anchors { left: ci.right; leftMargin: 12; verticalCenter: ci.verticalCenter }
+            width: Math.max(80, cur.width - 28 - ci.width - 12 - 120)
             spacing: 2
             UiText {
+                width: parent.width; elide: Text.ElideRight
                 text: !cur.dev ? "Sem conexão" : (cur.viaWired ? "Cabo · " + cur.dev.name : pg.home.wifiCur.name)
                 color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
             }
             UiText {
+                width: parent.width; elide: Text.ElideRight
                 text: !cur.dev ? "Conecte um cabo ou escolha uma rede abaixo" : ((pg.home.ips[cur.dev.name] ?? "sem IP") + (cur.viaWired && cur.dev.linkSpeed ? " · " + cur.dev.linkSpeed + " Mb/s" : "") + (!cur.viaWired && pg.home.wifiCur ? " · sinal " + Math.round(pg.home.wifiCur.signalStrength * 100) + "%" : ""))
                 color: Theme.muted; font.pixelSize: 12
             }
             UiText {
+                width: parent.width; elide: Text.ElideRight
                 visible: !!cur.dev && (pg.home.gateway !== "" || pg.home.pubIp !== "")
                 text: (pg.home.gateway !== "" ? "Gateway " + pg.home.gateway : "") + (pg.home.gateway !== "" && pg.home.pubIp !== "" ? " · " : "") + (pg.home.pubIp !== "" ? "IP público " + pg.home.pubIp : "")
                 color: Theme.muted; font.pixelSize: 12

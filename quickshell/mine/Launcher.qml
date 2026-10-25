@@ -446,10 +446,10 @@ Scope {
                                 radius: Math.max(8, Settings.launcherRadius - 8)
                                 color: Settings.glass ? Qt.rgba(Theme.card.r, Theme.card.g, Theme.card.b, 0.7) : Theme.card
                             }
-                            UiText {
+                            UiIcon {
                                 id: glyph
                                 anchors { left: parent.left; leftMargin: 28; verticalCenter: parent.verticalCenter }
-                                text: "⌕"; color: Theme.accent; font.pixelSize: 22
+                                name: "search"; color: Theme.muted; size: 22
                             }
                             TextInput {
                                 font.family: Theme.font
@@ -479,8 +479,8 @@ Scope {
                                         delegate: Rectangle {
                                             required property var modelData
                                             height: 22; width: pt.implicitWidth + 12; radius: 6
-                                            color: pm.containsMouse ? Theme.tint(0.2) : Theme.tint(0.08)
-                                            UiText { id: pt; anchors.centerIn: parent; text: chips.compact && !pm.containsMouse ? modelData[0] : modelData[0] + " " + modelData[1]; color: pm.containsMouse ? Theme.text : Theme.muted; font.pixelSize: 10 }
+                                            color: pm.containsMouse ? Theme.cardHi : Theme.track
+                                            UiText { id: pt; anchors.centerIn: parent; text: chips.compact && !pm.containsMouse ? modelData[0] : modelData[0] + " " + modelData[1]; color: Theme.muted; font.pixelSize: 11 }
                                             MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { input.text = modelData[0]; input.forceActiveFocus() } }
                                         }
                                     }
@@ -538,11 +538,6 @@ Scope {
                                 height: root.rowH
                                 radius: Math.max(8, Settings.launcherRadius - 8)
                                 color: cur ? Theme.cardHi : "transparent"
-                                Rectangle {
-                                    visible: row.cur
-                                    width: 3; height: parent.height * 0.5; radius: 2; color: Theme.accent
-                                    anchors { left: parent.left; leftMargin: 4; verticalCenter: parent.verticalCenter }
-                                }
                                 Item {
                                     id: ico
                                     anchors { left: parent.left; leftMargin: 18; verticalCenter: parent.verticalCenter }
@@ -559,7 +554,7 @@ Scope {
                                         anchors.fill: parent; radius: width * 0.3
                                         visible: !!row.modelData.glyph
                                         color: Theme.tint(0.16)
-                                        UiIcon { anchors.centerIn: parent; name: row.modelData.glyph ?? ""; size: parent.width * 0.55; color: Theme.accent }
+                                        UiIcon { anchors.centerIn: parent; name: row.modelData.glyph ?? ""; size: parent.width * 0.55; color: row.cur ? Theme.text : Theme.muted }
                                     }
                                     UiText { anchors.centerIn: parent; visible: !!row.modelData.big; text: row.modelData.big ?? ""; font.pixelSize: parent.width * 0.85; color: Theme.text }
                                     RoundImage {
@@ -610,7 +605,8 @@ Scope {
                         UiText {
                             visible: root.list.length === 0 && input.text !== ""
                             anchors { horizontalCenter: parent.horizontalCenter; top: bar.bottom; topMargin: 6 }
-                            text: "Nada encontrado"; color: Theme.muted; font.pixelSize: 13
+                            text: "Nada encontrado para “" + input.text.trim() + "”. Tente outro nome ou use / para ações."; color: Theme.muted; font.pixelSize: 13
+                            width: parent.width - 32; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight
                         }
                     }
                 }

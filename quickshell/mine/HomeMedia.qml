@@ -32,7 +32,7 @@ Item {
             anchors.centerIn: parent
             spacing: 10
             UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "music"; size: 46; color: Theme.muted }
-            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Nada tocando"; color: Theme.muted; font.pixelSize: 14 }
+            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Nada tocando. Inicie algo em um player e ele aparece aqui."; color: Theme.muted; font.pixelSize: 14; width: card.width - 48; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.Wrap }
         }
 
         Item {
@@ -89,8 +89,8 @@ Item {
                         onReleased: { pg.pl.position = prog.dragV * pg.pl.length; prog.dragV = -1 }
                     }
                 }
-                UiText { anchors { left: parent.left; bottom: parent.bottom } text: pg.home.fmt(prog.r * (pg.pl ? pg.pl.length : 0)); color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11 }
-                UiText { anchors { right: parent.right; bottom: parent.bottom } text: pg.pl ? pg.home.fmt(pg.pl.length) : ""; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11 }
+                UiText { anchors { left: parent.left; bottom: parent.bottom } text: pg.home.fmt(prog.r * (pg.pl ? pg.pl.length : 0)); color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11; font.features: { "tnum": 1 } }
+                UiText { anchors { right: parent.right; bottom: parent.bottom } text: pg.pl ? pg.home.fmt(pg.pl.length) : ""; color: Qt.rgba(1, 1, 1, 0.7); font.pixelSize: 11; font.features: { "tnum": 1 } }
             }
 
             // ---- controles ----
