@@ -30,7 +30,7 @@ Item {
     readonly property var p: o("onlyActive") ? Players.playingNow : (Players.playingNow ?? Players.pick(-1))
     readonly property string art: p ? (p.trackArtUrl ?? "") : ""
     readonly property real prog: p && p.length > 0 ? Math.max(0, Math.min(1, p.position / p.length)) : 0
-    Timer { interval: 1000; repeat: true; running: !!w.p && w.p.isPlaying; onTriggered: if (w.p) w.p.positionChanged() }
+    Timer { interval: 1000; repeat: true; running: w.visible && !!w.p && w.p.isPlaying; onTriggered: if (w.p) w.p.positionChanged() }
     // com a capa desfocada no fundo, o texto e claro
     // ---- composicao (opcao "look"): auto = a de sempre (capa em forma + info); end4/flush/full/label usam as composicoes abaixo ----
     readonly property string look: o("look")
@@ -89,9 +89,9 @@ Item {
                 y: body.tiny ? (body.height - height) / 2 : 0
                 shape: w.o("artShape"); sides: 12
                 source: w.art; sourceSize: Qt.size(384, 384)
-                Behavior on width { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-                Behavior on height { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
-                NumberAnimation on spin { running: w.o("spin") && !!w.p && w.p.isPlaying; from: 0; to: 360; duration: 14000; loops: Animation.Infinite }
+                Behavior on width { enabled: w.visible; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on height { enabled: w.visible; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                NumberAnimation on spin { running: w.visible && w.o("spin") && !!w.p && w.p.isPlaying; from: 0; to: 360; duration: 14000; loops: Animation.Infinite }
                 Flower { anchors.fill: parent; visible: !parent.ready; shape: parent.shape; color: w.bare ? w.cont : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.2)
                     UiIcon { anchors.centerIn: parent; name: "music"; size: parent.width * 0.35; color: w.ac } }
             }
@@ -131,7 +131,7 @@ Item {
                     width: parent.width; height: 4; radius: 2
                     color: Qt.rgba(w.tfg.r, w.tfg.g, w.tfg.b, 0.18)
                     Rectangle { width: parent.width * w.prog; height: parent.height; radius: 2; color: w.ac
-                        Behavior on width { NumberAnimation { duration: 900 } } }
+                        Behavior on width { enabled: w.visible; NumberAnimation { duration: 900 } } }
                 }
                 Item { width: 1; height: 4 }
                 Row {

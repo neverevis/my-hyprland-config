@@ -33,7 +33,7 @@ Item {
         return a === "left" ? Text.AlignLeft : a === "right" ? Text.AlignRight : Text.AlignHCenter }
     readonly property string quote: o("quote")
     readonly property real quoteH: quote !== "" ? Math.min(34, height * 0.18) : 0
-    SystemClock { id: clk; precision: w.secs || w.style === "analog" ? SystemClock.Seconds : SystemClock.Minutes }
+    SystemClock { id: clk; enabled: w.visible; precision: w.secs || w.style === "analog" ? SystemClock.Seconds : SystemClock.Minutes }
     readonly property var loc: Qt.locale("pt_BR")
     function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1) }
     readonly property string hh: { const h = clk.date.getHours(); return h12 ? String((h + 11) % 12 + 1) : String(h).padStart(2, "0") }
@@ -317,6 +317,7 @@ Item {
                 property real angle: 0                  // angulo mostrado: anima 300 ms pelo caminho mais curto (sem dar a volta no 360 -> 0)
                 property real unw: 0
                 property bool ready: false
+                property bool smooth: true             // o ponteiro dos segundos pula sem animar: animar 300 ms por segundo mantinha a janela inteira renderizando ~19 quadros/s
                 property real len: 0.6
                 property real thick: 6
                 property color col: an.ink
@@ -324,7 +325,7 @@ Item {
                 property bool tail: false
                 onTargetChanged: { unw += ((target - unw) % 360 + 540) % 360 - 180; angle = unw }
                 Component.onCompleted: { unw = target; angle = target; ready = true }
-                Behavior on angle { enabled: hd.ready && an.visible; NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1] } }
+                Behavior on angle { enabled: hd.ready && an.visible && hd.smooth; NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1] } }
                 Behavior on thick { enabled: an.visible; NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
                 Behavior on col { enabled: an.visible; ColorAnimation { duration: 250 } }
                 width: thick; height: face.width / 2 * len + (tail ? face.width * 0.08 : 0)
@@ -334,7 +335,7 @@ Item {
                 Rectangle { anchors.fill: parent; radius: width / 2; color: hd.hollow ? "transparent" : hd.col; border.width: hd.hollow ? Math.max(2, hd.thick * 0.22) : 0; border.color: hd.col; antialiasing: true }
             }
             readonly property real hA: (clk.date.getHours() % 12 + clk.date.getMinutes() / 60) * 30
-            readonly property real mA: (clk.date.getMinutes() + clk.date.getSeconds() / 60) * 6
+            readonly property real mA: clk.date.getMinutes() * 6   // sem fracao dos segundos: senao o ponteiro animava a cada segundo
             readonly property real sA: clk.date.getSeconds() * 6
             Hand {
                 readonly property string st: w.o("hourHand")
@@ -354,7 +355,7 @@ Item {
             Hand {
                 readonly property string st: w.o("secondHand")
                 visible: w.secs && (st === "line" || st === "classic")
-                target: face.sA; len: 0.8; thick: Math.max(1.5, face.width * 0.012); tail: st === "classic"
+                target: face.sA; smooth: false; len: 0.8; thick: Math.max(1.5, face.width * 0.012); tail: st === "classic"
                 col: w.ac
             }
             // segundos como bolinha andando na borda
@@ -494,26 +495,28 @@ Item {
             anchors.centerIn: parent
             spacing: px.ps * 1.4
             Repeater {
-                model: px.lines
+                model: px.lines.length   // estavel: a estrutura (linhas, digitos, celulas) so muda com a config; o texto e lido por indice
                 delegate: Row {
                     id: lineRow
-                    required property var modelData
                     required property int index
+                    readonly property string txt: px.lines[index] ?? ""
                     anchors.horizontalCenter: parent.horizontalCenter
                     spacing: px.ps * 1.0
                     Repeater {
-                        model: modelData.split("")
+                        model: lineRow.txt.length
                         delegate: Grid {
-                            required property var modelData
-                            readonly property var g: px.glyphs[modelData] ?? px.glyphs["0"]
+                            id: gl
+                            required property int index
+                            readonly property var g: px.glyphs[lineRow.txt.charAt(index)] ?? px.glyphs["0"]
+                            readonly property string bits: g.join("")
                             columns: g[0].length
                             spacing: px.ps * 0.18
                             Repeater {
-                                model: parent.g.join("").split("")
+                                model: gl.bits.length
                                 delegate: Rectangle {
-                                    required property var modelData
+                                    required property int index
                                     width: px.ps * 0.82; height: width; radius: width * 0.3
-                                    color: modelData === "1" ? (lineRow.index === 1 ? w.ac : w.fg) : Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07)
+                                    color: gl.bits.charAt(index) === "1" ? (lineRow.index === 1 ? w.ac : w.fg) : Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07)
                                     Behavior on color { enabled: w.o("animate") && w.style === "pixel"; ColorAnimation { duration: 260 } }
                                 }
                             }

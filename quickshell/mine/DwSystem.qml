@@ -20,8 +20,12 @@ Item {
     property string wid: ""
     property var comp: ({})                       // composicao vinda do cartao (caixas internas, selos, destaque)
     function o(k) { return DeskState.opt({ type: "system", opts: w.opts }, k) }
-    Component.onCompleted: SysInfo.use()
-    Component.onDestruction: SysInfo.release()
+    // so mede enquanto o widget esta visivel
+    property bool using: false
+    onVisibleChanged: syncUse()
+    Component.onCompleted: syncUse()
+    Component.onDestruction: if (using) SysInfo.release()
+    function syncUse() { if (visible && !using) { using = true; SysInfo.use() } else if (!visible && using) { using = false; SysInfo.release() } }
 
     // destaque fixo (primary/secondary/tertiary): todas as medidas na mesma cor; auto/mix: as tres cores de sempre
     readonly property bool oneAcc: !!comp.accentRole && comp.accentRole !== "auto" && comp.accentRole !== "mix"
@@ -89,10 +93,10 @@ Item {
                 width: tl.tw; height: tl.th
                 radius: Math.min(26, Math.min(width, height) * 0.24)
                 color: modelData.bg
-                Behavior on x { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
-                Behavior on y { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
-                Behavior on width { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
-                Behavior on height { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
+                Behavior on x { enabled: w.visible; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on y { enabled: w.visible; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on width { enabled: w.visible; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                Behavior on height { enabled: w.visible; NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
                 readonly property real m: Math.min(width, height)
                 ShapeIcon {
                     id: bdg
@@ -142,7 +146,7 @@ Item {
             visible: opacity > 0
             Behavior on opacity { NumberAnimation { duration: 150 } }
             UiIcon { anchors.centerIn: parent; name: "refresh"; size: 13; color: Theme.text
-                rotation: w.vert ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 350; easing.type: Easing.OutBack } } }
+                rotation: w.vert ? 90 : 0; Behavior on rotation { NumberAnimation { duration: 180; easing.type: Easing.OutBack } } }
             MouseArea { id: fm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                 onClicked: DeskState.setOpt(w.wid, "vertical", !o("vertical")) }
         }
@@ -207,7 +211,7 @@ Item {
                 Rectangle {
                     width: parent.width; height: 6; radius: 3; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12)
                     Rectangle { width: parent.width * Math.max(0.01, modelData.v); height: parent.height; radius: 3; color: modelData.col
-                        Behavior on width { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } } }
+                        Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } } }
                 }
             }
         }

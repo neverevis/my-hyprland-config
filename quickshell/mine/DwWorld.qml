@@ -31,18 +31,19 @@ Item {
         command: ["sh", "-c", 'base=$(date +%z); for z in "$@"; do printf "%s|%s|%s\\n" "$z" "$(TZ=$z date +%H:%M:%a:%z)" "$base"; done', "sh"].concat(w.zones)
         stdout: StdioCollector { onStreamFinished: {
             const toMin = z => (z[0] === "-" ? -1 : 1) * (parseInt(z.substr(1, 2)) * 60 + parseInt(z.substr(3, 2)))
-            w.rows_ = text.trim().split("\n").filter(l => l).map(l => {
+            const nr = text.trim().split("\n").filter(l => l).map(l => {
                 const [zone, t, base] = l.split("|"), p = t.split(":")
                 const diff = (toMin(p[3]) - toMin(base)) / 60
                 return { zone: zone, city: w.city(zone), hh: parseInt(p[0]), mm: parseInt(p[1]), day: p[2], diff: diff, off: toMin(p[3]) }
             })
+            if (JSON.stringify(nr) !== JSON.stringify(w.rows_)) w.rows_ = nr   // so troca quando mudou (evita refazer os cartoes)
         } }
     }
     Timer { interval: 20000; repeat: true; running: w.visible; triggeredOnStart: true; onTriggered: { q.running = false; q.running = true } }
     onZonesChanged: { q.running = false; q.running = true }
 
     Component.onCompleted: Weather.use()
-    SystemClock { id: clk; precision: SystemClock.Minutes }
+    SystemClock { id: clk; enabled: w.visible; precision: SystemClock.Minutes }
     function two(n) { return String(n).padStart(2, "0") }
     // hora no formato do shell (24 h ou 12 h com AM/PM)
     function fmt(hh, mm) { return (o("hours") === "auto" ? Settings.clock24 : o("hours") === "24") ? two(hh) + ":" + two(mm) : (hh % 12 === 0 ? 12 : hh % 12) + ":" + two(mm) + (hh < 12 ? " AM" : " PM") }
@@ -125,9 +126,10 @@ Item {
                 readonly property int nrows: Math.ceil(w.rows_.length / columns)
                 spacing: w.tilesLook ? 10 : 6
                 Repeater {
-                    model: w.rows_
+                    model: w.rows_.length   // estavel: os dados mudam a cada minuto, lidos por indice
                     delegate: Rectangle {
-                        required property var modelData
+                        required property int index
+                        readonly property var modelData: w.rows_[index] ?? ({ zone: "", city: "", hh: 0, mm: 0, day: "", diff: 0, off: 0 })
                         width: (parent.width - (parent.columns - 1) * parent.spacing) / parent.columns
                         height: (parent.height - (parent.nrows - 1) * parent.spacing) / parent.nrows
                         readonly property bool day: modelData.hh >= 6 && modelData.hh < 18

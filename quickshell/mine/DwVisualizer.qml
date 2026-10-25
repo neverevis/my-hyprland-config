@@ -51,6 +51,7 @@ Item {
     readonly property real bandK: o("bandH") / 100
     Connections {
         target: Cava
+        enabled: w.o("peaks") || w.o("pulse")   // sem pontas nem pulso nao ha o que calcular
         function onValuesChanged() {
             const v = w.vals, p = w.peaks.length === v.length ? w.peaks.slice() : v.map(() => 0)
             for (let i = 0; i < v.length; i++) p[i] = Math.max(v[i], p[i] - 0.015)
@@ -112,7 +113,7 @@ Item {
         readonly property bool refl: w.o("floor") && st === "bars"
         anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right
         height: st !== "ring" ? (w.e4 ? Math.min(240, parent.height) : parent.height * w.bandK) : parent.height
-        Connections { target: Cava; function onValuesChanged() { cv.requestPaint() } }
+        Connections { target: Cava; enabled: cv.visible; function onValuesChanged() { cv.requestPaint() } }
         onPaint: {
             const c = getContext("2d"); c.reset()
             const v = w.vals, n = v.length, W = width, H = height
