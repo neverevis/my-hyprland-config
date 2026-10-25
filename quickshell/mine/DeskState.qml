@@ -134,7 +134,7 @@ Singleton {
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false, when: { look: "tiles" } },
             { sec: "Visual", key: "tileRoles", label: "Cores dos cartões", type: "seg", def: "trio", options: [["trio", "Três cores", "palette"], ["same", "Todos iguais", "circleOutline"]], when: { look: "tiles" } },
             { sec: "Visual", key: "badge", label: "Selo do cartão", type: "seg", def: "shape", options: [["shape", "Forma", "shape"], ["ring", "Forma com anel de uso", "circleOutline"], ["none", "Sem", "close"]], when: { look: "tiles" } },
-            { sec: "Visual", key: "warn", label: "Avisar em vermelho acima de 85 %", icon: "bell", type: "switch", def: false, when: { look: "tiles" } },
+            { sec: "Visual", key: "warn", label: "Avisar em vermelho acima de 85 %", icon: "bell", type: "switch", def: true, when: { look: "tiles" } },
             { sec: "Visual", key: "clickOpen", label: "Clicar abre o monitor de tarefas", icon: "chart", type: "switch", def: false }
           ] },
         { type: "user", group: "system", name: "Usuário", icon: "account", desc: "Sua foto, saudação e o computador.", sizes: [[2, 1], [3, 1], [1, 1], [2, 2], [1, 2], [2, 3]], options: [

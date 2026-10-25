@@ -10,6 +10,7 @@ variantes: tonalspot (padrao) vibrant expressive fidelity content neutral monoch
 saida extra: _wall = ate 8 cores marcantes da imagem (para os widgets escolherem)
 saida: JSON { papel: "#rrggbb", ... } (papeis do Material + term0..term15). Resultado guardado em ~/.cache/quickshell-mine.
 """
+import math
 import hashlib
 import json
 import sys
@@ -53,21 +54,50 @@ def hue_dist(a: float, b: float) -> float:
     return min(d, 360 - d)
 
 
-def wallpaper_scheme(seed: int, ranked: list, dark: bool):
-    # base "Conteudo" (fiel a cor principal) com a secundaria e a terciaria trocadas por cores da propria imagem;
-    # se a imagem so tem uma cor, usa vizinhas proximas dela (+-25 graus), nunca a do lado oposto do circulo
+def hue_families(colors: dict) -> list:
+    # matizes que a imagem tem de verdade, pela AREA que cobrem: agrupa os pixels com cor (croma >= 5) em faixas de
+    # 15 graus; cada faixa vira [matiz medio, croma medio, fracao da imagem]. Uma flor pequena e viva nao pesa mais
+    # que o fundo inteiro (o Score do Material escolhe pela saturacao e trazia cores de 0,1% da imagem)
+    tot = sum(colors.values()) or 1
+    bins = {}
+    for argb, n in colors.items():
+        h = Hct.from_int(argb)
+        if h.chroma < 5:
+            continue
+        b = int(h.hue // 15)
+        acc = bins.setdefault(b, [0.0, 0.0, 0.0, 0])   # soma de seno, cosseno, croma ponderados; contagem
+        acc[0] += math.sin(math.radians(h.hue)) * n
+        acc[1] += math.cos(math.radians(h.hue)) * n
+        acc[2] += h.chroma * n
+        acc[3] += n
+    out = []
+    for acc in bins.values():
+        hue = math.degrees(math.atan2(acc[0], acc[1])) % 360
+        out.append([round(hue, 1), round(acc[2] / acc[3], 1), round(acc[3] / tot, 4)])
+    return sorted(out, key=lambda x: -x[2])
+
+
+def wallpaper_scheme(seed: int, data: dict, dark: bool):
+    # base "Conteudo" (fiel a cor principal) com a secundaria e a terciaria vindas das familias de cor que mais
+    # cobrem a imagem; cor rara (< 3 % da imagem) nao entra. Sem familias suficientes: vizinhas da principal
+    # (+-25 graus), nunca o lado oposto do circulo
     base = SchemeContent(Hct.from_int(seed), dark, 0.0)
     sh = Hct.from_int(seed)
-    others = [Hct.from_int(c) for c in ranked[1:] if Hct.from_int(c).chroma >= 10]
+    fams = [f for f in data.get("hues", []) if f[2] >= 0.03 and f[1] >= 8]
     picks = []
-    for h in others:
-        if all(hue_dist(h.hue, x.hue) > 12 or abs(h.chroma - x.chroma) > 20 for x in [sh] + picks):
-            picks.append(h)
+    for hue, chroma, share in fams:
+        if all(hue_dist(hue, x[0]) > 18 for x in [[sh.hue]] + picks):
+            picks.append([hue, chroma, share])
+        if len(picks) == 2:
+            break
     while len(picks) < 2:
         n = len(picks)
-        picks.append(Hct.from_hct(sh.hue + (25 if n == 0 else -25), max(16, sh.chroma * 0.6), sh.tone))
-    base.secondary_palette = TonalPalette.from_hue_and_chroma(picks[0].hue, max(16, min(picks[0].chroma, 48)))
-    base.tertiary_palette = TonalPalette.from_hue_and_chroma(picks[1].hue, max(20, min(picks[1].chroma, 64)))
+        picks.append([(sh.hue + (25 if n == 0 else -25)) % 360, max(16, sh.chroma * 0.6), 0])
+    # croma: o da propria familia, um pouco acima para nao virar cinza, mas sem gritar mais que a principal
+    def ch(c, lo, hi):
+        return max(lo, min(c * 1.4, hi, max(lo, sh.chroma)))
+    base.secondary_palette = TonalPalette.from_hue_and_chroma(picks[0][0], ch(picks[0][1], 16, 48))
+    base.tertiary_palette = TonalPalette.from_hue_and_chroma(picks[1][0], ch(picks[1][1], 20, 56))
     return base
 
 
@@ -123,7 +153,7 @@ def main() -> None:
             variant = "neutral" if (seed_hex or colorfulness(image) < 40) and not seed_hex else "tonalspot"
         except Exception:
             variant = "tonalspot"
-    cache = cache_dir / f"{key}-{shown}-{mode}-v2.json"   # v2: com _wall
+    cache = cache_dir / f"{key}-{shown}-{mode}-v3.json"   # v3: secundaria/terciaria pela area
     if cache.exists():
         print(cache.read_text())
         return
@@ -134,11 +164,11 @@ def main() -> None:
     data = None
     if seed_hex:
         c = int("ff" + seed_hex, 16)
-        data = {"seed": c, "ranked": [c], "loose": [c]}
+        data = {"seed": c, "ranked": [c], "loose": [c], "hues": []}
     elif seed_cache.exists():
         try:
             data = json.loads(seed_cache.read_text())
-            if not isinstance(data, dict):
+            if not isinstance(data, dict) or "hues" not in data:   # formato antigo: recalcula com as familias
                 data = None
         except ValueError:
             data = None
@@ -146,13 +176,13 @@ def main() -> None:
         colors = ImageQuantizeCelebi(str(p), 1, 128)
         ranked = Score.score(colors, ScoreOptions(desired=8, filter=True))
         loose = Score.score(colors, ScoreOptions(desired=8, filter=False))
-        data = {"seed": ranked[0], "ranked": ranked, "loose": loose}
+        data = {"seed": ranked[0], "ranked": ranked, "loose": loose, "hues": hue_families(colors)}
         cache_dir.mkdir(parents=True, exist_ok=True)
         seed_cache.write_text(json.dumps(data))
     source = data["seed"]
 
     if variant == "wallpaper":
-        scheme = wallpaper_scheme(source, data.get("ranked", []), mode == "dark")
+        scheme = wallpaper_scheme(source, data, mode == "dark")
     else:
         scheme = SCHEMES[variant](Hct.from_int(source), mode == "dark", 0.0)
     out = {}
