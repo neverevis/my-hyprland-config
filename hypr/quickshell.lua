@@ -13,7 +13,7 @@
 --   off      true = desligado por padrao (so vale se o usuario der uma tecla em `override`)
 --
 -- Suas escolhas ficam em ~/.config/hypr/quickshell-keys.lua (criado pelo install.sh; o editor "Atalhos de teclado"
--- das configuracoes vai escrever nele tambem). Formato:
+-- das configuracoes escreve nele tambem). Formato:
 --   return {
 --     conflicts = { settings = "replace", looks = "keep" },   -- id -> "replace" (o atalho do shell vence: o atalho
 --                                                              -- antigo da mesma combinacao e removido com hl.unbind)
@@ -86,12 +86,20 @@ for _, b in ipairs(keys) do
         if b.locked then opts.locked = true end
         if b.release then opts.release = true end
         for _, combo in ipairs(list(k)) do
-            -- "replace": remove o atalho que ja existia nessa combinacao (hl.unbind, API do Hyprland 0.56)
-            if not overridden and conflicts[b.id] == "replace" then pcall(hl.unbind, combo) end
+            -- "replace": remove o atalho que ja existia nessa combinacao (hl.unbind, API do Hyprland 0.56); vale tambem para a combinacao
+            -- escolhida em `override` (o editor das configuracoes usa isso quando voce troca por uma combinacao ja usada)
+            if conflicts[b.id] == "replace" then pcall(hl.unbind, combo) end
             hl.bind(combo, hl.dsp.exec_cmd(b.cmd), opts)
         end
     end
 end
+
+-- submap vazio usado pelo editor "Atalhos de teclado" (configuracoes) so enquanto grava uma tecla: dentro dele os atalhos
+-- normais ficam parados e a combinacao chega na janela das configuracoes. Esc (sem consumir) volta ao normal; o editor
+-- tambem volta sozinho depois de 10 s e ao fechar. Nao tem nenhum outro atalho.
+hl.define_submap("mine-rec", function()
+    hl.bind("ESCAPE", hl.dsp.submap("reset"), { non_consuming = true, description = "[mine-rec] sair da gravacao" })
+end)
 
 -- o seletor de wallpaper faz a propria animacao: desliga a animacao de camada do Hyprland nele
 hl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true })

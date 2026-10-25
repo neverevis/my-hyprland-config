@@ -45,7 +45,7 @@ Scope {
             { id: "desktop", label: "Área de trabalho", icon: "view_grid", desc: "Widgets sobre o wallpaper e layouts prontos." },
             { id: "bars", label: "Barras e moldura", icon: "bars", desc: "Onde ficam as barras, o que mostram e a moldura." },
             { id: "panels", label: "Painéis", icon: "dock", desc: "Início, launcher, notificações, visão geral e barra lateral." },
-            { id: "win", label: "Janelas", icon: "window", desc: "Hyprland: espaços, bordas, sombras, desfoque e atalhos." },
+            { id: "win", label: "Janelas", icon: "window", desc: "Hyprland: espaços, bordas, sombras e desfoque." },
             { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e molas de tudo o que se move." },
             { id: "looks", label: "Visuais", icon: "layers", desc: "Salvar, aplicar e trocar o visual inteiro." }
         ] },
@@ -131,8 +131,7 @@ Scope {
     Component { id: sessionC; PagePower {} }
     Component { id: toolsC; PageTools {} }
     Component { id: accountC; PageAccount {} }
-    Component { id: keysC; SetSoon { title: "Atalhos de teclado"; icon: "keyboard"; plans: ["Lista com busca", "Gravar uma tecla", "Criar e mudar atalhos do Hyprland"]
-        links: [["Atalhos atuais (só leitura)", "keyboard", "win", "Atalhos"]] } }
+    Component { id: keysC; PageKeys {} }
     Component { id: appsC; PageApps {} }
     Component { id: soundC; PageSound {} }
     Component { id: netC; PageNet {} }

@@ -21,17 +21,16 @@ Resumo do que está pronto, do que está em andamento e do que vem depois. Atual
 Nova arquitetura com duas áreas, **Personalização** e **Sistema**, e um kit de componentes `Set*`.
 
 - Todas as páginas de Personalização já estão no novo formato: Início, Tema e cores, Wallpaper (com palco que toca as transições de verdade), Área de trabalho, Barras e moldura, Painéis, Janelas, Animações e Visuais.
-- Em Sistema, já migradas: Mouse e teclado, Energia e sessão, Ferramentas, Conta e Sobre. Aplicativos (instalar, remover, atualizar, ao iniciar, apps padrão e webapps; script `scripts/apps.py`, modo de teste com `QS_APPS_DRYRUN=1`). Som (saídas, entradas com medidor ao vivo, volume por app, sons do shell, equalizador), Rede e Bluetooth (Wi-Fi, cabo, VPN, pareamento), Monitores (disposição, resolução, escala, posição, brilho, luz noturna, VRR; pergunta de 15 s em `Displays.qml`) e Data, hora e idioma (formato, fuso e NTP por pkexec, idioma). Modo de teste dessas quatro: `QS_SYS_DRYRUN=1` ou o arquivo `~/.cache/quickshell-mine/sys-dryrun`. Atalhos de teclado continua como "em breve".
+- Em Sistema, já migradas: Mouse e teclado, Energia e sessão, Ferramentas, Conta e Sobre. Aplicativos (instalar, remover, atualizar, ao iniciar, apps padrão e webapps; script `scripts/apps.py`, modo de teste com `QS_APPS_DRYRUN=1`). Som (saídas, entradas com medidor ao vivo, volume por app, sons do shell, equalizador), Rede e Bluetooth (Wi-Fi, cabo, VPN, pareamento), Monitores (disposição, resolução, escala, posição, brilho, luz noturna, VRR; pergunta de 15 s em `Displays.qml`) e Data, hora e idioma (formato, fuso e NTP por pkexec, idioma). Modo de teste dessas quatro: `QS_SYS_DRYRUN=1` ou o arquivo `~/.cache/quickshell-mine/sys-dryrun`. Atalhos de teclado (`PageKeys.qml`, `KeyCaps.qml`, `scripts/keys.py`): atalhos do shell por grupo com teclas desenhadas, gravar a combinação pelo teclado (submap `mine-rec` de `hypr/quickshell.lua`, com tempo limite de 10 s) ou digitar, conflitos com os seus atalhos (substituir/cancelar), desligar e voltar ao padrão, lista dos seus atalhos e gravação atômica de `quickshell-keys.lua` seguida de `hyprctl reload` com conferência. Modo de teste: o mesmo `sys-dryrun` (grava em `~/.cache/quickshell-mine/keys-test/`).
 - Pendências de acabamento: controles inline nas páginas antigas, cartão de usuário (avatar sobreposto) e composições de banner.
 
 ## Planejado: configurações do sistema operacional
 
 Páginas de Sistema para dispensar outros painéis:
 
-1. **Editor de atalhos de teclado** (escreve em `~/.config/hypr/quickshell-keys.lua`; o formato já está pronto, veja [ATALHOS.md](ATALHOS.md))
-2. Energia (perfil e sessão)
+1. Energia (perfil e sessão)
 
-(Aplicativos, Som, Rede e Bluetooth, Monitores e Data/hora já estão prontos.)
+(Aplicativos, Som, Rede e Bluetooth, Monitores, Data/hora e Atalhos de teclado já estão prontos.)
 
 ## Problemas conhecidos e limites
 

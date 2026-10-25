@@ -199,47 +199,11 @@ SetPage {
         SetRow { icon: "monitor"; label: "Resolução, escala e posição"; description: "Mudou para a página Monitores"; link: true; onClicked: Settings.settingsPage = "display" }
     }
 
-    // ---- atalhos (so leitura) ----
+    // ---- atalhos (a lista e o editor moraram aqui; agora ficam na pagina Atalhos de teclado) ----
     SetSection {
         title: "Atalhos"; icon: "keyboard"
-        subtitle: "Lidos dos seus arquivos do Hyprland; no launcher, digite < para buscar"
-        SetExpander {
-            icon: "listCheck"; label: "Ver os atalhos"; description: "Lista com busca"
-            lazy: Component {
-                SetBlock {
-                    id: kb
-                    sub: true
-                    property var binds: []
-                    Process {
-                        running: true
-                        command: ["python3", Qt.resolvedUrl("scripts/keybinds.py").toString().replace("file://", "")]
-                        stdout: StdioCollector { onStreamFinished: { try { kb.binds = JSON.parse(text) } catch (e) {} } }
-                    }
-                    UiField { id: kbF; width: parent.width; placeholderText: "Buscar atalho…" }
-                    Repeater {
-                        model: kb.binds.filter(b => { const q = kbF.text.toLowerCase(); return !q || (b.label + " " + b.keys + " " + b.section).toLowerCase().includes(q) }).slice(0, 40)
-                        delegate: Item {
-                            required property var modelData
-                            width: parent.width; height: 30
-                            UiText { anchors.verticalCenter: parent.verticalCenter; width: parent.width - kr.width - 12; elide: Text.ElideRight; text: modelData.label; color: Theme.text; font.pixelSize: 13 }
-                            Row {
-                                id: kr
-                                anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                                spacing: 4
-                                Repeater {
-                                    model: modelData.keys.split(" + ")
-                                    delegate: Rectangle {
-                                        required property string modelData
-                                        height: 22; width: Math.max(22, kt.implicitWidth + 12); radius: 6; color: Theme.track; border.width: 1; border.color: Theme.border
-                                        UiText { id: kt; anchors.centerIn: parent; text: modelData; color: Theme.text; font.pixelSize: 11; font.weight: Font.DemiBold }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        subtitle: "Ver, mudar e conferir os atalhos do shell e os seus"
+        SetRow { icon: "keyboard"; label: "Atalhos de teclado"; description: "Mudou para a página Atalhos de teclado"; link: true; onClicked: Settings.settingsPage = "keys" }
     }
 
     // ---- ajustes do Hyprland (o que sobra) ----
