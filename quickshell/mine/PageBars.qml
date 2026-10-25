@@ -1,34 +1,33 @@
-// Pagina "Barras": escolha da barra (no topo), ajustes da barra escolhida, secoes e modulos.
+// Pagina "Barras e moldura" (kit Set*): mapa ao vivo da tela no topo, a moldura (janela de configuracoes, composicao, contorno,
+// curvas), as barras (escolha, estilos prontos em cartoes, posicao, esconder), secoes e modulos (cada modulo e uma linha que abre
+// as opcoes dele so quando aberto), indicador de volume e detalhes/ilha. O avancado fica nos expansores.
 import Quickshell
 import QtQuick
 
-Column {
+SetPage {
     id: page
-    spacing: 14
+    title: "Barras e moldura"
+    subtitle: Settings.bars.length + " barra(s). O mapa mostra onde cada uma está agora."
     property var geo: ({})
     property int cur: 0
-    property int openMod: -1   // modulo com o painel de opcoes aberto
-    property int curSec: 0     // secao selecionada da barra
-    property int openStyle: -1 // modulo com o painel de fundo / pilula aberto
-    readonly property var sections: Settings.sectionsOf(bar)
-    readonly property int sec: Math.max(0, Math.min(curSec, sections.length - 1))
+    property int openMod: -1     // modulo com o painel aberto
+    property string openKind: "opts"   // "opts" (opcoes) ou "style" (pilula)
+    property int curSec: 0       // secao selecionada da barra
+    readonly property var secs: Settings.sectionsOf(bar)
+    readonly property int sec: Math.max(0, Math.min(curSec, secs.length - 1))
     readonly property int idx: Math.max(0, Math.min(cur, Settings.bars.length - 1))
     readonly property var bar: Settings.bars[idx] ?? null
+    readonly property var info: geo && geo.bars ? geo.bars[idx] : null
     readonly property var sideNames: ({ top: "Cima", bottom: "Baixo", left: "Esquerda", right: "Direita" })
     readonly property var modIcons: ({ clock: "clock", workspaces: "view_grid", window: "fullscreen", cpu: "chip", memory: "memory", volume: "volume", tray: "apps", palette: "palette", power: "power", text: "pencil",
         media: "music", weather: "wPartly", netspeed: "network", gpu: "gpuCard", temp: "temperature", updates: "download", keyboard: "keyboard",
         notifs: "bell", recorder: "monitor", utils: "frame", caffeine: "coffee", battery: "battery", bluetooth: "bluetooth", sysicons: "devices", launcher: "apps", visualizer: "wave", taskbar: "dock",
         island: "pulse", privacy: "eye", divisor: "alignVCenter", disk: "disk", swap: "swap_vertical", aiusage: "robot", avatar: "account", livewall: "wallpaper" })
     function setBar(k, v) { Settings.setBar(idx, k, v) }
+    function setSec(k, v) { Settings.setSection(idx, sec, k, v) }
+    readonly property var secObj: secs[sec] ?? null
     // estilos prontos: cada um e um conjunto de opcoes da barra e das secoes dela
-    readonly property var styles: [
-        { id: "hug", label: "Na moldura", icon: "frame", desc: "Sai da moldura com as curvas" },
-        { id: "plain", label: "Reta", icon: "squareRounded", desc: "Retângulo reto, sem curvas" },
-        { id: "float", label: "Solta", icon: "cards", desc: "Flutua com contorno" },
-        { id: "panel", label: "Painel", icon: "dock", desc: "Solta, sombra e cantos menores" },
-        { id: "islands", label: "Ilhas", icon: "dotsGrid", desc: "Sem fundo, um módulo por pílula" },
-        { id: "m3", label: "Cores M3", icon: "palette", desc: "Sem fundo, pílulas na cor do tema" }
-    ]
+    readonly property var styles: [["hug", "Na moldura", "frame"], ["plain", "Reta", "squareRounded"], ["float", "Solta", "cards"], ["panel", "Painel", "dock"], ["islands", "Ilhas", "dotsGrid"], ["m3", "Cores M3", "palette"]]
     function applyStyle(id) {
         Settings.mutate(b => {
             const x = b[idx]; if (!x) return
@@ -48,9 +47,9 @@ Column {
             const x = b[idx]; if (!x) return
             const sc = x.sections, n = sc.length
             const pos = n === 1 ? [50] : n === 2 ? [0, 100] : [0, 50, 100]
-            const groups = [[]]
-            if (n <= 3) { groups.length = 0; sc.forEach(q => groups.push([q])) }
-            else { groups.length = 0; groups.push([sc[0]], sc.slice(1, n - 1), [sc[n - 1]]) }
+            const groups = []
+            if (n <= 3) sc.forEach(q => groups.push([q]))
+            else groups.push([sc[0]], sc.slice(1, n - 1), [sc[n - 1]])
             const nb = groups.map((g, k) => Object.assign({}, x, { name: (x.name || "Barra") + " " + (k + 1), fit: true, full: false, pos: pos[k], corner: "", sections: g.map(q => Object.assign({}, q, { anchor: "center", offset: 0, width: 0 })) }))
             b.splice(idx, 1, ...nb)
         })
@@ -61,615 +60,502 @@ Column {
     Binding { target: Settings; property: "barDebugSec"; value: page.sec; when: page.visible }
     Component.onDestruction: if (page.visible) { Settings.barDebugBar = -1; Settings.barDebugSec = -1 }
 
-    // ---- mapa da tela + escolha da barra ----
-    Card {
-        icon: "monitor"
-        title: "Suas barras"
-        subtitle: "O mapa mostra onde cada uma está agora. Clique numa barra (no mapa ou nos cartões) para editar. O número é a prioridade."
+    // ---- mapa da tela (parado: so muda quando a configuracao muda) ----
+    preview: SetPreview {
+        height: map.height + 24
         BarsMap {
-            width: parent.width
+            id: map
+            anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
             geo: page.geo
             selected: page.idx
+            selectedSec: page.sec
             onPicked: i => { page.cur = i; page.curSec = 0; page.openMod = -1 }
         }
-        Flow {
-            width: parent.width
-            spacing: 8
-            Repeater {
-                model: Settings.bars
-                delegate: Rectangle {
-                    id: item
-                    required property int index
-                    required property var modelData
-                    readonly property bool on: page.idx === index
-                    readonly property var info: page.geo && page.geo.bars ? page.geo.bars[index] : null
-                    width: 196; height: 58; radius: 14
-                    color: on ? Theme.tint(0.14) : (bm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1))
-                    border.width: 1
-                    border.color: on ? Theme.accent : Theme.border
-                    Rectangle {   // prioridade
-                        id: prio
-                        x: 10; anchors.verticalCenter: parent.verticalCenter
-                        width: 26; height: 26; radius: 13
-                        color: item.on ? Theme.accent : Theme.track
-                        UiText { anchors.centerIn: parent; text: item.index + 1; color: item.on ? Theme.accentText : Theme.muted; font.pixelSize: 12; font.weight: Font.Bold }
-                    }
-                    Column {
-                        anchors { left: prio.right; leftMargin: 10; right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
-                        spacing: 1
-                        UiText { width: parent.width; elide: Text.ElideRight; text: item.modelData.name || ("Barra " + (item.index + 1)); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                        UiText {
-                            width: parent.width; elide: Text.ElideRight
-                            text: item.info && item.info.hidden ? "Sem espaço: escondida"
-                                : (page.sideNames[item.modelData.side] ?? "?") + (item.modelData.detached ? " · solta" : "") + " · " + Settings.sectionsOf(item.modelData).reduce((n, x) => n + x.modules.length, 0) + " módulos"
-                            color: item.info && item.info.hidden ? Theme.danger : Theme.muted; font.pixelSize: 11
+    }
+
+    // ================= BARRAS =================
+    SetSection {
+        title: "Suas barras"; icon: "bars"
+        SetBlock {
+            Flow {
+                width: parent.width
+                spacing: SetK.sm
+                Repeater {
+                    model: Settings.bars.length
+                    delegate: Rectangle {
+                        id: item
+                        required property int index
+                        readonly property var bd: Settings.bars[index] ?? ({})
+                        readonly property bool on: page.idx === index
+                        readonly property var inf: page.geo && page.geo.bars ? page.geo.bars[index] : null
+                        width: 188; height: 54; radius: 14
+                        color: on ? Theme.tint(0.14) : (bm.containsMouse ? Theme.cardHi : Theme.track)
+                        border.width: on ? 2 : 1
+                        border.color: on ? Theme.accent : Theme.border
+                        Rectangle {
+                            id: prio
+                            x: 10; anchors.verticalCenter: parent.verticalCenter
+                            width: 26; height: 26; radius: 13
+                            color: item.on ? Theme.accent : Theme.cardHi
+                            UiText { anchors.centerIn: parent; text: item.index + 1; color: item.on ? Theme.accentText : Theme.muted; font.pixelSize: 12; font.weight: Font.Bold }
                         }
+                        Column {
+                            anchors { left: prio.right; leftMargin: 10; right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                            spacing: 1
+                            UiText { width: parent.width; elide: Text.ElideRight; text: item.bd.name || ("Barra " + (item.index + 1)); color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                            UiText {
+                                width: parent.width; elide: Text.ElideRight
+                                text: item.inf && item.inf.hidden ? "Sem espaço: escondida"
+                                    : (page.sideNames[item.bd.side] ?? "?") + (item.bd.detached ? " · solta" : "") + " · " + Settings.sectionsOf(item.bd).reduce((n, x) => n + x.modules.length, 0) + " módulos"
+                                color: item.inf && item.inf.hidden ? Theme.danger : Theme.muted; font.pixelSize: 11
+                            }
+                        }
+                        MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { page.cur = item.index; page.curSec = 0; page.openMod = -1 } }
                     }
-                    MouseArea { id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { page.cur = item.index; page.curSec = 0; page.openMod = -1 } }
+                }
+                Rectangle {
+                    width: 54; height: 54; radius: 14
+                    color: am.containsMouse ? Theme.cardHi : "transparent"
+                    border.width: 1; border.color: Theme.border
+                    UiIcon { anchors.centerIn: parent; name: "plus"; size: 20; color: Theme.accent }
+                    MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addBar("top"); page.cur = Settings.bars.length - 1 } }
+                }
+                Rectangle {
+                    width: 54; height: 54; radius: 14
+                    color: dkm.containsMouse ? Theme.cardHi : "transparent"
+                    border.width: 1; border.color: Theme.border
+                    UiIcon { anchors.centerIn: parent; name: "dock"; size: 20; color: Theme.accent }
+                    MouseArea { id: dkm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addDock(); page.cur = Settings.bars.length - 1 } }
                 }
             }
-            Rectangle {
-                width: 120; height: 58; radius: 14
-                color: am.containsMouse ? Theme.cardHi : "transparent"
-                border.width: 1; border.color: Theme.border
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 6
-                    UiIcon { name: "plus"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                    UiText { text: "Nova barra"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
-                }
-                MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addBar("top"); page.cur = Settings.bars.length - 1 } }
-            }
-            Rectangle {
-                width: 136; height: 58; radius: 14
-                color: dkm.containsMouse ? Theme.cardHi : "transparent"
-                border.width: 1; border.color: Theme.border
-                Row {
-                    anchors.centerIn: parent
-                    spacing: 6
-                    UiIcon { name: "dock"; size: 18; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                    UiText { text: "Adicionar dock"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
-                }
-                MouseArea { id: dkm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Settings.addDock(); page.cur = Settings.bars.length - 1 } }
-            }
+            UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: SetK.fDesc; text: "Mais (+) cria uma barra; o ícone de dock cria um dock. O número é a prioridade: se duas barras do mesmo lado querem o mesmo lugar, a de maior prioridade fica; a outra vai para o espaço livre mais perto e, sem espaço, fica escondida." }
         }
-        // prioridade da barra escolhida
-        Row {
+        SetRow {
             visible: Settings.bars.length > 1 && !!page.bar
-            spacing: 8
-            UiIcon { name: "layers"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Prioridade " + (page.idx + 1) + " de " + Settings.bars.length; color: Theme.text; font.pixelSize: 13 }
-            UiButton { icon: "arrowUp"; text: "Subir"; kind: "ghost"; enabled: page.idx > 0; onClicked: { Settings.moveBar(page.idx, -1); page.cur = page.idx - 1 } }
-            UiButton { icon: "arrowDown"; text: "Descer"; kind: "ghost"; enabled: page.idx < Settings.bars.length - 1; onClicked: { Settings.moveBar(page.idx, 1); page.cur = page.idx + 1 } }
-        }
-        UiText {
-            visible: Settings.bars.length > 1
-            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
-            text: "Quando duas barras do mesmo lado querem o mesmo lugar, a de maior prioridade fica onde você colocou; a outra vai para o espaço livre mais perto, encolhe se precisar e, sem espaço nenhum, fica escondida."
+            icon: "layers"; label: "Prioridade " + (page.idx + 1) + " de " + Settings.bars.length; description: "Da barra escolhida"
+            UiButton { icon: "arrowUp"; kind: "ghost"; enabled: page.idx > 0; onClicked: { Settings.moveBar(page.idx, -1); page.cur = page.idx - 1 } }
+            UiButton { icon: "arrowDown"; kind: "ghost"; enabled: page.idx < Settings.bars.length - 1; onClicked: { Settings.moveBar(page.idx, 1); page.cur = page.idx + 1 } }
         }
     }
 
-    Card {
+    SetSection {
         visible: !!page.bar
-        icon: "frame"
-        title: "Posição e tamanho"
-        subtitle: "Lado, tamanho e posição em porcentagem do lado da tela. Nas pontas a barra encosta no canto sozinha."
-        readonly property var info: page.geo && page.geo.bars ? page.geo.bars[page.idx] : null
-        Row {
-            width: parent.width
-            spacing: 10
-            UiIcon { name: "pencil"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-            UiText { text: "Nome"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
-            UiField {
-                width: Math.min(280, parent.width - 80)
-                text: page.bar ? (page.bar.name ?? "") : ""
-                placeholderText: "Barra " + (page.idx + 1)
-                onEditingFinished: page.setBar("name", text.trim())
-            }
+        title: "Barra escolhida"; icon: "frame"
+        SetRow {
+            icon: "pencil"; label: "Nome"
+            UiField { width: 200; text: page.bar ? (page.bar.name ?? "") : ""; placeholderText: "Barra " + (page.idx + 1); onEditingFinished: page.setBar("name", text.trim()) }
         }
-        SidePick { value: page.bar ? page.bar.side : ""; onPicked: v => page.setBar("side", v) }
-        UiLabel { text: "Estilo" }
-        UiSeg {
-            options: [["frame", "Na moldura", "frame"], ["detached", "Solta", "cards"]]
-            value: page.bar && page.bar.detached ? "detached" : "frame"
-            onPicked: v => page.setBar("detached", v === "detached")
+        SetRow {
+            icon: "dock"; label: "Lado da tela"
+            below: SidePick { value: page.bar ? page.bar.side : ""; onPicked: v => page.setBar("side", v) }
         }
-        UiText {
-            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
-            text: page.bar && page.bar.detached ? "A barra flutua afastada da moldura, como uma ilha, com os cantos arredondados." : "A barra sai da moldura, emendada nela pelas curvas."
-        }
-        UiSwitch { visible: page.bar ? !page.bar.detached : true; label: "Ocupar o lado inteiro"; description: "A barra vai de uma ponta à outra da tela."; checked: page.bar ? !!page.bar.full : false; onToggled: on => page.setBar("full", on) }
-        Column {
-            visible: page.bar ? !page.bar.full : true
-            width: parent.width
-            spacing: 12
-            readonly property real sideLen: page.bar && (page.bar.side === "left" || page.bar.side === "right") ? (Quickshell.screens[0] ? Quickshell.screens[0].height : 1080) : (Quickshell.screens[0] ? Quickshell.screens[0].width : 1920)
-            readonly property real size: page.bar ? Settings.barSize(page.bar, sideLen) : 30
-            readonly property real pos: page.bar ? Settings.barPos(page.bar, sideLen) : 50
-            readonly property bool vert: page.bar ? (page.bar.side === "left" || page.bar.side === "right") : false
-            UiSwitch { label: "Largura do conteúdo"; description: "A barra cresce e encolhe com os módulos (bom para o dock)."; checked: page.bar ? !!page.bar.fit : false; onToggled: on => page.setBar("fit", on) }
-            UiSlider { visible: page.bar ? !page.bar.fit : true; label: "Largura"; icon: "swap_horizontal"; from: 3; to: 100; value: Math.round(parent.size); suffix: " %"; onMoved: v => page.setBar("size", v) }
-            UiSlider { label: "Posição"; icon: "arrow_right"; from: 0; to: 100; value: Math.round(parent.pos); suffix: " %"; onMoved: v => { page.setBar("pos", v); page.setBar("corner", "") } }
-            Row {
-                spacing: 6
-                readonly property var info: page.geo && page.geo.bars ? page.geo.bars[page.idx] : null
-                UiButton { icon: parent.parent.vert ? "arrowUp" : "arrow_left"; text: parent.parent.vert ? "No topo" : "No início"; kind: "ghost"; onClicked: { page.setBar("pos", 0); page.setBar("corner", "") } }
-                UiButton { icon: "alignCenter"; text: "Centro"; kind: "ghost"; onClicked: { page.setBar("pos", 50); page.setBar("corner", "") } }
-                UiButton { icon: parent.parent.vert ? "arrowDown" : "arrow_right"; text: parent.parent.vert ? "Embaixo" : "No fim"; kind: "ghost"; onClicked: { page.setBar("pos", 100); page.setBar("corner", "") } }
-                Rectangle {   // estado atual (vindo da geometria)
-                    anchors.verticalCenter: parent.verticalCenter
-                    readonly property string msg: !parent.info ? "" : (parent.info.hidden ? "Sem espaço" : (parent.info.corner < 0 ? (parent.parent.vert ? "Encostada no topo" : "Encostada à esquerda") : (parent.info.corner > 0 ? (parent.parent.vert ? "Encostada embaixo" : "Encostada à direita") : "")))
-                    visible: msg !== ""
-                    width: st.implicitWidth + 18; height: 26; radius: 13
-                    color: parent.info && parent.info.hidden ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.tint(0.18)
-                    UiText { id: st; anchors.centerIn: parent; text: parent.msg; color: parent.parent.info && parent.parent.info.hidden ? Theme.danger : Theme.accent; font.pixelSize: 11; font.weight: Font.DemiBold }
+        SetChoice {
+            icon: "brush"; label: "Estilo pronto"; description: "Mexe nas curvas, no fundo e nas pílulas desta barra de uma vez"
+            style: "tiles"; columns: 6; thumbHeight: 52
+            options: page.styles
+            value: ""
+            onPicked: v => page.applyStyle(v)
+            thumb: Item {
+                id: sg
+                property var opt
+                property bool on
+                property bool hovered
+                readonly property string m: opt ? opt[0] : "hug"
+                readonly property bool det: m === "float" || m === "panel"
+                readonly property bool isl: m === "islands" || m === "m3"
+                Rectangle { anchors.fill: parent; anchors.margins: 4; radius: 6; color: "transparent"; border.width: 2; border.color: Theme.cardHi }
+                Rectangle {   // faixa presa na moldura
+                    visible: !sg.isl
+                    x: sg.det ? 12 : 10; y: sg.det ? 10 : 4
+                    width: parent.width - x * 2; height: 11
+                    radius: sg.m === "plain" ? 0 : (sg.det ? 5 : 6)
+                    color: Theme.accent
+                    border.width: sg.m === "panel" ? 1 : 0; border.color: Theme.text
+                }
+                Row {   // pilulas
+                    visible: sg.isl
+                    anchors { horizontalCenter: parent.horizontalCenter; top: parent.top; topMargin: 9 }
+                    spacing: 5
+                    Repeater {
+                        model: 3
+                        delegate: Rectangle { required property int index; width: index === 1 ? 16 : 24; height: 9; radius: 4.5; color: sg.m === "m3" ? Theme.primaryContainer : Theme.surfaceHighest }
+                    }
                 }
             }
         }
-        UiSlider { label: "Espessura"; icon: "bars"; from: 24; to: 90; value: page.bar ? page.bar.height : 0; suffix: " px"; onMoved: v => page.setBar("height", v) }
-        UiSlider { visible: page.bar ? !!page.bar.detached : false; label: "Distância da moldura"; icon: "dock"; from: 0; to: 40; value: page.bar ? (page.bar.gap ?? 8) : 8; suffix: " px"; onMoved: v => page.setBar("gap", v) }
-        UiSlider { visible: page.bar ? !!page.bar.detached : false; label: "Arredondamento"; icon: "curve"; from: 0; to: 40; value: page.bar ? (page.bar.radius ?? 14) : 14; suffix: " px"; onMoved: v => page.setBar("radius", v) }
-        // curvas da barra presa na moldura (cada barra pode ter as suas; sem escolher, vale a da pagina Moldura)
-        Column {
+        SetRow { icon: "cards"; label: "Solta da moldura"; description: "Flutua afastada, como uma ilha com cantos arredondados"; checked: page.bar ? !!page.bar.detached : false; onToggled: on => page.setBar("detached", on) }
+        SetRow { visible: page.bar ? !page.bar.detached : true; icon: "swap_horizontal"; label: "Ocupar o lado inteiro"; description: "De uma ponta à outra da tela"; checked: page.bar ? !!page.bar.full : false; onToggled: on => page.setBar("full", on) }
+        SetRow { visible: page.bar ? !page.bar.full : true; icon: "view_column"; label: "Largura do conteúdo"; description: "Cresce e encolhe com os módulos (bom para o dock)"; checked: page.bar ? !!page.bar.fit : false; onToggled: on => page.setBar("fit", on) }
+        SetSlider {
+            id: wSl
+            visible: page.bar ? !page.bar.full && !page.bar.fit : false
+            readonly property real sideLen: page.bar && (page.bar.side === "left" || page.bar.side === "right") ? (Quickshell.screens[0] ? Quickshell.screens[0].height : 1080) : (Quickshell.screens[0] ? Quickshell.screens[0].width : 1920)
+            icon: "swap_horizontal"; label: "Tamanho"; description: "Em % do lado da tela"; from: 3; to: 100; unit: " %"
+            value: page.bar ? Math.round(Settings.barSize(page.bar, sideLen)) : 30; onMoved: v => page.setBar("size", Math.round(v))
+        }
+        SetSlider {
+            id: pSl
+            visible: page.bar ? !page.bar.full : false
+            readonly property real sideLen: wSl.sideLen
+            readonly property bool vert: page.bar ? (page.bar.side === "left" || page.bar.side === "right") : false
+            readonly property string msg: !page.info ? "" : (page.info.hidden ? "Sem espaço" : (page.info.corner < 0 ? (vert ? "Encostada no topo" : "Encostada à esquerda") : (page.info.corner > 0 ? (vert ? "Encostada embaixo" : "Encostada à direita") : "")))
+            icon: "arrow_right"; label: "Posição"; description: msg !== "" ? msg : "Nas pontas a barra encosta no canto sozinha"; from: 0; to: 100; unit: " %"
+            value: page.bar ? Math.round(Settings.barPos(page.bar, sideLen)) : 50
+            onMoved: v => { page.setBar("pos", Math.round(v)); page.setBar("corner", "") }
+            UiButton { icon: pSl.vert ? "arrowUp" : "arrow_left"; kind: "ghost"; onClicked: { page.setBar("pos", 0); page.setBar("corner", "") } }
+            UiButton { icon: "alignCenter"; kind: "ghost"; onClicked: { page.setBar("pos", 50); page.setBar("corner", "") } }
+            UiButton { icon: pSl.vert ? "arrowDown" : "arrow_right"; kind: "ghost"; onClicked: { page.setBar("pos", 100); page.setBar("corner", "") } }
+        }
+        SetSlider { icon: "bars"; label: "Espessura"; from: 24; to: 90; unit: " px"; value: page.bar ? page.bar.height : 0; onMoved: v => page.setBar("height", Math.round(v)) }
+        SetRow { icon: "eyeOff"; label: "Sem fundo"; description: "Só os módulos, soltos na tela (combine com pílulas)"; checked: page.bar ? !!page.bar.noBg : false; onToggled: on => page.setBar("noBg", on) }
+        SetExpander {
+            visible: page.bar ? !!page.bar.detached : false
+            icon: "cards"; label: "Barra solta"; description: "Distância, cantos, contorno e sombra"
+            SetSlider { sub: true; label: "Distância da moldura"; from: 0; to: 40; unit: " px"; def: 8; value: page.bar ? (page.bar.gap ?? 8) : 8; onMoved: v => page.setBar("gap", Math.round(v)) }
+            SetSlider { sub: true; label: "Arredondamento"; from: 0; to: 40; unit: " px"; def: 14; value: page.bar ? (page.bar.radius ?? 14) : 14; onMoved: v => page.setBar("radius", Math.round(v)) }
+            SetRow { sub: true; label: "Contorno fino"; checked: page.bar ? !!page.bar.border : false; onToggled: on => page.setBar("border", on) }
+            SetRow { sub: true; label: "Sombra"; checked: page.bar ? !!page.bar.shadow : false; onToggled: on => page.setBar("shadow", on) }
+        }
+        SetExpander {
             visible: page.bar ? !page.bar.detached && !page.bar.full : false
-            width: parent.width
-            spacing: 12
-            UiLabel { text: "Curvas da barra" }
-            UiSlider { label: "Curva da subida"; icon: "curve"; from: 0; to: 30; value: page.bar ? (page.bar.fillet ?? Settings.fillet) : 0; suffix: " px"; onMoved: v => page.setBar("fillet", Math.round(v)) }
-            UiSlider { label: "Cantos do topo"; icon: "rounded"; from: 0; to: 30; value: page.bar ? (page.bar.topRadius ?? Settings.topRadius) : 0; suffix: " px"; onMoved: v => page.setBar("topRadius", Math.round(v)) }
-            Row {
-                spacing: 6
+            icon: "curve"; label: "Curvas desta barra"; description: "Sem escolher, valem as da moldura"
+            SetSlider { sub: true; label: "Curva da subida"; from: 0; to: 30; unit: " px"; value: page.bar ? (page.bar.fillet ?? Settings.fillet) : 0; onMoved: v => page.setBar("fillet", Math.round(v)) }
+            SetSlider { sub: true; label: "Cantos do topo"; from: 0; to: 30; unit: " px"; value: page.bar ? (page.bar.topRadius ?? Settings.topRadius) : 0; onMoved: v => page.setBar("topRadius", Math.round(v)) }
+            SetRow {
+                sub: true; label: "Atalhos"; description: "Duas em zero: retângulo reto saindo da moldura"
                 UiButton { icon: "squareRounded"; text: "Retangular"; kind: "ghost"; onClicked: { page.setBar("fillet", 0); page.setBar("topRadius", 0) } }
-                UiButton { icon: "restore"; text: "Usar as curvas da moldura"; kind: "ghost"; enabled: page.bar ? page.bar.fillet !== undefined || page.bar.topRadius !== undefined : false
+                UiButton { icon: "restore"; text: "Da moldura"; kind: "ghost"; enabled: page.bar ? page.bar.fillet !== undefined || page.bar.topRadius !== undefined : false
                     onClicked: Settings.mutate(b => { if (b[page.idx]) { delete b[page.idx].fillet; delete b[page.idx].topRadius } }) }
             }
-            UiText {
-                width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
-                text: "Com as duas em zero a barra vira um retângulo reto saindo da moldura. Sem escolher, vale o que está na página Moldura."
-            }
         }
-    }
-
-    Card {
-        visible: !!page.bar
-        icon: "brush"
-        title: "Estilo da barra"
-        subtitle: "Estilos prontos: mexem nas curvas, no fundo e nas pílulas desta barra de uma vez. Depois dá para ajustar cada coisa."
-        Flow {
-            width: parent.width
-            spacing: 8
-            Repeater {
-                model: page.styles
-                delegate: Rectangle {
-                    id: sg
-                    required property var modelData
-                    width: 132; height: 74; radius: 14
-                    color: sgm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1)
-                    border.width: 1; border.color: sgm.containsMouse ? Theme.accent : Theme.border
-                    Column {
-                        anchors { fill: parent; margins: 10 }
-                        spacing: 3
-                        Row { spacing: 6
-                            UiIcon { name: sg.modelData.icon; size: 16; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                            UiText { text: sg.modelData.label; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter } }
-                        UiText { width: parent.width; wrapMode: Text.WordWrap; text: sg.modelData.desc; color: Theme.muted; font.pixelSize: 10 }
-                    }
-                    MouseArea { id: sgm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: page.applyStyle(sg.modelData.id) }
-                }
-            }
-        }
-        UiSwitch { label: "Sem fundo (só os módulos)"; description: "A barra deixa de desenhar o fundo; os módulos ficam soltos na tela. Combine com pílulas nas seções."; checked: page.bar ? !!page.bar.noBg : false; onToggled: on => page.setBar("noBg", on) }
-        UiSwitch { visible: page.bar ? !!page.bar.detached : false; label: "Contorno fino"; checked: page.bar ? !!page.bar.border : false; onToggled: on => page.setBar("border", on) }
-        UiSwitch { visible: page.bar ? !!page.bar.detached : false; label: "Sombra"; checked: page.bar ? !!page.bar.shadow : false; onToggled: on => page.setBar("shadow", on) }
-        Row {
-            spacing: 8
-            UiButton { icon: "view_column"; text: "Dividir em 3 abas"; kind: "ghost"; enabled: page.sections.length > 0; onClicked: { page.splitTabs(); page.curSec = 0; page.openMod = -1 } }
-        }
-        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "\"Dividir em 3 abas\" transforma cada seção desta barra numa barrinha própria (início, centro e fim) presa na moldura, como as abas do end4." }
-    }
-
-    Card {
-        visible: !!page.bar
-        icon: "eye"
-        title: "Esconder"
-        subtitle: "A barra some e reaparece quando o mouse encosta na borda."
-        UiSwitch { label: "Esconder automaticamente"; checked: page.bar ? !!page.bar.autoHide : false; onToggled: on => page.setBar("autoHide", on) }
-        Column {
-            visible: page.bar ? !!page.bar.autoHide : false
-            width: parent.width
-            spacing: 12
-            UiLabel { text: "Espaço das janelas" }
-            UiSeg {
-                fill: true
+        SetExpander {
+            icon: "eye"; label: "Esconder automaticamente"; description: "Some e reaparece quando o mouse encosta na borda"
+            checked: page.bar ? !!page.bar.autoHide : false
+            onToggled: on => page.setBar("autoHide", on)
+            SetChoice {
+                sub: true; label: "Espaço das janelas"
                 options: [["overlay", "Sobrepor", "layers"], ["always", "Reservar", "dock"], ["follow", "Acompanhar", "swap_vertical"]]
-                value: page.bar ? (page.bar.reserve ?? "overlay") : "overlay"
-                onPicked: v => page.setBar("reserve", v)
+                value: page.bar ? (page.bar.reserve ?? "overlay") : "overlay"; onPicked: v => page.setBar("reserve", v)
             }
-            UiText {
-                width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
-                text: ({ overlay: "A barra aparece por cima das janelas.", always: "As janelas sempre deixam o espaço da barra livre.", follow: "As janelas abrem espaço só enquanto a barra está visível." })[page.bar ? (page.bar.reserve ?? "overlay") : "overlay"]
-            }
-            UiSlider { label: "Esperar antes de mostrar"; from: 0; to: 1000; value: Settings.showDelay; suffix: " ms"; onMoved: v => Settings.showDelay = v }
-            UiSlider { label: "Esperar antes de esconder"; from: 0; to: 2000; value: Settings.hideDelay; suffix: " ms"; onMoved: v => Settings.hideDelay = v }
-            UiSlider { label: "Faixa que revela a barra"; icon: "arrow_bottom_right"; from: 1; to: 16; value: Settings.barHoverStrip; suffix: " px"; onMoved: v => Settings.barHoverStrip = Math.round(v) }
-            UiSwitch { label: "Revelar encostando em qualquer ponto da borda"; description: "Em vez de só no pedaço da barra, a faixa fina corre o lado inteiro da tela (vale para todas as barras escondidas daquele lado)."; checked: Settings.barEdgeReveal; onToggled: on => Settings.barEdgeReveal = on }
-            UiSwitch { label: "Revelar segurando a tecla Super"; description: "Segurar a tecla mostra as barras escondidas e vira os pontos dos workspaces em números. Precisa de uma tecla no Hyprland que chame: qs -c mine ipc call bar superdown (e superup ao soltar)."; checked: Settings.superReveal; onToggled: on => Settings.superReveal = on }
-            UiSlider { visible: Settings.superReveal; label: "Segurar por"; from: 0; to: 600; value: Settings.superDelay; suffix: " ms"; onMoved: v => Settings.superDelay = Math.round(v / 20) * 20 }
-            UiLabel { text: "Animação" }
-            AnimPicker { target: "bars" }
+            SetSlider { sub: true; label: "Esperar antes de mostrar"; from: 0; to: 1000; step: 10; unit: " ms"; def: 0; value: Settings.showDelay; onMoved: v => Settings.showDelay = Math.round(v) }
+            SetSlider { sub: true; label: "Esperar antes de esconder"; from: 0; to: 2000; step: 10; unit: " ms"; def: 450; value: Settings.hideDelay; onMoved: v => Settings.hideDelay = Math.round(v) }
+            SetSlider { sub: true; label: "Faixa que revela a barra"; from: 1; to: 16; unit: " px"; def: 8; value: Settings.barHoverStrip; onMoved: v => Settings.barHoverStrip = Math.round(v) }
+            SetRow { sub: true; label: "Revelar em qualquer ponto da borda"; description: "A faixa corre o lado inteiro (todas as barras escondidas dele)"; checked: Settings.barEdgeReveal; onToggled: on => Settings.barEdgeReveal = on }
+            SetRow { sub: true; label: "Revelar segurando a tecla Super"; description: "Precisa de uma tecla que chame: qs -c mine ipc call bar superdown (e superup)"; checked: Settings.superReveal; onToggled: on => Settings.superReveal = on }
+            SetSlider { visible: Settings.superReveal; sub: true; label: "Segurar por"; from: 0; to: 600; step: 20; unit: " ms"; def: 140; value: Settings.superDelay; onMoved: v => Settings.superDelay = Math.round(v / 20) * 20 }
+            lazy: Component { SetBlock { sub: true; UiLabel { text: "Animação" } AnimPicker { width: parent.width; target: "bars" } } }
         }
-        UiLabel { text: "Todas as barras de uma vez" }
-        Row {
-            spacing: 8
-            UiButton { icon: BarState.barsOpen ? "eyeOff" : "eye"; text: BarState.barsOpen ? "Esconder todas agora" : "Mostrar todas"; kind: BarState.barsOpen ? "ghost" : "accent"; onClicked: BarState.barsOpen = !BarState.barsOpen }
+        SetRow {
+            icon: "view_column"; label: "Dividir em 3 abas"; description: "Cada seção vira uma barrinha própria presa na moldura"
+            UiButton { icon: "view_column"; text: "Dividir"; kind: "ghost"; enabled: page.secs.length > 0; onClicked: { page.splitTabs(); page.curSec = 0; page.openMod = -1 } }
         }
-        UiText {
-            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
-            text: "Para um atalho de teclado, use o comando qs -c mine ipc call bar toggle (ou open / close). A moldura continua na tela."
+        SetRow {
+            icon: BarState.barsOpen ? "eyeOff" : "eye"; label: "Todas as barras de uma vez"; description: "Atalho de teclado: qs -c mine ipc call bar toggle"
+            UiButton { text: BarState.barsOpen ? "Esconder todas" : "Mostrar todas"; kind: BarState.barsOpen ? "ghost" : "accent"; onClicked: BarState.barsOpen = !BarState.barsOpen }
+        }
+        SetRow {
+            visible: Settings.bars.length > 1
+            icon: "trash"; label: "Remover a barra " + (page.idx + 1)
+            UiButton { icon: "trash"; text: "Remover"; kind: "danger"; onClicked: { Settings.removeBar(page.idx); page.cur = 0 } }
         }
     }
 
-    Card {
-        icon: "dock"
-        title: "Quando um painel abre"
-        subtitle: "O que as barras do mesmo lado fazem quando o launcher, o seletor de wallpaper ou o Início saem da moldura. Vale para todas as barras."
-        UiSeg {
-            fill: true
-            options: [["push", "Abrir espaço", "swap_horizontal"], ["out", "Sair pela borda", "arrow_right"], ["sink", "Recolher", "arrowDown"]]
-            value: Settings.barsPanelMode
-            onPicked: v => Settings.barsPanelMode = v
-        }
-        UiText {
-            width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
-            text: ({ push: "As barras deslizam só até encostar no painel e continuam visíveis. Se não houver espaço, saem pela borda.",
-                     out: "As barras deslizam pela borda até sair da tela e voltam quando o painel fecha.",
-                     sink: "As barras que estão no caminho recolhem para dentro da moldura." })[Settings.barsPanelMode] ?? ""
-        }
-    }
-
-    Card {
+    // ================= SECOES E MODULOS =================
+    SetSection {
         visible: !!page.bar
-        icon: "view_column"
-        title: "Seções"
-        subtitle: "Cada seção é um grupo de módulos com posição própria. Enquanto esta página está aberta, as seções aparecem marcadas na própria barra (a escolhida em destaque)."
-        Flow {
-            width: parent.width
-            spacing: 6
-            Repeater {
-                model: page.sections.length
-                delegate: UiButton {
-                    required property int index
-                    text: page.sections[index] ? (page.sections[index].name || ("Seção " + (index + 1))) : ""
-                    checked: page.sec === index
-                    onClicked: { page.curSec = index; page.openMod = -1 }
+        title: "Seções e módulos"; icon: "view_column"; subtitle: "Cada seção é um grupo de módulos com posição própria"
+        SetBlock {
+            Flow {
+                width: parent.width
+                spacing: 6
+                Repeater {
+                    model: page.secs.length
+                    delegate: UiButton {
+                        required property int index
+                        text: page.secs[index] ? (page.secs[index].name || ("Seção " + (index + 1))) : ""
+                        checked: page.sec === index
+                        onClicked: { page.curSec = index; page.openMod = -1 }
+                    }
                 }
-            }
-            UiButton { icon: "plus"; text: "Nova seção"; kind: "ghost"; onClicked: { Settings.addSection(page.idx); page.curSec = page.sections.length; page.openMod = -1 } }
-        }
-        Row {
-            spacing: 12
-            width: parent.width
-            Column {
-                spacing: 8
-                width: (parent.width - 12) / 2
-                UiLabel { text: "Nome" }
-                UiField {
-                    width: parent.width
-                    text: page.sections[page.sec] ? page.sections[page.sec].name : ""
-                    placeholderText: "Seção " + (page.sec + 1)
-                    onEditingFinished: Settings.setSection(page.idx, page.sec, "name", text)
-                }
-            }
-            Column {
-                spacing: 8
-                width: (parent.width - 12) / 2
-                UiLabel { text: "Posição na barra" }
-                UiSeg {
-                    fill: true
-                    options: [["start", "", "alignLeft"], ["center", "", "alignCenter"], ["end", "", "alignRight"]]
-                    value: page.sections[page.sec] ? (page.sections[page.sec].anchor ?? "center") : "center"
-                    onPicked: v => Settings.setSection(page.idx, page.sec, "anchor", v)
-                }
+                UiButton { icon: "plus"; text: "Nova seção"; kind: "ghost"; onClicked: { Settings.addSection(page.idx); page.curSec = page.secs.length; page.openMod = -1 } }
             }
         }
-        UiLabel { text: "Alinhamento dos módulos dentro da seção" }
-        UiSeg {
-            options: [["start", "Início", "alignLeft"], ["center", "Centro", "alignCenter"], ["end", "Fim", "alignRight"]]
-            value: page.sections[page.sec] ? (page.sections[page.sec].align ?? "center") : "center"
-            onPicked: v => Settings.setSection(page.idx, page.sec, "align", v)
-        }
-        UiSlider { label: "Largura (0 = automática)"; from: 0; to: 3000; value: page.sections[page.sec] ? (page.sections[page.sec].width ?? 0) : 0; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "width", v) }
-        UiSlider { label: "Deslocamento"; from: -1500; to: 1500; value: page.sections[page.sec] ? (page.sections[page.sec].offset ?? 0) : 0; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "offset", v) }
-        UiSlider { label: "Espaço entre módulos"; from: 0; to: 40; value: page.sections[page.sec] ? (page.sections[page.sec].spacing ?? 14) : 14; suffix: " px"; onMoved: v => Settings.setSection(page.idx, page.sec, "spacing", v) }
-        UiLabel { text: "Estilo do grupo" }
-        UiSeg {
-            fill: true
-            options: [["section", "Uma pílula", "circleOutline"], ["pills", "Uma por módulo", "dotsGrid"], ["segmented", "Segmentado", "view_column"]]
-            value: page.sections[page.sec] ? (page.sections[page.sec].groupStyle ?? "section") : "section"
-            onPicked: v => Settings.setSection(page.idx, page.sec, "groupStyle", v)
-        }
-        UiSwitch { visible: (page.sections[page.sec] ? (page.sections[page.sec].groupStyle ?? "section") : "section") === "section"; label: "Fundo em pílula"; description: "Um fundo arredondado atrás dos módulos desta seção (grupos, como no end4)."; checked: page.sections[page.sec] ? !!page.sections[page.sec].bg : false; onToggled: on => Settings.setSection(page.idx, page.sec, "bg", on) }
-        Column {
-            readonly property bool has: page.sections[page.sec] ? (!!page.sections[page.sec].bg || (page.sections[page.sec].groupStyle ?? "section") !== "section") : false
-            visible: has
-            width: parent.width
-            spacing: 12
-            RoleRow {
-                label: "Cor do fundo (sem escolher, usa a cor do texto)"
-                allowNone: true
-                value: page.sections[page.sec] ? (page.sections[page.sec].bgRole ?? "") : ""
-                onPicked: v => Settings.setSection(page.idx, page.sec, "bgRole", v)
+        SetExpander {
+            icon: "tune"; label: "Ajustes da seção"; description: "Posição, alinhamento, tamanho e fundo"
+            SetRow { sub: true; label: "Nome"; UiField { width: 180; text: page.secObj ? page.secObj.name : ""; placeholderText: "Seção " + (page.sec + 1); onEditingFinished: Settings.setSection(page.idx, page.sec, "name", text) } }
+            SetChoice { sub: true; label: "Posição na barra"; iconsOnly: true; options: [["start", "Início", "alignLeft"], ["center", "Centro", "alignCenter"], ["end", "Fim", "alignRight"]]; value: page.secObj ? (page.secObj.anchor ?? "center") : "center"; onPicked: v => page.setSec("anchor", v) }
+            SetChoice { sub: true; label: "Alinhar os módulos"; iconsOnly: true; options: [["start", "Início", "alignLeft"], ["center", "Centro", "alignCenter"], ["end", "Fim", "alignRight"]]; value: page.secObj ? (page.secObj.align ?? "center") : "center"; onPicked: v => page.setSec("align", v) }
+            SetSlider { sub: true; label: "Largura"; from: 0; to: 3000; step: 10; unit: " px"; zeroLabel: "Automática"; def: 0; value: page.secObj ? (page.secObj.width ?? 0) : 0; onMoved: v => page.setSec("width", Math.round(v)) }
+            SetSlider { sub: true; label: "Deslocamento"; from: -1500; to: 1500; step: 10; unit: " px"; def: 0; value: page.secObj ? (page.secObj.offset ?? 0) : 0; onMoved: v => page.setSec("offset", Math.round(v)) }
+            SetSlider { sub: true; label: "Espaço entre módulos"; from: 0; to: 40; unit: " px"; def: 14; value: page.secObj ? (page.secObj.spacing ?? 14) : 14; onMoved: v => page.setSec("spacing", Math.round(v)) }
+            SetChoice { sub: true; label: "Estilo do grupo"; options: [["section", "Uma pílula", "circleOutline"], ["pills", "Uma por módulo", "dotsGrid"], ["segmented", "Segmentado", "view_column"]]; value: page.secObj ? (page.secObj.groupStyle ?? "section") : "section"; onPicked: v => page.setSec("groupStyle", v) }
+            SetRow { visible: (page.secObj ? (page.secObj.groupStyle ?? "section") : "section") === "section"; sub: true; label: "Fundo em pílula"; description: "Um fundo arredondado atrás dos módulos"; checked: page.secObj ? !!page.secObj.bg : false; onToggled: on => page.setSec("bg", on) }
+            SetColor {
+                visible: page.secObj ? (!!page.secObj.bg || (page.secObj.groupStyle ?? "section") !== "section") : false
+                sub: true; label: "Cor do fundo"; allowNone: true; note: ""
+                value: page.secObj ? (page.secObj.bgRole ?? "") : ""; onPicked: v => page.setSec("bgRole", v)
             }
-            UiSlider { label: "Opacidade do fundo"; from: 4; to: 100; value: page.sections[page.sec] ? (page.sections[page.sec].bgAlpha ?? 10) : 10; suffix: " %"; onMoved: v => Settings.setSection(page.idx, page.sec, "bgAlpha", Math.round(v)) }
-            UiSwitch { label: "Contorno na cor de destaque"; checked: page.sections[page.sec] ? !!page.sections[page.sec].bgBorder : false; onToggled: on => Settings.setSection(page.idx, page.sec, "bgBorder", on) }
+            SetSlider { visible: page.secObj ? (!!page.secObj.bg || (page.secObj.groupStyle ?? "section") !== "section") : false; sub: true; label: "Opacidade do fundo"; from: 4; to: 100; unit: " %"; def: 10; value: page.secObj ? (page.secObj.bgAlpha ?? 10) : 10; onMoved: v => page.setSec("bgAlpha", Math.round(v)) }
+            SetRow { visible: page.secObj ? (!!page.secObj.bg || (page.secObj.groupStyle ?? "section") !== "section") : false; sub: true; label: "Contorno na cor de destaque"; checked: page.secObj ? !!page.secObj.bgBorder : false; onToggled: on => page.setSec("bgBorder", on) }
+            SetRow { visible: page.secs.length > 1; sub: true; label: "Remover esta seção"; UiButton { icon: "trash"; text: "Remover"; kind: "danger"; onClicked: { Settings.removeSection(page.idx, page.sec); page.curSec = 0; page.openMod = -1 } } }
         }
-        UiButton { visible: page.sections.length > 1; icon: "trash"; text: "Remover esta seção"; kind: "danger"; onClicked: { Settings.removeSection(page.idx, page.sec); page.curSec = 0; page.openMod = -1 } }
-    }
-
-    Card {
-        visible: !!page.bar
-        icon: "apps"
-        title: "Módulos da seção"
-        subtitle: "Na ordem em que aparecem na barra."
         Repeater {
-            model: page.sections[page.sec] ? page.sections[page.sec].modules.length : 0
+            model: page.secObj ? page.secObj.modules.length : 0
             delegate: Column {
                 id: mrow
                 required property int index
-                readonly property var mod: page.sections[page.sec].modules[index] ?? ({})
-                readonly property bool hasField: mod.type === "clock" || mod.type === "text"
-                readonly property string mtype: mod.type
+                readonly property var mod: (page.secObj && page.secObj.modules[index]) ?? ({})
+                readonly property string mtype: mod.type ?? ""
+                readonly property bool hasField: mtype === "clock" || mtype === "text"
                 readonly property bool isMeter: mtype === "cpu" || mtype === "memory" || mtype === "volume" || mtype === "disk" || mtype === "swap"
                 readonly property var schema: BarModules.schema(mtype)
                 readonly property bool hasOpts: mtype === "workspaces" || isMeter || mtype === "tray" || mtype === "palette" || schema.length > 0
-                readonly property bool optsOpen: hasOpts && page.openMod === index
-                readonly property bool styleOpen: page.openStyle === index
+                readonly property bool optsOpen: hasOpts && page.openMod === index && page.openKind === "opts"
+                readonly property bool styleOpen: page.openMod === index && page.openKind === "style"
+                readonly property bool anyOpen: optsOpen || styleOpen
                 width: parent.width
-                spacing: 6
-
-                Rectangle {
-                    width: parent.width; height: 48; radius: 12
-                    color: Theme.track; border.width: 1; border.color: mrow.optsOpen ? Theme.accent : Theme.border
-
-                    Rectangle {
-                        id: mic
-                        anchors { left: parent.left; leftMargin: 8; verticalCenter: parent.verticalCenter }
-                        width: 32; height: 32; radius: 9
-                        color: Theme.tint(0.14)
-                        UiIcon { anchors.centerIn: parent; name: page.modIcons[mrow.mtype] ?? "apps"; size: 17; color: Theme.accent }
-                    }
-                    UiText {
-                        id: mname
-                        anchors { left: mic.right; leftMargin: 10; verticalCenter: parent.verticalCenter }
-                        width: 96
-                        color: Theme.text; font.pixelSize: 13; font.weight: Font.Medium
-                        text: (Settings.moduleTypes.find(t => t.type === mrow.mod.type) ?? { label: mrow.mod.type }).label
-                    }
-                    UiField {
-                        anchors { left: mname.right; right: btns.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
-                        height: 32
+                function set(k, v) { Settings.setModuleOpt(page.idx, page.sec, index, k, v) }
+                SetRow {
+                    icon: page.modIcons[mrow.mtype] ?? "apps"
+                    label: (Settings.moduleTypes.find(t => t.type === mrow.mtype) ?? { label: mrow.mtype }).label
+                    divider: true
+                    rowClick: mrow.hasOpts
+                    below: UiField {
                         visible: mrow.hasField
-                        text: mrow.mod.type === "clock" ? (mrow.mod.format ?? "") : (mrow.mod.text ?? "")
-                        placeholderText: mrow.mod.type === "clock" ? "formato, ex.: ddd HH:mm" : "texto"
-                        onEditingFinished: Settings.setModuleOpt(page.idx, page.sec, mrow.index, mrow.mod.type === "clock" ? "format" : "text", text)
+                        width: parent ? parent.width : 300; height: mrow.hasField ? 34 : 0
+                        text: mrow.mtype === "clock" ? (mrow.mod.format ?? "") : (mrow.mod.text ?? "")
+                        placeholderText: mrow.mtype === "clock" ? "formato, ex.: ddd HH:mm" : "texto"
+                        onEditingFinished: mrow.set(mrow.mtype === "clock" ? "format" : "text", text)
                     }
-                    Row {
-                        id: btns
-                        anchors { right: parent.right; rightMargin: 7; verticalCenter: parent.verticalCenter }
-                        spacing: 4
-                        UiButton { visible: mrow.hasOpts; icon: "tune"; text: "Opções"; pad: 10; checked: mrow.optsOpen; onClicked: { page.openStyle = -1; page.openMod = mrow.optsOpen ? -1 : mrow.index } }
-                        UiButton { icon: "brush"; pad: 10; checked: mrow.styleOpen; onClicked: { page.openMod = -1; page.openStyle = mrow.styleOpen ? -1 : mrow.index } }
-                        UiButton { visible: page.sections.length > 1; icon: "swap_horizontal"; pad: 10; text: "Seção " + (((page.sec + 1) % page.sections.length) + 1); onClicked: { page.openMod = -1; Settings.moveModuleTo(page.idx, page.sec, mrow.index, (page.sec + 1) % page.sections.length) } }
-                        UiButton { icon: "arrowUp"; kind: "ghost"; enabled: mrow.index > 0; onClicked: Settings.moveModule(page.idx, page.sec, mrow.index, -1) }
-                        UiButton { icon: "arrowDown"; kind: "ghost"; enabled: mrow.index < page.sections[page.sec].modules.length - 1; onClicked: Settings.moveModule(page.idx, page.sec, mrow.index, 1) }
-                        UiButton { icon: "trash"; kind: "danger"; onClicked: { page.openMod = -1; Settings.removeModule(page.idx, page.sec, mrow.index) } }
-                    }
+                    onClicked: { page.openKind = "opts"; page.openMod = mrow.optsOpen ? -1 : mrow.index }
+                    UiButton { visible: mrow.hasOpts; icon: "tune"; kind: "ghost"; checked: mrow.optsOpen; onClicked: { page.openKind = "opts"; page.openMod = mrow.optsOpen ? -1 : mrow.index } }
+                    UiButton { icon: "brush"; kind: "ghost"; checked: mrow.styleOpen; onClicked: { page.openKind = "style"; page.openMod = mrow.styleOpen ? -1 : mrow.index } }
+                    UiButton { visible: page.secs.length > 1; icon: "swap_horizontal"; kind: "ghost"; onClicked: { page.openMod = -1; Settings.moveModuleTo(page.idx, page.sec, mrow.index, (page.sec + 1) % page.secs.length) } }
+                    UiButton { icon: "arrowUp"; kind: "ghost"; enabled: mrow.index > 0; onClicked: Settings.moveModule(page.idx, page.sec, mrow.index, -1) }
+                    UiButton { icon: "arrowDown"; kind: "ghost"; enabled: mrow.index < page.secObj.modules.length - 1; onClicked: Settings.moveModule(page.idx, page.sec, mrow.index, 1) }
+                    UiButton { icon: "trash"; kind: "ghost"; onClicked: { page.openMod = -1; Settings.removeModule(page.idx, page.sec, mrow.index) } }
                 }
-
-                // fundo deste modulo: pilula propria, cor, opacidade, arredondamento e folga
-                Rectangle {
-                    visible: mrow.styleOpen
+                Loader {
+                    active: mrow.anyOpen
+                    asynchronous: true
                     width: parent.width
-                    height: visible ? stCol.implicitHeight + 28 : 0
-                    radius: 12
-                    color: Theme.track; border.width: 1; border.color: Theme.border
-                    Column {
-                        id: stCol
-                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14 }
-                        spacing: 12
-                        function set(k, v) { Settings.setModuleOpt(page.idx, page.sec, mrow.index, k, v) }
-                        UiSwitch { label: "Pílula própria"; description: "Um fundo só deste módulo. Nas seções com \"Uma por módulo\" todos já têm; desligue aqui para tirar este."; checked: mrow.mod.group ?? ((page.sections[page.sec].groupStyle ?? "section") === "pills"); onToggled: on => stCol.set("group", on) }
-                        RoleRow { label: "Cor da pílula (sem escolher, vale a da seção)"; allowNone: true; value: mrow.mod.bgRole ?? ""; onPicked: v => stCol.set("bgRole", v) }
-                        UiSlider { label: "Opacidade"; from: 4; to: 100; value: mrow.mod.bgAlpha ?? (page.sections[page.sec].bgAlpha ?? 14); suffix: " %"; onMoved: v => stCol.set("bgAlpha", Math.round(v)) }
-                        UiSlider { label: "Folga nas laterais"; from: 2; to: 24; value: mrow.mod.bgPad ?? 9; suffix: " px"; onMoved: v => stCol.set("bgPad", Math.round(v)) }
-                        UiSlider { label: "Arredondamento (0 = redonda)"; from: 0; to: 24; value: mrow.mod.bgRadius ?? 0; suffix: " px"; onMoved: v => stCol.set("bgRadius", v > 0 ? Math.round(v) : undefined) }
-                        UiSwitch { label: "Contorno"; checked: !!mrow.mod.bgBorder; onToggled: on => stCol.set("bgBorder", on) }
-                        UiButton { icon: "restore"; text: "Voltar ao padrão"; kind: "ghost"; onClicked: Settings.mutate(b => { const m = b[page.idx].sections[page.sec].modules[mrow.index]; for (const k of ["group", "bgRole", "bgAlpha", "bgPad", "bgRadius", "bgBorder"]) delete m[k] }) }
+                    height: item ? item.height : 0
+                    sourceComponent: mrow.styleOpen ? styleC : (mrow.mtype === "workspaces" ? wsC : (mrow.isMeter || mrow.mtype === "tray" || mrow.mtype === "palette") ? meterC : schemaC)
+                    Component {
+                        id: styleC
+                        Column {
+                            width: parent.width
+                            SetRow { sub: true; label: "Pílula própria"; description: "Um fundo só deste módulo"; checked: mrow.mod.group ?? ((page.secObj.groupStyle ?? "section") === "pills"); onToggled: on => mrow.set("group", on) }
+                            SetColor { sub: true; label: "Cor da pílula"; allowNone: true; value: mrow.mod.bgRole ?? ""; onPicked: v => mrow.set("bgRole", v) }
+                            SetSlider { sub: true; label: "Opacidade"; from: 4; to: 100; unit: " %"; value: mrow.mod.bgAlpha ?? (page.secObj.bgAlpha ?? 14); onMoved: v => mrow.set("bgAlpha", Math.round(v)) }
+                            SetSlider { sub: true; label: "Folga nas laterais"; from: 2; to: 24; unit: " px"; def: 9; value: mrow.mod.bgPad ?? 9; onMoved: v => mrow.set("bgPad", Math.round(v)) }
+                            SetSlider { sub: true; label: "Arredondamento"; from: 0; to: 24; unit: " px"; zeroLabel: "Redonda"; def: 0; value: mrow.mod.bgRadius ?? 0; onMoved: v => mrow.set("bgRadius", v > 0 ? Math.round(v) : undefined) }
+                            SetRow { sub: true; label: "Contorno"; checked: !!mrow.mod.bgBorder; onToggled: on => mrow.set("bgBorder", on) }
+                            SetRow { sub: true; label: "Voltar ao padrão"; UiButton { icon: "restore"; kind: "ghost"; onClicked: Settings.mutate(b => { const m = b[page.idx].sections[page.sec].modules[mrow.index]; for (const k of ["group", "bgRole", "bgAlpha", "bgPad", "bgRadius", "bgBorder"]) delete m[k] }) } }
+                        }
                     }
-                }
-
-                // opcoes de medidores (cpu, memoria, volume), da bandeja e das cores
-                Rectangle {
-                    visible: (mrow.isMeter || mrow.mtype === "tray" || mrow.mtype === "palette") && mrow.optsOpen
-                    width: parent.width
-                    height: visible ? mCol.implicitHeight + 28 : 0
-                    radius: 12
-                    color: Theme.track; border.width: 1; border.color: Theme.border
-                    Column {
-                        id: mCol
-                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14 }
-                        spacing: 12
-                        readonly property string disp: mrow.mod.display ?? "text"
-                        readonly property bool isCpuMem: mrow.mtype === "cpu" || mrow.mtype === "memory" || mrow.mtype === "disk" || mrow.mtype === "swap"
-                        readonly property bool isRound: mCol.disp === "ring" || mCol.disp === "disc"
-                        readonly property int warnDef: ({ cpu: 90, memory: 95, disk: 90, swap: 85 })[mrow.mtype] ?? 85
-                        function set(k, v) { Settings.setModuleOpt(page.idx, page.sec, mrow.index, k, v) }
-
-                        // ---- bandeja ----
-                        UiSlider { visible: mrow.mtype === "tray"; label: "Tamanho dos ícones"; from: 12; to: 32; value: mrow.mod.size ?? 18; suffix: " px"; onMoved: v => mCol.set("size", v) }
-                        UiSlider { visible: mrow.mtype === "tray"; label: "Espaçamento"; from: 0; to: 20; value: mrow.mod.spacing ?? 8; suffix: " px"; onMoved: v => mCol.set("spacing", v) }
-
-                        // ---- cores do tema ----
-                        UiSlider { visible: mrow.mtype === "palette"; label: "Tamanho das bolinhas"; from: 8; to: 28; value: mrow.mod.size ?? 14; suffix: " px"; onMoved: v => mCol.set("size", v) }
-                        UiSlider { visible: mrow.mtype === "palette"; label: "Espaçamento"; from: 0; to: 14; value: mrow.mod.spacing ?? 5; suffix: " px"; onMoved: v => mCol.set("spacing", v) }
-                        UiSeg {
-                            visible: mrow.mtype === "palette"
-                            options: [["all", "Todas"], ["accents", "Só destaques"], ["surfaces", "Só superfícies"]]
-                            value: mrow.mod.set ?? "all"
-                            onPicked: v => mCol.set("set", v)
-                        }
-
-                        // ---- medidores ----
-                        UiLabel { visible: mrow.isMeter; text: "Exibição" }
-                        UiSeg {
-                            visible: mrow.isMeter
-                            options: mCol.isCpuMem ? [["text", "Texto"], ["bar", "Barra"], ["graph", "Gráfico"], ["segments", "Segmentos"], ["ring", "Anel", "circleOutline"], ["disc", "Disco", "disc"]]
-                                : [["text", "Texto"], ["bar", "Barra"], ["segments", "Segmentos"], ["slider", "Ícone + barra"], ["ring", "Anel", "circleOutline"], ["disc", "Disco", "disc"]]
-                            value: mCol.disp
-                            onPicked: v => mCol.set("display", v)
-                        }
-                        Row {
-                            visible: mrow.isMeter
-                            spacing: 10
-                            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Rótulo"; color: Theme.text; font.pixelSize: 13; width: 90 }
-                            UiField {
-                                width: 180
-                                text: mrow.mod.label ?? ({ cpu: "CPU", memory: "RAM", disk: "DSK", swap: "SWP" })[mrow.mtype] ?? "VOL"
-                                placeholderText: "vazio = sem rótulo"
-                                onEditingFinished: mCol.set("label", text)
+                    Component {
+                        id: schemaC
+                        SetBlock {
+                            sub: true
+                            OptionsForm {
+                                width: parent.width
+                                schema: mrow.schema
+                                get: k => BarModules.value(mrow.mod, k)
+                                set: (k, v) => mrow.set(k, v)
+                                isShown: d => BarModules.shown(mrow.mod, d)
                             }
                         }
-                        UiSwitch { visible: mrow.isMeter; label: "Mostrar o valor em número"; checked: mrow.mod.showValue ?? (mCol.disp === "text"); onToggled: on => mCol.set("showValue", on) }
-                        UiSlider { visible: mrow.isMeter && mCol.disp !== "text" && !mCol.isRound; label: "Largura"; from: 20; to: 200; value: mrow.mod.width ?? 60; suffix: " px"; onMoved: v => mCol.set("width", v) }
-                        UiSlider { visible: mrow.isMeter && mCol.disp !== "text"; label: mCol.isRound ? "Tamanho" : "Altura"; from: mCol.isRound ? 14 : 6; to: 40; value: mrow.mod.height ?? (mCol.isRound ? 22 : 16); suffix: " px"; onMoved: v => mCol.set("height", v) }
-                        UiSwitch { visible: mCol.isCpuMem; label: "Cor de alerta"; description: "Fica amarelo e vermelho quando o uso está alto."; checked: !!mrow.mod.warn; onToggled: on => mCol.set("warn", on) }
-                        UiSlider { visible: mCol.isCpuMem && !!mrow.mod.warn; label: "Vermelho a partir de"; icon: "gauge"; from: 40; to: 100; value: mrow.mod.warnAt ?? mCol.warnDef; suffix: " %"; onMoved: v => mCol.set("warnAt", Math.round(v / 5) * 5) }
-                        UiSlider { visible: mCol.isCpuMem && mCol.disp === "graph"; label: "Pontos do gráfico"; from: 10; to: 120; value: mrow.mod.points ?? 30; onMoved: v => mCol.set("points", v) }
-                        UiSlider { visible: mCol.isCpuMem; label: "Atualização"; from: 500; to: 5000; value: mrow.mod.interval ?? (mCol.disp === "graph" ? 1000 : 2000); suffix: " ms"; onMoved: v => mCol.set("interval", Math.round(v / 100) * 100) }
-                        UiSlider { visible: mrow.mtype === "volume"; label: "Passo da roda do mouse"; from: 1; to: 20; value: mrow.mod.step ?? 5; suffix: " %"; onMoved: v => mCol.set("step", v) }
-                        UiSlider { visible: mrow.mtype === "volume" && mCol.disp === "segments"; label: "Quantidade de segmentos"; from: 4; to: 16; value: mrow.mod.segments ?? 8; onMoved: v => mCol.set("segments", v) }
-                        ColorField {
-                            visible: mrow.isMeter
-                            label: "Cor"
-                            value: mrow.mod.color ? mrow.mod.color : Settings.textColor
-                            onPicked: c => mCol.set("color", c.toString())
-                        }
                     }
-                }
-
-                // opcoes pelo formulario generico (modulos novos e as que faltavam nos antigos)
-                Rectangle {
-                    visible: mrow.schema.length > 0 && mrow.optsOpen
-                    width: parent.width
-                    height: visible ? gCol.implicitHeight + 28 : 0
-                    radius: 12
-                    color: Theme.track; border.width: 1; border.color: Theme.border
-                    OptionsForm {
-                        id: gCol
-                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14 }
-                        width: parent.width - 28
-                        schema: mrow.schema
-                        get: k => BarModules.value(mrow.mod, k)
-                        set: (k, v) => Settings.setModuleOpt(page.idx, page.sec, mrow.index, k, v)
-                        isShown: d => BarModules.shown(mrow.mod, d)
-                    }
-                }
-                // opcoes do modulo de workspaces
-                Rectangle {
-                    visible: mrow.mtype === "workspaces" && mrow.optsOpen
-                    width: parent.width
-                    height: visible ? wsCol.implicitHeight + 28 : 0
-                    radius: 12
-                    color: Theme.track; border.width: 1; border.color: Theme.border
-                    Column {
-                        id: wsCol
-                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14 }
-                        spacing: 12
-                        readonly property string style: mrow.mod.style ?? "numbers"
-                        UiLabel { text: "Estilo" }
-                        Flow {
+                    Component {
+                        id: meterC
+                        Column {
+                            id: mc
                             width: parent.width
-                            spacing: 6
-                            Repeater {
-                                model: [["numbers", "① Números"], ["dots", "• Pontos"], ["pills", "━ Pílulas"], ["squares", "▢ Quadrados"], ["bars", "| Barras"], ["ring", "◎ Anel"], ["icons", "▣ Ícone do app"], ["roman", "Ⅳ Romanos"], ["kanji", "三 Kanji"], ["custom", "★ Símbolos"], ["glyphs", "◆ Ícones fixos"], ["bridge", "⬭ Pílula que viaja"]]
-                                delegate: UiButton {
-                                    required property var modelData
-                                    text: modelData[1]
-                                    checked: wsCol.style === modelData[0]
-                                    onClicked: Settings.setModuleOpt(page.idx, page.sec, mrow.index, "style", modelData[0])
-                                }
+                            readonly property string disp: mrow.mod.display ?? "text"
+                            readonly property bool isCpuMem: mrow.mtype === "cpu" || mrow.mtype === "memory" || mrow.mtype === "disk" || mrow.mtype === "swap"
+                            readonly property bool isRound: disp === "ring" || disp === "disc"
+                            readonly property int warnDef: ({ cpu: 90, memory: 95, disk: 90, swap: 85 })[mrow.mtype] ?? 85
+                            // bandeja
+                            SetSlider { visible: mrow.mtype === "tray"; sub: true; label: "Tamanho dos ícones"; from: 12; to: 32; unit: " px"; def: 18; value: mrow.mod.size ?? 18; onMoved: v => mrow.set("size", Math.round(v)) }
+                            SetSlider { visible: mrow.mtype === "tray"; sub: true; label: "Espaçamento"; from: 0; to: 20; unit: " px"; def: 8; value: mrow.mod.spacing ?? 8; onMoved: v => mrow.set("spacing", Math.round(v)) }
+                            // cores do tema
+                            SetSlider { visible: mrow.mtype === "palette"; sub: true; label: "Tamanho das bolinhas"; from: 8; to: 28; unit: " px"; def: 14; value: mrow.mod.size ?? 14; onMoved: v => mrow.set("size", Math.round(v)) }
+                            SetSlider { visible: mrow.mtype === "palette"; sub: true; label: "Espaçamento"; from: 0; to: 14; unit: " px"; def: 5; value: mrow.mod.spacing ?? 5; onMoved: v => mrow.set("spacing", Math.round(v)) }
+                            SetChoice { visible: mrow.mtype === "palette"; sub: true; label: "Quais"; options: [["all", "Todas"], ["accents", "Destaques"], ["surfaces", "Superfícies"]]; value: mrow.mod.set ?? "all"; onPicked: v => mrow.set("set", v) }
+                            // medidores
+                            SetChoice {
+                                visible: mrow.isMeter
+                                sub: true; label: "Exibição"
+                                style: "tiles"; minTile: 90; thumbHeight: 34
+                                options: mc.isCpuMem ? [["text", "Texto", "alignLeft"], ["bar", "Barra", "bars"], ["graph", "Gráfico", "wave"], ["segments", "Segmentos", "dotsGrid"], ["ring", "Anel", "circleOutline"], ["disc", "Disco", "disc"]]
+                                    : [["text", "Texto", "alignLeft"], ["bar", "Barra", "bars"], ["segments", "Segmentos", "dotsGrid"], ["slider", "Ícone + barra", "tune"], ["ring", "Anel", "circleOutline"], ["disc", "Disco", "disc"]]
+                                value: mc.disp; onPicked: v => mrow.set("display", v)
                             }
+                            SetRow { visible: mrow.isMeter; sub: true; label: "Rótulo"; description: "Vazio = sem rótulo"
+                                UiField { width: 140; text: mrow.mod.label ?? ({ cpu: "CPU", memory: "RAM", disk: "DSK", swap: "SWP" })[mrow.mtype] ?? "VOL"; onEditingFinished: mrow.set("label", text) } }
+                            SetRow { visible: mrow.isMeter; sub: true; label: "Mostrar o valor em número"; checked: mrow.mod.showValue ?? (mc.disp === "text"); onToggled: on => mrow.set("showValue", on) }
+                            SetSlider { visible: mrow.isMeter && mc.disp !== "text" && !mc.isRound; sub: true; label: "Largura"; from: 20; to: 200; unit: " px"; def: 60; value: mrow.mod.width ?? 60; onMoved: v => mrow.set("width", Math.round(v)) }
+                            SetSlider { visible: mrow.isMeter && mc.disp !== "text"; sub: true; label: mc.isRound ? "Tamanho" : "Altura"; from: mc.isRound ? 14 : 6; to: 40; unit: " px"; value: mrow.mod.height ?? (mc.isRound ? 22 : 16); onMoved: v => mrow.set("height", Math.round(v)) }
+                            SetRow { visible: mc.isCpuMem; sub: true; label: "Cor de alerta"; description: "Amarelo e vermelho quando o uso está alto"; checked: !!mrow.mod.warn; onToggled: on => mrow.set("warn", on) }
+                            SetSlider { visible: mc.isCpuMem && !!mrow.mod.warn; sub: true; label: "Vermelho a partir de"; from: 40; to: 100; step: 5; unit: " %"; value: mrow.mod.warnAt ?? mc.warnDef; onMoved: v => mrow.set("warnAt", Math.round(v / 5) * 5) }
+                            SetSlider { visible: mc.isCpuMem && mc.disp === "graph"; sub: true; label: "Pontos do gráfico"; from: 10; to: 120; def: 30; value: mrow.mod.points ?? 30; onMoved: v => mrow.set("points", Math.round(v)) }
+                            SetSlider { visible: mc.isCpuMem; sub: true; label: "Atualização"; from: 500; to: 5000; step: 100; unit: " ms"; value: mrow.mod.interval ?? (mc.disp === "graph" ? 1000 : 2000); onMoved: v => mrow.set("interval", Math.round(v / 100) * 100) }
+                            SetSlider { visible: mrow.mtype === "volume"; sub: true; label: "Passo da roda do mouse"; from: 1; to: 20; unit: " %"; def: 5; value: mrow.mod.step ?? 5; onMoved: v => mrow.set("step", Math.round(v)) }
+                            SetSlider { visible: mrow.mtype === "volume" && mc.disp === "segments"; sub: true; label: "Segmentos"; from: 4; to: 16; def: 8; value: mrow.mod.segments ?? 8; onMoved: v => mrow.set("segments", Math.round(v)) }
+                            SetBlock { visible: mrow.isMeter; sub: true; ColorField { width: parent.width; label: "Cor"; value: mrow.mod.color ? mrow.mod.color : Settings.textColor; onPicked: c => mrow.set("color", c.toString()) } }
                         }
-                        UiField {
+                    }
+                    Component {
+                        id: wsC
+                        Column {
+                            id: wc
                             width: parent.width
-                            visible: wsCol.style === "custom"
-                            text: mrow.mod.symbols ?? ""
-                            placeholderText: "um símbolo por workspace, separados por espaço (ex.: ● ◆ ▲ ■ ★)"
-                            onEditingFinished: Settings.setModuleOpt(page.idx, page.sec, mrow.index, "symbols", text)
-                        }
-                        UiField {
-                            width: parent.width
-                            visible: wsCol.style === "glyphs"
-                            text: mrow.mod.glyphs ?? ""
-                            placeholderText: "nomes de ícones, um por workspace (ex.: home web music pencil image bell)"
-                            onEditingFinished: Settings.setModuleOpt(page.idx, page.sec, mrow.index, "glyphs", text)
-                        }
-                        UiLabel { text: "Animação" }
-                        AnimPicker { target: "workspaces" }
-                        UiSlider { label: "Tamanho"; from: 10; to: 40; value: mrow.mod.size ?? 22; suffix: " px"; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "size", v) }
-                        UiSlider { label: "Espaçamento"; from: 0; to: 24; value: mrow.mod.spacing ?? 6; suffix: " px"; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "spacing", v) }
-                        UiSlider { label: "Quantidade fixa (0 = automática)"; from: 0; to: 20; value: mrow.mod.count ?? 0; onMoved: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "count", v) }
-                        UiSwitch { label: "Em grupos (1-10, 11-20…)"; description: "Mostra só o grupo do workspace atual, com a quantidade fixa acima (10 se ficar em 0)."; checked: !!mrow.mod.paged; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "paged", on) }
-                        UiLabel { text: "Números nos pontos e anéis" }
-                        UiSeg { value: mrow.mod.showNumbers ?? "hold"; options: [["hold", "Com Super"], ["always", "Sempre"], ["never", "Nunca"]]; onPicked: v => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "showNumbers", v) }
-                        UiSwitch { label: "Ícone do app maior no canto"; checked: !!mrow.mod.appIcons; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "appIcons", on) }
-                        UiSwitch { visible: !!mrow.mod.appIcons; label: "Ícones monocromáticos"; checked: !!mrow.mod.mono; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "mono", on) }
-                        UiSwitch { label: "Só os ocupados (e o atual)"; checked: !!mrow.mod.onlyOccupied; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "onlyOccupied", on) }
-                        UiSwitch { label: "Roda do mouse dá a volta"; icon: "refresh"; description: "Do último workspace a roda volta ao primeiro. Desligado, ela para nas pontas."; checked: mrow.mod.wrap ?? true; onToggled: on => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "wrap", on) }
-                        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Clique troca de workspace; o botão direito abre a visão geral." }
-                        ColorField {
-                            label: "Cor do ativo"
-                            value: mrow.mod.activeColor ? mrow.mod.activeColor : Settings.textColor
-                            onPicked: c => Settings.setModuleOpt(page.idx, page.sec, mrow.index, "activeColor", c.toString())
+                            readonly property string style: mrow.mod.style ?? "numbers"
+                            SetChoice {
+                                sub: true; label: "Estilo"
+                                style: "tiles"; minTile: 100; thumbHeight: 34
+                                options: [["numbers", "① Números", "numeric"], ["dots", "• Pontos", "dotsGrid"], ["pills", "━ Pílulas", "pill"], ["squares", "▢ Quadrados", "squareRounded"], ["bars", "| Barras", "bars"], ["ring", "◎ Anel", "circleOutline"],
+                                          ["icons", "▣ Ícone do app", "apps"], ["roman", "Ⅳ Romanos", "numeric"], ["kanji", "三 Kanji", "view_grid"], ["custom", "★ Símbolos", "flower"], ["glyphs", "◆ Ícones fixos", "tag"], ["bridge", "⬭ Pílula que viaja", "swap_horizontal"]]
+                                value: wc.style; onPicked: v => mrow.set("style", v)
+                            }
+                            SetBlock { visible: wc.style === "custom"; sub: true; UiField { width: parent.width; text: mrow.mod.symbols ?? ""; placeholderText: "um símbolo por workspace, separados por espaço (ex.: ● ◆ ▲ ■ ★)"; onEditingFinished: mrow.set("symbols", text) } }
+                            SetBlock { visible: wc.style === "glyphs"; sub: true; UiField { width: parent.width; text: mrow.mod.glyphs ?? ""; placeholderText: "nomes de ícones, um por workspace (ex.: home web music pencil image bell)"; onEditingFinished: mrow.set("glyphs", text) } }
+                            SetSlider { sub: true; label: "Tamanho"; from: 10; to: 40; unit: " px"; def: 22; value: mrow.mod.size ?? 22; onMoved: v => mrow.set("size", Math.round(v)) }
+                            SetSlider { sub: true; label: "Espaçamento"; from: 0; to: 24; unit: " px"; def: 6; value: mrow.mod.spacing ?? 6; onMoved: v => mrow.set("spacing", Math.round(v)) }
+                            SetSlider { sub: true; label: "Quantidade fixa"; from: 0; to: 20; zeroLabel: "Automática"; def: 0; value: mrow.mod.count ?? 0; onMoved: v => mrow.set("count", Math.round(v)) }
+                            SetRow { sub: true; label: "Em grupos (1-10, 11-20…)"; description: "Só o grupo do workspace atual (10 se a quantidade fixa for 0)"; checked: !!mrow.mod.paged; onToggled: on => mrow.set("paged", on) }
+                            SetChoice { sub: true; label: "Números nos pontos e anéis"; options: [["hold", "Com Super"], ["always", "Sempre"], ["never", "Nunca"]]; value: mrow.mod.showNumbers ?? "hold"; onPicked: v => mrow.set("showNumbers", v) }
+                            SetRow { sub: true; label: "Ícone do app maior no canto"; checked: !!mrow.mod.appIcons; onToggled: on => mrow.set("appIcons", on) }
+                            SetRow { visible: !!mrow.mod.appIcons; sub: true; label: "Ícones monocromáticos"; checked: !!mrow.mod.mono; onToggled: on => mrow.set("mono", on) }
+                            SetRow { sub: true; label: "Só os ocupados (e o atual)"; checked: !!mrow.mod.onlyOccupied; onToggled: on => mrow.set("onlyOccupied", on) }
+                            SetRow { sub: true; label: "Roda do mouse dá a volta"; description: "Desligado, ela para nas pontas. Clique direito abre a visão geral"; checked: mrow.mod.wrap ?? true; onToggled: on => mrow.set("wrap", on) }
+                            SetBlock { sub: true; ColorField { width: parent.width; label: "Cor do ativo"; value: mrow.mod.activeColor ? mrow.mod.activeColor : Settings.textColor; onPicked: c => mrow.set("activeColor", c.toString()) } }
+                            SetBlock { sub: true; UiLabel { text: "Animação" } AnimPicker { width: parent.width; target: "workspaces" } }
                         }
                     }
                 }
             }
         }
-        UiLabel { text: "Adicionar módulo" }
-        Flow {
-            width: parent.width
-            spacing: 6
-            Repeater {
-                model: Settings.moduleTypes
-                delegate: UiButton {
-                    required property var modelData
-                    icon: page.modIcons[modelData.type] ?? "plus"
-                    text: modelData.label
-                    onClicked: Settings.addModule(page.idx, page.sec, modelData.type)
+        SetExpander {
+            icon: "plus"; label: "Adicionar módulo"; description: "Para a seção escolhida"
+            lazy: Component {
+                SetBlock {
+                    sub: true
+                    Flow {
+                        width: parent.width
+                        spacing: 6
+                        Repeater {
+                            model: Settings.moduleTypes
+                            delegate: UiButton {
+                                required property var modelData
+                                icon: page.modIcons[modelData.type] ?? "plus"
+                                text: modelData.label
+                                onClicked: Settings.addModule(page.idx, page.sec, modelData.type)
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    Card {
-        icon: "info"
-        title: "Detalhes e ilha dinâmica"
-        subtitle: "Parar o mouse em cima do relógio, clima, sistema, música, volume ou atualizações mostra um cartão com mais detalhes. A ilha dinâmica é um módulo (adicione numa seção): ela muda de forma com música, notificações, volume, timer e gravação — numa barra com \"Largura do conteúdo\" a moldura cresce junto."
-        UiSwitch { label: "Detalhes ao passar o mouse"; checked: Settings.barPopups; onToggled: on => Settings.barPopups = on }
-        UiSwitch { label: "Dicas de texto"; icon: "tag"; description: "Um balãozinho com o nome do botão, do ícone da bandeja ou do app do dock ao parar o mouse em cima."; checked: Settings.barTips; onToggled: on => Settings.barTips = on }
-        UiSlider { visible: Settings.barPopups; label: "Esperar antes de mostrar"; from: 100; to: 1500; value: Settings.barPopupDelay; suffix: " ms"; onMoved: v => Settings.barPopupDelay = Math.round(v / 50) * 50 }
-        UiSlider { label: "Uso da IA: limite da janela de 5 h"; icon: "robot"; from: 100; to: 5000; value: Math.round(Settings.aiLimit / 1000); suffix: " mil tokens"; onMoved: v => Settings.aiLimit = Math.round(v / 50) * 50000 }
-        UiSlider { label: "Uso da IA: ler de novo a cada"; icon: "refresh"; from: 30; to: 600; value: Settings.aiInterval; suffix: " s"; onMoved: v => Settings.aiInterval = Math.round(v / 10) * 10 }
-        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "O módulo \"Uso da IA\" lê só os arquivos do Claude Code que já estão neste PC (~/.claude): nada vai para a internet e nenhuma chave é usada. Sem esses arquivos ele some sozinho." }
-        UiLabel { text: "Animação dos detalhes" }
-        AnimPicker { target: "popups" }
-        UiLabel { text: "Animação da ilha (ao mudar de forma)" }
-        AnimPicker { target: "island" }
+    // ================= MOLDURA =================
+    SetSection {
+        title: "Moldura"; icon: "frame"
+        SetChoice {
+            icon: "window"; label: "Janela de configurações"; description: "Normal: o Hyprland cuida dela. Camada: desliza do topo do shell"
+            options: [["window", "Normal", "window"], ["layer", "Camada", "layers"]]
+            value: Settings.settingsWindowed ? "window" : "layer"
+            onPicked: v => { const open = Settings.settingsOpen; Settings.settingsOpen = false; Settings.settingsWindowed = v === "window"; if (open) Qt.callLater(() => Settings.settingsOpen = true) }
+        }
+        SetChoice {
+            icon: "layers"; label: "Composição"; description: "Integrado: tudo nasce da moldura. Independente: peças soltas"
+            style: "tiles"; columns: 3; thumbHeight: 96
+            options: [["integrated", "Integrado", "frame"], ["independent", "Independente", "cards"], ["mixed", Settings.composition === "mixed" ? "Misto (em uso)" : "Misto", "tune"]]
+            value: Settings.composition
+            onPicked: v => { if (v !== "mixed") Settings.applyComposition(v) }
+            thumb: Item {
+                id: ct
+                property var opt
+                property bool on
+                property bool hovered
+                CompPreview {
+                    anchors.centerIn: parent
+                    width: Math.min(parent.width - 8, (parent.height - 4) * 1.6)
+                    dock: ct.opt && ct.opt[0] === "integrated" ? ({ bars: true, launcher: true, notifications: true, osd: true })
+                        : ct.opt && ct.opt[0] === "independent" ? ({ bars: false, launcher: false, notifications: false, osd: false })
+                        : (Settings.composition === "mixed" ? null : ({ bars: true, launcher: false, notifications: true, osd: false }))
+                }
+            }
+        }
+        SetExpander {
+            icon: "tune"; label: "Parte a parte"; description: "O que sai da moldura e o que flutua"
+            lazy: Component {
+                Column {
+                    width: parent.width
+                    Repeater {
+                        model: Settings.compParts
+                        delegate: SetRow {
+                            id: pr
+                            required property var modelData
+                            sub: true
+                            label: modelData.label
+                            description: modelData.hint ?? ""
+                            readonly property bool docked: Settings.partDocked(modelData.id)
+                            UiSeg {
+                                options: [[true, "Na moldura", "frame"], [false, "Solto", "cards"]]
+                                value: pr.docked
+                                onPicked: v => Settings.setPartDocked(pr.modelData.id, v)
+                            }
+                            UiButton { visible: pr.modelData.page !== "frame"; icon: "chevRight"; kind: "ghost"; onClicked: Settings.settingsPage = pr.modelData.page }
+                        }
+                    }
+                }
+            }
+        }
+        SetRow { icon: "frame"; label: "Contorno na tela"; description: "A faixa fina em volta da tela inteira"; checked: Settings.outline; onToggled: on => Settings.outline = on }
+        SetSlider { icon: "frame"; label: "Espessura do contorno"; from: 2; to: 16; unit: " px"; def: 6; value: Settings.edge; onMoved: v => Settings.edge = Math.round(v) }
+        SetSlider { icon: "rounded"; label: "Cantos da tela"; from: 0; to: 40; unit: " px"; def: 16; value: Settings.cornerRadius; onMoved: v => Settings.cornerRadius = Math.round(v) }
+        SetColor {
+            visible: Settings.themeOn
+            icon: "swatch"; label: "Cor da moldura e das barras"; allowNone: true
+            roles: ["primaryContainer", "secondaryContainer", "tertiaryContainer", "surfaceHigh", "primary", "secondary", "tertiary"]
+            value: Settings.frameRole; onPicked: v => Settings.frameRole = v
+        }
+        SetSlider { icon: "curve"; label: "Curva da subida"; description: "Como a faixa sobe até cada barra acoplada"; from: 0; to: 30; unit: " px"; def: 10; value: Settings.fillet; onMoved: v => Settings.fillet = Math.round(v) }
+        SetSlider { icon: "rounded"; label: "Cantos do topo das barras"; from: 0; to: 30; unit: " px"; def: 12; value: Settings.topRadius; onMoved: v => Settings.topRadius = Math.round(v) }
+        SetChoice {
+            icon: "dock"; label: "Quando um painel abre"; description: "O que as barras do mesmo lado fazem"
+            options: [["push", "Abrir espaço", "swap_horizontal"], ["out", "Sair", "arrow_right"], ["sink", "Recolher", "arrowDown"]]
+            value: Settings.barsPanelMode; onPicked: v => Settings.barsPanelMode = v
+        }
     }
 
-    Row {
-        visible: Settings.bars.length > 1
-        UiButton { icon: "trash"; text: "Remover a barra " + (page.idx + 1); kind: "danger"; onClicked: { Settings.removeBar(page.idx); page.cur = 0 } }
+    // ================= INDICADOR DE VOLUME =================
+    SetSection {
+        title: "Indicador de volume"; icon: "volume"; subtitle: "Aparece quando o volume ou o microfone mudam"
+        SetRow { icon: "eye"; label: "Mostrar o indicador"; description: "Também com as teclas de mídia, mostrando o que toca"; checked: Settings.osdOn; onToggled: on => Settings.osdOn = on }
+        SetChoice { icon: "dock"; label: "Lado"; options: [["left", "Esquerda", "alignLeft"], ["top", "Topo", "arrowUp"], ["bottom", "Base", "arrowDown"], ["right", "Direita", "alignRight"]]; value: Settings.osdSide; onPicked: v => Settings.osdSide = v }
+        SetSlider { icon: "timer"; label: "Tempo na tela"; from: 600; to: 4000; step: 100; unit: " ms"; def: 1400; value: Settings.osdTimeout; onMoved: v => Settings.osdTimeout = Math.round(v / 100) * 100 }
+        SetRow { icon: "play"; label: "Ver agora"; UiButton { icon: "play"; text: "Mostrar"; onClicked: Osd.preview() } }
+        SetExpander { icon: "animation"; label: "Animação"; lazy: Component { SetBlock { sub: true; AnimPicker { width: parent.width; target: "osd" } } } }
+    }
+
+    // ================= DETALHES E ILHA =================
+    SetSection {
+        title: "Detalhes e ilha dinâmica"; icon: "info"; subtitle: "Cartões ao parar o mouse e o uso da IA"
+        SetRow { icon: "info"; label: "Detalhes ao passar o mouse"; description: "Relógio, clima, sistema, música, volume e atualizações"; checked: Settings.barPopups; onToggled: on => Settings.barPopups = on }
+        SetRow { icon: "tag"; label: "Dicas de texto"; description: "Balãozinho com o nome do botão, do ícone ou do app"; checked: Settings.barTips; onToggled: on => Settings.barTips = on }
+        SetSlider { visible: Settings.barPopups; icon: "timer"; label: "Esperar antes de mostrar"; from: 100; to: 1500; step: 50; unit: " ms"; def: 450; value: Settings.barPopupDelay; onMoved: v => Settings.barPopupDelay = Math.round(v / 50) * 50 }
+        SetExpander {
+            icon: "robot"; label: "Uso da IA"; description: "Lê só os arquivos do Claude Code deste PC (~/.claude); nada vai para a internet"
+            SetSlider { sub: true; label: "Limite da janela de 5 h"; from: 100; to: 5000; step: 50; unit: " mil"; def: 1000; value: Math.round(Settings.aiLimit / 1000); onMoved: v => Settings.aiLimit = Math.round(v / 50) * 50000 }
+            SetSlider { sub: true; label: "Ler de novo a cada"; from: 30; to: 600; step: 10; unit: " s"; def: 60; value: Settings.aiInterval; onMoved: v => Settings.aiInterval = Math.round(v / 10) * 10 }
+        }
+        SetExpander {
+            icon: "animation"; label: "Animações"; description: "Dos detalhes e da ilha ao mudar de forma"
+            lazy: Component { SetBlock { sub: true; UiLabel { text: "Detalhes" } AnimPicker { width: parent.width; target: "popups" } UiLabel { text: "Ilha (ao mudar de forma)" } AnimPicker { width: parent.width; target: "island" } } }
+        }
     }
 }

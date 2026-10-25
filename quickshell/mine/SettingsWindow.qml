@@ -65,8 +65,8 @@ Scope {
     readonly property var allPages: groups.reduce((a, g) => a.concat(g.pages), [])
     // id antigo -> [entrada nova, cartao para rolar, sub-pagina]
     readonly property var aliases: ({
-        overview: ["start"], look: ["theme"], frame: ["bars", "Janela de configurações"], blur: ["win", "Blur do Hyprland"], hypr: ["win"],
-        home: ["panels", "", "home"], launcher: ["panels", "", "launcher"], notifications: ["panels", "", "notifications"],
+        overview: ["start"], look: ["theme"], frame: ["bars", "Moldura"], blur: ["win", "Blur do Hyprland"], hypr: ["win"],
+        home: ["panels", "", "home"], launcher: ["panels", "", "launcher"], notifications: ["panels", "", "notifications"], more: ["panels", "", "more"],
         system: ["input"], session: ["power"], wallpaper: ["wall"], about: ["account", "Sobre este computador"], profile: ["account"]
     })
     readonly property string curId: (aliases[Settings.settingsPage] ?? [Settings.settingsPage])[0]
@@ -111,18 +111,19 @@ Scope {
         keys: keysC, apps: appsC, sound: soundC, net: netC, display: displayC, input: systemC, power: sessionC, time: timeC, tools: toolsC, account: accountC })
     // o que a busca percorre: cada entrada; Paineis vira uma fonte por painel (a sub-pagina vai junto no resultado)
     readonly property var indexSources: allPages.reduce((a, pg) => a.concat(pg.id === "panels"
-        ? [{ pg: pg, comp: homeC, sub: "home" }, { pg: pg, comp: launcherC, sub: "launcher" }, { pg: pg, comp: notifC, sub: "notifications" }]
+        ? [{ pg: pg, comp: homeC, sub: "home" }, { pg: pg, comp: launcherC, sub: "launcher" }, { pg: pg, comp: notifC, sub: "notifications" }, { pg: pg, comp: moreC, sub: "more" }]
         : [{ pg: pg, comp: comps[pg.id], sub: "" }]), [])
     Item { id: indexHost; visible: false; width: 760; height: 10 }
     Component { id: startC; PageStart {} }
     Component { id: themeC; PageTheme {} }
     Component { id: wallC; PageWall {} }
     Component { id: desktopC; PageDesktop {} }
-    Component { id: barsC; Column { spacing: 14; PageBars { width: parent.width; geo: root.geo } PageFrame { width: parent.width } } }
+    Component { id: barsC; PageBars { geo: root.geo } }
     Component { id: panelsC; PagePanels {} }
     Component { id: homeC; PageHome {} }
     Component { id: launcherC; PageLauncher {} }
     Component { id: notifC; PageNotifications {} }
+    Component { id: moreC; PagePanelsMore {} }
     Component { id: winC; Column { spacing: 14; PageHypr { width: parent.width } ShadowCard { width: parent.width } PageBlur { width: parent.width } } }
     Component { id: animC; PageAnim {} }
     Component { id: looksC; PageLooks {} }

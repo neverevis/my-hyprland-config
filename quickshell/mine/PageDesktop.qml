@@ -1,11 +1,13 @@
-// Pagina "Widgets": padroes da area de trabalho, catalogo por grupo, os widgets na tela com todas as opcoes
-// (mesmo formulario do inspetor), a cor padrao dos widgets, clima, layouts prontos e a animacao dos widgets (visuais completos: PageLooks).
+// Pagina "Area de trabalho" (kit Set*): widgets sobre o wallpaper. Mostrar/editar/travar, adicionar (chips por grupo),
+// os widgets na tela (linha com opcoes completas so no aberto), aparencia, comportamento, layouts prontos, clima e animacao.
+// Lista "Na tela": modelo estavel (ids) + corpo pesado num Loader so quando aberto (regras de desempenho do RULES.md).
 import Quickshell
 import QtQuick
 
-Column {
+SetPage {
     id: page
-    spacing: 14
+    title: "Área de trabalho"
+    subtitle: (Settings.desktopWidgets || []).length + " widget(s) na tela. Clique direito no fundo abre o menu."
     property string toast: ""
     property string openId: DeskState.selected
     // ids dos widgets: so muda quando entra/sai um widget (o array novo a cada opcao alterada recriava a lista inteira)
@@ -16,276 +18,261 @@ Column {
     Timer { id: toastT; interval: 2200; onTriggered: page.toast = "" }
     function say(s) { toast = s; toastT.restart() }
 
-    Card {
-        icon: "dashboard"
-        title: "Área de trabalho"
-        subtitle: "Widgets por cima do wallpaper e por baixo das janelas. Clique direito no fundo da área de trabalho abre o menu (adicionar no ponto clicado, editar, wallpaper, presets)."
-        UiSwitch { label: "Mostrar os widgets"; icon: "eye"; checked: Settings.desktopOn; onToggled: on => Settings.desktopOn = on }
-        Row {
-            spacing: 8
-            UiButton { icon: DeskState.editing ? "check" : "pencil"; text: DeskState.editing ? "Terminar edição" : "Editar na tela"; kind: "accent"; onClicked: { DeskState.editing = !DeskState.editing; if (DeskState.editing) Settings.settingsOpen = false } }
-            UiButton { icon: DeskState.locked ? "lockOpen" : "lock"; text: DeskState.locked ? "Destravar posições" : "Travar posições"; kind: "ghost"; onClicked: Settings.desktopLocked = !Settings.desktopLocked }
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: (Settings.desktopWidgets || []).length + " widget(s) na tela"; color: Theme.muted; font.pixelSize: 12 }
+    SetSection {
+        title: "Widgets"; icon: "dashboard"
+        SetRow { icon: "eye"; label: "Mostrar os widgets"; description: "Por cima do wallpaper e por baixo das janelas"; checked: Settings.desktopOn; onToggled: on => Settings.desktopOn = on }
+        SetRow {
+            icon: "pencil"; label: "Editar na tela"; description: "Arraste, redimensione e ajuste direto na área de trabalho"
+            UiButton { icon: DeskState.editing ? "check" : "pencil"; text: DeskState.editing ? "Terminar edição" : "Editar"; kind: "accent"; onClicked: { DeskState.editing = !DeskState.editing; if (DeskState.editing) Settings.settingsOpen = false } }
         }
-        UiLabel { text: "Fundo padrão dos widgets" }
-        CardStylePicker { width: parent.width; withAuto: false; value: Settings.desktopCardStyle; onPicked: v => Settings.desktopCardStyle = v }
-        UiLabel { text: "Tamanho da grade" }
-        UiSeg { options: [["default", "Padrão", "view_grid"], ["compact", "Compacta", "grid"]]; value: Settings.desktopGridSize; onPicked: v => Settings.desktopGridSize = v }
-        UiSlider { label: "Opacidade do cartão"; icon: "glass"; from: 0; to: 100; value: Settings.desktopCard; suffix: " %"; onMoved: v => Settings.desktopCard = v }
-        ToneSwatches {
-            width: parent.width
-            label: "Cor dos widgets"
-            value: Settings.desktopTone
-            custom: Settings.desktopToneColor
-            onPicked: v => Settings.desktopTone = v
+        SetRow { icon: DeskState.locked ? "lock" : "lockOpen"; label: "Travar posições"; description: "Os widgets deixam de ser arrastados"; checked: Settings.desktopLocked; onToggled: on => Settings.desktopLocked = on }
+    }
+
+    // ---- adicionar: chips compactos por grupo ----
+    SetSection {
+        title: "Adicionar"; icon: "plus"
+        SetBlock {
+            Repeater {
+                model: DeskState.groups
+                delegate: Column {
+                    id: grp
+                    required property var modelData
+                    width: parent.width
+                    spacing: SetK.sm
+                    UiText { text: grp.modelData.label; color: Theme.muted; font.pixelSize: SetK.fDesc; font.weight: Font.DemiBold }
+                    Flow {
+                        width: parent.width
+                        spacing: SetK.sm
+                        Repeater {
+                            model: DeskState.catalog.filter(c => c.group === grp.modelData.id)
+                            delegate: Rectangle {
+                                id: chip
+                                required property var modelData
+                                height: 38; width: cr.implicitWidth + 30; radius: 12
+                                color: cm.containsMouse ? Theme.cardHi : Theme.track
+                                border.width: 1; border.color: cm.containsMouse ? Theme.accent : Theme.border
+                                Row {
+                                    id: cr
+                                    anchors.centerIn: parent
+                                    spacing: 8
+                                    UiIcon { name: chip.modelData.icon; size: 16; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                                    UiText { text: chip.modelData.name; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                                }
+                                MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    onClicked: { Settings.desktopOn = true; const id = DeskState.add(chip.modelData.type); page.openId = id; page.say(chip.modelData.name + " adicionado") } }
+                            }
+                        }
+                    }
+                }
+            }
+            UiText { visible: page.toast !== ""; text: page.toast; color: Theme.accent; font.pixelSize: 12 }
         }
-        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
-            text: Settings.desktopTone === "auto" ? "Automática: texto claro ou escuro conforme o wallpaper embaixo de cada widget, destaques na cor do tema."
-                : Settings.desktopTone === "neutral" ? "Neutra: só o texto do tema, sem cor de destaque."
-                : Settings.desktopTone === "custom" ? "Uma cor só para todos os widgets." : Settings.desktopTone.indexOf("wall") === 0 ? "Uma cor que existe no wallpaper: muda junto quando o wallpaper muda." : "Cartões no tom suave dessa cor da paleta, texto e destaques nela. Muda junto com o tema." }
-        ColorField { visible: Settings.desktopTone === "custom"; label: "Minha cor"; value: Settings.desktopToneColor; onPicked: c => Settings.desktopToneColor = c.toString() }
-        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Cada widget pode ter a própria cor nas opções dele (ou seguir esta, em \"Padrão\")." }
-        UiSwitch { label: "Sombra nos widgets"; icon: "layers"; description: "Deixa o texto legível em cima de qualquer wallpaper. Estilo, intensidade e tamanho: Aparência › Sombras e brilhos."; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }
-        UiSwitch { label: "Encaixar na grade ao arrastar"; description: "Grade de 24 px e guias no centro da tela."; checked: Settings.desktopSnap; onToggled: on => Settings.desktopSnap = on }
-        UiSwitch { label: "Arrastar sem modo de edição"; icon: "cursorMove"; description: "Mover os widgets direto na área de trabalho (clique direito abre o menu). Travar posições desliga."; checked: Settings.desktopAlwaysDrag; onToggled: on => Settings.desktopAlwaysDrag = on }
-        UiSwitch { label: "Grade ao arrastar"; icon: "grid"; description: "Mostra a grade de pontos só enquanto um widget é movido."; checked: Settings.desktopGrid; onToggled: on => Settings.desktopGrid = on }
-        UiSwitch { label: "Linhas de alinhamento ao soltar"; icon: "alignCenter"; description: "As bordas do widget piscam por 2 s depois de soltar."; checked: Settings.desktopSnapLines; onToggled: on => Settings.desktopSnapLines = on }
-        UiSwitch { label: "Desfoque atrás dos widgets"; icon: "blur"; description: "O desfoque do Hyprland por trás dos cartões e do vidro. A intensidade é a da página Blur."; checked: Settings.desktopBlur; onToggled: on => Settings.desktopBlur = on }
-        UiLabel { text: "Mostrar widgets em" }
-        UiSeg {
+    }
+
+    // ---- na tela: um item por widget; o corpo (previa + opcoes) so existe no aberto ----
+    SetSection {
+        title: "Na tela"; icon: "tune"; subtitle: "Clique num widget para ver todas as opções dele"
+        SetRow { visible: !page.wids.length; icon: "dashboard"; label: "Nenhum widget ainda"; description: "Escolha um em Adicionar" }
+        Repeater {
+            model: page.wids
+            delegate: Column {
+                id: row
+                required property var modelData
+                required property int index
+                readonly property var w: { Settings.desktopWidgets; return DeskState.find(modelData) }
+                readonly property var info: w ? DeskState.info(w.type) : null
+                readonly property bool open: page.openId === modelData
+                width: parent.width
+                SetRow {
+                    icon: row.info ? row.info.icon : "dashboard"
+                    label: row.info ? row.info.name : ""
+                    description: row.w ? row.w.cols + "×" + row.w.rows + "  ·  " + ({ auto: "fundo padrão", card: "cartão", glass: "vidro", none: "sem fundo" })[DeskState.opt(row.w, "card")] ?? "estilo próprio" + (DeskState.opt(row.w, "lock") ? "  ·  na tela de bloqueio" : "") + (DeskState.opt(row.w, "place") !== "free" ? "  ·  posição automática" : "") : ""
+                    divider: row.index > 0
+                    rowClick: true
+                    onClicked: page.openId = row.open ? "" : row.modelData
+                    UiButton { icon: "cards"; kind: "ghost"; onClicked: DeskState.duplicate(row.modelData) }
+                    UiButton { icon: "trash"; kind: "ghost"; onClicked: { if (page.openId === row.modelData) page.openId = ""; DeskState.remove(row.modelData) } }
+                    UiIcon { name: "chevDown"; size: 20; color: Theme.muted; rotation: row.open ? 180 : 0 }
+                }
+                Loader {
+                    id: body
+                    active: row.open
+                    asynchronous: true
+                    width: parent.width
+                    height: item ? item.height : 0
+                    sourceComponent: SetBlock {
+                        WidgetPreview {
+                            width: parent.width
+                            height: Math.min(240, Math.max(150, width * 0.34))
+                            w: row.w
+                        }
+                        SizePicker {
+                            width: parent.width
+                            sizes: row.info ? row.info.sizes : []
+                            cols: row.w ? row.w.cols : 1
+                            rows: row.w ? row.w.rows : 1
+                            onPicked: (c, r) => DeskState.setSize(row.modelData, c, r)
+                        }
+                        OptionsForm {
+                            width: parent.width
+                            sectionIcons: DeskState.secIcons
+                            previewType: row.w ? row.w.type : ""
+                            previewOpts: row.w ? (row.w.opts || {}) : ({})
+                            previewCols: row.w ? row.w.cols : 2
+                            previewRows: row.w ? row.w.rows : 2
+                            schema: row.w ? DeskState.optionsOf(row.w.type) : []
+                            get: k => row.w ? DeskState.opt(row.w, k) : undefined
+                            set: (k, v) => DeskState.setOpt(row.modelData, k, v)
+                            isShown: d => row.w ? DeskState.shown(row.w, d) : false
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ---- aparencia padrao ----
+    SetSection {
+        title: "Aparência"; icon: "palette"
+        SetRow {
+            icon: "cards"; label: "Fundo padrão"; description: "Cada widget pode ter o próprio nas opções dele"
+            below: CardStylePicker { width: parent ? parent.width : 300; withAuto: false; value: Settings.desktopCardStyle; onPicked: v => Settings.desktopCardStyle = v }
+        }
+        SetSlider { icon: "glass"; label: "Opacidade do cartão"; from: 0; to: 100; unit: " %"; value: Settings.desktopCard; onMoved: v => Settings.desktopCard = Math.round(v) }
+        SetRow {
+            icon: "swatch"; label: "Cor dos widgets"
+            description: Settings.desktopTone === "auto" ? "Automática: texto claro ou escuro conforme o wallpaper"
+                : Settings.desktopTone === "neutral" ? "Neutra: só o texto do tema, sem destaque"
+                : Settings.desktopTone === "custom" ? "Uma cor só para todos" : Settings.desktopTone.indexOf("wall") === 0 ? "Uma cor do wallpaper (muda junto com ele)" : "Tom suave dessa cor da paleta"
+            below: ToneSwatches { width: parent ? parent.width : 300; label: ""; value: Settings.desktopTone; custom: Settings.desktopToneColor; onPicked: v => Settings.desktopTone = v }
+        }
+        SetRow { visible: Settings.desktopTone === "custom"; sub: true; label: "Minha cor"
+            below: ColorField { width: parent ? parent.width : 300; label: ""; value: Settings.desktopToneColor; onPicked: c => Settings.desktopToneColor = c.toString() } }
+        SetChoice { icon: "grid"; label: "Tamanho da grade"; options: [["default", "Padrão", "view_grid"], ["compact", "Compacta", "grid"]]; value: Settings.desktopGridSize; onPicked: v => Settings.desktopGridSize = v }
+        SetRow { icon: "layers"; label: "Sombra nos widgets"; description: "Texto legível sobre qualquer wallpaper (ajuste em Janelas)"; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }
+        SetRow { icon: "blur"; label: "Desfoque atrás dos widgets"; description: "O desfoque do Hyprland atrás dos cartões e do vidro"; checked: Settings.desktopBlur; onToggled: on => Settings.desktopBlur = on }
+    }
+
+    // ---- comportamento ----
+    SetSection {
+        title: "Comportamento"; icon: "cursorMove"
+        SetChoice {
+            icon: "monitor"; label: "Mostrar widgets em"
             readonly property var sc: Quickshell.screens
             options: [["", "Principal"]].concat(sc.map(s => [s.name, s.name]))
             value: Settings.list(Settings.desktopScreens)[0] ?? ""
             onPicked: v => Settings.desktopScreens = v === "" ? [] : [v]
         }
-        UiSwitch { label: "Menu de clique direito na área de trabalho"; icon: "menu"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }
-        Column {
+        SetRow { icon: "cursorMove"; label: "Arrastar sem modo de edição"; description: "Mover direto na área de trabalho (travar desliga)"; checked: Settings.desktopAlwaysDrag; onToggled: on => Settings.desktopAlwaysDrag = on }
+        SetRow { icon: "menu"; label: "Menu de clique direito"; description: "No fundo da área de trabalho"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }
+        SetExpander {
+            icon: "grid"; label: "Grade e encaixe"; description: "Alinhamento ao arrastar"
+            SetRow { sub: true; label: "Encaixar na grade ao arrastar"; description: "Grade de 24 px e guias no centro da tela"; checked: Settings.desktopSnap; onToggled: on => Settings.desktopSnap = on }
+            SetRow { sub: true; label: "Mostrar a grade ao arrastar"; description: "Pontos só enquanto um widget é movido"; checked: Settings.desktopGrid; onToggled: on => Settings.desktopGrid = on }
+            SetRow { sub: true; label: "Linhas de alinhamento ao soltar"; description: "As bordas piscam por 2 s"; checked: Settings.desktopSnapLines; onToggled: on => Settings.desktopSnapLines = on }
+        }
+        SetExpander {
             visible: Settings.desktopMenu
-            width: parent.width
-            spacing: 8
-            UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12; text: "Widgets que aparecem em \"Adicionar widget\" no menu (clique para tirar ou pôr de volta):" }
-            Flow {
-                width: parent.width
-                spacing: 5
-                Repeater {
-                    model: DeskState.catalog
-                    delegate: Rectangle {
-                        required property var modelData
-                        readonly property bool on: Settings.list(Settings.desktopMenuHidden).indexOf(modelData.type) < 0
-                        height: 30; width: mr.implicitWidth + 22; radius: 10
-                        color: on ? Theme.tint(0.16) : (mm.containsMouse ? Theme.cardHi : "transparent")
-                        border.width: 1; border.color: on ? Theme.accent : Theme.border
-                        opacity: on ? 1 : 0.6
-                        Row {
-                            id: mr
-                            anchors.centerIn: parent
-                            spacing: 6
-                            UiIcon { name: modelData.icon; size: 14; color: parent.parent.on ? Theme.accent : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-                            UiText { text: modelData.name; color: Theme.text; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; font.strikeout: !parent.parent.on }
-                        }
-                        MouseArea { id: mm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: { const l = Settings.list(Settings.desktopMenuHidden), i = l.indexOf(modelData.type); if (i >= 0) l.splice(i, 1); else l.push(modelData.type); Settings.desktopMenuHidden = l } }
-                    }
-                }
-            }
-        }
-    }
-
-    Card {
-        icon: "plus"
-        title: "Adicionar"
-        subtitle: "O widget entra no canto de cima e já fica selecionado para arrastar e ajustar."
-        Repeater {
-            model: DeskState.groups
-            delegate: Column {
-                id: grp
-                required property var modelData
-                width: parent.width
-                spacing: 6
-                UiLabel { text: grp.modelData.label }
-                Flow {
-                    width: parent.width
-                    spacing: 8
-                    Repeater {
-                        model: DeskState.catalog.filter(c => c.group === grp.modelData.id)
-                        delegate: Rectangle {
-                            required property var modelData
-                            width: 212; height: 66; radius: 14
-                            color: cm.containsMouse ? Theme.cardHi : Theme.track
-                            border.width: 1; border.color: cm.containsMouse ? Theme.accent : Theme.border
-                            Behavior on color { ColorAnimation { duration: 120 } }
-                            Rectangle {
-                                id: ic
-                                x: 12; anchors.verticalCenter: parent.verticalCenter
-                                width: 40; height: 40; radius: 12
-                                color: Theme.tint(0.16)
-                                UiIcon { anchors.centerIn: parent; name: modelData.icon; size: 20; color: Theme.accent }
+            icon: "plus"; label: "Widgets no menu"; description: "Os que aparecem em Adicionar widget"
+            lazy: Component {
+                SetBlock {
+                    sub: true
+                    Flow {
+                        width: parent.width
+                        spacing: 5
+                        Repeater {
+                            model: DeskState.catalog
+                            delegate: Rectangle {
+                                id: mc
+                                required property var modelData
+                                readonly property bool on: Settings.list(Settings.desktopMenuHidden).indexOf(modelData.type) < 0
+                                height: 30; width: mr.implicitWidth + 22; radius: 10
+                                color: on ? Theme.tint(0.16) : (mm.containsMouse ? Theme.cardHi : "transparent")
+                                border.width: 1; border.color: on ? Theme.accent : Theme.border
+                                opacity: on ? 1 : 0.6
+                                Row {
+                                    id: mr
+                                    anchors.centerIn: parent
+                                    spacing: 6
+                                    UiIcon { name: mc.modelData.icon; size: 14; color: mc.on ? Theme.accent : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                                    UiText { text: mc.modelData.name; color: Theme.text; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; font.strikeout: !mc.on }
+                                }
+                                MouseArea { id: mm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    onClicked: { const l = Settings.list(Settings.desktopMenuHidden), i = l.indexOf(mc.modelData.type); if (i >= 0) l.splice(i, 1); else l.push(mc.modelData.type); Settings.desktopMenuHidden = l } }
                             }
-                            Column {
-                                anchors { left: ic.right; leftMargin: 10; right: plus.left; rightMargin: 6; verticalCenter: parent.verticalCenter }
-                                spacing: 2
-                                UiText { text: modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                                UiText { width: parent.width; elide: Text.ElideRight; text: modelData.desc; color: Theme.muted; font.pixelSize: 11 }
-                            }
-                            UiIcon { id: plus; anchors { right: parent.right; rightMargin: 12; verticalCenter: parent.verticalCenter } name: "plus"; size: 18; color: cm.containsMouse ? Theme.accent : Theme.muted }
-                            MouseArea { id: cm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                                onClicked: { Settings.desktopOn = true; const id = DeskState.add(modelData.type); page.openId = id; page.say(modelData.name + " adicionado") } }
                         }
                     }
                 }
             }
         }
-        UiText { visible: page.toast !== ""; text: page.toast; color: Theme.accent; font.pixelSize: 12 }
     }
 
-    Card {
-        icon: "tune"
-        title: "Na tela"
-        subtitle: "Clique num widget para ver todas as opções dele (as mesmas do inspetor na área de trabalho)."
-        UiText { visible: !(Settings.desktopWidgets || []).length; text: "Nenhum widget ainda."; color: Theme.muted; font.pixelSize: 13 }
-        Repeater {
-            model: page.wids
-            delegate: Rectangle {
-                id: row
-                required property var modelData
-                readonly property var w: { Settings.desktopWidgets; return DeskState.find(modelData) }
-                readonly property var info: w ? DeskState.info(w.type) : null
-                readonly property bool open: page.openId === modelData
-                width: parent.width
-                height: head.height + (open && body.item ? body.item.implicitHeight + 16 : 0)
-                radius: 12
-                clip: true
-                color: open ? Theme.cardHi : (hm.containsMouse ? Qt.rgba(Theme.cardHi.r, Theme.cardHi.g, Theme.cardHi.b, 0.6) : "transparent")
-                border.width: open ? 1 : 0; border.color: Theme.border
-                Behavior on height { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
-                Item {
-                    id: head
-                    width: parent.width; height: 52
-                    MouseArea { id: hm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: page.openId = row.open ? "" : row.modelData }
-                    Rectangle { id: hic; x: 12; anchors.verticalCenter: parent.verticalCenter; width: 32; height: 32; radius: 10; color: Theme.tint(0.16)
-                        UiIcon { anchors.centerIn: parent; name: row.info ? row.info.icon : "dashboard"; size: 16; color: Theme.accent } }
-                    Column {
-                        anchors { left: hic.right; leftMargin: 12; verticalCenter: parent.verticalCenter }
-                        UiText { text: row.info ? row.info.name : ""; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                        UiText { text: row.w ? row.w.cols + "×" + row.w.rows + "  ·  " + ({ auto: "fundo padrão", card: "cartão", glass: "vidro", none: "sem fundo" })[DeskState.opt(row.w, "card")] + (DeskState.opt(row.w, "lock") ? "  ·  na tela de bloqueio" : "") + (DeskState.opt(row.w, "place") !== "free" ? "  ·  posição automática" : "") : ""
-                            color: Theme.muted; font.pixelSize: 11 }
+    // ---- layouts, clima, animacao ----
+    SetSection {
+        title: "Mais"; icon: "layers"
+        SetExpander {
+            icon: "layers"; label: "Layouts prontos"; description: "Trocam só os widgets; o visual inteiro fica em Visuais"
+            lazy: Component {
+                SetBlock {
+                    sub: true
+                    Flow {
+                        width: parent.width
+                        spacing: SetK.md
+                        Repeater {
+                            model: DeskState.builtins
+                            delegate: Rectangle {
+                                id: pc
+                                required property var modelData
+                                readonly property bool cur: DeskState.lastApplied === modelData.name
+                                width: 190; height: 152; radius: 14
+                                color: ph.hovered ? Theme.cardHi : Theme.track
+                                border.width: cur ? 2 : 1; border.color: cur ? Theme.accent : Theme.border
+                                HoverHandler { id: ph }
+                                LookPreview { id: lpv; x: 8; y: 8; width: parent.width - 16; look: pc.modelData.data }
+                                Row {
+                                    anchors { left: parent.left; leftMargin: 12; top: lpv.bottom; topMargin: 8 }
+                                    spacing: 7
+                                    UiIcon { name: pc.modelData.icon || "dashboard"; size: 15; color: pc.cur ? Theme.accent : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                                    UiText { text: pc.modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
+                                }
+                                UiText {
+                                    anchors { left: parent.left; leftMargin: 12; bottom: parent.bottom; bottomMargin: 8 }
+                                    text: pc.cur ? "Em uso" : pc.modelData.data.desktopWidgets.length + " widget(s)"
+                                    color: pc.cur ? Theme.accent : Theme.muted; font.pixelSize: 11
+                                }
+                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { DeskState.apply(pc.modelData.name); page.say("Layout: " + pc.modelData.name) } }
+                            }
+                        }
                     }
                     Row {
-                        anchors { right: parent.right; rightMargin: 10; verticalCenter: parent.verticalCenter }
-                        spacing: 4
-                        UiButton { icon: "cards"; kind: "ghost"; onClicked: DeskState.duplicate(row.modelData) }
-                        UiButton { icon: "trash"; kind: "ghost"; onClicked: { if (page.openId === row.modelData) page.openId = ""; DeskState.remove(row.modelData) } }
-                        UiIcon { anchors.verticalCenter: parent.verticalCenter; name: row.open ? "chevUp" : "chevDown"; size: 16; color: Theme.muted }
-                    }
-                }
-                // opcoes (previa ao vivo + formulario com miniaturas): so existem para o widget aberto, criadas sem travar
-                Loader {
-                    id: body
-                    active: row.open
-                    asynchronous: true
-                    visible: row.open
-                    x: 16; y: head.height
-                    width: row.width - 32
-                    sourceComponent: Column {
-                    width: body.width
-                    spacing: 12
-                    WidgetPreview {
-                        width: parent.width
-                        height: Math.min(260, Math.max(150, width * 0.36))
-                        w: row.w
-                    }
-                    SizePicker {
-                        width: parent.width
-                        sizes: row.info ? row.info.sizes : []
-                        cols: row.w ? row.w.cols : 1
-                        rows: row.w ? row.w.rows : 1
-                        onPicked: (c, r) => DeskState.setSize(row.modelData, c, r)
-                    }
-                    OptionsForm {
-                        width: parent.width
-                        sectionIcons: DeskState.secIcons
-                        previewType: row.w ? row.w.type : ""
-                        previewOpts: row.w ? (row.w.opts || {}) : ({})
-                        previewCols: row.w ? row.w.cols : 2
-                        previewRows: row.w ? row.w.rows : 2
-                        schema: row.w ? DeskState.optionsOf(row.w.type) : []
-                        get: k => row.w ? DeskState.opt(row.w, k) : undefined
-                        set: (k, v) => DeskState.setOpt(row.modelData, k, v)
-                        isShown: d => row.w ? DeskState.shown(row.w, d) : false
-                    }
+                        spacing: 8
+                        UiButton { icon: "restore"; text: "Desfazer"; kind: "ghost"; visible: !!Looks.undoData; onClicked: Looks.undo() }
+                        UiButton { icon: "layers"; text: "Abrir Visuais"; kind: "ghost"; onClicked: Settings.settingsPage = "looks" }
                     }
                 }
             }
         }
-    }
-
-    Card {
-        icon: "sun"
-        title: "Clima"
-        subtitle: "Para o widget de clima. Os dados vêm do Open-Meteo (gratuito, sem conta)."
-        Row {
-            spacing: 10
-            UiText { text: "Cidade"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; width: 90 }
-            UiField { width: 280; text: Settings.weatherCity; placeholderText: "Vazio = descobrir pela internet"; onEditingFinished: Settings.weatherCity = text.trim() }
-            UiButton { icon: "refresh"; text: "Atualizar"; kind: "ghost"; onClicked: Weather.refresh() }
-        }
-        UiText {
-            text: Weather.busy ? "Buscando…" : Weather.error !== "" ? Weather.error : Weather.ready ? Weather.place + ": " + Math.round(Weather.now.temp) + Weather.unit + ", " + Weather.describe(Weather.now.code).toLowerCase() + " (atualizado às " + Qt.formatTime(Weather.updated, "HH:mm") + ")" : "Ainda não consultado (adicione um widget de clima)."
-            color: Weather.error !== "" ? Theme.danger : Theme.muted; font.pixelSize: 12
-        }
-        Row {
-            spacing: 10
-            UiText { text: "Unidades"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; width: 90 }
-            UiSeg { options: [["metric", "°C, km/h"], ["imperial", "°F, mph"]]; value: Settings.weatherUnits; onPicked: v => Settings.weatherUnits = v }
-        }
-        UiSlider { label: "Atualizar a cada"; icon: "timer"; from: 5; to: 120; value: Settings.weatherInterval; suffix: " min"; onMoved: v => Settings.weatherInterval = Math.round(v / 5) * 5 }
-    }
-
-    Card {
-        icon: "layers"
-        title: "Layouts prontos"
-        subtitle: "Trocam só os widgets (o resto fica como está). Para guardar o visual inteiro — wallpaper, barras, cores, animações — use a página Visuais."
-        Flow {
-            width: parent.width
-            spacing: 12
-            Repeater {
-                model: DeskState.builtins
-                delegate: Rectangle {
-                    id: pc
-                    required property var modelData
-                    readonly property bool cur: DeskState.lastApplied === modelData.name
-                    width: 214; height: 168; radius: 16
-                    color: ph.hovered ? Theme.cardHi : Theme.track
-                    border.width: cur ? 2 : 1; border.color: cur ? Theme.accent : Theme.border
-                    Behavior on color { ColorAnimation { duration: 120 } }
-                    HoverHandler { id: ph }
-                    LookPreview { id: lpv; x: 10; y: 10; width: parent.width - 20; look: pc.modelData.data }
-                    Row {
-                        anchors { left: parent.left; leftMargin: 12; top: lpv.bottom; topMargin: 10 }
-                        spacing: 7
-                        UiIcon { name: pc.modelData.icon || "dashboard"; size: 15; color: pc.cur ? Theme.accent : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-                        UiText { text: pc.modelData.name; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
-                    }
-                    UiText {
-                        anchors { left: parent.left; leftMargin: 12; bottom: parent.bottom; bottomMargin: 10 }
-                        text: pc.cur ? "Em uso" : pc.modelData.data.desktopWidgets.length + " widget(s)"
-                        color: pc.cur ? Theme.accent : Theme.muted; font.pixelSize: 11
-                    }
-                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { DeskState.apply(pc.modelData.name); page.say("Layout: " + pc.modelData.name) } }
+        SetExpander {
+            icon: "sun"; label: "Clima"; description: "Para o widget de clima (Open-Meteo, grátis e sem conta)"
+            SetRow {
+                sub: true; label: "Cidade"; description: "Vazio descobre pela internet"
+                UiField { width: 200; text: Settings.weatherCity; placeholderText: "Cidade"; onEditingFinished: Settings.weatherCity = text.trim() }
+                UiButton { icon: "refresh"; kind: "ghost"; onClicked: Weather.refresh() }
+            }
+            SetChoice { sub: true; label: "Unidades"; options: [["metric", "°C, km/h"], ["imperial", "°F, mph"]]; value: Settings.weatherUnits; onPicked: v => Settings.weatherUnits = v }
+            SetSlider { sub: true; label: "Atualizar a cada"; from: 5; to: 120; step: 5; unit: " min"; def: 20; value: Settings.weatherInterval; onMoved: v => Settings.weatherInterval = Math.round(v / 5) * 5 }
+            SetBlock {
+                sub: true
+                UiText {
+                    width: parent.width; wrapMode: Text.WordWrap
+                    text: Weather.busy ? "Buscando…" : Weather.error !== "" ? Weather.error : Weather.ready ? Weather.place + ": " + Math.round(Weather.now.temp) + Weather.unit + ", " + Weather.describe(Weather.now.code).toLowerCase() + " (atualizado às " + Qt.formatTime(Weather.updated, "HH:mm") + ")" : "Ainda não consultado (adicione um widget de clima)."
+                    color: Weather.error !== "" ? Theme.danger : Theme.muted; font.pixelSize: 12
                 }
             }
         }
-        Row {
-            spacing: 8
-            UiButton { icon: "restore"; text: "Desfazer"; kind: "ghost"; visible: !!Looks.undoData; onClicked: Looks.undo() }
-            UiButton { icon: "layers"; text: "Abrir Visuais"; kind: "ghost"; onClicked: Settings.settingsPage = "looks" }
+        SetExpander {
+            icon: "animation"; label: "Animação dos widgets"; description: "Ao mudar de lugar ou tamanho, inclusive ao aplicar um layout"
+            lazy: Component { SetBlock { sub: true; AnimPicker { width: parent.width; target: "desktop" } } }
         }
-    }
-
-    Card {
-        icon: "animation"
-        title: "Animação dos widgets"
-        subtitle: "Usada quando eles mudam de lugar ou de tamanho (inclusive ao aplicar um preset)."
-        AnimPicker { target: "desktop" }
     }
 }
