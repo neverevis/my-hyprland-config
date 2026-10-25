@@ -57,7 +57,7 @@ LazyLoader {
                 id: card
                 anchors.centerIn: parent
                 width: 440; height: col.implicitHeight + 48
-                radius: 26
+                radius: 20
                 color: Theme.gl(Theme.bg, 1)
                 border.width: 1; border.color: Theme.border
                 scale: 0.94 + 0.06 * win.k; opacity: win.k

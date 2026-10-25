@@ -232,7 +232,7 @@ Item {
                 width: 18; height: 18; radius: 9; anchors.verticalCenter: parent.verticalCenter
                 source: parent.p ? (parent.p.trackArtUrl || "") : ""
                 sourceSize: Qt.size(48, 48)
-                RotationAnimation on rotation { running: !!(root.player && root.player.isPlaying); from: 0; to: 360; duration: 9000; loops: Animation.Infinite }
+                RotationAnimation on rotation { running: visible && !!(root.player && root.player.isPlaying); from: 0; to: 360; duration: 9000; loops: Animation.Infinite }
             }
             UiText {
                 visible: !root.vertical
@@ -280,7 +280,7 @@ Item {
                 }
                 Component.onCompleted: Cava.use()
                 Component.onDestruction: Cava.release()
-                Timer { interval: 120; repeat: true; running: !Cava.available; onTriggered: root.now = Date.now() }
+                Timer { interval: 120; repeat: true; running: !Cava.available && waveC.visible; onTriggered: root.now = Date.now() }
             }
             // passar o mouse: anterior / proxima
             Row {
@@ -315,7 +315,7 @@ Item {
                 width: Math.min(Math.max(nt.implicitWidth, nb.implicitWidth), 320)
                 spacing: -2
                 UiText { id: nt; width: parent.width; elide: Text.ElideRight; text: root.notifText; color: root.fg; font.pixelSize: root.notifBody !== "" ? 11 : 12; font.weight: Font.DemiBold }
-                UiText { id: nb; visible: root.notifBody !== ""; width: parent.width; elide: Text.ElideRight; text: root.notifBody; color: root.fg; opacity: 0.65; font.pixelSize: 9 }
+                UiText { id: nb; visible: root.notifBody !== ""; width: parent.width; elide: Text.ElideRight; text: root.notifBody; color: root.fg; opacity: 0.65; font.pixelSize: 11 }
             }
         }
     }

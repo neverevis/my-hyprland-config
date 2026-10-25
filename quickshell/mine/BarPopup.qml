@@ -183,7 +183,7 @@ Scope {
                             UiIcon { name: modelData[0]; size: 14; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
                             Column { anchors.verticalCenter: parent.verticalCenter; spacing: -2
                                 UiText { text: modelData[2]; color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
-                                UiText { text: modelData[1]; color: Theme.muted; font.pixelSize: 9 } }
+                                UiText { text: modelData[1]; color: Theme.muted; font.pixelSize: 11 } }
                         }
                     }
                 }
@@ -224,7 +224,7 @@ Scope {
                         width: (nc.width - 8) / 2; height: 52; radius: 12; color: Theme.track
                         Column { anchors.centerIn: parent; spacing: 0
                             UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData[0] + " " + SysInfo.bytes(modelData[2] ?? 0) + "/s"; color: modelData[4]; font.pixelSize: 13; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
-                            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: SysInfo.bytes(modelData[3] ?? 0) + " no total"; color: Theme.muted; font.pixelSize: 10 }
+                            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: SysInfo.bytes(modelData[3] ?? 0) + " no total"; color: Theme.muted; font.pixelSize: 11 }
                         }
                     }
                 }

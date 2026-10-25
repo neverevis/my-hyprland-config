@@ -36,6 +36,7 @@ Item {
     component Label: UiText {
         color: Settings.textColor
         font.pixelSize: 14
+        font.features: { "tnum": 1 }
         horizontalAlignment: Text.AlignHCenter
     }
 
@@ -53,8 +54,16 @@ Item {
             id: ck
             implicitWidth: col.implicitWidth
             implicitHeight: col.implicitHeight
-            opacity: cm.containsMouse ? 0.75 : 1
-            Behavior on opacity { NumberAnimation { duration: 120 } }
+            scale: cm.pressed ? 0.97 : 1
+            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+            // fundo suave ao passar o mouse
+            Rectangle {
+                z: -1
+                anchors { fill: parent; leftMargin: -8; rightMargin: -8; topMargin: -3; bottomMargin: -3 }
+                radius: 8
+                color: Qt.rgba(Settings.textColor.r, Settings.textColor.g, Settings.textColor.b, cm.containsMouse ? 0.12 : 0)
+                Behavior on color { ColorAnimation { duration: 140 } }
+            }
             SystemClock { id: clk; precision: Settings.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes }
             Column {
                 id: col
@@ -68,7 +77,7 @@ Item {
                     visible: root.vertical && root.opts.shortDate !== false
                     width: col.width
                     text: Qt.formatDateTime(clk.date, "dd/MM")
-                    font.pixelSize: 10
+                    font.pixelSize: 11
                     opacity: 0.7
                 }
             }
@@ -221,7 +230,7 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignLeft
                     elide: Text.ElideRight
-                    font.pixelSize: 10
+                    font.pixelSize: 11
                     opacity: 0.65
                     text: winRow.line1
                 }

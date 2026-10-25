@@ -67,10 +67,10 @@ Scope {
                 root.fails++
                 root.pw = ""
                 root.error = result === PamResult.MaxTries ? "Muitas tentativas. Aguarde um pouco e tente de novo."
-                    : (root.fails >= 3 ? "Senha incorreta. Depois de várias tentativas o sistema pode esperar alguns minutos." : "Senha incorreta")
+                    : (root.fails >= 3 ? "Senha incorreta. Após várias tentativas o sistema pode pedir para esperar." : "Senha incorreta. Tente de novo.")
             }
         }
-        onError: err => { root.checking = false; root.pw = ""; root.error = "Não foi possível verificar a senha (" + PamError.toString(err) + ")" }
+        onError: err => { root.checking = false; root.pw = ""; root.error = "Não foi possível verificar a senha (" + PamError.toString(err) + "). Tente de novo." }
     }
     // destrava o chaveiro do GNOME com a mesma senha (pela entrada padrao: a senha nunca vai nos argumentos)
     Process {

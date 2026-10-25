@@ -165,6 +165,7 @@ Item {
             visible: m.showValue
             text: m.valueText
             color: m.graphic ? Settings.textColor : m.col; font.pixelSize: m.vertical ? 11 : 14
+            font.features: { "tnum": 1 }
             font.weight: m.vertical ? Font.DemiBold : Font.Normal   // so texto: o proprio valor leva a cor de destaque
         }
     }

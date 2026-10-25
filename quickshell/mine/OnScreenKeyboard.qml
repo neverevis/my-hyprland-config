@@ -106,17 +106,26 @@ Scope {
                                 delegate: Rectangle {
                                     required property var modelData
                                     height: 24; width: lt.implicitWidth + 16; radius: 12
-                                    color: Settings.oskLayout === modelData[0] ? Theme.accent : Theme.track
+                                    color: Settings.oskLayout === modelData[0] ? Theme.accent : (lm.containsMouse ? Theme.cardHi : Theme.track)
+                                    Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
+                                    scale: lm.pressed ? 0.97 : 1
+                                    Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                                     UiText { id: lt; anchors.centerIn: parent; text: modelData[1]; font.pixelSize: 11; color: Settings.oskLayout === modelData[0] ? Theme.accentText : Theme.text }
-                                    MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.oskLayout = modelData[0] }
+                                    MouseArea { id: lm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.oskLayout = modelData[0] }
                                 }
                             }
-                            Rectangle { height: 24; width: 24; radius: 12; color: Settings.oskPinned ? Theme.tint(0.3) : Theme.track
+                            Rectangle { height: 24; width: 24; radius: 12; color: Settings.oskPinned ? Theme.tint(0.3) : (pnm.containsMouse ? Theme.cardHi : Theme.track)
+                                scale: pnm.pressed ? 0.97 : 1
+                                Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                                Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
                                 UiIcon { anchors.centerIn: parent; name: Settings.oskPinned ? "pin" : "pinOff"; size: 13; color: Settings.oskPinned ? Theme.accent : Theme.muted }
-                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Settings.oskPinned = !Settings.oskPinned } }
-                            Rectangle { height: 24; width: 24; radius: 12; color: Theme.track
+                                MouseArea { id: pnm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.oskPinned = !Settings.oskPinned } }
+                            Rectangle { height: 24; width: 24; radius: 12; color: clm.containsMouse ? Theme.cardHi : Theme.track
+                                scale: clm.pressed ? 0.97 : 1
+                                Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                                Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
                                 UiIcon { anchors.centerIn: parent; name: "keyboardClose"; size: 14; color: Theme.muted }
-                                MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.open = false } }
+                                MouseArea { id: clm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.open = false } }
                         }
                     }
                     Repeater {
@@ -139,6 +148,9 @@ Scope {
                                     radius: 10
                                     color: armed ? Theme.accent : (km.pressed ? Theme.tint(0.3) : (km.containsMouse ? Theme.cardHi : Theme.track))
                                     border.width: 1; border.color: Theme.border
+                                    scale: km.pressed ? 0.97 : 1
+                                    Behavior on scale { NumberAnimation { duration: 100; easing.type: Easing.OutCubic } }
+                                    Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
                                     UiIcon { visible: key.modelData.ic !== ""; anchors.centerIn: parent; name: key.modelData.ic; size: 18; color: key.armed ? Theme.accentText : Theme.text }
                                     UiText {
                                         visible: key.modelData.ic === ""

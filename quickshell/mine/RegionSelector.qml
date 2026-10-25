@@ -74,7 +74,7 @@ Scope {
                     visible: win.hasSel
                     anchors { left: parent.left; bottom: parent.top; bottomMargin: 6 }
                     width: szT.implicitWidth + 12; height: 22; radius: 7; color: Theme.accent
-                    UiText { id: szT; anchors.centerIn: parent; text: Math.round(win.sel.width) + " × " + Math.round(win.sel.height); color: Theme.accentText; font.pixelSize: 11; font.weight: Font.Bold }
+                    UiText { id: szT; anchors.centerIn: parent; text: Math.round(win.sel.width) + " × " + Math.round(win.sel.height); color: Theme.accentText; font.pixelSize: 11; font.features: { "tnum": 1 }; font.weight: Font.Bold }
                 }
             }
             // linhas-guia
@@ -124,6 +124,9 @@ Scope {
                             readonly property bool on: Capture.action === modelData.id
                             height: 38; width: ar.implicitWidth + 22; radius: 19
                             color: on ? Theme.accent : (am.containsMouse ? Theme.cardHi : "transparent")
+                            Behavior on color { ColorAnimation { duration: 140 } }
+                            scale: am.pressed ? 0.97 : 1
+                            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                             Row {
                                 id: ar
                                 anchors.centerIn: parent

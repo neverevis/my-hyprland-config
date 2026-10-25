@@ -302,7 +302,7 @@ Item {
                 layer.effect: MultiEffect { colorization: 1; colorizationColor: root.base; brightness: 0.35 }
             }
 
-            scale: wm.containsMouse && !cell.active ? 1.12 : 1
+            scale: wm.pressed ? 0.94 : (wm.containsMouse && !cell.active ? 1.12 : 1)
             Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
             MouseArea {
                 id: wm

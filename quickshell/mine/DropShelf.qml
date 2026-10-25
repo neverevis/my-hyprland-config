@@ -103,7 +103,7 @@ Singleton {
                         Column {
                             anchors { left: ic.right; leftMargin: 10; right: xb.left; rightMargin: 6; verticalCenter: parent.verticalCenter }
                             UiText { width: parent.width; elide: Text.ElideMiddle; text: row.modelData.split("/").pop(); color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
-                            UiText { width: parent.width; elide: Text.ElideMiddle; text: row.modelData.replace(/\/[^/]*$/, "").replace(Quickshell.env("HOME"), "~"); color: Theme.muted; font.pixelSize: 10 }
+                            UiText { width: parent.width; elide: Text.ElideMiddle; text: row.modelData.replace(/\/[^/]*$/, "").replace(Quickshell.env("HOME"), "~"); color: Theme.muted; font.pixelSize: 11 }
                         }
                         MouseArea { id: rm; anchors.fill: parent; hoverEnabled: true; drag.target: dummy; cursorShape: Qt.OpenHandCursor
                             onDoubleClicked: Qt.openUrlExternally("file://" + row.modelData) }

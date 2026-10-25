@@ -60,6 +60,6 @@ MeterView {
             }
         }
     }
-    Timer { interval: root.opts.interval ?? (root.display === "graph" ? 1000 : 2000); running: true; repeat: true; triggeredOnStart: true
+    Timer { interval: root.opts.interval ?? (root.display === "graph" ? 1000 : 2000); running: root.visible; repeat: true; triggeredOnStart: true
         onTriggered: if (root.viaInfo) root.fromInfo(); else file.reload() }
 }

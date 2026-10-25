@@ -41,7 +41,7 @@ PanelWindow {
     Behavior on fade {
         NumberAnimation {
             duration: Motion.durationOf("bars", !win.shown)
-            easing.type: win.shown ? Easing.InQuad : Easing.OutQuad
+            easing.type: Easing.OutQuad
         }
     }
     onProgChanged: BarState.set(modelData, prog)

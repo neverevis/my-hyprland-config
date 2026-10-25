@@ -38,8 +38,8 @@ Grid {
                 smooth: true
                 fillMode: Image.PreserveAspectFit
                 opacity: cell.modelData.status === Status.Passive ? 0.5 : 1
-                scale: mouse.containsMouse ? 1.12 : 1
-                Behavior on scale { NumberAnimation { duration: 100 } }
+                scale: mouse.pressed ? 0.94 : (mouse.containsMouse ? 1.12 : 1)
+                Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                 // monocromatico: o icone vira silhueta na cor do texto da barra
                 layer.enabled: root.opts.mono ?? true
                 layer.effect: MultiEffect { colorization: 1; colorizationColor: Settings.textColor; brightness: 0.4 }
@@ -93,7 +93,7 @@ Grid {
         visible: root.opts.overflow !== false && root.hiddenItems.length > 0
         width: visible ? root.size : 0; height: visible ? root.size : 0
         UiIcon { anchors.centerIn: parent; name: root.vertical ? "chevDown" : (root.side === "top" ? "chevDown" : "chevUp"); size: root.size * 0.9; color: Settings.textColor
-            scale: mm.containsMouse ? 1.12 : 1; Behavior on scale { NumberAnimation { duration: 100 } } }
+            scale: mm.pressed ? 0.94 : (mm.containsMouse ? 1.12 : 1); Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } } }
         MouseArea {
             id: mm
             anchors.fill: parent; anchors.margins: -3

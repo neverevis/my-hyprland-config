@@ -222,7 +222,7 @@ Scope {
                 onTextChanged: if (activeFocus) { nt.stat = "Salvando…"; deb.restart() }
                 UiText { visible: !parent.text; text: "Anotações rápidas…"; color: Theme.muted; font.pixelSize: 13 }
             }
-            UiText { id: sl; anchors { right: parent.right; bottom: parent.bottom } text: nt.stat; color: Theme.muted; font.pixelSize: 10 }
+            UiText { id: sl; anchors { right: parent.right; bottom: parent.bottom } text: nt.stat; color: Theme.muted; font.pixelSize: 11 }
         }
     }
     Component {
@@ -322,7 +322,7 @@ Scope {
                 UiText { text: rs.of; color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
             }
             MiniGraph { visible: rs.tab < 2; width: 220; height: 46; max: 1; values: rs.tab === 0 ? SysInfo.hist.cpu : SysInfo.hist.mem }
-            UiText { visible: SysInfo.d.gpu; text: "GPU " + Math.round(SysInfo.gpu * 100) + "%" + (SysInfo.gpuTemp ? "  " + SysInfo.gpuTemp + "°" : ""); color: Theme.muted; font.pixelSize: 12 }
+            UiText { visible: SysInfo.d.gpu; text: "GPU " + Math.round(SysInfo.gpu * 100) + "%" + (SysInfo.gpuTemp ? "  " + SysInfo.gpuTemp + "°" : ""); color: Theme.muted; font.features: { "tnum": 1 }; font.pixelSize: 12 }
         }
     }
     Component {

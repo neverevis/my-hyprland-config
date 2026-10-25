@@ -276,7 +276,7 @@ Item {
                 width: visible ? 130 : 0
                 spacing: -1
                 UiText { width: parent.width; elide: Text.ElideRight; text: mcard.p ? (mcard.p.trackTitle || mcard.p.identity) : ""; color: Settings.textColor; font.pixelSize: 12; font.weight: Font.DemiBold }
-                UiText { width: parent.width; elide: Text.ElideRight; text: mcard.p ? (mcard.p.trackArtist || "") : ""; color: Settings.textColor; opacity: 0.65; font.pixelSize: 10 }
+                UiText { width: parent.width; elide: Text.ElideRight; text: mcard.p ? (mcard.p.trackArtist || "") : ""; color: Settings.textColor; opacity: 0.65; font.pixelSize: 11 }
             }
             Row {
                 id: btns

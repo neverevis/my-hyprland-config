@@ -187,7 +187,7 @@ Item {
         id: foot
         anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
         height: 16
-        text: "≈ " + (Ai.tokensIn + Ai.tokensOut) + " tokens  ·  criatividade " + (Settings.aiTemp / 100).toFixed(1)
-        color: Theme.muted; font.pixelSize: 10; horizontalAlignment: Text.AlignRight
+        font.features: { "tnum": 1 }; text: "≈ " + (Ai.tokensIn + Ai.tokensOut) + " tokens  ·  criatividade " + (Settings.aiTemp / 100).toFixed(1)
+        color: Theme.muted; font.pixelSize: 11; horizontalAlignment: Text.AlignRight
     }
 }

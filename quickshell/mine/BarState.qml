@@ -15,11 +15,13 @@ Singleton {
     property var popPending: null
     property bool popHover: false
     Timer { id: popShowT; interval: Settings.barPopupDelay; onTriggered: bs.pop = bs.popPending }
-    Timer { id: popHideT; interval: 260; onTriggered: if (!bs.popHover) bs.pop = null }
+    property double lastClose: 0   // quando a ultima dica/cartao fechou: dicas vizinhas logo em seguida aparecem sem atraso
+    Timer { id: popHideT; interval: 260; onTriggered: if (!bs.popHover) { bs.lastClose = Date.now(); bs.pop = null } }
     function popEnter(p) {
         if (p.kind === "tip" ? !Settings.barTips : !Settings.barPopups) return
         popPending = p; popHideT.stop()
         if (pop) pop = p      // ja aberto: troca na hora (passar de um modulo para o outro)
+        else if (p.kind === "tip" && Date.now() - lastClose < 600) { popShowT.stop(); pop = p }   // so a primeira dica espera
         else popShowT.restart()
     }
     // menus abertos por clique (bandeja, estilo do modulo): continuam abertos ate o mouse entrar e sair do cartao, ou 3 s sem entrar

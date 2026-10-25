@@ -43,6 +43,8 @@ Item {
         signal clicked(var mouse)
         signal wheel(int dy)
         readonly property bool hovered: ma.containsMouse
+        scale: ma.pressed ? 0.97 : 1
+        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
         implicitWidth: root.vertical ? Math.max(ic.implicitWidth, tx.width) : ic.implicitWidth + (tx.text !== "" ? tx.width + 6 : 0)
         implicitHeight: root.vertical ? ic.implicitHeight + (tx.text !== "" ? tx.implicitHeight + 2 : 0) : Math.max(ic.implicitHeight, tx.implicitHeight)
         // fundo de passar o mouse: pilula suave atras do botao
@@ -50,7 +52,7 @@ Item {
             anchors { fill: parent; leftMargin: -6; rightMargin: -6; topMargin: -3; bottomMargin: -3 }
             radius: Math.min(width, height) / 2
             color: Qt.rgba(root.fg.r, root.fg.g, root.fg.b, ma.containsMouse ? 0.13 : 0)
-            Behavior on color { ColorAnimation { duration: 120 } }
+            Behavior on color { ColorAnimation { duration: 140 } }
         }
         UiIcon { id: ic; name: ch.icon; size: 16; color: ch.hot ? root.ac : ch.tint; visible: ch.icon !== ""
             x: root.vertical ? (ch.width - width) / 2 : 0; y: root.vertical ? 0 : (ch.height - height) / 2
@@ -72,7 +74,7 @@ Item {
                 border.width: 1.5; border.color: Settings.barColor
             }
         }
-        UiText { id: tx; text: ch.text; color: ch.tint; font.pixelSize: root.vertical ? 10 : 13; font.features: { "tnum": 1 }
+        UiText { id: tx; text: ch.text; color: ch.tint; font.pixelSize: root.vertical ? 11 : 13; font.features: { "tnum": 1 }
             width: ch.textMax > 0 ? Math.max(ch.textMin, Math.min(implicitWidth, ch.textMax)) : implicitWidth; elide: Text.ElideRight
             x: root.vertical ? (ch.width - width) / 2 : (ic.visible ? ic.width + 6 : 0); y: root.vertical ? ic.height + 2 : (ch.height - height) / 2 }
         MouseArea { id: ma; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -151,7 +153,9 @@ Item {
             UiText { text: "↑ " + nsp.s(SysInfo.d.tx); color: Theme.tertiary; font.pixelSize: nsp.fs; font.features: { "tnum": 1 }; opacity: (SysInfo.d.tx ?? 0) > 1024 ? 1 : 0.5 }
             UiText { text: "↓ " + nsp.s(SysInfo.d.rx); color: root.ac; font.pixelSize: nsp.fs; font.features: { "tnum": 1 }; opacity: (SysInfo.d.rx ?? 0) > 1024 ? 1 : 0.5 }
         }
-        MouseArea { anchors.fill: parent; anchors.margins: -4; cursorShape: Qt.PointingHandCursor
+        scale: nsm.pressed ? 0.97 : 1
+        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+        MouseArea { id: nsm; anchors.fill: parent; anchors.margins: -4; cursorShape: Qt.PointingHandCursor
             onClicked: { BarState.popLeave(); Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "home", "go", "net"]) } }
     } }
     Component { id: gpuC; Chip {

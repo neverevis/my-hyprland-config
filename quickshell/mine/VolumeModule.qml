@@ -21,8 +21,20 @@ MeterView {
     dim: !!(audio && audio.muted)
     valueText: audio ? (audio.muted ? "mudo" : Math.round(audio.volume * 100) + "%") : "--"
 
+    scale: vm.pressed ? 0.97 : 1
+    Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+    Rectangle {   // fundo suave ao passar o mouse
+        z: -1
+        anchors { fill: parent; leftMargin: -6; rightMargin: -6; topMargin: -3; bottomMargin: -3 }
+        radius: 8
+        color: Qt.rgba(Settings.textColor.r, Settings.textColor.g, Settings.textColor.b, vm.containsMouse ? 0.12 : 0)
+        Behavior on color { ColorAnimation { duration: 140 } }
+    }
     MouseArea {
+        id: vm
         anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
         onClicked: if (root.audio) root.audio.muted = !root.audio.muted
         onWheel: w => {
             if (!root.audio) return
