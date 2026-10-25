@@ -33,7 +33,7 @@ HomeScroll {
         Column {
             anchors { left: avatar.right; leftMargin: 18; verticalCenter: parent.verticalCenter }
             spacing: 3
-            UiText { text: Quickshell.env("USER"); color: "white"; font.pixelSize: 19; font.weight: Font.Bold }
+            UiText { text: Profile.name; color: "white"; font.pixelSize: 19; font.weight: Font.Bold }
             UiText { text: Quickshell.env("USER") + "@" + (pg.home.st.host || "linux"); color: Qt.rgba(1, 1, 1, 0.75); font.pixelSize: 12 }
             Row {
                 spacing: 5

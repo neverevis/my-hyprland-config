@@ -18,6 +18,7 @@ SetRow {
     property int minTile: 116
     property int thumbHeight: 58
     property int columns: 0
+    property bool tileDesc: false          // mostra options[i][3] (1 linha, muda) sob o nome do cartao
     signal picked(var v)
 
     readonly property bool tiles: style === "tiles"
@@ -48,7 +49,7 @@ SetRow {
                 required property var modelData
                 readonly property bool on: c.value === modelData[0]
                 width: grid.tw
-                height: c.thumbHeight + 30
+                height: c.thumbHeight + (c.tileDesc ? 46 : 30)
                 Rectangle {
                     id: frame
                     width: parent.width; height: c.thumbHeight
@@ -91,6 +92,15 @@ SetRow {
                     color: tile.on ? Theme.text : Theme.muted
                     font.pixelSize: SetK.fDesc
                     font.weight: tile.on ? Font.DemiBold : Font.Medium
+                }
+                UiText {
+                    visible: c.tileDesc && (tile.modelData[3] ?? "") !== ""
+                    anchors { top: frame.bottom; topMargin: 24; left: parent.left; right: parent.right }
+                    horizontalAlignment: Text.AlignHCenter
+                    elide: Text.ElideRight
+                    text: tile.modelData[3] ?? ""
+                    color: Theme.muted
+                    font.pixelSize: SetK.fDesc
                 }
                 MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: c.picked(tile.modelData[0]) }
             }

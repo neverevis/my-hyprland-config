@@ -113,7 +113,7 @@ SetPage {
                 Column {
                     width: parent ? parent.width : 300
                     Repeater {
-                        model: [["Do sistema", "sys"], ["Suas curvas", "curve"], ["Suas molas", "spring"]]
+                        model: [["Curvas", "bcurve"], ["Molas", "bspring"], ["Suas curvas", "curve"], ["Suas molas", "spring"]]
                         delegate: SetChoice {
                             id: grp
                             required property var modelData
@@ -121,7 +121,7 @@ SetPage {
                             readonly property var opts: page.names.filter(n => {
                                 const a = Settings.findAnim(n)
                                 if (!a) return false
-                                const k = a.builtin ? "sys" : (a.type === "spring" ? "spring" : "curve")
+                                const k = (a.builtin ? "b" : "") + (a.type === "spring" ? "spring" : "curve")
                                 return k === grp.modelData[1]
                             }).map(n => [n, n, "curve"])
                             visible: opts.length > 0

@@ -11,12 +11,32 @@ SetPage {
 
     readonly property real paneAlpha: Settings.glass ? (Settings.glassAuto ? Settings.glassOpacityAuto : Settings.glassOpacity) / 100 : 1
     readonly property real cardAlpha: Settings.glass && Settings.glassSplit ? Settings.glassContent / 100 : paneAlpha
-    readonly property var variantInfo: ({
-        auto: "Escolhe sozinho pela imagem: se ela for calma, usa tons neutros", wallpaper: "As cores que mais aparecem na imagem",
-        tonalspot: "Tons suaves da cor principal", vibrant: "Cores mais vivas e saturadas", expressive: "Gira as cores para dar mais contraste",
-        fidelity: "A cor principal da imagem, sem mudar", content: "Fiel à imagem, com cores vizinhas de apoio", neutral: "Quase cinza, com um toque da cor",
-        monochrome: "Só tons de cinza", rainbow: "Várias cores, pouco ligadas à imagem", fruitsalad: "Ainda mais cores, bem alegre"
-    })
+    // cores de previa de cada estilo (estaticas; mudam so com a cor atual ou o wallpaper)
+    readonly property var vBase: ThemeColors.primary
+    readonly property var vWall: ThemeColors.wall
+    Component {
+        id: dotsThumb
+        Item {
+            id: dt
+            property var opt
+            property bool on
+            property bool hovered
+            readonly property var cols: opt ? ThemeVariants.dots(opt[0], page.vBase, page.vWall) : []
+            Row {
+                anchors.centerIn: parent
+                spacing: 6
+                Repeater {
+                    model: 4
+                    delegate: Rectangle {
+                        required property int index
+                        width: 18; height: 18; radius: 9
+                        color: dt.cols.length > index ? dt.cols[index] : "transparent"
+                        border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.14)
+                    }
+                }
+            }
+        }
+    }
 
     // conta-gotas: a cor escolhida vira a semente da paleta
     Process {
@@ -166,13 +186,26 @@ SetPage {
             visible: Settings.themeSource === "wallpaper"
             enabled: Settings.themeOn
             icon: "magic"; label: "Estilo da paleta"
-            description: page.variantInfo[Settings.themeVariant] ?? ""
-            style: "tiles"; minTile: 104; thumbHeight: 44
-            options: [["auto", "Automático", "auto"], ["wallpaper", "Wallpaper", "wallpaper"], ["tonalspot", "Tonal", "palette"], ["vibrant", "Vibrante", "lightning"],
-                      ["expressive", "Expressivo", "magic"], ["fidelity", "Fiel", "eye"], ["content", "Conteúdo", "image"], ["neutral", "Neutro", "balance"],
-                      ["monochrome", "Mono", "moon"], ["rainbow", "Arco-íris", "firework"], ["fruitsalad", "Salada", "leaf"]]
+            description: (ThemeVariants.info(Settings.themeVariant) ?? { desc: "" }).desc
+            style: "tiles"; columns: 3; thumbHeight: 36; tileDesc: true
+            options: ThemeVariants.options(true)
+            thumb: dotsThumb
             value: Settings.themeVariant
             onPicked: v => Settings.themeVariant = v
+        }
+        SetExpander {
+            visible: Settings.themeSource === "wallpaper"
+            enabled: Settings.themeOn
+            icon: "palette"; label: "Mais estilos"; description: "Expressivo, Neutro, Mono, Arco-íris e outros"
+            open: ThemeVariants.ids(false).indexOf(Settings.themeVariant) >= 0
+            SetChoice {
+                sub: true
+                style: "tiles"; columns: 3; thumbHeight: 36; tileDesc: true
+                options: ThemeVariants.options(false)
+                thumb: dotsThumb
+                value: Settings.themeVariant
+                onPicked: v => Settings.themeVariant = v
+            }
         }
         SetRow {
             visible: Settings.themeSource === "wallpaper"

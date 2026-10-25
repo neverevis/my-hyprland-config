@@ -260,6 +260,7 @@ Scope {
         readonly property bool narrow: width < 1000
         property bool collapsePref: false
         property bool peek: false
+        property bool resetAsk: false
         readonly property bool collapsed: narrow ? !peek : collapsePref
         onNarrowChanged: peek = false
         Item {
@@ -276,48 +277,27 @@ Scope {
 
             Column {
                 id: sideTop
-                x: 12; y: 14
+                x: 12; y: 8
                 width: side.inner
-                spacing: SetK.sm
-                // recolher / abrir a barra lateral
-                Item {
-                    width: parent.width; height: 34
+                spacing: 4
+                // recolher / abrir a barra lateral + busca (recolhida: so a lupa, que abre a barra e foca o campo)
+                Row {
+                    width: parent.width; height: 36
+                    spacing: 6
                     Rectangle {
-                        width: 44; height: 34; radius: 10
+                        width: body.collapsed ? parent.width : 36; height: 36; radius: 10
                         color: colM.containsMouse ? Theme.cardHi : "transparent"
                         UiIcon { anchors.centerIn: parent; name: body.collapsed ? "menu" : "menuOpen"; size: 19; color: Theme.muted }
-                        MouseArea { id: colM; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { if (body.narrow) body.peek = !body.peek; else body.collapsePref = !body.collapsePref } }
-                    }
-                }
-                // cabecalho: foto e nome; o clique leva a Conta e Sobre
-                Item {
-                    width: parent.width; height: 52
-                    Rectangle { anchors.fill: parent; radius: 12; color: prM.pressed ? Theme.card : (prM.containsMouse ? Theme.cardHi : "transparent")
-                        scale: prM.pressed ? 0.98 : 1
-                        Behavior on scale { enabled: root.open; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } } }
-                    Row {
-                        x: body.collapsed ? (parent.width - 36) / 2 : 6
-                        spacing: 12
-                        anchors.verticalCenter: parent.verticalCenter
-                        Avatar { size: 36; ring: 2 }
-                        Column {
-                            visible: !body.collapsed
-                            anchors.verticalCenter: parent.verticalCenter
-                            UiText { text: Profile.name; color: Theme.text; font.pixelSize: 14; font.weight: Font.Bold }
-                            UiText { text: Profile.desc || "Configurações"; color: Theme.muted; font.pixelSize: 12; width: side.inner - 60; elide: Text.ElideRight }
+                        MouseArea {
+                            id: colM; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                            onClicked: { if (body.narrow) body.peek = !body.peek; else body.collapsePref = !body.collapsePref }
+                            onContainsMouseChanged: { if (!tip) return; if (containsMouse && body.collapsed) tip.request("Menu", 8 + (36 - tip.height) / 2); else tip.release("Menu") }
                         }
                     }
-                    MouseArea { id: prM; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { body.peek = false; Settings.settingsPage = "account" } }
-                    Component.onCompleted: SysInfo.use()
-                    Component.onDestruction: SysInfo.release()
-                }
-                // busca (recolhida: so a lupa, que abre a barra e foca o campo)
-                Item {
-                    width: parent.width; height: 36
                     UiField {
                         id: search
                         visible: !body.collapsed
-                        anchors.fill: parent
+                        width: parent.width - 42; height: 36
                         placeholderText: "Buscar opção  (Ctrl+F)"
                         leftPadding: 32
                         onTextChanged: root.query = text
@@ -326,21 +306,43 @@ Scope {
                         Keys.onReturnPressed: if (root.results.length) body.open(root.results[0])
                         UiIcon { anchors { left: parent.left; leftMargin: 10; verticalCenter: parent.verticalCenter } name: "search"; size: 15; color: Theme.muted }
                     }
-                    Rectangle {
-                        visible: body.collapsed
-                        anchors.horizontalCenter: parent.horizontalCenter
-                        width: 44; height: 36; radius: 10
-                        color: sM.containsMouse ? Theme.cardHi : Theme.track
-                        border.width: 1; border.color: Theme.border
-                        UiIcon { anchors.centerIn: parent; name: "search"; size: 16; color: Theme.muted }
-                        MouseArea { id: sM; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { if (body.narrow) body.peek = true; else body.collapsePref = false; search.forceActiveFocus() } }
+                }
+                Rectangle {
+                    visible: body.collapsed
+                    width: parent.width; height: 36; radius: 10
+                    color: sM.containsMouse ? Theme.cardHi : Theme.track
+                    border.width: 1; border.color: Theme.border
+                    UiIcon { anchors.centerIn: parent; name: "search"; size: 16; color: Theme.muted }
+                    MouseArea { id: sM; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { if (body.narrow) body.peek = true; else body.collapsePref = false; search.forceActiveFocus() } }
+                }
+                // cabecalho: foto e nome; o clique leva a Conta e Sobre. Aberta, as duas ferramentas ficam no canto dele
+                Item {
+                    id: profHdr
+                    width: parent.width; height: 40
+                    Rectangle { anchors.fill: parent; radius: 12; color: prM.pressed ? Theme.card : (prM.containsMouse ? Theme.cardHi : "transparent")
+                        scale: prM.pressed ? 0.98 : 1
+                        Behavior on scale { enabled: root.open; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } } }
+                    Row {
+                        x: body.collapsed ? (parent.width - 36) / 2 : 4
+                        spacing: 10
+                        anchors.verticalCenter: parent.verticalCenter
+                        Avatar { size: 32; ring: 2 }
+                        Column {
+                            visible: !body.collapsed
+                            anchors.verticalCenter: parent.verticalCenter
+                            UiText { text: Profile.name; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold; width: side.inner - 34 - 10 - 4 - 70; elide: Text.ElideRight }
+                            UiText { text: Profile.desc || "Configurações"; color: Theme.muted; font.pixelSize: 12; width: side.inner - 34 - 10 - 4 - 70; elide: Text.ElideRight }
+                        }
                     }
+                    MouseArea { id: prM; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { body.peek = false; Settings.settingsPage = "account" } }
+                    Component.onCompleted: SysInfo.use()
+                    Component.onDestruction: SysInfo.release()
                 }
             }
             // lista das paginas: rola quando nao cabe (ao passar o mouse por cima, a roda rola)
             Flickable {
                 id: navFlick
-                anchors { left: parent.left; right: parent.right; top: sideTop.bottom; bottom: sideBottom.top; leftMargin: 12; rightMargin: 12; topMargin: 6; bottomMargin: 8 }
+                anchors { left: parent.left; right: parent.right; top: sideTop.bottom; bottom: parent.bottom; leftMargin: 12; rightMargin: 12; topMargin: 2; bottomMargin: body.collapsed ? 80 : 2 }
                 contentHeight: navCol.implicitHeight
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
@@ -357,10 +359,10 @@ Scope {
                         width: parent.width
                         spacing: 2
                         Item {
-                            width: parent.width; height: grp.index === 0 ? 28 : 40
+                            width: parent.width; height: grp.index === 0 ? 20 : 23
                             UiText {
                                 visible: !body.collapsed
-                                anchors { left: parent.left; leftMargin: 12; bottom: parent.bottom; bottomMargin: 6 }
+                                anchors { left: parent.left; leftMargin: 12; bottom: parent.bottom; bottomMargin: 3 }
                                 text: grp.modelData.label; color: Theme.muted; font.pixelSize: 12; font.weight: Font.DemiBold
                             }
                             Rectangle { visible: body.collapsed && grp.index > 0; anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 10; rightMargin: 10 } height: 1; color: Theme.border }
@@ -371,7 +373,7 @@ Scope {
                                 id: nav
                                 required property var modelData
                                 readonly property bool on: root.query === "" && root.curId === modelData.id
-                                width: grp.width; height: 38; radius: 11
+                                width: grp.width; height: 30; radius: 9
                                 color: on ? Theme.cardHi : (navMouse.containsMouse ? Theme.card : "transparent")
                                 Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
                                 scale: navMouse.pressed ? 0.97 : 1
@@ -407,49 +409,84 @@ Scope {
             }
             }
 
-            // sombra suave quando a lista rola: so no lado onde ainda ha mais paginas
+            // sombra suave quando a lista rola: so no lado onde ainda ha mais paginas (embaixo, com um "mais" discreto)
             Rectangle {
                 anchors { left: navFlick.left; right: navFlick.right; top: navFlick.top }
-                height: 24; z: 3
+                height: 32; z: 3
                 opacity: navFlick.contentY > 2 ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: SetK.fast } }
                 gradient: Gradient { GradientStop { position: 0; color: Theme.sidebar } GradientStop { position: 1; color: Qt.rgba(Theme.sidebar.r, Theme.sidebar.g, Theme.sidebar.b, 0) } }
             }
             Rectangle {
+                id: fadeBot
+                readonly property bool more: navFlick.contentY < navFlick.contentHeight - navFlick.height - 2
                 anchors { left: navFlick.left; right: navFlick.right; bottom: navFlick.bottom }
-                height: 24; z: 3
-                opacity: navFlick.contentY < navFlick.contentHeight - navFlick.height - 2 ? 1 : 0
+                height: 32; z: 3
+                opacity: more ? 1 : 0
                 Behavior on opacity { NumberAnimation { duration: SetK.fast } }
-                gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(Theme.sidebar.r, Theme.sidebar.g, Theme.sidebar.b, 0) } GradientStop { position: 1; color: Theme.sidebar } }
+                gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(Theme.sidebar.r, Theme.sidebar.g, Theme.sidebar.b, 0) } GradientStop { position: 0.7; color: Theme.sidebar } GradientStop { position: 1; color: Theme.sidebar } }
+                UiIcon { anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 2 } name: "chevDown"; size: 16; color: Theme.muted }
             }
-            // arquivo de configuracao (clique abre, direito copia o caminho) e restaurar (pede confirmacao)
-            Column {
-                id: sideBottom
-                anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 12 }
-                spacing: 4
+            // ferramentas: arquivo de configuracao (clique abre, direito copia o caminho) e restaurar (abre a confirmacao).
+            // Abertas ficam no canto do cabecalho; recolhidas, empilhadas no pe da barra
+            Grid {
+                id: tools
+                columns: body.collapsed ? 1 : 2
+                spacing: 2
+                z: 4
+                x: body.collapsed ? 12 + (side.inner - width) / 2 : 12 + side.inner - width - 4
+                y: body.collapsed ? side.height - height - 8 : sideTop.y + profHdr.y + (profHdr.height - height) / 2
                 UiButton {
                     id: cfgBtn
                     property bool copied: false
-                    width: parent.width
+                    width: 32; height: 32
                     icon: copied ? "check" : "pencil"
-                    text: body.collapsed ? "" : (copied ? "Caminho copiado" : "Arquivo de configuração")
                     kind: "ghost"
                     onClicked: Qt.openUrlExternally(Qt.resolvedUrl("settings.json"))
                     MouseArea {
-                        anchors.fill: parent; acceptedButtons: Qt.RightButton
+                        anchors.fill: parent; acceptedButtons: Qt.RightButton; hoverEnabled: true
                         onClicked: { Quickshell.clipboardText = Qt.resolvedUrl("settings.json").toString().replace("file://", ""); cfgBtn.copied = true; cfgT.restart() }
+                        onContainsMouseChanged: { const t = cfgBtn.copied ? "Caminho copiado" : "Abrir settings.json (botão direito copia o caminho)"; if (containsMouse) tip.request(t, cfgBtn.mapToItem(body, 0, 0).y + (32 - tip.height) / 2); else tip.release(t) }
                     }
                     Timer { id: cfgT; interval: 1500; onTriggered: cfgBtn.copied = false }
                 }
                 UiButton {
                     id: resetBtn
-                    property bool armed: false
-                    width: parent.width
+                    width: 32; height: 32
                     icon: "restore"
-                    text: body.collapsed ? "" : (armed ? "Clique de novo para confirmar" : "Restaurar padrão")
-                    kind: armed ? "danger" : "ghost"
-                    onClicked: { if (armed) { Settings.reset(); armed = false } else { armed = true; disarm.restart() } }
-                    Timer { id: disarm; interval: 4000; onTriggered: resetBtn.armed = false }
+                    kind: body.resetAsk ? "danger" : "ghost"
+                    onClicked: body.resetAsk = !body.resetAsk
+                    MouseArea {
+                        anchors.fill: parent; acceptedButtons: Qt.NoButton; hoverEnabled: true
+                        onContainsMouseChanged: { const t = "Restaurar padrão"; if (containsMouse) tip.request(t, resetBtn.mapToItem(body, 0, 0).y + (32 - tip.height) / 2); else tip.release(t) }
+                    }
+                }
+            }
+        }
+        // confirmacao de "Restaurar padrao": diz o que muda e o que fica
+        Rectangle {
+            id: resetCard
+            visible: opacity > 0
+            opacity: body.resetAsk ? 1 : 0
+            Behavior on opacity { NumberAnimation { duration: SetK.fast } }
+            z: 60
+            x: side.width + 10
+            y: Math.max(10, Math.min(body.height - height - 10, tools.mapToItem(body, 0, 0).y - 8))
+            width: 300; height: rcCol.implicitHeight + 28; radius: 14
+            color: Theme.cardHi; border.width: 1; border.color: Theme.border
+            MouseArea { anchors.fill: parent }
+            Column {
+                id: rcCol
+                x: 14; y: 14; width: parent.width - 28
+                spacing: 6
+                UiText { width: parent.width; text: "Restaurar o padrão do shell?"; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold }
+                UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
+                    text: "Barras, tema, animações, painéis, wallpaper, bloqueio e energia voltam ao padrão. Seus widgets da área de trabalho, visuais salvos e atalhos continuam." }
+                Item { width: 1; height: 4 }
+                Row {
+                    spacing: 8
+                    UiButton { text: "Cancelar"; onClicked: body.resetAsk = false }
+                    UiButton { text: "Restaurar padrão"; kind: "danger"; onClicked: { body.resetAsk = false; Settings.reset() } }
                 }
             }
         }
@@ -470,7 +507,7 @@ Scope {
                 if (text === t) { text = ""; lastHide = Date.now() }
             }
             Timer { id: delayT; interval: 450; onTriggered: { tip.text = tip.wantText; tip.y = tip.wantY } }
-            visible: text !== "" && body.collapsed
+            visible: text !== ""
             z: 50
             x: side.width + 6
             width: tipT.implicitWidth + 20; height: 28; radius: 8

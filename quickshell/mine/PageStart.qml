@@ -3,6 +3,7 @@
 import Quickshell
 import Quickshell.Networking
 import Quickshell.Bluetooth
+import Quickshell.Io
 import QtQuick
 
 SetPage {
@@ -12,6 +13,12 @@ SetPage {
     property string toast: ""
     Timer { id: toastT; interval: 2400; onTriggered: page.toast = "" }
     function say(t) { toast = t; toastT.restart() }
+    // perfil de energia (mesmo nome do bloco Energia do Inicio); le uma vez ao abrir e quando o painel fecha
+    property string prof: "balanced"
+    readonly property var profNames: ({ "balanced": "Equilibrado", "performance": "Desempenho", "power-saver": "Economia" })
+    Process { id: pProf; command: ["powerprofilesctl", "get"]; stdout: StdioCollector { onStreamFinished: page.prof = text.trim() || "balanced" } }
+    Component.onCompleted: pProf.running = true
+    Connections { target: Settings; function onHomeOpenChanged() { if (!Settings.homeOpen) { pProf.running = false; pProf.running = true } } }
 
     // ---- o visual de agora ----
     preview: SetPreview {
@@ -87,7 +94,7 @@ SetPage {
                     readonly property bool on: { Toggles.deps(); Networking.wifiEnabled; return id === "wifi" ? (wdev ? Networking.wifiEnabled : !!cdev) : id === "bt" ? !!(Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) : id === "profile" ? false : (t ? t.on() : false) }
                     readonly property bool avail: { Toggles.deps(); return id === "bt" ? !!Bluetooth.defaultAdapter : (t && t.avail ? t.avail() : true) }
                     readonly property string icn: { Toggles.deps(); return id === "wifi" ? (wdev ? (Networking.wifiEnabled ? "wifi" : "wifiOff") : (cdev ? "ethernet" : "wifiOff")) : id === "bt" ? (on ? "bluetooth" : "btOff") : (t ? (t.iconNow ? t.iconNow() : t.icon) : "cog") }
-                    readonly property string sub: { Toggles.deps(); return id === "wifi" ? (wdev ? (!Networking.wifiEnabled ? "Desligado" : (wcur ? wcur.name : (cdev ? "Cabo conectado" : "Ligado"))) : (cdev ? "Cabo · " + cdev.name : "Sem conexão")) : id === "bt" ? (!Bluetooth.defaultAdapter ? "Sem adaptador" : (on ? "Ligado" : "Desligado")) : id === "profile" ? "Abre o painel" : (t ? t.sub() : "") }
+                    readonly property string sub: { Toggles.deps(); return id === "wifi" ? (wdev ? (!Networking.wifiEnabled ? "Desligado" : (wcur ? wcur.name : (cdev ? "Cabo conectado" : "Ligado"))) : (cdev ? "Cabo · " + cdev.name : "Sem conexão")) : id === "bt" ? (!Bluetooth.defaultAdapter ? "Sem adaptador" : (on ? "Ligado" : "Desligado")) : id === "profile" ? (page.profNames[page.prof] ?? page.prof) : (t ? t.sub() : "") }
                     width: qg.tw; height: 60; radius: 16
                     opacity: avail ? 1 : 0.55
                     color: on ? Theme.accent : (qm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1))

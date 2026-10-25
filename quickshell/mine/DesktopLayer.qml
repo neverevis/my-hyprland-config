@@ -360,7 +360,7 @@ Scope {
                             width: parent.width
                             spacing: 6
                             Repeater {
-                                model: [["wallpaper", "Automático"], ["tonalspot", "Tonal"], ["vibrant", "Vibrante"], ["expressive", "Expressivo"], ["fidelity", "Fiel"], ["content", "Conteúdo"], ["neutral", "Neutro"], ["monochrome", "Mono"], ["rainbow", "Arco-íris"], ["fruitsalad", "Frutas"]]
+                                model: ThemeVariants.list.map(v => [v.id, v.label])
                                 delegate: Rectangle {
                                     required property var modelData
                                     readonly property bool on: Settings.themeVariant === modelData[0]

@@ -209,7 +209,7 @@ Item {
             readonly property string iconUrl: desktop ? Icons.path("user-desktop", "") : (cls === "" ? "" : Icons.path(entry && entry.icon ? entry.icon : cls, "application-x-executable"))
             readonly property bool showClass: root.opts.showClass !== false
             readonly property string line1: desktop ? "Área de trabalho" : (entry && entry.name ? entry.name : cls)
-            readonly property string line2: desktop ? "Workspace " + (focusedWs ? focusedWs.id : 1) : title
+            readonly property string line2: desktop ? "Espaço " + (focusedWs ? (focusedWs.name && focusedWs.name !== String(focusedWs.id) ? focusedWs.name : focusedWs.id) : 1) : title
             Image {
                 visible: winRow.iconUrl !== ""
                 anchors.verticalCenter: parent.verticalCenter
