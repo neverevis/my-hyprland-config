@@ -193,8 +193,8 @@ Variants {
             Image {
                 id: newImg
                 parent: win.trans === "circle" ? newWrap : (win.trans === "wipe" ? wipeInner : plainNew)
-                x: win.trans === "wipe" ? win.ox - wipeClip.x : 0
-                y: win.trans === "wipe" ? win.oy - wipeClip.y : 0
+                x: win.trans === "wipe" ? stage.ox - wipeClip.x : 0
+                y: win.trans === "wipe" ? stage.oy - wipeClip.y : 0
                 width: win.width; height: win.height
                 scale: win.trans === "wipe" ? 1 + 2 * (1 - win.progress) * win.newK * win.kmax * win.zoomW
                     : (win.trans === "circle" ? 1 + (1 - win.progress) * win.sK * 1.25 : 1)
@@ -206,8 +206,8 @@ Variants {
                 onStatusChanged: if (status === Image.Ready && win.incoming !== "" && !anim.running) anim.restart()
             }
             // cortina: a imagem nova tambem anda na direcao da cortina, mais devagar que a borda (deslocamento o)
-            readonly property real ox: trans === "wipe" ? -(1 - progress) * newK * dx : 0
-            readonly property real oy: trans === "wipe" ? -(1 - progress) * newK * dy : 0
+            readonly property real ox: win.trans === "wipe" ? -(1 - win.progress) * win.newK * win.dx : 0
+            readonly property real oy: win.trans === "wipe" ? -(1 - win.progress) * win.newK * win.dy : 0
 
             Item {   // fonte do circulo (fora da tela, mas visivel: item invisivel nao atualiza a textura)
                 id: newWrap
