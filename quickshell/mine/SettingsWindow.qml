@@ -271,7 +271,7 @@ Scope {
             z: 5
             readonly property real inner: width - 24
             // um unico retangulo com cantos arredondados so na esquerda (o da direita fica cortado): o vidro nao dobra
-            Rectangle { x: 0; y: 0; width: parent.width + 40; height: parent.height; radius: 22; color: Theme.gl(Theme.sidebar, 1) }
+            Rectangle { x: 0; y: 0; width: parent.width + 40; height: parent.height; radius: root.windowed ? 0 : 22; color: Theme.gl(Theme.sidebar, 1) }
             Rectangle { anchors { right: parent.right; top: parent.top; bottom: parent.bottom } width: 1; color: Theme.border; opacity: 0.6 }
 
             Column {
