@@ -284,6 +284,15 @@ SetPage {
     readonly property var wsOpts: [["", "Do Hyprland", "cog"], ["slide", "Deslizar", "arrow_right"], ["slidevert", "Vertical", "arrowDown"],
         ["slidefade 20%", "Deslizar + fade", "arrow_right"], ["slidefadevert 20%", "Vertical + fade", "arrowDown"], ["fade", "Fade", "opacity"], ["none", "Nenhuma", "close"]]
     readonly property string ws: (Settings.animCfg ?? {}).ws ?? ""
+    // wallpapers de verdade nas miniaturas: o atual e o proximo da lista
+    readonly property string thA: Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
+    readonly property string thB: {
+        const fl = Wallpaper.files
+        if (!fl || fl.length < 2) return thA
+        let i = 0
+        for (let k = 0; k < fl.length; k++) if (fl[k].path === Wallpaper.current) { i = k; break }
+        return Wallpaper.stillUrl(fl[(i + 1) % fl.length].path)
+    }
     SetSection {
         title: "Troca de workspace"; icon: "swap_horizontal"; subtitle: "Como a tela muda ao ir para outro workspace. Passe o mouse para ver"
         SetChoice {
@@ -316,14 +325,20 @@ SetPage {
                             required property int index
                             readonly property real t: index === 0 ? -wd.p : 1 - wd.p   // posicao relativa: 0 = na tela
                             width: wd.width; height: wd.height; radius: 9
-                            color: index === 0 ? Theme.secondaryContainer : Theme.primaryContainer
+                            color: Theme.track
+                            clip: true
+                            Image {
+                                anchors.fill: parent
+                                source: index === 0 ? page.thA : page.thB; sourceSize: Qt.size(192, 108)
+                                fillMode: Image.PreserveAspectCrop; asynchronous: true; smooth: true
+                            }
                             x: wt.vert ? 0 : t * wd.width * wt.far
                             y: wt.vert ? t * wd.height * wt.far : 0
                             opacity: wt.st === "none" ? ((index === 1) === (wd.p >= 0.5) ? 1 : 0) : wt.fades ? 1 - Math.abs(t) : 1
                             // janelinhas de cada workspace
-                            Rectangle { x: 6; y: 6; width: parent.width * (index === 0 ? 0.42 : 0.6) - 9; height: parent.height - 12; radius: 4; color: index === 0 ? Theme.secondary : Theme.primary; opacity: 0.8 }
-                            Rectangle { x: parent.width * (index === 0 ? 0.42 : 0.6) + 3; y: 6; width: parent.width * (index === 0 ? 0.58 : 0.4) - 9; height: index === 0 ? parent.height - 12 : (parent.height - 15) / 2; radius: 4; color: index === 0 ? Theme.secondary : Theme.primary; opacity: 0.5 }
-                            Rectangle { visible: index === 1; x: parent.width * 0.6 + 3; y: 9 + (parent.height - 15) / 2; width: parent.width * 0.4 - 9; height: (parent.height - 15) / 2; radius: 4; color: Theme.primary; opacity: 0.5 }
+                            Rectangle { x: 6; y: 6; width: parent.width * (index === 0 ? 0.42 : 0.6) - 9; height: parent.height - 12; radius: 4; color: "white"; opacity: 0.3; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.4) }
+                            Rectangle { x: parent.width * (index === 0 ? 0.42 : 0.6) + 3; y: 6; width: parent.width * (index === 0 ? 0.58 : 0.4) - 9; height: index === 0 ? parent.height - 12 : (parent.height - 15) / 2; radius: 4; color: "white"; opacity: 0.25; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.4) }
+                            Rectangle { visible: index === 1; x: parent.width * 0.6 + 3; y: 9 + (parent.height - 15) / 2; width: parent.width * 0.4 - 9; height: (parent.height - 15) / 2; radius: 4; color: "white"; opacity: 0.25; border.width: 1; border.color: Qt.rgba(1, 1, 1, 0.4) }
                         }
                     }
                 }

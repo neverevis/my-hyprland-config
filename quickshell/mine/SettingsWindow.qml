@@ -288,7 +288,9 @@ Scope {
                 // cabecalho: foto e nome; o clique leva a Conta e Sobre
                 Item {
                     width: parent.width; height: 52
-                    Rectangle { anchors.fill: parent; radius: 12; color: prM.containsMouse ? Theme.cardHi : "transparent" }
+                    Rectangle { anchors.fill: parent; radius: 12; color: prM.pressed ? Theme.card : (prM.containsMouse ? Theme.cardHi : "transparent")
+                        scale: prM.pressed ? 0.98 : 1
+                        Behavior on scale { enabled: root.open; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } } }
                     Row {
                         x: body.collapsed ? (parent.width - 36) / 2 : 6
                         spacing: 12
@@ -366,14 +368,10 @@ Scope {
                                 required property var modelData
                                 readonly property bool on: root.query === "" && root.curId === modelData.id
                                 width: grp.width; height: 38; radius: 11
-                                color: on ? Theme.tint(0.14) : (navMouse.containsMouse ? Theme.card : "transparent")
+                                color: on ? Theme.cardHi : (navMouse.containsMouse ? Theme.card : "transparent")
                                 Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
-                                // marca da pagina aberta
-                                Rectangle {
-                                    visible: nav.on
-                                    anchors { left: parent.left; verticalCenter: parent.verticalCenter }
-                                    width: 3; height: 16; radius: 2; color: Theme.accent
-                                }
+                                scale: navMouse.pressed ? 0.97 : 1
+                                Behavior on scale { enabled: root.open; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                 UiIcon {
                                     id: navIc
                                     x: body.collapsed ? (parent.width - width) / 2 : 12
@@ -394,8 +392,8 @@ Scope {
                                     id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                                     onClicked: { search.text = ""; body.peek = false; Settings.settingsPage = nav.modelData.id }
                                     onContainsMouseChanged: {
-                                        if (!tip) return; if (containsMouse && body.collapsed) { tip.text = nav.modelData.label; tip.y = nav.mapToItem(body, 0, 0).y + (nav.height - tip.height) / 2 }
-                                        else if (tip.text === nav.modelData.label) tip.text = ""
+                                        if (!tip) return; if (containsMouse && body.collapsed) tip.request(nav.modelData.label, nav.mapToItem(body, 0, 0).y + (nav.height - tip.height) / 2)
+                                        else tip.release(nav.modelData.label)
                                     }
                                 }
                             }
@@ -440,6 +438,19 @@ Scope {
         Rectangle {
             id: tip
             property string text: ""
+            property real lastHide: 0          // ms do ultimo fechamento: vizinhos logo depois abrem sem atraso
+            property string wantText: ""
+            property real wantY: 0
+            function request(t, yy) {
+                wantText = t; wantY = yy
+                if (text !== "" || Date.now() - lastHide < 600) { delayT.stop(); text = t; y = yy }
+                else delayT.restart()
+            }
+            function release(t) {
+                if (wantText === t) { delayT.stop(); wantText = "" }
+                if (text === t) { text = ""; lastHide = Date.now() }
+            }
+            Timer { id: delayT; interval: 450; onTriggered: { tip.text = tip.wantText; tip.y = tip.wantY } }
             visible: text !== "" && body.collapsed
             z: 50
             x: side.width + 6
@@ -495,6 +506,8 @@ Scope {
                             delegate: Rectangle {
                                 required property var modelData
                                 height: 30; width: jr.implicitWidth + 22; radius: 15
+                                scale: jm.pressed ? 0.97 : 1
+                                Behavior on scale { enabled: root.open; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                                 color: jm.containsMouse ? Theme.tint(0.16) : Theme.track
                                 border.width: 1; border.color: jm.containsMouse ? Theme.tint(0.5) : Theme.border
                                 Row {
@@ -591,12 +604,11 @@ Scope {
                         width: parent.width; height: 54; radius: 12
                         color: rrm.containsMouse || (index === 0) ? Theme.cardHi : Theme.track
                         border.width: 1; border.color: index === 0 ? Theme.tint(0.45) : Theme.border
-                        Rectangle {
+                        Item {
                             id: rrIc
-                            x: 12; anchors.verticalCenter: parent.verticalCenter
-                            width: 32; height: 32; radius: 9
-                            color: Theme.tint(0.16)
-                            UiIcon { anchors.centerIn: parent; name: (root.pageInfo(rr.modelData.page) ?? {}).icon ?? "cog"; size: 16; color: Theme.accent }
+                            x: 14; anchors.verticalCenter: parent.verticalCenter
+                            width: 20; height: 20
+                            UiIcon { anchors.centerIn: parent; name: (root.pageInfo(rr.modelData.page) ?? {}).icon ?? "cog"; size: 18; color: Theme.muted }
                         }
                         Column {
                             anchors { left: rrIc.right; leftMargin: 12; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter }

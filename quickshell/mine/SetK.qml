@@ -20,9 +20,9 @@ Singleton {
     readonly property int rowH: 56          // linha sem descricao
     readonly property int rowHDesc: 64      // linha com descricao
     readonly property int subH: 52          // sub-linha (dentro de um expansor)
-    readonly property int tile: 36          // quadradinho do icone
+    readonly property int tile: 20          // icone das linhas (sem caixa)
     readonly property int pad: 16           // margem interna das linhas
-    readonly property int textX: pad + tile + 14   // onde comeca o texto das linhas (sub-linhas alinham aqui)
+    readonly property int textX: pad + tile + 12   // onde comeca o texto das linhas (sub-linhas alinham aqui)
     readonly property int boxRadius: 18     // caixa das secoes
     readonly property int innerRadius: 12   // destaque de hover dentro da caixa
     // texto

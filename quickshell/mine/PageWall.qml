@@ -3,6 +3,7 @@
 // tela de bloqueio, o seletor (Super + W) e a busca no Wallhaven. O avancado fica nos expansores.
 import Quickshell
 import QtQuick
+import QtQuick.Effects
 
 SetPage {
     id: page
@@ -209,6 +210,10 @@ SetPage {
     // ---- transicao ----
     property string hov: ""   // transicao sob o mouse nos cartoes (vazio = a escolhida)
     readonly property var trOpts: [["fade", "Fade", "opacity"], ["slide", "Deslizar", "arrow_right"], ["wipe", "Cortina", "view_column"], ["circle", "Círculo", "circleOutline"], ["zoom", "Zoom", "fullscreen"], ["dissolve", "Dissolver", "grain"], ["pixelate", "Pixelar", "grid"], ["ripple", "Ondas", "wave"], ["blinds", "Persianas", "menu"], ["swirl", "Redemoinho", "rotate"], ["circlepit", "Poço", "target"], ["circleselect", "Círculos", "dotsCircle"], ["magic", "Mágica", "magic"], ["doom", "Derreter", "fire"], ["peel", "Folha", "noteText"], ["transition", "Diagonal", "arrow_bottom_right"], ["stripes", "Listras", "bars"], ["crt", "TV antiga", "monitor"], ["glitch", "Glitch", "lightning"], ["shatter", "Estilhaçar", "cardsDiamond"], ["random", "Aleatória", "dice"], ["none", "Nenhuma", "close"]]
+    // miniaturas das transicoes: o wallpaper atual e o proximo da lista (como no palco)
+    readonly property int thI: Wallpaper.files.findIndex(f => f.path === Wallpaper.current)
+    readonly property string thA: Wallpaper.current !== "" ? Wallpaper.stillUrl(Wallpaper.current) : ""
+    readonly property string thB: Wallpaper.files.length > 1 ? Wallpaper.stillUrl(Wallpaper.files[(Math.max(0, thI) + 1) % Wallpaper.files.length].path) : thA
     function trName(id) { const o = trOpts.find(x => x[0] === id); return o ? o[1] : id }
     SetSection {
         title: "Transição"
@@ -251,35 +256,64 @@ SetPage {
                     zoom: "zoom", swirl: "zoom", dissolve: "cells", pixelate: "cells", magic: "cells", glitch: "cells", shatter: "cells", blinds: "blinds", stripes: "blinds",
                     transition: "diag", doom: "drip", crt: "crt", none: "none" })[id0] ?? "fade"
                 onHoveredChanged: { if (!page) return; if (hovered) page.hov = id0; else if (page.hov === id0) page.hov = "" }
-                UiIcon {
-                    visible: tt.kind === "none"
-                    anchors.centerIn: parent
-                    name: tt.opt ? tt.opt[2] : ""
-                    size: 20
-                    color: tt.on ? Theme.accent : Theme.muted
-                }
-                Loader {
+                // quadro do meio da troca com os seus wallpapers de verdade: o atual por baixo, o proximo recortado pela forma
+                // da transicao (mascara). Imagens pequenas e compartilhadas entre os cartoes (mesmo endereco e tamanho = um cache so)
+                Item {
+                    id: demo
                     anchors.fill: parent
-                    active: tt.kind !== "none"
-                    sourceComponent: Item {
-                        id: demo
-                        clip: true
-                        property real p: 0.5   // parado no meio da troca; com o mouse em cima, ensaia em loop
-                        NumberAnimation on p { running: tt.hovered; from: 0; to: 1; duration: 1100; loops: Animation.Infinite; easing.type: Easing.InOutCubic; onRunningChanged: if (!running) demo.p = 0.5 }
-                        readonly property color ca: Theme.secondaryContainer
-                        readonly property color cb: Theme.primary
-                        Rectangle { anchors.fill: parent; radius: 9; color: demo.ca }
-                        // fade / zoom / crt: uma camada so
+                    property real p: 0.5   // parado no meio da troca; com o mouse em cima, ensaia em loop
+                    NumberAnimation on p { running: tt.hovered && tt.kind !== "none"; from: 0; to: 1; duration: 1100; loops: Animation.Infinite; easing.type: Easing.InOutCubic; onRunningChanged: if (!running) demo.p = 0.5 }
+                    readonly property bool masked: tt.kind !== "fade" && tt.kind !== "zoom" && tt.kind !== "none"
+                    readonly property color cb: "white"
+                    layer.enabled: true
+                    layer.effect: MultiEffect { maskEnabled: true; maskSource: round; maskThresholdMin: 0.5; maskSpreadAtMin: 0.2 }
+                    Rectangle { id: round; anchors.fill: parent; radius: 10; visible: false; layer.enabled: true }
+                    Image {
+                        anchors.fill: parent
+                        source: page.thA; sourceSize: Qt.size(192, 108)
+                        fillMode: Image.PreserveAspectCrop; asynchronous: true; smooth: true
+                    }
+                    // escurece o que sai, para a forma do que entra aparecer
+                    Rectangle { anchors.fill: parent; color: "black"; opacity: tt.kind === "none" ? 0 : 0.35 }
+                    Image {
+                        id: ib
+                        anchors.fill: parent
+                        source: page.thB; sourceSize: Qt.size(192, 108)
+                        fillMode: Image.PreserveAspectCrop; asynchronous: true; smooth: true
+                        visible: tt.kind === "fade" || tt.kind === "zoom"
+                        opacity: demo.p
+                        scale: tt.kind === "zoom" ? 1.6 - 0.6 * demo.p : 1
+                    }
+                    MultiEffect {
+                        visible: demo.masked
+                        anchors.fill: parent
+                        source: ib
+                        maskEnabled: true; maskSource: mk
+                        maskThresholdMin: 0.5; maskSpreadAtMin: 0.1
+                    }
+                    // fio branco na borda da forma (onde e barato desenhar)
+                    Rectangle { visible: tt.kind === "wipe"; x: demo.p * parent.width - 1; width: 1; height: parent.height; color: "white"; opacity: 0.6 }
+                    Rectangle { visible: tt.kind === "slide"; x: (1 - demo.p) * parent.width; width: 1; height: parent.height; color: "white"; opacity: 0.6 }
+                    Rectangle {
+                        visible: tt.kind === "circle"
+                        readonly property real d: demo.p * Math.hypot(parent.width, parent.height)
+                        anchors.centerIn: parent; width: d; height: d; radius: d / 2
+                        color: "transparent"; border.width: 1; border.color: "white"; opacity: 0.6
+                    }
+                    // a forma da transicao (so a mascara; nunca aparece)
+                    Item {
+                        id: mk
+                        anchors.fill: parent
+                        visible: false
+                        layer.enabled: demo.masked
                         Rectangle {
-                            visible: tt.kind === "fade" || tt.kind === "zoom" || tt.kind === "crt"
+                            visible: tt.kind === "crt"
                             anchors.centerIn: parent
-                            width: parent.width; height: tt.kind === "crt" ? Math.max(2, parent.height * Math.min(1, demo.p * 1.6)) : parent.height
-                            radius: 9; color: demo.cb
-                            opacity: tt.kind === "crt" ? 1 : demo.p
-                            scale: tt.kind === "zoom" ? 1.6 - 0.6 * demo.p : 1
+                            width: parent.width; height: Math.max(2, parent.height * Math.min(1, demo.p * 1.6))
+                            color: demo.cb
                         }
-                        Rectangle { visible: tt.kind === "slide"; x: (1 - demo.p) * parent.width; width: parent.width; height: parent.height; radius: 9; color: demo.cb }
-                        Rectangle { visible: tt.kind === "wipe"; width: demo.p * parent.width; height: parent.height; radius: 9; color: demo.cb }
+                        Rectangle { visible: tt.kind === "slide"; x: (1 - demo.p) * parent.width; width: parent.width; height: parent.height; color: demo.cb }
+                        Rectangle { visible: tt.kind === "wipe"; width: demo.p * parent.width; height: parent.height; color: demo.cb }
                         Rectangle {
                             visible: tt.kind === "circle"
                             readonly property real d: demo.p * Math.hypot(parent.width, parent.height)
@@ -292,11 +326,11 @@ SetPage {
                         }
                         Repeater {
                             model: tt.kind === "blinds" ? 5 : 0
-                            delegate: Rectangle { required property int index; y: index * demo.height / 5; width: demo.width; height: demo.p * demo.height / 5; color: demo.cb }
+                            delegate: Rectangle { required property int index; y: index * mk.height / 5; width: mk.width; height: demo.p * mk.height / 5; color: demo.cb }
                         }
                         Repeater {
                             model: tt.kind === "drip" ? 8 : 0
-                            delegate: Rectangle { required property int index; x: index * demo.width / 8; width: demo.width / 8 + 1; height: Math.min(demo.height, demo.p * demo.height * (0.7 + ((index * 37) % 10) / 12)); color: demo.cb }
+                            delegate: Rectangle { required property int index; x: index * mk.width / 8; width: mk.width / 8 + 1; height: Math.min(mk.height, demo.p * mk.height * (0.7 + ((index * 37) % 10) / 12)); color: demo.cb }
                         }
                         Grid {
                             visible: tt.kind === "cells"
@@ -304,9 +338,16 @@ SetPage {
                             columns: 6
                             Repeater {
                                 model: tt.kind === "cells" ? 24 : 0
-                                delegate: Rectangle { required property int index; width: demo.width / 6; height: demo.height / 4; color: demo.cb; opacity: ((index * 7919) % 24) / 24 < demo.p ? 1 : 0 }
+                                delegate: Rectangle { required property int index; width: mk.width / 6; height: mk.height / 4; color: demo.cb; opacity: ((index * 7919) % 24) / 24 < demo.p ? 1 : 0 }
                             }
                         }
+                    }
+                    // "Nenhuma" e "Aleatória": o icone num selo discreto por cima da imagem
+                    Rectangle {
+                        visible: tt.kind === "none" || tt.id0 === "random"
+                        anchors.centerIn: parent; width: 30; height: 30; radius: 15
+                        color: Qt.rgba(0, 0, 0, 0.45)
+                        UiIcon { anchors.centerIn: parent; name: tt.opt ? tt.opt[2] : ""; size: 16; color: "white" }
                     }
                 }
             }

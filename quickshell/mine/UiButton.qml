@@ -22,6 +22,8 @@ Rectangle {
     border.width: kind === "ghost" ? 0 : 1
     border.color: hot ? Theme.accent : (kind === "danger" ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.5) : Theme.border)
     opacity: mouse.pressed ? 0.8 : (enabled ? 1 : 0.45)
+    scale: mouse.pressed ? 0.97 : 1
+    Behavior on scale { enabled: b.visible; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
     Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
 
     readonly property color fg: hot ? Theme.accentText : (kind === "danger" ? Theme.danger : Theme.text)

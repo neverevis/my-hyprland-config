@@ -76,7 +76,7 @@ SetPage {
                         width: parent.width - 8
                         spacing: 1
                         UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: mr.modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                        UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: mr.modelData.w + "×" + mr.modelData.h + " · " + Math.round(parseFloat(mr.modelData.mode.split("@")[1])) + " Hz"; color: Theme.muted; font.pixelSize: 11 }
+                        UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: mr.modelData.w + "×" + mr.modelData.h + " · " + Math.round(parseFloat(mr.modelData.mode.split("@")[1])) + " Hz"; color: Theme.muted; font.pixelSize: 11; font.features: { "tnum": 1 } }
                     }
                 }
             }

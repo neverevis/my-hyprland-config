@@ -97,17 +97,19 @@ Scope {
                             required property var modelData
                             readonly property bool cur: Apps.tab === modelData.id
                             width: parent.width; height: 42; radius: SetK.innerRadius
-                            color: cur ? Theme.accent : (th.hovered ? Theme.cardHi : "transparent")
+                            color: cur ? Theme.cardHi : (th.hovered ? Theme.card : "transparent")
+                            scale: tm.pressed ? 0.97 : 1
+                            Behavior on scale { enabled: tb.visible; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
                             HoverHandler { id: th }
-                            MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Apps.tab = tb.modelData.id }
-                            UiIcon { x: SetK.md; anchors.verticalCenter: parent.verticalCenter; name: tb.modelData.icon; size: 18; color: tb.cur ? Theme.accentText : Theme.muted }
-                            UiText { x: SetK.md + 28; anchors.verticalCenter: parent.verticalCenter; text: tb.modelData.label; color: tb.cur ? Theme.accentText : Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium }
+                            MouseArea { id: tm; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Apps.tab = tb.modelData.id }
+                            UiIcon { x: SetK.md; anchors.verticalCenter: parent.verticalCenter; name: tb.modelData.icon; size: 18; color: tb.cur ? Theme.accent : Theme.muted }
+                            UiText { x: SetK.md + 28; anchors.verticalCenter: parent.verticalCenter; text: tb.modelData.label; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: tb.cur ? Font.DemiBold : Font.Medium }
                             Rectangle {
                                 visible: tb.modelData.id === "updates" && SystemGuard.updates > 0
                                 anchors { right: parent.right; rightMargin: SetK.md; verticalCenter: parent.verticalCenter }
                                 width: Math.max(20, ub.implicitWidth + 10); height: 18; radius: 9
-                                color: tb.cur ? Theme.accentText : Theme.accent
-                                UiText { id: ub; anchors.centerIn: parent; text: SystemGuard.updates; font.pixelSize: 10; font.weight: Font.Bold; color: tb.cur ? Theme.accent : Theme.accentText }
+                                color: Theme.accent
+                                UiText { id: ub; anchors.centerIn: parent; text: SystemGuard.updates; font.pixelSize: 10; font.weight: Font.Bold; color: Theme.accentText; font.features: { "tnum": 1 } }
                             }
                         }
                     }

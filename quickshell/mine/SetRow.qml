@@ -1,5 +1,5 @@
 // SetRow: linha no estilo do Windows 11 / GNOME, dentro de uma SetSection.
-//   [icone num quadradinho]  Nome            [restaurar] [controle]
+//   [icone simples]  Nome            [restaurar] [controle]
 //                            uma linha curta
 // - checked (bool) liga o interruptor no fim; a linha inteira clica e emite toggled(on).
 // - filhos viram o controle do fim (UiSeg, UiButton, UiField...). link: true mostra a seta e a linha emite clicked().
@@ -77,14 +77,12 @@ Item {
             onClicked: { if (r.checked !== undefined && !r.switchOnly) r.toggled(!r.checked); else r.clicked() }
         }
 
-        Rectangle {
+        UiIcon {
             id: tileBox
             visible: !r.sub && r.icon !== ""
-            x: SetK.pad
+            x: SetK.pad + (SetK.tile - 18) / 2
             anchors.verticalCenter: parent.verticalCenter
-            width: SetK.tile; height: SetK.tile; radius: 11
-            color: Theme.tint(0.14)
-            UiIcon { anchors.centerIn: parent; name: r.icon; size: 18; color: Theme.accent }
+            name: r.icon; size: 18; color: Theme.muted
         }
         Column {
             anchors {
