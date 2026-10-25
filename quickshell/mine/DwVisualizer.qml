@@ -92,8 +92,8 @@ Item {
         anchors.centerIn: parent
         spacing: 6
         UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "pulse"; size: 26; color: w.dim }
-        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Precisa do cava:"; color: w.fg; font.pixelSize: 13 }
-        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "sudo pacman -S cava"; color: w.ac; font.pixelSize: 13; font.family: Theme.mono }
+        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Falta o programa cava"; color: w.fg; font.pixelSize: 13 }
+        DetailsLine { anchors.horizontalCenter: parent.horizontalCenter; width: 200; cmd: "sudo pacman -S cava"; tone: w.dim }
     }
 
     // capa no meio do anel

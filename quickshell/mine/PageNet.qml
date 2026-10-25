@@ -87,7 +87,7 @@ SetPage {
     SetSection {
         title: "Wi-Fi"; icon: "wifi"
         subtitle: !page.wifi ? "Nenhuma placa Wi-Fi neste computador" : !Networking.wifiEnabled ? "Desligado" : page.cur ? "Conectado a " + page.cur.name : "Sem conexão"
-        SetRow { visible: !page.wifi; icon: "wifiOff"; label: "Sem Wi-Fi"; description: "Este computador não tem placa de rede sem fio, ou o NetworkManager não está rodando" }
+        SetRow { visible: !page.wifi; icon: "wifiOff"; label: "Sem Wi-Fi"; description: "Sem placa de Wi-Fi, ou a rede é gerenciada fora do shell. Instale o NetworkManager para controlar daqui" }
         SetRow {
             visible: page.wifiFail !== ""
             icon: "info"; label: "Não deu para conectar a " + page.wifiFail
@@ -190,7 +190,7 @@ SetPage {
     // ================= VPN =================
     SetSection {
         title: "VPN"; icon: "shieldLock"
-        subtitle: Vpn.connected ? "Conectada: " + Vpn.activeProfile.name : (Vpn.has ? "Desconectada" : "Nenhum perfil; importe um .conf (WireGuard) ou .ovpn (OpenVPN)")
+        subtitle: Vpn.connected ? "Conectada: " + Vpn.activeProfile.name : (Vpn.has ? "Desconectada" : "Nenhum perfil; importe um arquivo de VPN (WireGuard ou OpenVPN)")
         Timer { interval: 8000; repeat: true; running: page.live; onTriggered: Vpn.refresh() }
         Repeater {
             model: Vpn.profiles
@@ -211,7 +211,7 @@ SetPage {
             }
         }
         SetRow {
-            icon: "plus"; label: "Importar perfil"; description: Vpn.lastError !== "" ? "Não deu para usar o perfil. Detalhe: " + Vpn.lastError : "Escolhe o arquivo .conf ou .ovpn numa janela do sistema (precisa do zenity)"
+            icon: "plus"; label: "Importar perfil"; description: Vpn.lastError !== "" ? "Não deu para usar o perfil. Detalhe: " + Vpn.lastError : "Escolha o arquivo de VPN (.conf ou .ovpn) numa janela do sistema"
             UiButton { icon: "download"; text: "Importar"; kind: "accent"; enabled: !Vpn.busy; onClicked: { if (SysAct.real("vpn: importar")) Vpn.pickAndImport() } }
         }
     }
@@ -243,7 +243,12 @@ SetPage {
             checked: !!page.bt && page.bt.enabled
             onToggled: on => { if (page.bt && SysAct.real("bluetooth: " + (on ? "ligar" : "desligar"))) page.bt.enabled = on }
         }
-        SetRow { visible: !page.bt; icon: "info"; label: "Sem adaptador"; description: "Se o computador tiver um, ative o serviço: systemctl enable --now bluetooth (precisa do bluez)" }
+        SetRow {
+            visible: !page.bt; icon: "info"; label: "Bluetooth indisponível"
+            description: SysAct.jobState === "err" && SysAct.jobTitle === "Ligar Bluetooth" ? SysAct.jobFriendly : "O Bluetooth está desligado no sistema."
+            UiButton { icon: "bluetooth"; text: SysAct.busy && SysAct.jobTitle === "Ligar Bluetooth" ? "Ligando…" : "Ligar Bluetooth"; kind: "accent"; enabled: !SysAct.busy; onClicked: SysAct.runJob("Ligar Bluetooth", ["pkexec", "systemctl", "enable", "--now", "bluetooth"]) }
+            below: DetailsLine { cmd: "systemctl enable --now bluetooth  (precisa do pacote bluez)" }
+        }
         SetBlock {
             visible: !!page.bt && page.bt.enabled
             UiText { visible: page.paired.length === 0; width: parent.width; text: "Nenhum dispositivo pareado. Use Procurar dispositivos, logo abaixo."; color: Theme.muted; font.pixelSize: SetK.fDesc }

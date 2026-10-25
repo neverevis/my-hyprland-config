@@ -112,10 +112,10 @@ Column {
         Column {
             anchors { left: th.right; leftMargin: 9; right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
             spacing: 2
-            UiText { width: parent.width; elide: Text.ElideRight; text: opt.sameAsIn ? "Igual a abrir" : (opt.a ? opt.a.name : ""); color: Theme.text; font.pixelSize: 12; font.weight: opt.on ? Font.DemiBold : Font.Medium }
+            UiText { width: parent.width; elide: Text.ElideRight; text: opt.sameAsIn ? "Igual a abrir" : (opt.a ? (opt.a.name === "Padrão M3" ? "Padrão (Material)" : opt.a.name) : ""); color: Theme.text; font.pixelSize: 12; font.weight: opt.on ? Font.DemiBold : Font.Medium }
             UiText {
                 width: parent.width; elide: Text.ElideRight
-                text: !opt.a ? "" : opt.sameAsIn ? opt.a.name : (opt.a.type === "spring" ? "mola · " : "") + Motion.compile(opt.a).duration + " ms"
+                text: !opt.a ? "" : opt.sameAsIn ? (opt.a.name === "Padrão M3" ? "Padrão (Material)" : opt.a.name) : (opt.a.type === "spring" ? "mola · " : "") + Motion.compile(opt.a).duration + " ms"
                 color: Theme.muted; font.pixelSize: 11
             }
         }

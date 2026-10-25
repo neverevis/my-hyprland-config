@@ -64,9 +64,16 @@ HomeScroll {
                 visible: !pg.bt || !pg.bt.enabled || pg.paired.length === 0
                 width: parent.width; wrapMode: Text.WordWrap
                 topPadding: 6; bottomPadding: 6
-                text: !pg.bt ? "Nenhum adaptador Bluetooth disponível. Se o computador tiver um, ative o serviço: systemctl enable --now bluetooth" : (!pg.bt.enabled ? "O Bluetooth está desligado." : "Nenhum dispositivo pareado.")
+                text: !pg.bt ? "O Bluetooth está desligado no sistema." : (!pg.bt.enabled ? "O Bluetooth está desligado." : "Nenhum dispositivo pareado.")
                 color: Theme.muted; font.pixelSize: 13
             }
+            Row {
+                visible: !pg.bt
+                spacing: 6
+                UiButton { icon: "bluetooth"; text: SysAct.busy && SysAct.jobTitle === "Ligar Bluetooth" ? "Ligando…" : "Ligar Bluetooth"; kind: "accent"; enabled: !SysAct.busy; onClicked: SysAct.runJob("Ligar Bluetooth", ["pkexec", "systemctl", "enable", "--now", "bluetooth"]) }
+                UiText { visible: SysAct.jobState === "err" && SysAct.jobTitle === "Ligar Bluetooth"; anchors.verticalCenter: parent.verticalCenter; text: SysAct.jobFriendly; color: Theme.danger; font.pixelSize: SetK.fDesc }
+            }
+            DetailsLine { visible: !pg.bt; cmd: "systemctl enable --now bluetooth  (precisa do pacote bluez)" }
             Repeater {
                 model: pg.bt && pg.bt.enabled ? pg.paired : []
                 delegate: DevRow {

@@ -26,7 +26,7 @@ HomeScroll {
                 width: Math.max(80, pg.width - 28 - 40 - 12 - 12)
                 spacing: 2
                 UiText { width: parent.width; elide: Text.ElideRight; text: Vpn.connected ? "Conectado" : (Vpn.has ? "Desconectado" : "Nenhum perfil"); color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold }
-                UiText { width: parent.width; elide: Text.ElideRight; text: Vpn.connected ? Vpn.activeProfile.name : (Vpn.has ? "Escolha um perfil abaixo" : "Importe um arquivo .conf (WireGuard) ou .ovpn (OpenVPN)"); color: Theme.muted; font.pixelSize: 12 }
+                UiText { width: parent.width; elide: Text.ElideRight; text: Vpn.connected ? Vpn.activeProfile.name : (Vpn.has ? "Escolha um perfil abaixo" : "Importe um arquivo de VPN (.conf ou .ovpn)"); color: Theme.muted; font.pixelSize: 12 }
             }
         }
         Row {
@@ -45,7 +45,7 @@ HomeScroll {
             id: list
             width: parent.width
             spacing: 6
-            UiText { visible: !Vpn.has; text: "Nenhum perfil de VPN no NetworkManager."; color: Theme.muted; font.pixelSize: 13; height: 24; verticalAlignment: Text.AlignVCenter }
+            UiText { visible: !Vpn.has; text: "Nenhum perfil de VPN ainda. Se a rede é gerenciada fora do shell, instale o NetworkManager para controlar daqui."; color: Theme.muted; font.pixelSize: 13; height: 24; verticalAlignment: Text.AlignVCenter }
             Rectangle {   // barra de ocupado
                 visible: Vpn.busy
                 width: parent.width; height: 3; radius: 2; color: Theme.track

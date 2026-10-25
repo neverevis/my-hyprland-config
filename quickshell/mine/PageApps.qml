@@ -57,8 +57,9 @@ SetPage {
         }
         SetRow {
             icon: "plus"; label: "Novo comando"
-            UiField { id: asF; width: 260; placeholderText: "ex.: discord --start-minimized"; onAccepted: asB.clicked() }
+            CmdField { id: asF; fieldWidth: 220; placeholderText: "ex.: discord --start-minimized"; onAccepted: asB.clicked() }
             UiButton { id: asB; icon: "plus"; text: "Adicionar"; kind: "accent"; onClicked: { const c = asF.text.trim(); if (!c) return; Settings.hyprAutostart = (Settings.list(Settings.hyprAutostart)).concat([c]); asF.text = "" } }
+            below: CmdBelow { f: asF }
         }
         Repeater {
             model: Apps.startup.filter(s => !s.system)
@@ -99,13 +100,13 @@ SetPage {
                 id: ar
                 required property var modelData
                 icon: modelData.icon; label: modelData.label
-                UiField {
-                    width: 240
+                CmdField {
+                    id: cf
                     text: (Settings.appCmds || ({}))[ar.modelData.id] || ""
                     placeholderText: ar.modelData.def
-                    onAccepted: AppCmds.set(ar.modelData.id, text)
-                    onEditingFinished: AppCmds.set(ar.modelData.id, text)
+                    onCommitted: AppCmds.set(ar.modelData.id, text)
                 }
+                below: CmdBelow { f: cf }
             }
         }
     }

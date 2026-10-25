@@ -202,7 +202,9 @@ SetPage {
     // ---- luz noturna (os ajustes completos ficam em Paineis) ----
     SetSection {
         title: "Luz noturna"; icon: "night"
-        subtitle: !NightLight.available ? "Precisa do hyprsunset (sudo pacman -S hyprsunset)" : NightLight.active ? "Ligada agora (" + Settings.nightTemp + " K)" : "Desligada agora"
+        subtitle: !NightLight.available ? "Indisponível" : NightLight.active ? "Ligada agora (" + Settings.nightTemp + " K)" : "Desligada agora"
+        SetRow { visible: !NightLight.available; icon: "info"; label: "Falta o programa da luz noturna"; description: "O hyprsunset não está instalado."
+            below: DetailsLine { cmd: "sudo pacman -S hyprsunset" } }
         SetRow {
             icon: "night"; label: "Luz noturna"; description: "Tela mais quente para a noite"
             checked: NightLight.active

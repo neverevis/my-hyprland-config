@@ -25,7 +25,9 @@ Column {
 
     SetSection {
         title: "Luz noturna"; icon: "night"
-        subtitle: !NightLight.available ? "Precisa do hyprsunset (sudo pacman -S hyprsunset)" : (NightLight.active ? "Ligada agora (" + Settings.nightTemp + " K)" : "Desligada agora")
+        subtitle: !NightLight.available ? "Indisponível" : (NightLight.active ? "Ligada agora (" + Settings.nightTemp + " K)" : "Desligada agora")
+        SetRow { visible: !NightLight.available; icon: "info"; label: "Falta o programa da luz noturna"; description: "O hyprsunset não está instalado."
+            below: DetailsLine { cmd: "sudo pacman -S hyprsunset" } }
         SetRow {
             icon: NightLight.active ? "sun" : "night"; label: NightLight.active ? "Desligar agora" : "Ligar agora"; description: "Também pelo clique direito no botão Luz noturna do painel"
             UiButton { text: NightLight.active ? "Desligar" : "Ligar"; kind: NightLight.active ? "ghost" : "accent"; onClicked: NightLight.toggle() }

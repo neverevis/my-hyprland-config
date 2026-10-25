@@ -27,7 +27,7 @@ SetPage {
     function setSec(k, v) { Settings.setSection(idx, sec, k, v) }
     readonly property var secObj: secs[sec] ?? null
     // estilos prontos: cada um e um conjunto de opcoes da barra e das secoes dela
-    readonly property var styles: [["hug", "Na moldura", "frame"], ["plain", "Reta", "squareRounded"], ["float", "Solta", "cards"], ["panel", "Painel", "dock"], ["islands", "Ilhas", "dotsGrid"], ["m3", "Cores M3", "palette"]]
+    readonly property var styles: [["hug", "Na moldura", "frame"], ["plain", "Reta", "squareRounded"], ["float", "Solta", "cards"], ["panel", "Painel", "dock"], ["islands", "Ilhas", "dotsGrid"], ["m3", "Cores do tema", "palette"]]
     function applyStyle(id) {
         Settings.mutate(b => {
             const x = b[idx]; if (!x) return
