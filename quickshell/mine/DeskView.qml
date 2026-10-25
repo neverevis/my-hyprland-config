@@ -34,14 +34,30 @@ Item {
             id: fh
             property alias tex: ftex
             width: 640; height: Math.max(1, Math.round(640 * view.height / Math.max(1, view.width)))
-            Image {
+            // durante a troca de wallpaper: a imagem velha embaixo e a nova por cima, no ritmo da transicao (antes o fosco
+            // pulava para o wallpaper novo logo no inicio)
+            readonly property bool trans: Wallpaper.transTo !== ""
+            Item {
                 id: fimg
                 anchors.fill: parent
-                source: "file://" + Wallpaper.still
-                sourceSize: Qt.size(640, 360)
-                fillMode: Image.PreserveAspectCrop
-                asynchronous: true
-                cache: true
+                Image {
+                    anchors.fill: parent
+                    source: "file://" + (fh.trans ? Wallpaper.stillOf(Wallpaper.transFrom) : Wallpaper.still)
+                    sourceSize: Qt.size(640, 360)
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                }
+                Image {
+                    anchors.fill: parent
+                    visible: fh.trans
+                    opacity: Wallpaper.transProg
+                    source: fh.trans ? "file://" + Wallpaper.stillOf(Wallpaper.transTo) : ""
+                    sourceSize: Qt.size(640, 360)
+                    fillMode: Image.PreserveAspectCrop
+                    asynchronous: true
+                    cache: true
+                }
             }
             ShaderEffectSource { id: fsrc; sourceItem: fimg; hideSource: true; live: true }
             MultiEffect { id: fblur; anchors.fill: parent; source: fsrc; blurEnabled: true; blurMax: 64; blur: 1.0; autoPaddingEnabled: false }

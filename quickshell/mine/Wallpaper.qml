@@ -48,6 +48,10 @@ Singleton {
     function stillUrl(p) { const s = stillOf(p); return s ? "file://" + s : "" }
     function enqueue(p) { if (frameQueue.indexOf(p) < 0 && !frames[p]) { frameQueue = frameQueue.concat([p]); nextFrame() } }
     readonly property string still: stillOf(current)
+    // transicao em andamento (WallpaperWindow da primeira tela informa): o fundo fosco dos widgets mistura as duas imagens no mesmo ritmo
+    property string transFrom: ""
+    property string transTo: ""
+    property real transProg: 0
     function nextFrame() {
         if (frameProc.running || !frameQueue.length) return
         const p = frameQueue[0]

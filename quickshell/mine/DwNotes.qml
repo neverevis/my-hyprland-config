@@ -1,7 +1,10 @@
 // Widget de notas: varias notas salvas no proprio widget (opts.notes = [{ id, text }]; o antigo opts.text vira a primeira).
 // Com altura 2+ mostra a lista (linhas coloridas, arraste para a esquerda apaga) e o + vira o cartao para o editor
 // (animacao de virar). Com altura 1 abre direto a primeira nota, como o bloco unico de antes.
+// Composicoes (opcao "look"): auto (a de sempre), end4 (titulo grande + botao redondo, linhas em cartoes de 55 px que ciclam
+// primaria/secundaria/terciaria, editor em caixa) e linhas (lista solta com divisorias).
 import QtQuick
+import "dwparts.js" as U
 
 Item {
     id: w
@@ -16,7 +19,24 @@ Item {
     property color cont: Theme.primaryContainer
     property color contInk: Theme.primaryContainerInk
     property bool bare: false
+    property var comp: ({})                       // composicao vinda do cartao (caixas internas, selos, destaque, raio)
     function o(k) { return DeskState.opt({ type: "notes", opts: w.opts }, k) }
+
+    // composicao: auto, cards (end4) ou lines
+    readonly property string lk: { const l = o("look"); return l === "end4" ? "cards" : l === "lines" ? "lines" : "auto" }
+    readonly property bool cards: lk === "cards"
+    readonly property real pad: cards ? 14 : -1       // o DeskView usa como margem do conteudo (-1 = a padrao)
+    readonly property real rowR: comp.innerRadius > 0 ? comp.innerRadius : 17
+    function rowRole(i) {
+        if (comp.innerRole && comp.innerRole !== "auto") return comp.innerRole
+        const p = o("rowPalette")
+        if (p === "primary") return "primaryContainer"
+        if (p === "tertiary") return "tertiaryContainer"
+        if (p === "none") return "none"
+        return ["primaryContainer", "secondaryContainer", "tertiaryContainer"][i % 3]
+    }
+    function rowFill(i) { const r = rowRole(i); if (r === "none") return Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.08); const c = Theme.role(r); return Qt.rgba(c.r, c.g, c.b, comp.innerAlpha > 0 ? comp.innerAlpha : 1) }
+    function rowInk(i) { const r = rowRole(i); return r === "none" ? w.fg : Theme.role(U.inkRole(r)) }
 
     readonly property var notes: {
         const l = Settings.list(opts.notes).map(n => ({ id: n.id, text: n.text ?? "" }))
@@ -64,12 +84,12 @@ Item {
 
         Item {
             id: head
-            width: parent.width; height: 28
+            width: parent.width; height: w.cards ? 36 : 28
             Row {
                 spacing: 8
                 anchors.verticalCenter: parent.verticalCenter
-                UiIcon { name: "pencil"; size: 16; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
-                UiText { text: w.o("title"); color: w.fg; font.pixelSize: 15; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+                UiIcon { visible: !w.cards; name: "pencil"; size: 16; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: w.o("title"); color: w.fg; font.pixelSize: w.cards ? 22 : 15; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
             }
             Row {
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
@@ -98,25 +118,42 @@ Item {
             id: lv
             visible: !w.inEditor
             anchors { top: head.bottom; topMargin: 10; left: parent.left; right: parent.right; bottom: parent.bottom }
-            clip: true; spacing: 6
+            clip: true; spacing: w.cards ? 8 : w.lk === "lines" ? 0 : 6
             boundsBehavior: Flickable.StopAtBounds
             model: w.inEditor ? [] : w.notes
             delegate: Item {
                 id: row
                 required property var modelData
                 required property int index
-                width: lv.width; height: 44
+                width: lv.width; height: w.cards ? 55 : w.lk === "lines" ? 40 : 44
                 readonly property color tone: index % 3 === 0 ? w.ac : index % 3 === 1 ? w.ac2 : w.contInk
+                readonly property color ink: w.cards ? w.rowInk(index) : w.fg
+                readonly property var lines: row.modelData.text.split("\n").filter(l => l.trim() !== "")
+                // end4: arrastar mostra o tile de erro por baixo
+                Rectangle {
+                    visible: w.cards && rb.x < 0
+                    anchors.fill: parent; radius: w.rowR; color: Theme.danger
+                    UiIcon { anchors { right: parent.right; rightMargin: 18; verticalCenter: parent.verticalCenter } name: "trash"; size: 20; color: Theme.role("onError") }
+                }
                 Rectangle {
                     id: rb
-                    width: parent.width; height: parent.height; radius: 14
-                    color: Qt.rgba(row.tone.r, row.tone.g, row.tone.b, rm.containsMouse ? 0.28 : 0.18)
+                    width: parent.width; height: parent.height; radius: w.cards ? w.rowR : w.lk === "lines" ? 0 : 14
+                    color: w.cards ? w.rowFill(row.index) : w.lk === "lines" ? (rm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07) : "transparent") : Qt.rgba(row.tone.r, row.tone.g, row.tone.b, rm.containsMouse ? 0.28 : 0.18)
                     opacity: 1 - Math.min(0.6, -rb.x / width)
-                    Behavior on x { enabled: !drag.active; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+                    Behavior on x { enabled: !drag.active; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                    Rectangle { visible: w.lk === "lines" && row.index < lv.count - 1; anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12) }
                     UiText {
+                        visible: !w.cards
                         anchors { left: parent.left; right: parent.right; leftMargin: 14; rightMargin: 14; verticalCenter: parent.verticalCenter }
                         text: row.modelData.text.split("\n")[0] || "Nota vazia"
                         elide: Text.ElideRight; color: row.modelData.text ? w.fg : w.dim; font.pixelSize: 13
+                    }
+                    // end4: primeira linha como titulo e a segunda como previa
+                    Column {
+                        visible: w.cards
+                        anchors { left: parent.left; right: parent.right; leftMargin: 16; rightMargin: 16; verticalCenter: parent.verticalCenter }
+                        UiText { width: parent.width; text: row.lines[0] ?? "Nota vazia"; elide: Text.ElideRight; color: row.ink; font.pixelSize: 15; font.weight: Font.DemiBold }
+                        UiText { visible: row.lines.length > 1; width: parent.width; text: row.lines[1] ?? ""; elide: Text.ElideRight; color: Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.65); font.pixelSize: 12 }
                     }
                     MouseArea { id: rm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onClicked: { const id = row.modelData.id; w.flipTo(() => { w.cur = id }) } }
@@ -130,11 +167,17 @@ Item {
             UiText { visible: w.notes.length === 0; anchors.centerIn: parent; text: "Nenhuma nota. Toque no +"; color: w.dim; font.pixelSize: 13 }
         }
 
-        // editor
+        // editor (end4: dentro de uma caixa)
+        Rectangle {
+            visible: w.cards && w.inEditor
+            anchors { top: head.bottom; topMargin: 10; left: parent.left; right: parent.right; bottom: parent.bottom }
+            radius: w.rowR; color: Theme.role("surfaceLow")
+        }
         Flickable {
             id: fl
             visible: w.inEditor
-            anchors { top: head.bottom; topMargin: 10; left: parent.left; right: parent.right; bottom: parent.bottom }
+            anchors { top: head.bottom; topMargin: w.cards ? 22 : 10; left: parent.left; right: parent.right; bottom: parent.bottom
+                      leftMargin: w.cards ? 14 : 0; rightMargin: w.cards ? 14 : 0; bottomMargin: w.cards ? 12 : 0 }
             contentHeight: ed.contentHeight
             clip: true
             boundsBehavior: Flickable.StopAtBounds

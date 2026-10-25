@@ -29,6 +29,10 @@ Variants {
 
         property string shown: ""       // imagem totalmente visivel
         property string incoming: ""    // imagem entrando (durante a transicao)
+        readonly property bool mainScreen: modelData === Quickshell.screens[0]
+        Binding { target: Wallpaper; property: "transFrom"; value: win.incoming !== "" ? win.shown : ""; when: win.mainScreen }
+        Binding { target: Wallpaper; property: "transTo"; value: win.incoming; when: win.mainScreen }
+        Binding { target: Wallpaper; property: "transProg"; value: win.progress; when: win.mainScreen && win.incoming !== "" }
         property string trans: "fade"
         property real progress: 0
         readonly property bool isShader: Wallpaper.shaderTransitions.indexOf(trans) >= 0

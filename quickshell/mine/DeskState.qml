@@ -150,15 +150,24 @@ Singleton {
             { sec: "Perfil", key: "avatarShape", label: "Forma da foto", type: "seg", preview: true, def: "circle", options: Shapes.list }
           ] },
         { type: "todo", group: "work", name: "Tarefas", icon: "check", desc: "Lista de afazeres que fica salva.", sizes: [[2, 2], [2, 1], [3, 2], [2, 3]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["lines", "Linhas", "view_column"]] },
+            { sec: "Estilo", key: "rowPalette", label: "Cores das linhas", type: "seg", def: "cycle", options: [["cycle", "Alternadas", "palette"], ["primary", "Primária", "circleOutline"], ["tertiary", "Terciária", "circleOutline"], ["none", "Sem cor", "close"]], when: { look: "end4" } },
+            { sec: "Estilo", key: "header", label: "Cabeçalho", type: "seg", def: "title", options: [["title", "Título e +", "plus"], ["field", "Campo no topo", "pencil"], ["none", "Sem", "close"]], when: { look: "end4" } },
+            { sec: "Estilo", key: "checkShape", label: "Marca de concluída", type: "seg", def: "circle", options: [["circle", "Círculo", "circleOutline"], ["square", "Quadrado", "checkbox"]], when: { look: "end4" } },
+            { sec: "Lista", key: "doneStyle", label: "Concluídas", type: "seg", def: "strike", options: [["strike", "Riscadas", "minus"], ["fade", "Apagadas", "blur"], ["hide", "Escondidas", "eyeOff"]] },
             { sec: "Lista", key: "hideDone", label: "Esconder as concluídas", icon: "eyeOff", type: "switch", def: false },
             { sec: "Lista", key: "progress", label: "Barra de progresso", icon: "progressCheck", type: "switch", def: true }
           ] },
         { type: "notes", group: "work", name: "Notas", icon: "pencil", desc: "Um bloco de notas que fica salvo.", sizes: [[2, 2], [2, 1], [3, 2], [1, 1]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["lines", "Linhas", "view_column"]] },
+            { sec: "Estilo", key: "rowPalette", label: "Cores das linhas", type: "seg", def: "cycle", options: [["cycle", "Alternadas", "palette"], ["primary", "Primária", "circleOutline"], ["tertiary", "Terciária", "circleOutline"], ["none", "Sem cor", "close"]], when: { look: "end4" } },
             { sec: "Bloco", key: "title", label: "Título", icon: "tag", type: "text", def: "Notas" },
             { sec: "Bloco", key: "mono", label: "Fonte de código", icon: "keyboard", type: "switch", def: false },
             { sec: "Bloco", key: "size", label: "Tamanho da letra", icon: "textSize", type: "slider", from: 10, to: 28, step: 1, suffix: " px", def: 14 }
           ] },
         { type: "timer", group: "work", name: "Timers", icon: "timer", desc: "Cronômetro, contagem regressiva e pomodoro.", sizes: [[2, 1], [2, 2], [1, 1], [3, 1], [4, 1], [1, 3]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["cards", "Cartões no tom", "dashboard"], ["compact", "Compacto", "timer"]] },
+            { sec: "Estilo", key: "chips", label: "Botões +1m e +5m", icon: "plus", type: "switch", def: true, when: { look: ["end4", "cards"], mode: ["countdown", "all"] } },
             { sec: "Tempos", key: "mode", label: "Modo", type: "seg", def: "pomodoro", options: [["all", "Os três", "dashboard"], ["pomodoro", "Pomodoro", "target"], ["countdown", "Regressivo", "timer"], ["stopwatch", "Cronômetro", "stopwatch"]] },
             { sec: "Tempos", key: "flip", label: "Tiles na vertical", icon: "dashboard", type: "switch", def: false, when: { mode: "all" } },
             { sec: "Tempos", key: "focus", label: "Foco", icon: "target", type: "slider", from: 5, to: 90, step: 5, suffix: " min", def: 25, when: { mode: ["pomodoro", "all"] } },
@@ -170,7 +179,13 @@ Singleton {
             { sec: "Tempos", key: "sound", label: "Tocar um som ao terminar", icon: "volume", type: "switch", def: true, when: { notify: true } }
           ] },
         { type: "text", group: "deco", name: "Texto", icon: "compose", desc: "Uma frase, com a fonte e a cor que quiser.", sizes: [[3, 1], [2, 1], [4, 1], [2, 2], [4, 2]], options: [
-            { sec: "Texto", key: "text", label: "Texto", type: "text", multiline: true, def: "Olá, mundo" },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"]] },
+            { sec: "Texto", key: "text", label: "Texto", desc: "Variáveis: {time} hora, {date} data, {battery} bateria.", type: "text", multiline: true, def: "Olá, mundo" },
+            { sec: "Estilo", key: "fill", label: "Preenchimento", type: "seg", def: "solid", options: [["solid", "Cor do tom", "circleOutline"], ["accent", "Destaque", "palette"], ["gradient", "Degradê", "blur"]] },
+            { sec: "Estilo", key: "outline", label: "Contorno", icon: "circleOutline", type: "switch", def: false },
+            { sec: "Estilo", key: "outlineRole", label: "Cor do contorno", type: "role", def: "bg", roles: ["bg", "text", "primary", "secondary", "tertiary"], when: { outline: true } },
+            { sec: "Estilo", key: "backing", label: "Base atrás do texto", type: "seg", def: "none", options: [["none", "Sem", "close"], ["pill", "Pílula", "circleOutline"], ["panel", "Caixa", "view_grid"]] },
+            { sec: "Estilo", key: "blend", label: "Opacidade do texto", icon: "blur", type: "slider", from: 20, to: 100, step: 5, suffix: " %", def: 100 },
             { sec: "Fonte", key: "font", label: "Fonte", type: "font", def: "" },
             { sec: "Fonte", key: "size", label: "Tamanho", icon: "textSize", type: "slider", from: 12, to: 200, step: 2, suffix: " px", def: 64 },
             { sec: "Fonte", key: "weight", label: "Peso", icon: "bold", type: "slider", from: 100, to: 900, step: 100, def: 600 },
@@ -180,6 +195,9 @@ Singleton {
           ] },
         { type: "image", group: "deco", name: "Imagem", icon: "image", desc: "Foto numa forma, cartão com legenda ou adesivo. Solte uma imagem nele para trocar.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2], [2, 3]], free: true, options: [
             { sec: "Imagem", key: "path", label: "Imagem", type: "image", def: "" },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", when: { kind: "card" }, options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["polaroid", "Polaroid", "imageFrame"], ["film", "Filme", "image"]] },
+            { sec: "Imagem", key: "overlay", label: "Legenda sobre a foto", icon: "tag", type: "switch", def: false, when: { kind: "card", look: "end4" } },
+            { sec: "Imagem", key: "captionPos", label: "Posição da legenda", type: "seg", def: "bottom", options: [["bottom", "Embaixo", "alignVCenter"], ["top", "Em cima", "alignVCenter"]], when: { kind: "card", look: "end4", overlay: true } },
             { sec: "Imagem", key: "kind", label: "Tipo", type: "seg", preview: true, def: "photo", options: [["photo", "Foto", "image"], ["card", "Cartão", "imageFrame"], ["sticker", "Adesivo", "sticker"]] },
             { sec: "Forma", key: "shape", label: "Forma", type: "seg", preview: true, def: "rounded", options: Shapes.list, when: { kind: "photo" } },
             { sec: "Forma", key: "sides", label: "Pétalas", icon: "flowerOutline", type: "slider", from: 3, to: 24, step: 1, def: 10, when: { kind: "photo", shape: "flower" } },
@@ -376,6 +394,14 @@ Singleton {
             { id: "b-notes", type: "notes", fx: 0.05, fy: 0.9, cols: 2, rows: 2, opts: {} },
             { id: "b-media", type: "media", fx: 0.5, fy: 0.92, cols: 2, rows: 2, opts: {} },
             { id: "b-calendar", type: "calendar", fx: 0.95, fy: 0.9, cols: 2, rows: 2, opts: {} }] } },
+        { name: "end4", builtin: true, icon: "view_grid", data: { desktopWidgets: [
+            { id: "e4-user", type: "user", fx: 0.03, fy: 0.08, cols: 2, rows: 2, opts: { look: "end4", card: "frost" } },
+            { id: "e4-calendar", type: "calendar", fx: 0.03, fy: 0.92, cols: 2, rows: 2, opts: { look: "end4", card: "frost" } },
+            { id: "e4-timer", type: "timer", fx: 0.5, fy: 0.08, cols: 3, rows: 1, opts: { look: "end4", mode: "all", card: "frost" } },
+            { id: "e4-media", type: "media", fx: 0.5, fy: 0.94, cols: 3, rows: 1, opts: { look: "end4", card: "frost" } },
+            { id: "e4-clock", type: "clock", fx: 0.97, fy: 0.06, cols: 2, rows: 2, opts: { look: "end4", card: "frost" } },
+            { id: "e4-weather", type: "weather", fx: 0.97, fy: 0.5, cols: 2, rows: 1, opts: { look: "end4", card: "frost" } },
+            { id: "e4-todo", type: "todo", fx: 0.97, fy: 0.94, cols: 2, rows: 2, opts: { look: "end4", card: "frost" } }] } },
         { name: "Limpo", builtin: true, icon: "broom", data: { desktopWidgets: [] } }
     ]
     readonly property var all: builtins.concat(Looks.list)
