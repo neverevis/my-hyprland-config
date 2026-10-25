@@ -77,13 +77,22 @@ Item {
         if (!cur || cur.primary === undefined) { ThemeColors.t = t; toT = t; return }   // primeira paleta: sem fade
         if (Object.keys(t).every(k => String(cur[k]) === String(t[k]))) return       // mesma paleta: nada a fazer
         fromT = cur; toT = t
+        // durante a troca de wallpaper o fade espera: cada passo recalcula as cores de todas as janelas e disputava
+        // a thread principal com a transicao (engasgava)
+        if (Wallpaper.busy) { pending = true; return }
+        startFade()
+    }
+    property bool pending: false
+    function startFade() {
+        pending = false
         fadeStart = Date.now()
         ThemeColors.fading = true
         step.restart()
     }
+    Connections { target: Wallpaper; function onBusyChanged() { if (!Wallpaper.busy && root.pending) root.startFade() } }
     Timer {
         id: step
-        interval: 33; repeat: true; triggeredOnStart: true
+        interval: 50; repeat: true; triggeredOnStart: true   // ~12 passos: cada um custa uma reavaliacao de todas as cores
         onTriggered: {
             const x = Math.min(1, (Date.now() - root.fadeStart) / root.fadeMs)
             root.mix = 1 - Math.pow(1 - x, 3)   // OutCubic

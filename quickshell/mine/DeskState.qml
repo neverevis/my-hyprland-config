@@ -245,6 +245,17 @@ Singleton {
         const own = info(type).options, lockOwn = own.filter(o => o.sec === "Tela de bloqueio")
         return own.filter(o => o.sec !== "Tela de bloqueio").concat(commonOptions, lockOwn)
     }
+    // padroes de cada tipo { tipo: { chave: def } }, montado uma vez: opt() e chamada por quase todo binding dos widgets
+    // e antes remontava a lista inteira de opcoes a cada chamada (228 mil chamadas numa troca de wallpaper)
+    readonly property var defs: {
+        const out = {}
+        for (const c of catalog) {
+            const m = {}
+            for (const o of optionsOf(c.type)) if (m[o.key] === undefined) m[o.key] = o.def
+            out[c.type] = m
+        }
+        return out
+    }
     // valor de uma opcao com o padrao do esquema
     function opt(w, key) {
         const o = (w && w.opts) || {}
@@ -252,8 +263,8 @@ Singleton {
         // tom: widgets antigos guardavam "fg" (auto | theme | custom)
         if (key === "tone" && o.fg !== undefined) return ({ theme: "primary", custom: "custom" })[o.fg] ?? "global"
         if (key === "card") return (w && w.type === "system" && (o.look ?? "tiles") === "tiles") || (w && w.type === "world" && o.look === "tiles") ? "none" : (cardDefaults[w ? w.type : ""] ?? "auto")
-        const d = optionsOf(w ? w.type : "").find(x => x.key === key)
-        return d ? d.def : undefined
+        const d = defs[w ? w.type : ""] ?? defs[catalog[0].type]
+        return d[key]
     }
     function shown(w, def) {
         if (!def.when) return true
