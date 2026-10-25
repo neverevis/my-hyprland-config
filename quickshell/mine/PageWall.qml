@@ -207,20 +207,40 @@ SetPage {
     }
 
     // ---- transicao ----
+    property string hov: ""   // transicao sob o mouse nos cartoes (vazio = a escolhida)
+    readonly property var trOpts: [["fade", "Fade", "opacity"], ["slide", "Deslizar", "arrow_right"], ["wipe", "Cortina", "view_column"], ["circle", "Círculo", "circleOutline"], ["zoom", "Zoom", "fullscreen"], ["dissolve", "Dissolver", "grain"], ["pixelate", "Pixelar", "grid"], ["ripple", "Ondas", "wave"], ["blinds", "Persianas", "menu"], ["swirl", "Redemoinho", "rotate"], ["circlepit", "Poço", "target"], ["circleselect", "Círculos", "dotsCircle"], ["magic", "Mágica", "magic"], ["doom", "Derreter", "fire"], ["peel", "Folha", "noteText"], ["transition", "Diagonal", "arrow_bottom_right"], ["stripes", "Listras", "bars"], ["crt", "TV antiga", "monitor"], ["glitch", "Glitch", "lightning"], ["shatter", "Estilhaçar", "cardsDiamond"], ["random", "Aleatória", "dice"], ["none", "Nenhuma", "close"]]
+    function trName(id) { const o = trOpts.find(x => x[0] === id); return o ? o[1] : id }
     SetSection {
         title: "Transição"
         icon: "transition"
+        SetBlock {
+            Item {
+                width: parent.width
+                height: (stgL.item ? stgL.item.height : 236) + 30
+                Loader {
+                    id: stgL
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    active: Settings.settingsOpen
+                    sourceComponent: WpStage {
+                        width: Math.min(420, page.width - SetK.pad * 4)
+                        sel: page.hov !== "" ? page.hov : Settings.wpTransition
+                        active: Settings.settingsOpen && page.visible
+                    }
+                }
+                UiText {
+                    anchors { top: parent.top; topMargin: (stgL.item ? stgL.item.height : 0) + 8; horizontalCenter: parent.horizontalCenter }
+                    color: Theme.muted; font.pixelSize: SetK.fDesc
+                    text: page.trName(stgL.item ? (stgL.item.sel) : "") + (stgL.item && stgL.item.sel === "random" ? " (" + page.trName(stgL.item.trans) + ")" : "") + "  ·  " + Wallpaper.duration + " ms"
+                }
+            }
+        }
         SetChoice {
             label: ""
             style: "tiles"; minTile: 80; thumbHeight: 50
-            options: [["fade", "Fade", "opacity"], ["slide", "Deslizar", "arrow_right"], ["wipe", "Cortina", "view_column"], ["circle", "Círculo", "circleOutline"], ["zoom", "Zoom", "fullscreen"],
-                      ["dissolve", "Dissolver", "grain"], ["pixelate", "Pixelar", "grid"], ["ripple", "Ondas", "wave"], ["blinds", "Persianas", "menu"], ["swirl", "Redemoinho", "rotate"],
-                      ["circlepit", "Poço", "target"], ["circleselect", "Círculos", "dotsCircle"], ["magic", "Mágica", "magic"], ["doom", "Derreter", "fire"], ["peel", "Folha", "noteText"],
-                      ["transition", "Diagonal", "arrow_bottom_right"], ["stripes", "Listras", "bars"], ["crt", "TV antiga", "monitor"], ["glitch", "Glitch", "lightning"], ["shatter", "Estilhaçar", "cardsDiamond"],
-                      ["random", "Aleatória", "dice"], ["none", "Nenhuma", "close"]]
+            options: page.trOpts
             value: Settings.wpTransition
             onPicked: v => Settings.wpTransition = v
-            // miniatura parada (icone); com o mouse em cima, um ensaio da transicao em loop
+            // miniatura parada (quadro do meio da troca); com o mouse em cima, um ensaio da transicao em loop
             thumb: Item {
                 id: tt
                 property var opt
@@ -230,8 +250,9 @@ SetPage {
                 readonly property string kind: ({ fade: "fade", random: "fade", slide: "slide", peel: "slide", wipe: "wipe", circle: "circle", ripple: "circle", circlepit: "circle", circleselect: "circle",
                     zoom: "zoom", swirl: "zoom", dissolve: "cells", pixelate: "cells", magic: "cells", glitch: "cells", shatter: "cells", blinds: "blinds", stripes: "blinds",
                     transition: "diag", doom: "drip", crt: "crt", none: "none" })[id0] ?? "fade"
+                onHoveredChanged: { if (!page) return; if (hovered) page.hov = id0; else if (page.hov === id0) page.hov = "" }
                 UiIcon {
-                    visible: !tt.hovered || tt.kind === "none"
+                    visible: tt.kind === "none"
                     anchors.centerIn: parent
                     name: tt.opt ? tt.opt[2] : ""
                     size: 20
@@ -239,12 +260,12 @@ SetPage {
                 }
                 Loader {
                     anchors.fill: parent
-                    active: tt.hovered && tt.kind !== "none"
+                    active: tt.kind !== "none"
                     sourceComponent: Item {
                         id: demo
                         clip: true
-                        property real p: 0
-                        NumberAnimation on p { from: 0; to: 1; duration: 1100; loops: Animation.Infinite; easing.type: Easing.InOutCubic }
+                        property real p: 0.5   // parado no meio da troca; com o mouse em cima, ensaia em loop
+                        NumberAnimation on p { running: tt.hovered; from: 0; to: 1; duration: 1100; loops: Animation.Infinite; easing.type: Easing.InOutCubic; onRunningChanged: if (!running) demo.p = 0.5 }
                         readonly property color ca: Theme.secondaryContainer
                         readonly property color cb: Theme.primary
                         Rectangle { anchors.fill: parent; radius: 9; color: demo.ca }
