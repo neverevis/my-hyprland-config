@@ -19,6 +19,14 @@ Column {
     property var previewOpts: ({})
     property int previewCols: 2
     property int previewRows: 2
+    // inspetor: secoes que recolhem (openMap[prefixo+secao]; padrao = so as 2 primeiras abertas) e "voltar ao padrao" por opcao
+    property bool collapsible: false
+    property var openMap: ({})
+    property string openPrefix: ""
+    signal toggled(string key, bool open)
+    property bool resettable: false
+    property var defOf: k => undefined
+    property var reset: null
     width: parent ? parent.width : 320
     spacing: 0
 
@@ -33,6 +41,20 @@ Column {
         }
         return out
     }
+    readonly property var secList: {
+        const out = []
+        for (const d of schema) if (d.sec && out.indexOf(d.sec) < 0 && isShown(d)) out.push(d.sec)
+        return out
+    }
+    function isOpen(sec) {
+        if (!collapsible || !sec) return true
+        const v = openMap[openPrefix + sec]
+        return v !== undefined ? v : secList.indexOf(sec) < 2
+    }
+    function norm(v) { return v !== null && typeof v === "object" ? JSON.stringify(Array.from(v)) : String(v) }
+    function differs(d) { if (!resettable) return false; const dv = defOf(d.key); return dv !== undefined && norm(get(d.key)) !== norm(dv) }
+    function secChanged(sec) { return resettable && schema.some(d => d.sec === sec && isShown(d) && differs(d)) }
+    function doReset(d) { if (reset) reset(d.key); else set(d.key, defOf(d.key)) }
     function merged(key, v) { const o = Object.assign({}, previewOpts || {}); if (v !== "same") o[key] = v; return o }
 
     Repeater {
@@ -43,7 +65,8 @@ Column {
             required property int index
             readonly property var place: form.places[modelData.key] ?? ({ head: true, last: true })
             readonly property bool shownNow: form.isShown(modelData)
-            visible: shownNow
+            readonly property bool open: form.isOpen(modelData.sec)
+            visible: shownNow && (open || place.head)
             width: form.width
             spacing: 0
 
@@ -52,6 +75,20 @@ Column {
                 visible: form.grouped && row.place.head && !!row.modelData.sec
                 width: parent.width
                 height: visible ? (row.index > 0 ? 40 : 30) : 0
+                MouseArea {
+                    enabled: form.collapsible
+                    anchors { fill: parent; topMargin: row.index > 0 ? 8 : 0 }
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: form.toggled(form.openPrefix + row.modelData.sec, !row.open)
+                }
+                Row {
+                    visible: form.collapsible
+                    anchors { right: parent.right; rightMargin: 6; bottom: parent.bottom; bottomMargin: 10 }
+                    spacing: 6
+                    Rectangle { visible: !row.open && form.secChanged(row.modelData.sec); width: 6; height: 6; radius: 3; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                    UiIcon { name: "chevDown"; size: 14; color: Theme.muted; rotation: row.open ? 0 : -90; anchors.verticalCenter: parent.verticalCenter
+                        Behavior on rotation { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } } }
+                }
                 Row {
                     anchors { left: parent.left; leftMargin: 4; bottom: parent.bottom; bottomMargin: 8 }
                     spacing: 8
@@ -66,6 +103,7 @@ Column {
             }
             // bloco: linhas coladas, cantos arredondados so no comeco e no fim da secao
             Rectangle {
+                visible: row.open
                 width: parent.width
                 height: ld.height + form.pad * 2
                 color: form.grouped ? Qt.rgba(Theme.text.r, Theme.text.g, Theme.text.b, 0.045) : "transparent"
@@ -74,15 +112,34 @@ Column {
                 Loader {
                     id: ld
                     x: form.pad; y: form.pad
-                    width: parent.width - form.pad * 2
-                    active: row.shownNow
+                    width: parent.width - form.pad * 2 - (form.resettable ? 24 : 0)
+                    active: row.shownNow && row.open
                     sourceComponent: ({ seg: row.modelData.preview && form.previewType !== "" ? previewC : segC, switch: switchC, slider: sliderC, text: textC, font: fontC, color: colorC, image: imageC, list: listC, tone: toneC, role: roleC })[row.modelData.type] ?? null
                     property var def: row.modelData
                     property var val: form.get(row.modelData.key)
                 }
+                // voltar ao padrao: so aparece quando o valor difere
+                Item {
+                    id: rst
+                    readonly property bool on: row.open && row.shownNow && form.differs(row.modelData)
+                    visible: on
+                    x: parent.width - form.pad - 20; y: form.pad - 1
+                    width: 22; height: 22
+                    Rectangle { anchors.fill: parent; radius: 11; color: rm.containsMouse ? Theme.cardHi : "transparent" }
+                    UiIcon { anchors.centerIn: parent; name: "restore"; size: 14; color: rm.containsMouse ? Theme.accent : Theme.muted }
+                    Rectangle {
+                        visible: rm.containsMouse
+                        z: 5
+                        anchors { right: parent.left; rightMargin: 4; verticalCenter: parent.verticalCenter }
+                        width: rt.implicitWidth + 14; height: 22; radius: 7
+                        color: Theme.card; border.width: 1; border.color: Theme.border
+                        UiText { id: rt; anchors.centerIn: parent; text: "Voltar ao padrão"; color: Theme.text; font.pixelSize: 11 }
+                    }
+                    MouseArea { id: rm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: form.doReset(row.modelData) }
+                }
             }
             // espaco: fino dentro da secao, maior entre itens soltos
-            Item { width: 1; height: form.grouped ? (row.place.last ? 0 : 2) : (form.compact ? 8 : 12) }
+            Item { visible: row.open; width: 1; height: form.grouped ? (row.place.last ? 0 : 2) : (form.compact ? 8 : 12) }
         }
     }
 

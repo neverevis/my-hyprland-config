@@ -13,9 +13,10 @@ Column {
 
     Row {
         spacing: 8
-        UiIcon { name: "resize"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-        UiText { text: "Tamanho"; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
-        UiText { text: sp.cols + " × " + sp.rows; color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+        Rectangle { width: 22; height: 22; radius: 7; color: Theme.tint(0.16)
+            UiIcon { anchors.centerIn: parent; name: "resize"; size: 13; color: Theme.accent } }
+        UiText { text: "Tamanho"; color: Theme.text; font.pixelSize: 13; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+        UiText { text: Math.round(sp.cols * 10) / 10 + " × " + Math.round(sp.rows * 10) / 10; color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
     }
     Flow {
         width: sp.width

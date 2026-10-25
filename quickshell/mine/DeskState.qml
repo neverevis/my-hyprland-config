@@ -291,11 +291,111 @@ Singleton {
     function wantKeys(key, on) { if (!!keyWant[key] === on) return; const m = Object.assign({}, keyWant); m[key] = on; keyWant = m }
 
     function find(id) { return (Settings.desktopWidgets || []).find(w => w.id === id) ?? null }
-    function mutate(fn) {
+    function mutate(fn, key) {
+        snap(key)
         const list = JSON.parse(JSON.stringify(Settings.desktopWidgets || []))
         fn(list)
         Settings.desktopWidgets = list
     }
+    // ---------------- desfazer / refazer (so enquanto edita; ate 30 passos) ----------------
+    // pilha de fotos de Settings.desktopWidgets; "key" junta mudancas seguidas da mesma opcao (arrastar um slider = 1 passo)
+    property var undoS: []
+    property var redoS: []
+    readonly property int undoN: undoS.length
+    readonly property int redoN: redoS.length
+    property string snapKey: ""
+    property double snapT: 0
+    function snap(key) {
+        const now = Date.now()
+        if (key && key === snapKey && now - snapT < 900) { snapT = now; return }
+        snapKey = key ?? ""; snapT = now
+        const u = undoS.slice(-29); u.push(JSON.stringify(Settings.desktopWidgets || [])); undoS = u
+        if (redoS.length) redoS = []
+    }
+    function restoreSnap(js) {
+        Settings.desktopWidgets = JSON.parse(js)
+        if (selected !== "" && !find(selected)) selected = ""
+        selection = selection.filter(x => !!find(x))
+        snapKey = ""
+    }
+    function undo() {
+        if (!undoS.length) return
+        const u = undoS.slice(), js = u.pop(), r = redoS.slice(-29)
+        r.push(JSON.stringify(Settings.desktopWidgets || []))
+        undoS = u; redoS = r; restoreSnap(js)
+    }
+    function redo() {
+        if (!redoS.length) return
+        const r = redoS.slice(), js = r.pop(), u = undoS.slice(-29)
+        u.push(JSON.stringify(Settings.desktopWidgets || []))
+        redoS = r; undoS = u; restoreSnap(js)
+    }
+    // empurrao com as setas: dx/dy em pixels, vale para a selecao (ou o widget aberto)
+    function nudge(dx, dy) {
+        const ids = selection.length ? selection : (selected !== "" ? [selected] : [])
+        if (!ids.length || locked) return
+        const ps = []
+        for (const id of ids) {
+            const w = find(id)
+            if (!w) continue
+            const p = posOf(w)
+            ps.push({ id: id, fx: Math.max(0, Math.min(1, p.fx + dx / Math.max(1, area.width - pxW(w.cols)))), fy: Math.max(0, Math.min(1, p.fy + dy / Math.max(1, area.height - pxH(w.rows)))) })
+        }
+        if (ps.length) setPosMany(ps, "nudge")
+    }
+    // galeria "Adicionar widget" (ponto do clique; -1 = meio da area)
+    property bool galleryOpen: false
+    property real galleryX: -1
+    property real galleryY: -1
+    function openGallery(px, py) { galleryX = px; galleryY = py; galleryOpen = true }
+    function addAt(type, px, py) {
+        const c = info(type), a = area
+        const pw = pxW(c.sizes[0][0]), ph = pxH(c.sizes[0][1])
+        const cx = px < 0 ? a.x + a.width / 2 : px, cy = py < 0 ? a.y + a.height / 2 : py
+        Settings.desktopOn = true
+        return add(type, { fx: Math.max(0, Math.min(1, (cx - pw / 2 - a.x) / Math.max(1, a.width - pw))), fy: Math.max(0, Math.min(1, (cy - ph / 2 - a.y) / Math.max(1, a.height - ph))) })
+    }
+    // inspetor: aba aberta, painel recolhido pelo chip do widget, secoes abertas/fechadas (lembradas entre widgets)
+    property string inspTab: "layout"
+    property bool inspOpen: true
+    property var secOpen: ({})
+    function setSecOpen(k, on) { const m = Object.assign({}, secOpen); m[k] = on; secOpen = m }
+    onSelectedChanged: inspOpen = true
+    // secao -> aba do inspetor (Layout | Aparencia | Conteudo); o que nao esta aqui vai para Conteudo; "look" (composicao) sempre no Layout
+    readonly property var secTab: ({ "Posição": "layout", "Tela de bloqueio": "layout",
+        "Estilo": "look", "Visual": "look", "Composição": "look", "Números": "look", "Flor": "look", "Ponteiros": "look", "Pixel": "look",
+        "Fonte": "look", "Forma": "look", "Enquadramento": "look", "Detalhes": "look" })
+    function tabOf(d) { return d.key === "look" ? "layout" : (secTab[d.sec] ?? "content") }
+    // copiar/colar estilo: so opcoes de aparencia (as comuns valem para qualquer tipo; as do tipo so no mesmo tipo)
+    property var styleClip: null
+    function styleKeys(type, same) {
+        const out = ["card"]
+        for (const d of optionsOf(type)) if (tabOf(d) === "look" && (same || commonOptions.some(c => c.key === d.key))) out.push(d.key)
+        return out
+    }
+    function copyStyle(id) {
+        const w = find(id)
+        if (!w) return
+        const o = {}
+        for (const k of styleKeys(w.type, true)) if (w.opts && w.opts[k] !== undefined) o[k] = w.opts[k]
+        styleClip = { type: w.type, o: o }
+    }
+    function pasteStyle(id) {
+        const w = find(id), c = styleClip
+        if (!w || !c) return
+        const ks = styleKeys(w.type, w.type === c.type)
+        mutate(l => { const x = l.find(z => z.id === id); if (!x) return; x.opts = x.opts || {}; for (const k of ks) if (c.o[k] !== undefined) x.opts[k] = c.o[k] })
+    }
+    // mesma composicao (look) em todos os widgets cujo tipo a tem
+    function applyLookAll(id) {
+        const w = find(id)
+        if (!w) return
+        const v = opt(w, "look")
+        mutate(l => { for (const x of l) {
+            const d = optionsOf(x.type).find(o => o.key === "look")
+            if (d && Array.from(d.options).some(o => o[0] === v)) { x.opts = x.opts || {}; x.opts.look = v } } })
+    }
+    function resetOpt(id, k) { mutate(l => { const w = l.find(x => x.id === id); if (w && w.opts) { delete w.opts[k]; if (k === "tone") delete w.opts.fg } }) }
     function add(type, at) {
         const c = info(type)
         const id = type + "-" + Date.now().toString(36)
@@ -317,7 +417,7 @@ Singleton {
     }
     function remove(id) { if (selected === id) selected = ""; selection = selection.filter(x => x !== id); mutate(l => { const i = l.findIndex(w => w.id === id); if (i >= 0) l.splice(i, 1) }) }
     function setPos(id, fx, fy) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.fx = fx; w.fy = fy; if (w.opts && w.opts.place && w.opts.place !== "free") w.opts.place = "free" } }) }
-    function setOpt(id, k, v) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.opts = w.opts || {}; w.opts[k] = v } }) }
+    function setOpt(id, k, v) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.opts = w.opts || {}; w.opts[k] = v } }, "o:" + id + ":" + k) }
     // tamanho e lugar de uma vez (alca do canto); tamanhos quebrados so nos widgets "free" (imagem)
     function setGeom(id, c, r, fx, fy) { mutate(l => { const w = l.find(x => x.id === id); if (w) { const f = !!info(w.type).free; w.cols = Math.max(f ? 0.5 : 1, Math.min(6, c)); w.rows = Math.max(f ? 0.5 : 1, Math.min(5, r)); w.fx = fx; w.fy = fy; if (w.opts && w.opts.place && w.opts.place !== "free") w.opts.place = "free" } }) }
     function setSize(id, c, r) { mutate(l => { const w = l.find(x => x.id === id); if (w) { w.cols = Math.max(1, Math.min(6, c)); w.rows = Math.max(1, Math.min(5, r)) } }) }
@@ -341,8 +441,8 @@ Singleton {
     function inSel(id) { return selection.indexOf(id) >= 0 }
     function toggleSel(id) { selection = inSel(id) ? selection.filter(x => x !== id) : selection.concat([id]); selected = selection.length === 1 ? selection[0] : "" }
     function removeMany(ids) { selected = ""; selection = []; mutate(l => { for (const id of ids) { const i = l.findIndex(w => w.id === id); if (i >= 0) l.splice(i, 1) } }) }
-    function setPosMany(ps) { mutate(l => { for (const p of ps) { const w = l.find(x => x.id === p.id); if (w) { w.fx = p.fx; w.fy = p.fy; if (w.opts && w.opts.place && w.opts.place !== "free") w.opts.place = "free" } } }) }
-    onEditingChanged: if (!editing) selection = []
+    function setPosMany(ps, key) { mutate(l => { for (const p of ps) { const w = l.find(x => x.id === p.id); if (w) { w.fx = p.fx; w.fy = p.fy; if (w.opts && w.opts.place && w.opts.place !== "free") w.opts.place = "free" } } }, key) }
+    onEditingChanged: if (!editing) { selection = []; undoS = []; redoS = []; galleryOpen = false; snapKey = "" }
     // liga/desliga um tipo (menu Widgets): se ja existe tira todos, senao poe um no tamanho padrao
     function hasType(t) { return (Settings.desktopWidgets || []).some(w => w.type === t) }
     function toggleType(t) { if (hasType(t)) mutate(l => { for (let i = l.length - 1; i >= 0; i--) if (l[i].type === t) l.splice(i, 1) }); else { const e = editing; add(t); editing = e; selected = "" } }
@@ -438,6 +538,10 @@ Singleton {
         function menuclose(): void { DeskMenu.close() }
         function menucenter(): void { DeskMenu.show(root.screenSize.width / 2 - 145, root.screenSize.height / 2 - 160, "") }   // menu no meio da tela (atalho)
         function state(): string { return JSON.stringify({ editing: root.editing, selected: root.selected, locked: root.locked, peek: root.peek }) }
+        function undo(): void { root.undo() }
+        function redo(): void { root.redo() }
+        function gallery(): void { root.editing = true; root.openGallery(-1, -1) }
+        function tab(t: string): void { root.inspTab = t }
         function stop(): void { root.editing = false; root.selected = ""; root.peek = false }   // sai da edicao (testes)
     }
 }

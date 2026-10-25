@@ -34,30 +34,30 @@ Item {
             id: fh
             property alias tex: ftex
             width: 640; height: Math.max(1, Math.round(640 * view.height / Math.max(1, view.width)))
-            // durante a troca de wallpaper: a imagem velha embaixo e a nova por cima, no ritmo da transicao (antes o fosco
-            // pulava para o wallpaper novo logo no inicio)
+            // durante a troca de wallpaper: a imagem velha embaixo e a nova por cima, no ritmo da transicao. Dois slots que
+            // se alternam: o da frente so muda depois que o de tras carregou (trocar o source no lugar deixava o fosco preto
+            // por alguns quadros enquanto a imagem carregava)
             readonly property bool trans: Wallpaper.transTo !== ""
             Item {
                 id: fimg
                 anchors.fill: parent
-                Image {
-                    anchors.fill: parent
-                    source: "file://" + (fh.trans ? Wallpaper.stillOf(Wallpaper.transFrom) : Wallpaper.still)
-                    sourceSize: Qt.size(640, 360)
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
+                readonly property string want: "file://" + (fh.trans ? Wallpaper.stillOf(Wallpaper.transTo) : Wallpaper.still)
+                property bool aFront: true
+                readonly property Image front: aFront ? ia : ib
+                readonly property Image back: aFront ? ib : ia
+                function sync() {
+                    if (front.source.toString() === want) { back.opacity = 0; return }
+                    if (back.source.toString() !== want) back.source = want
+                    if (back.status !== Image.Ready) { back.opacity = 0; return }
+                    if (fh.trans) back.opacity = Wallpaper.transProg
+                    else { back.opacity = 1; aFront = !aFront; front.z = 0; back.z = 1; back.opacity = 0 }
                 }
-                Image {
-                    anchors.fill: parent
-                    visible: fh.trans
-                    opacity: Wallpaper.transProg
-                    source: fh.trans ? "file://" + Wallpaper.stillOf(Wallpaper.transTo) : ""
-                    sourceSize: Qt.size(640, 360)
-                    fillMode: Image.PreserveAspectCrop
-                    asynchronous: true
-                    cache: true
-                }
+                onWantChanged: sync()
+                Component.onCompleted: ia.source = want   // valor inicial (sem binding: o slot nunca troca de imagem na frente)
+                Connections { target: Wallpaper; function onTransProgChanged() { if (fh.trans) fimg.sync() } }
+                Connections { target: fh; function onTransChanged() { fimg.sync() } }
+                Image { id: ia; anchors.fill: parent; z: 0; sourceSize: Qt.size(640, 360); fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: true; onStatusChanged: fimg.sync() }
+                Image { id: ib; anchors.fill: parent; z: 1; opacity: 0; sourceSize: Qt.size(640, 360); fillMode: Image.PreserveAspectCrop; asynchronous: true; cache: true; onStatusChanged: fimg.sync() }
             }
             ShaderEffectSource { id: fsrc; sourceItem: fimg; hideSource: true; live: true }
             MultiEffect { id: fblur; anchors.fill: parent; source: fsrc; blurEnabled: true; blurMax: 64; blur: 1.0; autoPaddingEnabled: false }
@@ -529,35 +529,40 @@ Item {
                     onReleased: DeskState.setOpt(card.wid, "tilt", angle)
                 }
             }
-            // barra de ferramentas
-            Row {
-                anchors { right: parent.right; top: parent.top; margins: 8 }
-                spacing: 6
-                opacity: view.editable && DeskState.editing && !card.moving ? 1 : 0
-                visible: opacity > 0
-                Behavior on opacity { NumberAnimation { duration: 160 } }
-                Rectangle {
-                    visible: !DeskState.locked
-                    height: 28; width: sz.implicitWidth + 34; radius: 14
-                    color: szm.containsMouse ? Theme.accent : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.92)
-                    border.width: 1; border.color: Theme.border
-                    Row {
-                        anchors.centerIn: parent
-                        spacing: 5
-                        UiIcon { name: "fullscreen"; size: 14; color: szm.containsMouse ? Theme.accentText : Theme.text; anchors.verticalCenter: parent.verticalCenter }
-                        UiText { id: sz; text: card.w ? Math.round(card.w.cols * 10) / 10 + "×" + Math.round(card.w.rows * 10) / 10 : ""; color: szm.containsMouse ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+            // chip de acoes do widget escolhido: logo acima dele (abaixo se nao houver espaco)
+            Rectangle {
+                id: chip
+                readonly property bool want: view.editable && DeskState.editing && DeskState.selected === card.wid && !card.moving
+                property real k: want ? 1 : 0
+                Behavior on k { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                readonly property bool above: card.y > 56
+                visible: k > 0
+                opacity: k
+                anchors.right: parent.right
+                y: above ? -height - 10 + (1 - k) * 6 : parent.height + 10 - (1 - k) * 6
+                width: crow.implicitWidth + 12; height: 34; radius: 17
+                color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.96)
+                border.width: 1; border.color: Theme.border
+                Row {
+                    id: crow
+                    anchors.centerIn: parent
+                    spacing: 2
+                    Rectangle {
+                        visible: !DeskState.locked
+                        height: 28; width: sz.implicitWidth + 24; radius: 14
+                        color: szm.containsMouse ? Theme.accent : "transparent"
+                        UiText { id: sz; anchors.centerIn: parent; text: card.w ? Math.round(card.w.cols * 10) / 10 + "×" + Math.round(card.w.rows * 10) / 10 : ""; color: szm.containsMouse ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.Bold }
+                        MouseArea { id: szm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.cycleSize(card.wid) }
                     }
-                    MouseArea { id: szm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.cycleSize(card.wid) }
-                }
-                Repeater {
-                    model: [["tune", () => DeskState.selected = DeskState.selected === card.wid ? "" : card.wid, false], ["close", () => DeskState.remove(card.wid), true]]
-                    delegate: Rectangle {
-                        required property var modelData
-                        width: 28; height: 28; radius: 14
-                        color: tbm.containsMouse ? (modelData[2] ? Theme.danger : Theme.accent) : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.92)
-                        border.width: 1; border.color: Theme.border
-                        UiIcon { anchors.centerIn: parent; name: modelData[0]; size: 14; color: tbm.containsMouse ? (modelData[2] ? "white" : Theme.accentText) : Theme.text }
-                        MouseArea { id: tbm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: modelData[1]() }
+                    Repeater {
+                        model: [["tune", () => DeskState.inspOpen = !DeskState.inspOpen, false, "Opções"], ["cards", () => DeskState.duplicate(card.wid), false, "Duplicar"], ["trash", () => DeskState.remove(card.wid), true, "Remover"]]
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: 28; height: 28; radius: 14
+                            color: tbm.containsMouse ? (modelData[2] ? Theme.danger : Theme.accent) : "transparent"
+                            UiIcon { anchors.centerIn: parent; name: modelData[0]; size: 15; color: tbm.containsMouse ? (modelData[2] ? "white" : Theme.accentText) : (modelData[0] === "tune" && DeskState.inspOpen ? Theme.accent : Theme.text) }
+                            MouseArea { id: tbm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: modelData[1]() }
+                        }
                     }
                 }
             }
