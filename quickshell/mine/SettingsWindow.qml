@@ -359,10 +359,10 @@ Scope {
                         width: parent.width
                         spacing: 2
                         Item {
-                            width: parent.width; height: grp.index === 0 ? 20 : 23
+                            width: parent.width; height: grp.index === 0 ? 34 : 36
                             UiText {
                                 visible: !body.collapsed
-                                anchors { left: parent.left; leftMargin: 12; bottom: parent.bottom; bottomMargin: 3 }
+                                anchors { left: parent.left; leftMargin: 12; bottom: parent.bottom; bottomMargin: 6 }
                                 text: grp.modelData.label; color: Theme.muted; font.pixelSize: 12; font.weight: Font.DemiBold
                             }
                             Rectangle { visible: body.collapsed && grp.index > 0; anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 10; rightMargin: 10 } height: 1; color: Theme.border }
@@ -373,7 +373,7 @@ Scope {
                                 id: nav
                                 required property var modelData
                                 readonly property bool on: root.query === "" && root.curId === modelData.id
-                                width: grp.width; height: 30; radius: 9
+                                width: grp.width; height: 38; radius: 11
                                 color: on ? Theme.cardHi : (navMouse.containsMouse ? Theme.card : "transparent")
                                 Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 120 } }
                                 scale: navMouse.pressed ? 0.97 : 1
@@ -392,7 +392,7 @@ Scope {
                                     elide: Text.ElideRight
                                     text: nav.modelData.label
                                     color: nav.on ? Theme.text : Theme.muted
-                                    font.pixelSize: 13; font.weight: nav.on ? Font.DemiBold : Font.Medium
+                                    font.pixelSize: 14; font.weight: nav.on ? Font.DemiBold : Font.Medium
                                 }
                                 MouseArea {
                                     id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
