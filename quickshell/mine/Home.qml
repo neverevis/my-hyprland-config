@@ -52,14 +52,14 @@ Scope {
     function fmt(sec) { sec = Math.max(0, Math.floor(sec || 0)); return Math.floor(sec / 60) + ":" + ("0" + (sec % 60)).slice(-2) }
     function bytes(b) {
         b = b || 0
-        if (b >= 1073741824) return (b / 1073741824).toFixed(1) + " GiB"
-        if (b >= 1048576) return (b / 1048576).toFixed(0) + " MiB"
-        return (b / 1024).toFixed(0) + " KiB"
+        if (b >= 1073741824) return SysInfo.num(b / 1073741824, 1) + " GiB"
+        if (b >= 1048576) return SysInfo.num(b / 1048576, 0) + " MiB"
+        return SysInfo.num(b / 1024, 0) + " KiB"
     }
     function rate(b) {
         b = b || 0
-        if (b >= 1048576) return (b / 1048576).toFixed(1) + " MB/s"
-        if (b >= 1024) return (b / 1024).toFixed(0) + " KB/s"
+        if (b >= 1048576) return SysInfo.num(b / 1048576, 1) + " MB/s"
+        if (b >= 1024) return SysInfo.num(b / 1024, 0) + " KB/s"
         return Math.round(b) + " B/s"
     }
     function dur(sec) {

@@ -71,7 +71,7 @@ Singleton {
         command: ["curl", "-sf", "--max-time", "12", "http://ip-api.com/json/?fields=status,city,lat,lon"]
         stdout: StdioCollector { onStreamFinished: {
             try { const j = JSON.parse(text); if (j.status !== "success") throw 0; root.place = j.city; root.lat = j.lat; root.lon = j.lon; root.fetch() }
-            catch (e) { root.busy = false; root.error = "Sem internet ou local desconhecido" }
+            catch (e) { root.busy = false; root.error = "Sem internet. Confira a conexão e tente de novo." }
         } }
     }
     Process {
@@ -103,7 +103,7 @@ Singleton {
                     rain: d.precipitation_probability_max[i], sunrise: new Date(d.sunrise[i]), sunset: new Date(d.sunset[i]) }))
                 root.updated = new Date()
                 root.ready = true
-            } catch (e) { root.error = "Resposta inválida do serviço de clima" }
+            } catch (e) { root.error = "Não consegui atualizar o clima. Confira a conexão e tente de novo." }
             root.busy = false
         } }
     }

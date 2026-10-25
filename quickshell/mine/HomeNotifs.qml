@@ -71,7 +71,9 @@ Item {
                             x: 12; y: 12
                             width: 38; height: 38; radius: 10; clip: true
                             color: Theme.track
+                            UiIcon { visible: nimg.status !== Image.Ready; anchors.centerIn: parent; name: "bell"; size: 20; color: Theme.muted }
                             Image {
+                                id: nimg
                                 anchors.fill: parent; anchors.margins: card.modelData.image ? 0 : 6
                                 source: card.modelData.image ? card.modelData.image : Icons.path(card.modelData.icon, "dialog-information")
                                 fillMode: card.modelData.image ? Image.PreserveAspectCrop : Image.PreserveAspectFit
@@ -84,10 +86,10 @@ Item {
                             spacing: 2
                             Row {
                                 width: parent.width
-                                UiText { width: parent.width - when.width; text: card.modelData.app; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
+                                UiText { width: parent.width - when.width; text: card.modelData.app; maximumLineCount: 1; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
                                 UiText { id: when; text: NotifHistory.ago(card.modelData.time); color: Theme.muted; font.pixelSize: 11; font.features: { "tnum": 1 } }
                             }
-                            UiText { width: parent.width; text: card.modelData.summary; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
+                            UiText { width: parent.width; text: card.modelData.summary; maximumLineCount: 1; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
                             UiText {
                                 visible: text !== ""; width: parent.width
                                 text: NotifHistory.body(card.modelData.body, card.modelData.app, false)

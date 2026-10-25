@@ -288,7 +288,7 @@ Item {
                     model: [["prev", () => mcard.p.previous()], ["next", () => mcard.p.next()]]
                     delegate: Rectangle {
                         required property var modelData
-                        width: 22; height: 22; radius: 11; color: bmm.containsMouse ? Qt.rgba(Settings.textColor.r, Settings.textColor.g, Settings.textColor.b, 0.16) : "transparent"
+                        width: 24; height: 24; radius: 12; color: bmm.containsMouse ? Qt.rgba(Settings.textColor.r, Settings.textColor.g, Settings.textColor.b, 0.16) : "transparent"
                         UiIcon { anchors.centerIn: parent; name: modelData[0]; size: 13; color: Settings.textColor }
                         MouseArea { id: bmm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: if (mcard.p) modelData[1]() }
                     }

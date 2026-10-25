@@ -201,7 +201,7 @@ Item {
             UiText {
                 visible: root.idleKind !== "dot"
                 anchors.verticalCenter: parent.verticalCenter
-                text: ir.wx ? (Weather.ready ? Math.round(Weather.now.temp) + "°" : "--")
+                text: ir.wx ? (Weather.ready && isFinite(Weather.now.temp) ? Math.round(Weather.now.temp) + "°" : "—")
                     : root.vertical ? Qt.formatDateTime(clk.date, "HH\nmm")
                     : root.idleKind === "window" ? (parent.tl ? parent.tl.title : "").slice(0, 48) : DateTime.formatted(clk.date, root.opts.format || "HH:mm")
                 color: root.fg; font.pixelSize: 13; font.weight: Font.DemiBold; font.features: { "tnum": 1 }
@@ -355,7 +355,7 @@ Item {
             spacing: 7
             Rectangle {
                 width: 9; height: 9; radius: 4.5; color: Theme.danger; anchors.verticalCenter: parent.verticalCenter
-                SequentialAnimation on opacity { loops: Animation.Infinite; NumberAnimation { to: 0.35; duration: 600 } NumberAnimation { to: 1; duration: 600 } }
+                SequentialAnimation on opacity { loops: 8; NumberAnimation { to: 0.35; duration: 600 } NumberAnimation { to: 1; duration: 600 } }
             }
             UiText { visible: !root.vertical; anchors.verticalCenter: parent.verticalCenter; text: "Gravando " + Recorder.elapsed; color: root.fg; font.pixelSize: 12; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
         }

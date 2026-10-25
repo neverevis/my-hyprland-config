@@ -7,7 +7,7 @@ HomeScroll {
     property string confirmDel: ""   // uuid esperando a confirmacao
 
     Component.onCompleted: Vpn.refresh()
-    Timer { interval: 4000; repeat: true; running: true; onTriggered: Vpn.refresh() }
+    Timer { interval: 4000; repeat: true; running: pg.visible; onTriggered: Vpn.refresh() }
 
     HomeCard {
         width: pg.width

@@ -33,7 +33,7 @@ Singleton {
         stdout: StdioCollector { onStreamFinished: {
             root.busy = false
             const bad = text.split("\n").filter(x => x.startsWith("erro"))
-            root.msg = bad.length ? bad[0].replace("erro: ", "Não deu: ") : "Pronto: aparece no launcher."
+            root.msg = bad.length ? "Não consegui criar o app. " + bad[0].replace("erro: ", "") : "Pronto: aparece no launcher."
             root.refresh()
         } }
     }

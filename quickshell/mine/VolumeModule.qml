@@ -19,7 +19,7 @@ MeterView {
     segments: opts.segments ?? 8
     value: audio && !audio.muted ? Math.min(1, audio.volume) : 0
     dim: !!(audio && audio.muted)
-    valueText: audio ? (audio.muted ? "mudo" : Math.round(audio.volume * 100) + "%") : "--"
+    valueText: audio ? (audio.muted ? "mudo" : Math.round(audio.volume * 100) + "%") : "—"
 
     scale: vm.pressed ? 0.97 : 1
     Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }

@@ -30,7 +30,7 @@ Item {
     // tamanho do grafico (na lateral: limitado para caber na espessura da barra; ele fica em pe)
     readonly property real gw: round ? dia : (vertical ? Math.min(w, 48) : w)
     readonly property real gh: round ? dia : (vertical ? Math.min(h, 16) : h)
-    property real shownValue: Math.max(0, Math.min(1, value))
+    property real shownValue: Math.max(0, Math.min(1, value || 0))
     Behavior on shownValue { NumberAnimation { duration: 300; easing.type: Easing.OutCubic } }
 
     visible: present
@@ -72,7 +72,7 @@ Item {
                 radius: height / 2
                 color: Qt.rgba(m.col.r, m.col.g, m.col.b, 0.2)
                 Rectangle {
-                    width: Math.max(parent.height, parent.width * Math.max(0, Math.min(1, m.value)))
+                    width: m.value > 0 ? Math.max(parent.height, parent.width * Math.min(1, m.value)) : 0
                     height: parent.height; radius: height / 2
                     color: m.tint
                     Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -126,7 +126,7 @@ Item {
                         capStyle: ShapePath.RoundCap
                         startX: m.display === "disc" ? rg.cx : rg.cx; startY: m.display === "disc" ? rg.cy : rg.cy - rg.rad
                         PathLine { x: rg.cx; y: rg.cy - rg.rad }
-                        PathAngleArc { centerX: rg.cx; centerY: rg.cy; radiusX: rg.rad; radiusY: rg.rad; startAngle: -90; sweepAngle: Math.max(0.6, 359.9 * m.shownValue) }
+                        PathAngleArc { centerX: rg.cx; centerY: rg.cy; radiusX: rg.rad; radiusY: rg.rad; startAngle: -90; sweepAngle: m.shownValue > 0 ? Math.max(0.6, 359.9 * m.shownValue) : 0 }
                     }
                 }
                 UiIcon { anchors.centerIn: parent; visible: m.icon !== ""; name: m.icon; size: Math.round(rg.d * 0.5); color: Settings.textColor }
@@ -146,7 +146,7 @@ Item {
                     return out
                 }
                 ShapePath {   // area
-                    fillColor: Qt.rgba(m.tint.r, m.tint.g, m.tint.b, 0.25)
+                    fillColor: Qt.rgba(m.tint.r, m.tint.g, m.tint.b, 0.14)
                     strokeColor: "transparent"
                     PathPolyline { path: gshape.pts.length ? gshape.pts.concat([Qt.point(m.gw, m.gh), Qt.point(0, m.gh)]) : [Qt.point(0, m.gh), Qt.point(1, m.gh)] }
                 }

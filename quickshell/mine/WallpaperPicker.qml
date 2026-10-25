@@ -324,6 +324,11 @@ Scope {
                                 border.width: 1; border.color: Theme.border
                                 UiIcon { anchors.centerIn: parent; anchors.verticalCenterOffset: -8; name: "folder"; size: 48; color: Theme.accent }
                             }
+                            Rectangle {   // imagem vazia ou com erro: tile neutro do mesmo tamanho
+                                visible: !card.isDir && thumb.status !== Image.Ready
+                                anchors.fill: parent; radius: Settings.wpCardRadius; color: Theme.track
+                                UiIcon { anchors.centerIn: parent; name: "image"; size: 40; color: Theme.muted }
+                            }
                             Rectangle { id: round; anchors.fill: parent; radius: Settings.wpCardRadius; x: -width - 20; layer.enabled: true; layer.smooth: true; layer.textureSize: Qt.size(width * 2, height * 2) }
                             MultiEffect {
                                 anchors.fill: parent

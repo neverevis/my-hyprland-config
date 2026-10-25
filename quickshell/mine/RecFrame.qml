@@ -28,7 +28,7 @@ Scope {
                 radius: 6; color: "transparent"
                 border.width: 2; border.color: Theme.danger
                 SequentialAnimation on opacity {
-                    loops: Animation.Infinite; running: true
+                    loops: 6; running: true
                     NumberAnimation { to: 0.35; duration: 1100; easing.type: Easing.InOutSine }
                     NumberAnimation { to: 1; duration: 1100; easing.type: Easing.InOutSine }
                 }

@@ -35,7 +35,7 @@ Item {
     readonly property string shown: !hasVars ? raw : raw
         .replace(/\{time\}/g, Qt.formatTime(clk.date, Settings.clock24 ? "HH:mm" : "h:mm AP"))
         .replace(/\{date\}/g, DateTime.long(clk.date, "dddd, d MMM"))
-        .replace(/\{battery\}/g, Battery.present ? Math.round(Battery.pct * 100) + "%" : "--")
+        .replace(/\{battery\}/g, Battery.present ? Math.round(Battery.pct * 100) + "%" : "—")
 
     Item {
     id: body

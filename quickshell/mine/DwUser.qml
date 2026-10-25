@@ -46,7 +46,7 @@ Item {
     FileView { path: "/etc/os-release"; onLoaded: { const m = text().match(/^PRETTY_NAME="?([^"\n]*)"?/m); if (m) w.distro = m[1] } }
     FileView { path: "/proc/sys/kernel/osrelease"; onLoaded: w.kernel = text().trim() }
     FileView { path: "/proc/sys/kernel/hostname"; onLoaded: w.host = text().trim() }
-    Timer { interval: 60000; repeat: true; running: true; triggeredOnStart: true; onTriggered: upf.reload() }
+    Timer { interval: 60000; repeat: true; running: w.visible; triggeredOnStart: true; onTriggered: upf.reload() }
     readonly property string infoText: ({ uptime: "Ligado há " + up, host: Profile.user + "@" + host, kernel: distro + " · " + kernel, none: "" })[o("info")] ?? ""
     readonly property string infoIcon: ({ uptime: "clock", host: "account", kernel: "arch", none: "" })[o("info")] ?? ""
 

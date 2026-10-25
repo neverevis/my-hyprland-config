@@ -219,7 +219,9 @@ Scope {
                                     color: Theme.track
                                     clip: true
                                     UiIcon { visible: card.guess !== ""; anchors.centerIn: parent; name: card.guess; size: 28; color: Theme.muted }
+                                    UiIcon { visible: card.guess === "" && nimg.status !== Image.Ready; anchors.centerIn: parent; name: "bell"; size: 24; color: Theme.muted }
                                     Image {
+                                        id: nimg
                                         visible: card.guess === ""
                                         anchors.fill: parent
                                         anchors.margins: card.n.image !== "" ? 0 : 8
@@ -238,6 +240,7 @@ Scope {
                                     UiText {
                                         width: parent.width
                                         text: card.n.appName
+                                        maximumLineCount: 1
                                         visible: text !== ""
                                         color: Theme.muted; font.pixelSize: 11; font.weight: Font.Medium
                                         elide: Text.ElideRight
@@ -245,6 +248,7 @@ Scope {
                                     UiText {
                                         width: parent.width
                                         text: card.n.summary
+                                        maximumLineCount: 1
                                         color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold
                                         elide: Text.ElideRight
                                     }

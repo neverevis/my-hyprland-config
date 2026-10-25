@@ -46,6 +46,8 @@ Singleton {
         onExited: (code, status) => {
             if (Date.now() - root.started > 1500)
                 Quickshell.execDetached(["notify-send", "-a", "Gravação", "-i", "video-x-generic", "Gravação salva", root.file])
+            else if (code !== 0)
+                Quickshell.execDetached(["notify-send", "-a", "Gravação", "-u", "critical", "-i", "dialog-error", "Não consegui gravar a tela", "Confira se o wf-recorder está instalado e se a pasta de gravações permite escrita."])
         }
     }
     IpcHandler {

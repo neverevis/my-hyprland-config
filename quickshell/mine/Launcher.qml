@@ -542,7 +542,9 @@ Scope {
                                     id: ico
                                     anchors { left: parent.left; leftMargin: 18; verticalCenter: parent.verticalCenter }
                                     width: Settings.launcherIcon; height: width
+                                    UiIcon { visible: !!row.modelData.icon && aimg.status === Image.Error; anchors.centerIn: parent; name: "apps"; size: parent.width * 0.6; color: Theme.muted }
                                     Image {
+                                        id: aimg
                                         anchors.fill: parent
                                         visible: !!row.modelData.icon
                                         sourceSize: Qt.size(width * 2, height * 2)
@@ -584,7 +586,7 @@ Scope {
                                 Column {
                                     anchors { left: ico.right; leftMargin: row.modelData.thumb ? 14 + ico.width * 0.3 : 14; right: tail.left; rightMargin: 10; verticalCenter: parent.verticalCenter }
                                     spacing: 1
-                                    UiText { width: parent.width; text: root.hl(row.modelData.name); textFormat: Text.StyledText; color: Theme.text; font.pixelSize: 15; font.weight: Font.Medium; elide: Text.ElideRight }
+                                    UiText { width: parent.width; text: root.hl(row.modelData.name); textFormat: Text.StyledText; maximumLineCount: 1; color: Theme.text; font.pixelSize: 15; font.weight: Font.Medium; elide: Text.ElideRight }
                                     UiText {
                                         visible: text !== ""
                                         width: parent.width

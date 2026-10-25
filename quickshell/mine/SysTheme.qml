@@ -92,7 +92,7 @@ Singleton {
         stdout: StdioCollector { onStreamFinished: {
             let r = null
             try { r = JSON.parse(text) } catch (e) {}
-            root.msg = r && r.ok ? (r.files ? r.files + " arquivo(s) de fonte instalado(s)." : "") : (r && r.err ? r.err : "Não deu certo.")
+            root.msg = r && r.ok ? (r.files ? r.files + " arquivo(s) de fonte instalado(s)." : "") : (r && r.err ? "Não deu certo. " + r.err : "Não deu certo. Confira a internet e tente de novo.")
             const f = act.after; act.after = null; root.busy = ""
             if (f) f(r)
         } }

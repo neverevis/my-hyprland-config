@@ -17,19 +17,18 @@ Canvas {
         if (vals.length < 2) return
         const n = vals.length, w = width, h = height - 2
         const px = i => i / (n - 1) * w
-        const py = v => 1 + h - Math.max(0, Math.min(1, v / top)) * h
+        const py = v => 1 + h - Math.max(0, Math.min(1, (v / top) || 0)) * h
         ctx.beginPath()
         ctx.moveTo(px(0), py(vals[0]))
         for (let i = 1; i < n; i++) {
-            const x0 = px(i - 1), x1 = px(i), xm = (x0 + x1) / 2
-            ctx.bezierCurveTo(xm, py(vals[i - 1]), xm, py(vals[i]), x1, py(vals[i]))
+            ctx.lineTo(px(i), py(vals[i]))   // segmentos retos: nao inventa valores
         }
         ctx.lineWidth = 2
         ctx.strokeStyle = col
         ctx.stroke()
         ctx.lineTo(w, height); ctx.lineTo(0, height); ctx.closePath()
         const grad = ctx.createLinearGradient(0, 0, 0, height)
-        grad.addColorStop(0, Qt.rgba(col.r, col.g, col.b, 0.32))
+        grad.addColorStop(0, Qt.rgba(col.r, col.g, col.b, 0.14))
         grad.addColorStop(1, Qt.rgba(col.r, col.g, col.b, 0))
         ctx.fillStyle = grad
         ctx.fill()

@@ -147,9 +147,9 @@ Singleton {
             root.busy = false
             const last = root.msgs.count - 1
             if (root.error === "" && code !== 0 && last >= 0 && root.msgs.get(last).content === "")
-                root.error = code === 7 ? "Não consegui conectar ao servidor. Confira o endereço." : "A conexão falhou (curl " + code + ")."
+                root.error = code === 7 ? "Não consegui conectar ao servidor. Confira o endereço e use o botão de repetir." : "A conexão com a IA falhou. Confira a internet e use o botão de repetir."
             if (root.error === "" && root.raw.trim() !== "" && last >= 0 && root.msgs.get(last).content === "")
-                root.error = root.raw.trim().slice(0, 300)
+                root.error = "A IA não respondeu. Use o botão de repetir. Detalhe: " + root.raw.trim().slice(0, 300)
             if (last >= 0 && root.msgs.get(last).role === "assistant" && root.msgs.get(last).content === "") root.msgs.remove(last)
             if (root.error !== "") root.msgs.append({ role: "error", content: root.error })
             if (!root.gotUsage) root.tokensOut += Math.ceil((root.msgs.count && root.msgs.get(root.msgs.count - 1).role === "assistant" ? root.msgs.get(root.msgs.count - 1).content.length : 0) / 4)

@@ -124,7 +124,7 @@ Column {
                     readonly property bool on: row.open && row.shownNow && form.differs(row.modelData)
                     visible: on
                     x: parent.width - form.pad - 20; y: form.pad - 1
-                    width: 22; height: 22
+                    width: 24; height: 24
                     Rectangle { anchors.fill: parent; radius: 11; color: rm.containsMouse ? Theme.cardHi : "transparent" }
                     UiIcon { anchors.centerIn: parent; name: "restore"; size: 14; color: rm.containsMouse ? Theme.accent : Theme.muted }
                     Rectangle {

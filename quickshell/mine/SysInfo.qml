@@ -23,7 +23,9 @@ Singleton {
     readonly property real disk: disks.length ? disks[0].used / disks[0].total : 0
     readonly property var temp: d.cpuTemp ?? null
     readonly property var gpuTemp: d.gpu ? d.gpu.temp : null
-    function bytes(b) { const u = ["B", "KB", "MB", "GB", "TB"]; let i = 0; while (b >= 1024 && i < 4) { b /= 1024; i++ } return (i ? b.toFixed(b < 10 ? 1 : 0) : Math.round(b)) + " " + u[i] }
+    // numero pt-BR (virgula decimal); invalido vira "—"
+    function num(v, d) { if (v === undefined || v === null || !isFinite(v)) return "—"; return Number(v).toFixed(d || 0).replace(".", ",") }
+    function bytes(b) { if (b === undefined || b === null || !isFinite(b)) return "—"; const u = ["B", "KB", "MB", "GB", "TB"]; let i = 0; while (b >= 1024 && i < 4) { b /= 1024; i++ } return (i ? num(b, b < 10 ? 1 : 0) : Math.round(b)) + " " + u[i] }
 
     Process {
         running: root.users > 0

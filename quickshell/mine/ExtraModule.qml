@@ -93,7 +93,7 @@ Item {
     Component { id: weatherC; Chip {
         Component.onCompleted: Weather.use(); Component.onDestruction: Weather.release()
         icon: Weather.ready ? Weather.icon(Weather.now.code, Weather.now.day) : "wCloudy"
-        text: Weather.ready ? Math.round(Weather.now.temp) + "°" : "--"
+        text: Weather.ready && isFinite(Weather.now.temp) ? Math.round(Weather.now.temp) + "°" : "—"
         onClicked: Weather.refresh()
     } }
     // midia: icone com anel de progresso + titulo. Esquerdo toca/pausa (ou abre a aba Midia), meio anterior, direito proxima,
@@ -160,11 +160,11 @@ Item {
     } }
     Component { id: gpuC; Chip {
         Component.onCompleted: SysInfo.use(); Component.onDestruction: SysInfo.release()
-        icon: "gpuCard"; text: SysInfo.d.gpu ? Math.round(SysInfo.gpu * 100) + "%" + (root.vertical || !SysInfo.gpuTemp ? "" : " " + SysInfo.gpuTemp + "°") : "--"
+        icon: "gpuCard"; text: SysInfo.d.gpu ? Math.round(SysInfo.gpu * 100) + "%" + (root.vertical || !SysInfo.gpuTemp ? "" : " " + SysInfo.gpuTemp + "°") : "—"
     } }
     Component { id: tempC; Chip {
         Component.onCompleted: SysInfo.use(); Component.onDestruction: SysInfo.release()
-        icon: "temperature"; text: SysInfo.temp !== null ? SysInfo.temp + "°" : "--"
+        icon: "temperature"; text: SysInfo.temp !== null ? SysInfo.temp + "°" : "—"
         tint: SysInfo.temp > 80 ? Theme.danger : root.fg
     } }
     // atualizacoes (checkupdates + AUR): clique atualiza num terminal (avisa ao terminar), direito verifica agora; gira enquanto verifica.
@@ -201,7 +201,7 @@ Item {
         icon: "monitor"; text: root.vertical ? "" : Recorder.elapsed
         tip: "Gravando a tela. Clique para parar."
         tint: Theme.danger
-        SequentialAnimation on opacity { running: Recorder.active; loops: Animation.Infinite; NumberAnimation { to: 0.45; duration: 700 } NumberAnimation { to: 1; duration: 700 } }
+        SequentialAnimation on opacity { running: Recorder.active && visible; loops: 6; NumberAnimation { to: 0.45; duration: 700 } NumberAnimation { to: 1; duration: 700 } }
         onClicked: Recorder.stop()
     } }
     // notificacoes: sino (com nao perturbe); clique liga/desliga o nao perturbe, direito limpa.
@@ -369,7 +369,7 @@ Item {
         visible: ClaudeUsage.available || root.opts.alwaysVisible === true
         icon: ClaudeUsage.busyN > 0 ? "creation" : "robot"
         hot: ClaudeUsage.busyN > 0
-        text: !ClaudeUsage.ready ? "…" : !ClaudeUsage.available ? "--" : Math.round(ClaudeUsage.frac * 100) + "%"
+        text: !ClaudeUsage.ready ? "…" : !ClaudeUsage.available ? "—" : Math.round(ClaudeUsage.frac * 100) + "%"
         tint: ClaudeUsage.frac >= 0.9 ? Theme.danger : root.fg
         onClicked: ClaudeUsage.refresh()
     } }

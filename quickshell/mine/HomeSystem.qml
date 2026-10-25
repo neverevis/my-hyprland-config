@@ -106,11 +106,11 @@ Item {
                         Item {
                             width: parent.width; height: 15
                             UiText { text: modelData.mount; color: Theme.text; font.pixelSize: 12 }
-                            UiText { anchors.right: parent.right; text: (modelData.used / 1073741824).toFixed(0) + " / " + (modelData.total / 1073741824).toFixed(0) + " GiB"; color: Theme.muted; font.pixelSize: 12 }
+                            UiText { anchors.right: parent.right; text: SysInfo.num(modelData.used / 1073741824, 0) + " / " + SysInfo.num(modelData.total / 1073741824, 0) + " GiB"; color: Theme.muted; font.pixelSize: 12 }
                         }
                         Rectangle {
                             width: parent.width; height: 6; radius: 3; color: Theme.cardHi
-                            Rectangle { width: parent.width * parent.parent.r; height: 6; radius: 3; color: parent.parent.r > 0.9 ? Theme.danger : Theme.accent }
+                            Rectangle { width: parent.width * Math.max(0, Math.min(1, parent.parent.r || 0)); height: 6; radius: 3; color: parent.parent.r > 0.9 ? Theme.danger : Theme.accent }
                         }
                     }
                 }

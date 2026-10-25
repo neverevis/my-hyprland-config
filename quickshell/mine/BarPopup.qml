@@ -136,10 +136,10 @@ Scope {
             readonly property var rows: {
                 const dk = SysInfo.disks.length ? SysInfo.disks[0] : null
                 return [
-                    { icon: "memory", label: "Memória", v: d.memTotal ? d.memUsed / d.memTotal : 0, sub: d.memTotal ? SysInfo.bytes(d.memUsed) + " / " + SysInfo.bytes(d.memTotal) : "--" },
-                    { icon: "chip", label: "Processador", v: (d.cpu ?? 0) / 100, sub: d.cpu !== undefined ? Math.round(d.cpu) + " %" + (d.cpuTemp ? " · " + d.cpuTemp + "°" : "") : "--" },
-                    { icon: "swap_vertical", label: "Swap", v: d.swapTotal ? d.swapUsed / d.swapTotal : 0, sub: d.swapTotal ? SysInfo.bytes(d.swapUsed) + " / " + SysInfo.bytes(d.swapTotal) : (d.memTotal ? "sem swap" : "--") },
-                    { icon: "disk", label: dk ? "Disco " + dk.mount : "Disco", v: dk ? dk.used / dk.total : 0, sub: dk ? SysInfo.bytes(dk.used) + " / " + SysInfo.bytes(dk.total) : "--" }
+                    { icon: "memory", label: "Memória", v: d.memTotal ? d.memUsed / d.memTotal : 0, sub: d.memTotal ? SysInfo.bytes(d.memUsed) + " / " + SysInfo.bytes(d.memTotal) : "—" },
+                    { icon: "chip", label: "Processador", v: (d.cpu ?? 0) / 100, sub: d.cpu !== undefined ? Math.round(d.cpu) + " %" + (d.cpuTemp ? " · " + d.cpuTemp + "°" : "") : "—" },
+                    { icon: "swap_vertical", label: "Swap", v: d.swapTotal ? d.swapUsed / d.swapTotal : 0, sub: d.swapTotal ? SysInfo.bytes(d.swapUsed) + " / " + SysInfo.bytes(d.swapTotal) : (d.memTotal ? "sem swap" : "—") },
+                    { icon: "disk", label: dk ? "Disco " + dk.mount : "Disco", v: dk ? dk.used / dk.total : 0, sub: dk ? SysInfo.bytes(dk.used) + " / " + SysInfo.bytes(dk.total) : "—" }
                 ]
             }
             Repeater {
@@ -174,8 +174,8 @@ Scope {
             Row {
                 spacing: 8
                 Repeater {
-                    model: [["gauge", "Pressão", Weather.now.pressure !== undefined ? Math.round(Weather.now.pressure) + " hPa" : "--"],
-                            ["wRain", "Chuva agora", Weather.now.precip !== undefined ? Weather.now.precip.toFixed(1) + " mm" : "--"]]
+                    model: [["gauge", "Pressão", Weather.now.pressure !== undefined ? Math.round(Weather.now.pressure) + " hPa" : "—"],
+                            ["wRain", "Chuva agora", Weather.now.precip !== undefined ? SysInfo.num(Weather.now.precip, 1) + " mm" : "—"]]
                     delegate: Rectangle {
                         required property var modelData
                         width: (parent.parent.width - 8) / 2; height: 34; radius: 10; color: Theme.track
@@ -235,7 +235,7 @@ Scope {
                     required property var modelData
                     width: nc.width; height: 18
                     UiText { text: modelData[0]; color: Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
-                    UiText { anchors { right: parent.right; verticalCenter: parent.verticalCenter } text: modelData[1] || "--"; color: Theme.text; font.pixelSize: 12; font.features: { "tnum": 1 } }
+                    UiText { anchors { right: parent.right; verticalCenter: parent.verticalCenter } text: modelData[1] || "—"; color: Theme.text; font.pixelSize: 12; font.features: { "tnum": 1 } }
                 }
             }
         }
@@ -518,7 +518,7 @@ Scope {
                             model: 10
                             delegate: Rectangle {
                                 required property int index
-                                width: 21; height: 21; radius: 7
+                                width: 24; height: 24; radius: 7
                                 color: wm.containsMouse ? Theme.accent : Theme.track
                                 UiText { anchors.centerIn: parent; text: parent.index + 1; font.pixelSize: 11; color: wm.containsMouse ? Theme.accentText : Theme.text }
                                 MouseArea { id: wm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { BarState.pop = null; mi.modelData.fn(parent.index + 1) } }
@@ -593,7 +593,7 @@ Scope {
                         width: 220
                         UiText { width: 190; elide: Text.ElideRight; text: wc.modelData.title || root.shown.title; color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold }
                         Rectangle {
-                            width: 20; height: 20; radius: 10; color: xm.containsMouse ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.25) : "transparent"
+                            width: 24; height: 24; radius: 12; color: xm.containsMouse ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.25) : "transparent"
                             UiIcon { anchors.centerIn: parent; name: "close"; size: 12; color: xm.containsMouse ? Theme.danger : Theme.muted }
                             MouseArea { id: xm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                                 onClicked: { Quickshell.execDetached(["hyprctl", "eval", 'hl.dispatch(hl.dsp.window.close({ window = "address:' + wc.o.address + '" }))']); BarState.pop = null } }
@@ -626,7 +626,7 @@ Scope {
             }
             UiText { text: Battery.stateText + (Battery.etaText(Battery.eta) !== "" ? " · " + Battery.etaText(Battery.eta) + (Battery.plugged ? " para encher" : " restantes") : ""); color: Theme.muted; font.pixelSize: 12 }
             UiText { visible: !!Battery.dev && Battery.dev.healthSupported; text: "Saúde: " + (Battery.dev ? Math.round(Battery.dev.healthPercentage) : 0) + "%"; color: Theme.muted; font.pixelSize: 12 }
-            UiText { visible: !!Battery.dev && Math.abs(Battery.dev.changeRate) > 0.05; text: (Battery.plugged ? "Carga: " : "Consumo: ") + (Battery.dev ? Math.abs(Battery.dev.changeRate).toFixed(1) : 0) + " W"; color: Theme.muted; font.pixelSize: 12 }
+            UiText { visible: !!Battery.dev && Math.abs(Battery.dev.changeRate) > 0.05; text: (Battery.plugged ? "Carga: " : "Consumo: ") + (Battery.dev ? SysInfo.num(Math.abs(Battery.dev.changeRate), 1) : 0) + " W"; color: Theme.muted; font.pixelSize: 12 }
         }
     }
     Component {

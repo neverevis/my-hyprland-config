@@ -120,7 +120,7 @@ Item {
         visible: !!root.opts.showValue
         x: root.vertical ? (root.width - width) / 2 : track.x + track.width + 6
         y: root.vertical ? track.y + track.height + 2 : (root.height - height) / 2
-        text: root.audio ? (root.muted ? "mudo" : Math.round(root.vol * 100) + "%") : "--"
+        text: root.audio ? (root.muted ? "mudo" : Math.round(root.vol * 100) + "%") : "—"
         color: Settings.textColor; font.pixelSize: 12
     }
 }

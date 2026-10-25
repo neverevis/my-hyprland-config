@@ -24,18 +24,18 @@ Item {
 
     readonly property var n: Weather.now
     readonly property string show: { const s = o("show"); return s !== "auto" ? s : (rows > 1 ? "tiles" : (cols >= 3 ? "hours" : "now")) }
-    function t(v) { return v === undefined || v === null ? "--" : Math.round(v) + "°" }
+    function t(v) { return v === undefined || v === null ? "—" : Math.round(v) + "°" }
     readonly property var loc: Qt.locale("pt_BR")
     readonly property bool tilesOn: show === "tiles" && rows > 1
-    function hm(d) { return d ? Qt.formatDateTime(d, "HH:mm") : "--" }
-    function vis(m) { if (m === undefined || m === null) return "--"; return Weather.imperial ? (m / 1609.34).toFixed(1) + " mi" : (m >= 10000 ? Math.round(m / 1000) : (m / 1000).toFixed(1)) + " km" }
+    function hm(d) { return d ? Qt.formatDateTime(d, "HH:mm") : "—" }
+    function vis(m) { if (m === undefined || m === null) return "—"; return Weather.imperial ? SysInfo.num(m / 1609.34, 1) + " mi" : (m >= 10000 ? Math.round(m / 1000) : SysInfo.num(m / 1000, 1)) + " km" }
     // blocos de detalhe: icone, rotulo, valor (nascer e por do sol so nos largos)
     // [icone, rotulo, valor, gravidade 0..1 (cor do valor nas composicoes novas)]
     readonly property var allMetrics: {
         const d0 = Weather.days.length ? Weather.days[0] : null
         const kmh = (n.wind ?? 0) * (Weather.imperial ? 1.609 : 1), rain = d0 ? d0.rain : 0
-        return [["humidity", "Umidade", (n.humidity ?? "--") + "%", 0], ["wWind", "Vento", Math.round(n.wind ?? 0) + " " + Weather.windUnit, Math.max(0, Math.min(1, (kmh - 25) / 45))],
-                ["eye", "Visibilidade", vis(n.vis), n.vis !== undefined && n.vis < 3000 ? 0.7 : 0], ["wRain", "Chuva", (d0 ? d0.rain : "--") + "%", Math.max(0, Math.min(1, (rain - 40) / 50))],
+        return [["humidity", "Umidade", (n.humidity ?? "—") + "%", 0], ["wWind", "Vento", Math.round(n.wind ?? 0) + " " + Weather.windUnit, Math.max(0, Math.min(1, (kmh - 25) / 45))],
+                ["eye", "Visibilidade", vis(n.vis), n.vis !== undefined && n.vis < 3000 ? 0.7 : 0], ["wRain", "Chuva", (d0 ? d0.rain : "—") + "%", Math.max(0, Math.min(1, (rain - 40) / 50))],
                 ["sunrise", "Nascer do sol", hm(d0 ? d0.sunrise : null), 0], ["sunset", "Pôr do sol", hm(d0 ? d0.sunset : null), 0]]
     }
     readonly property var metrics: {
@@ -135,6 +135,14 @@ Item {
         anchors.fill: parent
         active: Weather.ready
         sourceComponent: ({ plain: plainC, end4: e4C, hero: heroC })[w.lk] ?? plainC
+    }
+    // falha ao atualizar com dados antigos na tela: avisa dentro do widget e quando funcionou pela ultima vez
+    UiText {
+        visible: Weather.ready && Weather.error !== "" && w.cols > 1
+        anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: 6 }
+        horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; maximumLineCount: 1
+        text: "Sem conexão · atualizado às " + Qt.formatDateTime(Weather.updated, "HH:mm")
+        color: w.dim; font.pixelSize: 11
     }
 
     // ---- end4: um layout por tamanho ----

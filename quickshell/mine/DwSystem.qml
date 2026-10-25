@@ -36,8 +36,8 @@ Item {
         cpu: { label: "CPU", icon: "chip", v: SysInfo.cpu, t: Math.round(SysInfo.cpu * 100) + "%", h: SysInfo.hist.cpu, col: w.c1 },
         mem: { label: "RAM", icon: "memory", v: SysInfo.mem, t: Math.round(SysInfo.mem * 100) + "%", h: SysInfo.hist.mem, col: w.c2 },
         disk: { label: "Disco", icon: "disk", v: SysInfo.disk, t: Math.round(SysInfo.disk * 100) + "%", h: [], col: w.c3 },
-        temp: { label: "Temp.", icon: "temperature", v: SysInfo.temp !== null ? Math.min(1, SysInfo.temp / 100) : 0, t: SysInfo.temp !== null ? SysInfo.temp + "°" : "--", h: [], col: SysInfo.temp > 80 ? Theme.danger : w.c3 },
-        gpu: { label: "GPU", icon: "gpuCard", v: SysInfo.gpu, t: SysInfo.d.gpu ? Math.round(SysInfo.gpu * 100) + "%" : "--", h: SysInfo.hist.gpu, col: w.c2 },
+        temp: { label: "Temp.", icon: "temperature", v: SysInfo.temp !== null ? Math.min(1, SysInfo.temp / 100) : 0, t: SysInfo.temp !== null ? SysInfo.temp + "°" : "—", h: [], col: SysInfo.temp > 80 ? Theme.danger : w.c3 },
+        gpu: { label: "GPU", icon: "gpuCard", v: SysInfo.gpu, t: SysInfo.d.gpu ? Math.round(SysInfo.gpu * 100) + "%" : "—", h: SysInfo.hist.gpu, col: w.c2 },
         net: { label: "Rede", icon: "network", v: Math.min(1, (SysInfo.d.rx ?? 0) / 5e6), t: "↓" + SysInfo.bytes(SysInfo.d.rx ?? 0) + "/s", h: SysInfo.hist.rx.map(x => Math.min(1, x / 5e6)), col: w.c1 }
     })
     // bateria (so notebooks): nos tiles ela troca o disco
@@ -176,7 +176,7 @@ Item {
                         c.strokeStyle = Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12)
                         c.beginPath(); c.arc(width / 2, height / 2, r, Math.PI * 0.75, Math.PI * 2.25); c.stroke()
                         c.strokeStyle = modelData.col
-                        c.beginPath(); c.arc(width / 2, height / 2, r, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5 * Math.max(0.002, modelData.v)); c.stroke()
+                        c.beginPath(); c.arc(width / 2, height / 2, r, Math.PI * 0.75, Math.PI * 0.75 + Math.PI * 1.5 * Math.max(0, Math.min(1, modelData.v || 0))); c.stroke()
                     }
                 }
                 Column {
@@ -210,7 +210,7 @@ Item {
                 }
                 Rectangle {
                     width: parent.width; height: 6; radius: 3; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12)
-                    Rectangle { width: parent.width * Math.max(0.01, modelData.v); height: parent.height; radius: 3; color: modelData.col
+                    Rectangle { width: parent.width * Math.max(0, Math.min(1, modelData.v || 0)); height: parent.height; radius: 3; color: modelData.col
                         Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } } }
                 }
             }
@@ -240,11 +240,11 @@ Item {
                     onPaint: {
                         const c = getContext("2d"); c.reset()
                         const h = modelData.h.length ? modelData.h : new Array(60).fill(modelData.v), n = h.length
-                        const px = i => i / Math.max(1, 59) * width + (60 - n) / 59 * width, py = v => height - 2 - v * (height - 4)
+                        const px = i => i / Math.max(1, 59) * width + (60 - n) / 59 * width, py = v => height - 2 - Math.max(0, Math.min(1, v || 0)) * (height - 4)
                         c.beginPath(); c.moveTo(px(0), height)
                         h.forEach((v, i) => c.lineTo(px(i), py(v)))
                         c.lineTo(px(n - 1), height); c.closePath()
-                        c.fillStyle = Qt.rgba(modelData.col.r, modelData.col.g, modelData.col.b, 0.22); c.fill()
+                        c.fillStyle = Qt.rgba(modelData.col.r, modelData.col.g, modelData.col.b, 0.14); c.fill()
                         c.beginPath(); h.forEach((v, i) => i ? c.lineTo(px(i), py(v)) : c.moveTo(px(i), py(v)))
                         c.strokeStyle = modelData.col; c.lineWidth = 2; c.lineJoin = "round"; c.stroke()
                     }
