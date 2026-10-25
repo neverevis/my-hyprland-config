@@ -111,7 +111,7 @@ Column {
     SetSection {
         title: "Apps favoritos e escondidos"; icon: "sparkle"; subtitle: "No launcher, clique direito num app para favoritar"
         SetExpander {
-            icon: "sparkle"; label: "Favoritos"; description: (Settings.launcherFavs || []).length ? (Settings.launcherFavs || []).length + " app(s), aparecem primeiro" : "Nenhum ainda"
+            icon: "sparkle"; label: "Favoritos"; description: (Settings.launcherFavs || []).length ? ((Settings.launcherFavs || []).length === 1 ? "1 app, aparece primeiro" : (Settings.launcherFavs || []).length + " apps, aparecem primeiro") : "Nenhum ainda; marque um app no launcher para fixar aqui"
             lazy: Component {
                 SetBlock {
                     sub: true
@@ -140,7 +140,7 @@ Column {
             }
         }
         SetExpander {
-            icon: "eyeOff"; label: "Escondidos"; description: (Settings.launcherHidden || []).length ? (Settings.launcherHidden || []).length + " app(s) fora do launcher" : "Nenhum"
+            icon: "eyeOff"; label: "Escondidos"; description: (Settings.launcherHidden || []).length ? ((Settings.launcherHidden || []).length === 1 ? "1 app fora do launcher" : (Settings.launcherHidden || []).length + " apps fora do launcher") : "Nenhum app escondido"
             lazy: Component {
                 SetBlock {
                     sub: true
@@ -181,6 +181,6 @@ Column {
                 }
             }
         }
-        SetRow { icon: "history"; label: "Histórico de uso"; description: "Quantas vezes você abriu cada app, para ordenar os resultados"; UiButton { icon: "broom"; text: "Limpar"; kind: "danger"; onClicked: Settings.launcherUsage = ({}) } }
+        SetRow { icon: "history"; label: "Histórico de uso"; description: "Quantas vezes você abriu cada app, para ordenar os resultados"; UiButton { icon: "broom"; text: "Limpar histórico"; kind: "danger"; onClicked: Settings.launcherUsage = ({}) } }
     }
 }

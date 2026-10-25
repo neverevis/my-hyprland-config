@@ -81,7 +81,7 @@ SetPage {
     // ---- espacos, bordas, cantos ----
     SetSection {
         title: "Espaços e bordas"; icon: "window"
-        subtitle: page.nChanged > 0 ? page.nChanged + " ajuste(s) seu(s) por cima dos arquivos do Hyprland" : "Valem na hora; \"Restaurar\" volta ao que está nos arquivos do Hyprland"
+        subtitle: page.nChanged > 0 ? (page.nChanged === 1 ? "1 ajuste seu por cima" : page.nChanged + " ajustes seus por cima") + " dos arquivos do Hyprland" : "Valem na hora; \"Restaurar\" volta ao que está nos arquivos do Hyprland"
         SetHypr { keys: ["general:gaps_in", "general:gaps_out", "general:border_size", "decoration:rounding", "decoration:active_opacity"] }
         SetExpander {
             icon: "tune"; label: "Mais ajustes"; description: "Forma do canto, opacidade das outras janelas e espaço entre workspaces"
@@ -216,7 +216,7 @@ SetPage {
         }
         SetRow {
             visible: sysH.changed > 0
-            icon: "restore"; label: "Restaurar esta seção"; description: sysH.changed + " trocada(s) aqui"
+            icon: "restore"; label: "Restaurar esta seção"; description: sysH.changed === 0 ? "Nada mudado aqui" : sysH.changed === 1 ? "1 opção trocada aqui" : sysH.changed + " opções trocadas aqui"
             UiButton { text: "Restaurar"; kind: "ghost"; onClicked: { sysH.restore(); refreshT.restart() } }
         }
         SetRow {

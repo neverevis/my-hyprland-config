@@ -28,6 +28,7 @@ SetPage {
     property string editor: ""
     property string userFile: ""
     property int rev: 0
+    property bool loadErr: false
     property var byId: ({})
     property var groupNames: []
     property var groupIds: ({})
@@ -46,7 +47,7 @@ SetPage {
         id: stP
         stdout: StdioCollector { onStreamFinished: {
             let d
-            try { d = JSON.parse(text) } catch (e) { return }
+            try { d = JSON.parse(text); page.loadErr = false } catch (e) { page.loadErr = true; return }
             page.entries = d.entries; page.conflicts = d.conflicts; page.override = d.override; page.binds = d.binds
             page.hasSubmap = d.hasSubmap; page.editor = d.editor; page.userFile = d.userBinds
             const m = {}, g = {}, names = []
@@ -239,7 +240,7 @@ SetPage {
         stdout: StdioCollector { onStreamFinished: {
             let r = { ok: false, err: "resposta vazia" }
             try { r = JSON.parse(text) } catch (e) {}
-            if (!r.ok) { page.saving = false; page.verifyId = ""; page.say("Não gravou: " + (r.err || "erro"), "err"); return }
+            if (!r.ok) { page.saving = false; page.verifyId = ""; console.warn("Keys: gravar falhou:", r.err); page.say("Não deu para gravar o atalho: o arquivo ficou como estava. Tente de novo.", "err"); return }
             if (wP.reload) rP.running = true
             else page.load()
         } }
@@ -302,6 +303,17 @@ SetPage {
         function cancel(): void { page.cancelEdit() }
         function apply(replace: bool): void { page.commit(replace) }
         function state(): string { return JSON.stringify({ conflicts: page.conflicts, override: page.override, edit: page.editId, pending: page.pending, ev: page.ev, note: page.note, groups: page.groupNames, rec: page.recArmed, sub: page.hasSubmap, dry: SysAct.dry }) }
+    }
+
+    // ---- leitura dos atalhos ----
+    SetSection {
+        visible: page.entries.length === 0
+        SetRow {
+            icon: page.loadErr ? "info" : "refresh"
+            label: page.loadErr ? "Não consegui ler os atalhos" : "Lendo os atalhos…"
+            description: page.loadErr ? "A leitura do Hyprland falhou; confira se ele está rodando e tente de novo" : ""
+            UiButton { visible: page.loadErr; icon: "refresh"; text: "Tentar de novo"; kind: "ghost"; onClicked: page.load() }
+        }
     }
 
     // ---- aviso do resultado ----
@@ -466,7 +478,7 @@ SetPage {
                 }
                 Row {
                     spacing: SetK.sm
-                    UiButton { text: "Aplicar"; kind: "accent"; enabled: !!page.ev && !!page.ev.combo && !page.ev.hit && !page.saving; onClicked: page.commit(false) }
+                    UiButton { text: "Aplicar atalho"; kind: "accent"; enabled: !!page.ev && !!page.ev.combo && !page.ev.hit && !page.saving; onClicked: page.commit(false) }
                     UiButton {
                         visible: !!page.ev && !!page.ev.hit
                         text: "Substituir"; kind: "danger"; enabled: !page.saving
@@ -483,7 +495,7 @@ SetPage {
         title: "Seus atalhos"; icon: "listCheck"
         subtitle: "Os outros atalhos do Hyprland, lidos agora (só leitura)"
         SetExpander {
-            icon: "search"; label: "Ver todos"; description: page.userBinds.length + " atalhos"
+            icon: "search"; label: "Ver todos"; description: page.userBinds.length === 0 ? "Nenhum atalho seu" : page.userBinds.length === 1 ? "1 atalho" : page.userBinds.length.toLocaleString(Qt.locale("pt_BR"), "f", 0) + " atalhos"
             lazy: Component {
                 SetBlock {
                     id: ub
@@ -494,6 +506,7 @@ SetPage {
                             .filter(x => !q || (x.combo + " " + x.what).toLowerCase().includes(q))
                     }
                     UiField { id: ubF; width: parent.width; placeholderText: "Buscar atalho…" }
+                    UiText { visible: ub.items.length === 0; width: parent.width; text: ubF.text !== "" ? "Nada encontrado para “" + ubF.text + "”." : "Nenhum atalho seu foi encontrado."; color: Theme.muted; font.pixelSize: SetK.fDesc }
                     ListView {
                         width: parent.width; height: 320
                         clip: true; boundsBehavior: Flickable.StopAtBounds
@@ -519,7 +532,7 @@ SetPage {
             description: page.confirmAll ? "Apaga as combinações que você mudou; as decisões de conflito ficam." : "Volta todas as combinações ao padrão"
             enabled: !page.saving
             UiButton { visible: !page.confirmAll; text: "Restaurar padrão"; kind: "ghost"; onClicked: page.confirmAll = true }
-            UiButton { visible: page.confirmAll; text: "Confirmar"; kind: "danger"; onClicked: page.resetAll() }
+            UiButton { visible: page.confirmAll; text: "Restaurar tudo"; kind: "danger"; onClicked: page.resetAll() }
             UiButton { visible: page.confirmAll; text: "Cancelar"; kind: "ghost"; onClicked: page.confirmAll = false }
         }
     }

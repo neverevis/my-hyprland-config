@@ -20,6 +20,7 @@ SetPage {
     property var zones: []
     property string pendingZone: ""      // fuso esperando a confirmacao
     property var loc: ({})               // chaves do localectl
+    property bool zonesDone: false
     function readStatus() { if (!statP.running) statP.running = true }
     Process {
         id: statP
@@ -33,7 +34,7 @@ SetPage {
     Process {
         id: zoneP
         command: ["timedatectl", "list-timezones"]
-        stdout: StdioCollector { onStreamFinished: page.zones = text.trim().split("\n").filter(z => z !== "") }
+        stdout: StdioCollector { onStreamFinished: { page.zones = text.trim().split("\n").filter(z => z !== ""); page.zonesDone = true } }
     }
     Process {
         id: locP
@@ -75,12 +76,13 @@ SetPage {
         SetRow {
             icon: SysAct.jobState === "ok" ? "check" : SysAct.jobState === "err" ? "info" : "refresh"
             label: SysAct.jobTitle + (SysAct.jobState === "run" ? "…" : SysAct.jobState === "ok" ? ": pronto" : ": não deu")
-            description: SysAct.jobState === "run" ? "Se pedir a senha, a janela aparece pelo shell" : SysAct.jobState === "ok" ? "Já vale para o sistema" : "Veja a mensagem abaixo"
+            description: SysAct.jobState === "run" ? "Se pedir a senha, a janela aparece pelo shell" : SysAct.jobState === "ok" ? "Já vale para o sistema" : SysAct.jobFriendly !== "" ? SysAct.jobFriendly : "Veja a mensagem abaixo"
+            UiButton { visible: SysAct.jobState === "err" && SysAct.retry !== null; icon: "refresh"; text: "Tentar de novo"; kind: "ghost"; onClicked: SysAct.retryJob() }
             UiButton { visible: SysAct.jobState !== "run"; text: "Fechar"; kind: "ghost"; onClicked: SysAct.closeJob() }
         }
         SetBlock {
             visible: SysAct.jobLog !== ""
-            UiText { width: parent.width; wrapMode: Text.WrapAnywhere; text: SysAct.jobLog; color: SysAct.jobState === "err" ? Theme.danger : Theme.muted; font.pixelSize: 11; font.family: Settings.fontMono || "monospace" }
+            UiText { width: parent.width; wrapMode: Text.WrapAnywhere; text: SysAct.jobLog; color: Theme.muted; font.pixelSize: 11; font.family: Settings.fontMono || "monospace" }
         }
     }
 
@@ -119,7 +121,7 @@ SetPage {
             icon: "shield"; label: "Mudar o fuso para " + page.pendingZone + "?"
             description: "Muda para o computador inteiro e pede a senha de administrador"
             UiButton { text: "Cancelar"; kind: "ghost"; onClicked: page.pendingZone = "" }
-            UiButton { icon: "check"; text: "Mudar"; kind: "accent"; enabled: !SysAct.busy; onClicked: { const z = page.pendingZone; page.pendingZone = ""; page.applyZone(z) } }
+            UiButton { icon: "check"; text: "Mudar fuso"; kind: "accent"; enabled: !SysAct.busy; onClicked: { const z = page.pendingZone; page.pendingZone = ""; page.applyZone(z) } }
         }
         SetBlock {
             id: zb
@@ -130,8 +132,9 @@ SetPage {
             }
             UiField { id: zf; width: parent.width; placeholderText: "Buscar um fuso (ex.: Sao_Paulo, Lisbon, Tokyo)…"; onTextChanged: zt.restart() }
             Timer { id: zt; interval: 120; onTriggered: zb.q = zf.text.trim() }
-            UiText { visible: page.zones.length === 0; text: "Lendo os fusos…"; color: Theme.muted; font.pixelSize: SetK.fDesc }
-            UiText { visible: page.zones.length > 0 && zb.shown.length === 0; text: "Nenhum fuso encontrado."; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            UiText { visible: page.zones.length === 0; text: page.zonesDone ? "Não consegui listar os fusos (falta o timedatectl, do systemd)." : "Lendo os fusos…"; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            UiButton { visible: page.zones.length === 0 && page.zonesDone; text: "Tentar de novo"; kind: "ghost"; onClicked: { page.zonesDone = false; zoneP.running = true } }
+            UiText { visible: page.zones.length > 0 && zb.shown.length === 0; text: "Nada encontrado para “" + zb.q + "”. Tente a cidade em inglês, como Sao_Paulo."; color: Theme.muted; font.pixelSize: SetK.fDesc }
             ListView {
                 id: zl
                 width: parent.width

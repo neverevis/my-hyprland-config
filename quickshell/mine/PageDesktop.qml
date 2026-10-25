@@ -7,7 +7,7 @@ import QtQuick
 SetPage {
     id: page
     title: "Área de trabalho"
-    subtitle: (Settings.desktopWidgets || []).length + " widget(s) na tela. Clique direito no fundo abre o menu."
+    subtitle: ((Settings.desktopWidgets || []).length === 0 ? "Nenhum widget na tela" : (Settings.desktopWidgets || []).length === 1 ? "1 widget na tela" : (Settings.desktopWidgets || []).length + " widgets na tela") + ". Clique direito no fundo abre o menu."
     property string toast: ""
     property string openId: DeskState.selected
     // ids dos widgets: so muda quando entra/sai um widget (o array novo a cada opcao alterada recriava a lista inteira)
@@ -237,7 +237,7 @@ SetPage {
                                 }
                                 UiText {
                                     anchors { left: parent.left; leftMargin: 12; bottom: parent.bottom; bottomMargin: 8 }
-                                    text: pc.cur ? "Em uso" : pc.modelData.data.desktopWidgets.length + " widget(s)"
+                                    text: pc.cur ? "Em uso" : (pc.modelData.data.desktopWidgets.length === 1 ? "1 widget" : pc.modelData.data.desktopWidgets.length + " widgets")
                                     color: pc.cur ? Theme.accent : Theme.muted; font.pixelSize: 11
                                 }
                                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: { DeskState.apply(pc.modelData.name); page.say("Layout: " + pc.modelData.name) } }

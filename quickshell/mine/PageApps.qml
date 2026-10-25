@@ -15,18 +15,18 @@ SetPage {
         title: "Resumo"; icon: "apps"
         SetRow {
             icon: "package"
-            label: Apps.loaded ? Apps.apps.length + " aplicativos instalados" : "Lendo os aplicativos…"
-            description: (Apps.pkgs > 0 ? Apps.pkgs + " pacotes · " : "") + "instalar, remover e atualizar na janela Aplicativos"
+            label: Apps.loaded ? (Apps.apps.length === 1 ? "1 app instalado" : Apps.apps.length.toLocaleString(Qt.locale("pt_BR"), "f", 0) + " apps instalados") : Apps.listErr ? "Não consegui ler os apps" : "Lendo os apps…"
+            description: (Apps.pkgs > 0 ? (Apps.pkgs === 1 ? "1 pacote" : Apps.pkgs.toLocaleString(Qt.locale("pt_BR"), "f", 0) + " pacotes") + " · " : "") + (Apps.listErr && !Apps.loaded ? "abra a janela Aplicativos para tentar de novo" : "instalar, remover e atualizar na janela Aplicativos")
             UiButton { icon: "apps"; text: "Abrir Aplicativos"; kind: "accent"; onClicked: Apps.openWindow("apps") }
         }
         SetRow {
             icon: "refresh"
             label: {
                 const u = SystemGuard.updates
-                return SystemGuard.checking ? "Verificando atualizações…" : u < 0 ? "Atualizações: sem checkupdates" : u === 0 ? "Tudo em dia" : u + (u === 1 ? " atualização pendente" : " atualizações pendentes")
+                return SystemGuard.checking ? "Verificando atualizações…" : u < 0 ? "Atualizações indisponíveis: falta o checkupdates (pacman-contrib)" : u === 0 ? "Tudo em dia" : u + (u === 1 ? " atualização pendente" : " atualizações pendentes")
             }
             description: "Veja a lista e atualize tudo na aba Atualizações"
-            UiButton { text: "Verificar"; kind: "ghost"; enabled: !SystemGuard.checking; onClicked: SystemGuard.checkUpdates() }
+            UiButton { text: "Verificar agora"; kind: "ghost"; enabled: !SystemGuard.checking; onClicked: SystemGuard.checkUpdates() }
             UiButton { icon: "download"; text: "Ver atualizações"; onClicked: Apps.openWindow("updates") }
         }
         SetRow { visible: Apps.dry; icon: "info"; label: "Modo de teste"; description: "Nenhum comando é executado de verdade; só aparece o que rodaria" }
@@ -46,6 +46,16 @@ SetPage {
             }
         }
         SetRow {
+            visible: Settings.list(Settings.hyprAutostart).length === 0 && Apps.startup.filter(s => !s.system).length === 0
+            icon: "info"; label: Apps.startupLoaded ? "Nenhum programa ao iniciar" : "Lendo os programas…"
+            description: Apps.startupLoaded ? "Use Novo comando abaixo para escolher o primeiro" : ""
+        }
+        SetRow {
+            visible: Apps.startupErr; icon: "info"; label: "Não deu para mudar esse programa"
+            description: "A pasta autostart não aceitou a alteração; confira as permissões e tente de novo"
+            UiButton { text: "Tentar de novo"; kind: "ghost"; onClicked: Apps.loadStartup() }
+        }
+        SetRow {
             icon: "plus"; label: "Novo comando"
             UiField { id: asF; width: 260; placeholderText: "ex.: discord --start-minimized"; onAccepted: asB.clicked() }
             UiButton { id: asB; icon: "plus"; text: "Adicionar"; kind: "accent"; onClicked: { const c = asF.text.trim(); if (!c) return; Settings.hyprAutostart = (Settings.list(Settings.hyprAutostart)).concat([c]); asF.text = "" } }
@@ -60,7 +70,7 @@ SetPage {
             }
         }
         SetExpander {
-            icon: "cog"; label: "Do sistema"; description: "Só leitura: vêm de /etc/xdg/autostart, são de pacotes"
+            icon: "cog"; label: "Do sistema"; description: "Só leitura: vêm de /etc/xdg/autostart, são de pacotes (" + Apps.startup.filter(s => s.system).length.toLocaleString(Qt.locale("pt_BR"), "f", 0) + ")"
             lazy: Component {
                 SetBlock {
                     sub: true
@@ -115,7 +125,7 @@ SetPage {
             }
         }
         SetRow {
-            icon: "plus"; label: "Novo webapp"; description: Webapps.msg !== "" ? Webapps.msg : (Webapps.apps.length === 0 ? "Nenhum ainda; separe vários endereços por espaço" : "Separe vários endereços por espaço")
+            icon: "plus"; label: "Novo webapp"; description: Webapps.msg !== "" ? Webapps.msg : (Webapps.apps.length === 0 ? "Nenhum webapp ainda. Digite um endereço; separe vários por espaço" : "Separe vários endereços por espaço")
             UiField { id: waF; width: 220; placeholderText: "web.whatsapp.com"; onAccepted: waB.clicked() }
             UiButton { id: waB; icon: "plus"; text: Webapps.busy ? "Criando…" : "Criar"; kind: "accent"; enabled: !Webapps.busy; onClicked: { Webapps.add(waF.text); waF.text = "" } }
         }

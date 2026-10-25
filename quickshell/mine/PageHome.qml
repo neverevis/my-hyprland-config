@@ -36,7 +36,7 @@ Column {
                                     visible: chip.on
                                     anchors { right: parent.right; rightMargin: 6; verticalCenter: parent.verticalCenter }
                                     Rectangle {
-                                        width: 22; height: 22; radius: 6; color: sm.containsMouse ? Theme.cardHi : "transparent"
+                                        width: 24; height: 24; radius: 6; color: sm.containsMouse ? Theme.cardHi : "transparent"
                                         UiText { anchors.centerIn: parent; text: chip.on ? chip.lst[chip.pos].size : ""; color: Theme.accent; font.pixelSize: 13; font.weight: Font.Bold }
                                         MouseArea { id: sm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                                             onClicked: { const l = Toggles.norm(Settings.homeToggles); l[chip.pos].size = l[chip.pos].size % 3 + 1; Settings.homeToggles = l } }
@@ -45,7 +45,7 @@ Column {
                                         model: [["chevLeft", -1], ["chevRight", 1]]
                                         delegate: Rectangle {
                                             required property var modelData
-                                            width: 22; height: 22; radius: 6; color: am.containsMouse ? Theme.cardHi : "transparent"
+                                            width: 24; height: 24; radius: 6; color: am.containsMouse ? Theme.cardHi : "transparent"
                                             UiIcon { anchors.centerIn: parent; name: modelData[0]; size: 13; color: Theme.muted }
                                             MouseArea { id: am; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                                                 onClicked: { const l = Toggles.norm(Settings.homeToggles), i = chip.pos, j = i + modelData[1]; if (j < 0 || j >= l.length) return; const t = l[i]; l[i] = l[j]; l[j] = t; Settings.homeToggles = l } }

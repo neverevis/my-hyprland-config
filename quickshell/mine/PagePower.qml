@@ -91,12 +91,12 @@ SetPage {
     // ---- atualizacoes e cuidados do sistema ----
     SetSection {
         title: "Atualizações"; icon: "download"
-        subtitle: SystemGuard.updates < 0 ? "Verificando…" : SystemGuard.updates === 0 ? "Sistema em dia" : SystemGuard.updates + " atualização(ões) disponível(is)"
+        subtitle: SystemGuard.updates < 0 ? (SystemGuard.checking ? "Verificando…" : "Indisponível: falta o checkupdates (pacman-contrib)") : SystemGuard.updates === 0 ? "Sistema em dia" : SystemGuard.updates === 1 ? "1 atualização disponível" : SystemGuard.updates.toLocaleString(Qt.locale("pt_BR"), "f", 0) + " atualizações disponíveis"
         SetRow {
             icon: "refresh"; label: SystemGuard.checking ? "Verificando…" : "Verificar agora"
             description: Settings.updAur && SystemGuard.updAurN > 0 ? SystemGuard.updRepo + " do pacman e " + SystemGuard.updAurN + " do AUR" : ""
             UiButton { icon: "refresh"; text: "Verificar"; kind: "ghost"; enabled: !SystemGuard.checking; onClicked: SystemGuard.checkUpdates() }
-            UiButton { icon: "download"; text: "Atualizar agora"; kind: "ghost"; onClicked: SystemGuard.runUpdate() }
+            UiButton { icon: "download"; text: "Atualizar sistema"; kind: "ghost"; onClicked: SystemGuard.runUpdate() }
         }
         SetRow { icon: "package"; label: "Contar também o AUR"; description: "Usa o yay (ou o paru) junto com o pacman"; checked: Settings.updAur; onToggled: on => { Settings.updAur = on; SystemGuard.checkUpdates() } }
         SetExpander {
@@ -113,7 +113,7 @@ SetPage {
         SetRow {
             icon: "bell"; label: "Outros daemons de notificação"
             description: SystemGuard.conflicts.length ? "Rodando junto: " + SystemGuard.conflicts.join(", ") : "Nenhum conflito"
-            UiButton { visible: SystemGuard.conflicts.length > 0; icon: "close"; text: "Encerrar"; kind: "danger"; onClicked: { Quickshell.execDetached(["pkill", "-x", SystemGuard.conflicts.join("|")]); SystemGuard.conflicts = [] } }
+            UiButton { visible: SystemGuard.conflicts.length > 0; icon: "close"; text: "Encerrar daemons"; kind: "danger"; onClicked: { Quickshell.execDetached(["pkill", "-x", SystemGuard.conflicts.join("|")]); SystemGuard.conflicts = [] } }
             UiButton { icon: "refresh"; text: "Procurar"; kind: "ghost"; onClicked: SystemGuard.scan() }
         }
         SetRow { sub: true; label: "Encerrar sozinho ao iniciar"; checked: Settings.killConflicts; onToggled: on => Settings.killConflicts = on }

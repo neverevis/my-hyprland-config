@@ -7,7 +7,7 @@ import QtQuick
 SetPage {
     id: page
     title: "Barras e moldura"
-    subtitle: Settings.bars.length + " barra(s). O mapa mostra onde cada uma está agora."
+    subtitle: (Settings.bars.length === 1 ? "1 barra" : Settings.bars.length + " barras") + ". O mapa mostra onde cada uma está agora."
     property var geo: ({})
     property int cur: 0
     property int openMod: -1     // modulo com o painel aberto
@@ -106,7 +106,7 @@ SetPage {
                             UiText {
                                 width: parent.width; elide: Text.ElideRight
                                 text: item.inf && item.inf.hidden ? "Sem espaço: escondida"
-                                    : (page.sideNames[item.bd.side] ?? "?") + (item.bd.detached ? " · solta" : "") + " · " + Settings.sectionsOf(item.bd).reduce((n, x) => n + x.modules.length, 0) + " módulos"
+                                    : (page.sideNames[item.bd.side] ?? "—") + (item.bd.detached ? " · solta" : "") + " · " + Settings.sectionsOf(item.bd).reduce((n, x) => n + x.modules.length, 0) + (Settings.sectionsOf(item.bd).reduce((n, x) => n + x.modules.length, 0) === 1 ? " módulo" : " módulos")
                                 color: item.inf && item.inf.hidden ? Theme.danger : Theme.muted; font.pixelSize: 11
                             }
                         }
@@ -256,7 +256,7 @@ SetPage {
         SetRow {
             visible: Settings.bars.length > 1
             icon: "trash"; label: "Remover a barra " + (page.idx + 1)
-            UiButton { icon: "trash"; text: "Remover"; kind: "danger"; onClicked: { Settings.removeBar(page.idx); page.cur = 0 } }
+            UiButton { icon: "trash"; text: "Remover barra"; kind: "danger"; onClicked: { Settings.removeBar(page.idx); page.cur = 0 } }
         }
     }
 
@@ -297,7 +297,7 @@ SetPage {
             }
             SetSlider { visible: page.secObj ? (!!page.secObj.bg || (page.secObj.groupStyle ?? "section") !== "section") : false; sub: true; label: "Opacidade do fundo"; from: 4; to: 100; unit: " %"; def: 10; value: page.secObj ? (page.secObj.bgAlpha ?? 10) : 10; onMoved: v => page.setSec("bgAlpha", Math.round(v)) }
             SetRow { visible: page.secObj ? (!!page.secObj.bg || (page.secObj.groupStyle ?? "section") !== "section") : false; sub: true; label: "Contorno na cor de destaque"; checked: page.secObj ? !!page.secObj.bgBorder : false; onToggled: on => page.setSec("bgBorder", on) }
-            SetRow { visible: page.secs.length > 1; sub: true; label: "Remover esta seção"; UiButton { icon: "trash"; text: "Remover"; kind: "danger"; onClicked: { Settings.removeSection(page.idx, page.sec); page.curSec = 0; page.openMod = -1 } } }
+            SetRow { visible: page.secs.length > 1; sub: true; label: "Remover esta seção"; UiButton { icon: "trash"; text: "Remover seção"; kind: "danger"; onClicked: { Settings.removeSection(page.idx, page.sec); page.curSec = 0; page.openMod = -1 } } }
         }
         Repeater {
             model: page.secObj ? page.secObj.modules.length : 0

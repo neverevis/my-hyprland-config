@@ -12,7 +12,7 @@ SetPage {
     Timer { id: toastT; interval: 2600; onTriggered: page.toast = "" }
     function say(s) { toast = s; toastT.restart() }
     property var pick: Looks.defaultGroups()
-    Connections { target: Looks; function onDone(msg) { page.say(msg) } }
+    Connections { target: Looks; function onDone(msg) { page.say(msg.indexOf("Falhou:") === 0 ? "Não deu para concluir. Tente de novo ou veja o arquivo." : msg) } }
     Component.onCompleted: Looks.scan()
 
     // previa: o visual de agora (desenhado, parado)
@@ -151,9 +151,9 @@ SetPage {
         title: "Salvar o visual de agora"; icon: "plus"
         subtitle: "Coisas pessoais nunca entram: clima, apps fixados, tarefas, notas e inatividade"
         SetRow {
-            icon: "layers"; label: "Nome do novo visual"; description: page.pick.length + " de " + Looks.groups.length + " grupos entram"
+            icon: "layers"; label: "Nome do novo visual"; description: page.pick.length + " de " + Looks.groups.length + " grupos entram" + (page.pick.length === 0 ? "; escolha ao menos um para salvar" : "")
             UiField { id: nameF; width: 180; placeholderText: "Ex.: Noite, Foco…"; onAccepted: saveB.clicked() }
-            UiButton { id: saveB; icon: "plus"; text: "Salvar"; kind: "accent"; enabled: page.pick.length > 0
+            UiButton { id: saveB; icon: "plus"; text: "Salvar visual"; kind: "accent"; enabled: page.pick.length > 0
                 onClicked: { const n = Looks.save(nameF.text, page.pick, descF.text); nameF.text = ""; descF.text = ""; page.say("Salvo como “" + n + "”") } }
         }
         SetExpander {
@@ -196,15 +196,15 @@ SetPage {
         title: "Importar"; icon: "download"
         subtitle: "Visuais exportados por este shell (.visual.zip), em Downloads, na pasta pessoal e nos wallpapers"
         SetRow {
-            icon: "refresh"; label: Looks.busy === "scan" ? "Procurando…" : "Procurar de novo"; description: Looks.found.length + " encontrado(s)"
-            UiButton { text: "Procurar"; kind: "ghost"; onClicked: Looks.scan() }
+            icon: "refresh"; label: Looks.busy === "scan" ? "Procurando…" : "Procurar de novo"; description: Looks.busy === "scan" ? "" : Looks.found.length === 0 ? "Nenhum visual encontrado; exporte um em outro computador e copie o .visual.zip para Downloads" : Looks.found.length === 1 ? "1 encontrado" : Looks.found.length + " encontrados"
+            UiButton { text: "Procurar"; kind: "ghost"; enabled: Looks.busy !== "scan"; onClicked: Looks.scan() }
         }
         Repeater {
             model: Looks.found
             delegate: SetRow {
                 required property var modelData
                 icon: "layers"; label: modelData.name; description: modelData.path
-                UiButton { icon: "download"; text: "Importar"; onClicked: Looks.importZip(modelData.path) }
+                UiButton { icon: "download"; text: "Importar visual"; onClicked: Looks.importZip(modelData.path) }
             }
         }
     }

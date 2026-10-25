@@ -49,8 +49,9 @@ SetPage {
     }
 
     // acoes (em teste so logam)
-    function wifiConnect(n) { if (SysAct.real("wifi: conectar " + n.name)) n.connect() }
-    function wifiPsk(n, pw) { if (SysAct.real("wifi: conectar com senha " + n.name)) n.connectWithPsk(pw) }   // a senha nunca entra no log
+    property string wifiFail: ""     // rede que nao conectou (frase no bloco do Wi-Fi)
+    function wifiConnect(n) { wifiFail = ""; if (SysAct.real("wifi: conectar " + n.name)) n.connect() }
+    function wifiPsk(n, pw) { wifiFail = ""; if (SysAct.real("wifi: conectar com senha " + n.name)) n.connectWithPsk(pw) }   // a senha nunca entra no log
     function wifiDisconnect(n) { if (SysAct.real("wifi: desconectar " + n.name)) n.disconnect() }
     function wifiForget(n) { if (SysAct.real("wifi: esquecer " + n.name)) n.forget() }
 
@@ -86,7 +87,13 @@ SetPage {
     SetSection {
         title: "Wi-Fi"; icon: "wifi"
         subtitle: !page.wifi ? "Nenhuma placa Wi-Fi neste computador" : !Networking.wifiEnabled ? "Desligado" : page.cur ? "Conectado a " + page.cur.name : "Sem conexão"
-        SetRow { visible: !page.wifi; icon: "wifiOff"; label: "Sem Wi-Fi"; description: "Este computador não tem placa de rede sem fio" }
+        SetRow { visible: !page.wifi; icon: "wifiOff"; label: "Sem Wi-Fi"; description: "Este computador não tem placa de rede sem fio, ou o NetworkManager não está rodando" }
+        SetRow {
+            visible: page.wifiFail !== ""
+            icon: "info"; label: "Não deu para conectar a " + page.wifiFail
+            description: "Confira a senha e o sinal e tente de novo"
+            UiButton { text: "Fechar aviso"; kind: "ghost"; onClicked: page.wifiFail = "" }
+        }
         SetRow {
             visible: !!page.wifi
             icon: Networking.wifiEnabled ? "wifi" : "wifiOff"; label: "Wi-Fi"; description: "Ligar ou desligar a placa de rede sem fio"
@@ -108,13 +115,13 @@ SetPage {
                     spacing: 2
                     UiText { width: parent.width; elide: Text.ElideRight; text: page.cur ? page.cur.name : ""; color: Theme.text; font.pixelSize: 15; font.weight: Font.DemiBold }
                     UiText { width: parent.width; elide: Text.ElideRight; color: Theme.muted; font.pixelSize: SetK.fDesc
-                        text: page.cur ? "Sinal " + Math.round(page.cur.signalStrength * 100) + "% · " + (page.wifi && page.ips[page.wifi.name] ? "IP " + page.ips[page.wifi.name] : "sem IP") + (page.gateway !== "" ? " · gateway " + page.gateway : "") : "" }
+                        text: page.cur ? "Sinal " + Math.round(page.cur.signalStrength * 100) + " % · " + (page.wifi && page.ips[page.wifi.name] ? "IP " + page.ips[page.wifi.name] : "sem IP") + (page.gateway !== "" ? " · gateway " + page.gateway : "") : "" }
                 }
             }
         }
         SetBlock {
             visible: !!page.wifi && Networking.wifiEnabled
-            UiText { visible: page.sorted.length === 0; width: parent.width; text: "Procurando redes…"; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            UiText { visible: page.sorted.length === 0; width: parent.width; text: "Procurando redes… Se nada aparecer, aproxime-se do roteador."; color: Theme.muted; font.pixelSize: SetK.fDesc }
             ListView {
                 id: wl
                 width: parent.width
@@ -134,13 +141,15 @@ SetPage {
                     icon: page.sigIcon(modelData.signalStrength)
                     title: modelData.name
                     active: modelData.connected
-                    desc: (modelData.connected ? "Conectado" : (modelData.stateChanging ? "Conectando…" : (modelData.known ? "Salva" : (secure ? "Protegida" : "Aberta")))) + " · " + Math.round(modelData.signalStrength * 100) + "%"
+                    desc: (modelData.connected ? "Conectado" : (modelData.stateChanging ? "Conectando…" : (modelData.known ? "Salva" : (secure ? "Protegida" : "Aberta")))) + " · " + Math.round(modelData.signalStrength * 100) + " %"
                     extra: asking ? 52 : 0
+                    Connections { target: nr.modelData; function onConnectionFailed(reason) { page.wifiFail = nr.modelData.name } }
                     UiIcon { visible: nr.secure && !nr.modelData.known; anchors.verticalCenter: parent.verticalCenter; name: "lock"; size: 14; color: Theme.muted }
                     UiButton { visible: nr.modelData.known && !nr.modelData.connected; icon: "trash"; kind: "ghost"; onClicked: page.wifiForget(nr.modelData) }
                     UiButton {
                         text: nr.modelData.connected ? "Desconectar" : "Conectar"
                         kind: nr.modelData.connected ? "normal" : "accent"
+                        enabled: !nr.modelData.stateChanging
                         onClicked: {
                             if (nr.modelData.connected) page.wifiDisconnect(nr.modelData)
                             else if (nr.modelData.known || !nr.secure) page.wifiConnect(nr.modelData)
@@ -193,7 +202,7 @@ SetPage {
                 description: (on ? "Conectada · " : "") + (modelData.type === "wireguard" ? "WireGuard" : "OpenVPN")
                 UiButton { visible: page.confirmVpn !== vr.modelData.uuid; icon: "trash"; kind: "ghost"; onClicked: page.confirmVpn = vr.modelData.uuid }
                 UiButton { visible: page.confirmVpn === vr.modelData.uuid; text: "Cancelar"; kind: "ghost"; onClicked: page.confirmVpn = "" }
-                UiButton { visible: page.confirmVpn === vr.modelData.uuid; text: "Apagar"; kind: "danger"; onClicked: { page.confirmVpn = ""; if (SysAct.real("vpn: apagar " + vr.modelData.name)) Vpn.remove(vr.modelData.uuid) } }
+                UiButton { visible: page.confirmVpn === vr.modelData.uuid; text: "Apagar perfil"; kind: "danger"; onClicked: { page.confirmVpn = ""; if (SysAct.real("vpn: apagar " + vr.modelData.name)) Vpn.remove(vr.modelData.uuid) } }
                 UiButton {
                     visible: page.confirmVpn !== vr.modelData.uuid
                     text: vr.on ? "Desligar" : "Ligar"; kind: vr.on ? "normal" : "accent"; enabled: !Vpn.busy
@@ -202,7 +211,7 @@ SetPage {
             }
         }
         SetRow {
-            icon: "plus"; label: "Importar perfil"; description: Vpn.lastError !== "" ? Vpn.lastError : "Escolhe o arquivo .conf ou .ovpn numa janela do sistema (precisa do zenity)"
+            icon: "plus"; label: "Importar perfil"; description: Vpn.lastError !== "" ? "Não deu para usar o perfil. Detalhe: " + Vpn.lastError : "Escolhe o arquivo .conf ou .ovpn numa janela do sistema (precisa do zenity)"
             UiButton { icon: "download"; text: "Importar"; kind: "accent"; enabled: !Vpn.busy; onClicked: { if (SysAct.real("vpn: importar")) Vpn.pickAndImport() } }
         }
     }
@@ -219,7 +228,7 @@ SetPage {
             : i.indexOf("phone") >= 0 ? "cellphone" : i.indexOf("gaming") >= 0 ? "gamepad" : "bluetooth"
     }
     function devDesc(d) {
-        return (d.pairing ? "Pareando…" : d.connected ? "Conectado" : d.paired ? "Pareado" : d.address) + (d.batteryAvailable ? " · bateria " + Math.round(d.battery * 100) + "%" : "")
+        return (d.pairing ? "Pareando…" : d.connected ? "Conectado" : d.paired ? "Pareado" : d.address) + (d.batteryAvailable ? " · bateria " + Math.round(d.battery * 100) + " %" : "")
     }
     // procurar: so com a pagina visivel; para sozinho em 30 s
     function scanToggle() { if (bt) bt.discovering = !bt.discovering }
@@ -227,17 +236,17 @@ SetPage {
 
     SetSection {
         title: "Bluetooth"; icon: "bluetooth"
-        subtitle: !page.bt ? "Nenhum adaptador Bluetooth" : !page.bt.enabled ? "Desligado" : page.paired.filter(d => d.connected).length + " conectado(s), " + page.paired.length + " pareado(s)"
+        subtitle: !page.bt ? "Nenhum adaptador Bluetooth" : !page.bt.enabled ? "Desligado" : (page.paired.length === 0 ? "Nenhum dispositivo pareado" : page.paired.filter(d => d.connected).length + " de " + page.paired.length + (page.paired.length === 1 ? " conectado" : " conectados"))
         SetRow {
             visible: !!page.bt
             icon: "bluetooth"; label: "Bluetooth"; description: "Ligar ou desligar o adaptador"
             checked: !!page.bt && page.bt.enabled
             onToggled: on => { if (page.bt && SysAct.real("bluetooth: " + (on ? "ligar" : "desligar"))) page.bt.enabled = on }
         }
-        SetRow { visible: !page.bt; icon: "info"; label: "Sem adaptador"; description: "Se o computador tiver um, ative o serviço: systemctl enable --now bluetooth" }
+        SetRow { visible: !page.bt; icon: "info"; label: "Sem adaptador"; description: "Se o computador tiver um, ative o serviço: systemctl enable --now bluetooth (precisa do bluez)" }
         SetBlock {
             visible: !!page.bt && page.bt.enabled
-            UiText { visible: page.paired.length === 0; width: parent.width; text: "Nenhum dispositivo pareado."; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            UiText { visible: page.paired.length === 0; width: parent.width; text: "Nenhum dispositivo pareado. Use Procurar dispositivos, logo abaixo."; color: Theme.muted; font.pixelSize: SetK.fDesc }
             ListView {
                 id: pl
                 width: parent.width
@@ -271,6 +280,7 @@ SetPage {
             description: page.bt && page.bt.discovering ? "Deixe o aparelho em modo de pareamento" : "Gasta o rádio do Bluetooth; use só para parear"
             UiButton { icon: page.bt && page.bt.discovering ? "close" : "magic"; text: page.bt && page.bt.discovering ? "Parar" : "Procurar"; kind: page.bt && page.bt.discovering ? "normal" : "accent"; onClicked: page.scanToggle() }
         }
+        SetRow { visible: !!page.bt && page.bt.discovering && page.found.length === 0; sub: true; icon: "info"; label: "Nada por perto ainda"; description: "Deixe o aparelho em modo de pareamento e espere alguns segundos" }
         SetBlock {
             visible: page.found.length > 0
             ListView {
@@ -286,7 +296,7 @@ SetPage {
                     required property var modelData
                     width: fl.width
                     icon: page.devIcon(modelData.icon); title: modelData.name; desc: page.devDesc(modelData)
-                    UiButton { text: "Parear"; kind: "accent"; onClicked: { if (SysAct.real("bluetooth: parear " + fr.modelData.address)) { fr.modelData.trusted = true; fr.modelData.pair() } } }
+                    UiButton { text: "Parear"; kind: "accent"; enabled: !fr.modelData.pairing; onClicked: { if (SysAct.real("bluetooth: parear " + fr.modelData.address)) { fr.modelData.trusted = true; fr.modelData.pair() } } }
                 }
             }
         }

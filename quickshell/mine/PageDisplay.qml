@@ -40,7 +40,7 @@ SetPage {
     readonly property var scaleOpts: {
         const o = [1, 1.25, 1.5, 1.75, 2]
         if (sel && o.indexOf(sel.scale) < 0) { o.push(Math.round(sel.scale * 100) / 100); o.sort((a, b) => a - b) }
-        return o.map(v => [v, Math.round(v * 100) + "%"])
+        return o.map(v => [v, Math.round(v * 100) + " %"])
     }
 
     // ---- previa: retangulos em escala (logicos), clique escolhe ----
@@ -76,11 +76,11 @@ SetPage {
                         width: parent.width - 8
                         spacing: 1
                         UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: mr.modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                        UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: mr.modelData.w + "×" + mr.modelData.h + " · " + Math.round(parseFloat(mr.modelData.mode.split("@")[1])) + " Hz"; color: Theme.muted; font.pixelSize: 11; font.features: { "tnum": 1 } }
+                        UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: mr.modelData.w + "×" + mr.modelData.h + " · " + (isFinite(parseFloat(mr.modelData.mode.split("@")[1])) ? Math.round(parseFloat(mr.modelData.mode.split("@")[1])) : "—") + " Hz"; color: Theme.muted; font.pixelSize: 11; font.features: { "tnum": 1 } }
                     }
                 }
             }
-            UiText { visible: page.mons.length === 0; anchors.centerIn: parent; text: "Lendo os monitores…"; color: Theme.muted; font.pixelSize: 13 }
+            UiText { visible: page.mons.length === 0; anchors.centerIn: parent; text: Displays.listErr ? "Não consegui ler os monitores" : "Lendo os monitores…"; color: Theme.muted; font.pixelSize: 13 }
         }
     }
 
@@ -90,15 +90,26 @@ SetPage {
         title: ""
         SetRow {
             icon: "timer"; label: "Ficou bom? Volta em " + Displays.secsLeft + " s"; description: SysAct.dry ? "Modo de teste: nada foi mudado de verdade" : "Se a tela ficar estranha, ela volta sozinha"
-            UiButton { icon: "check"; text: "Manter"; kind: "accent"; onClicked: Displays.keep() }
-            UiButton { icon: "restore"; text: "Voltar"; kind: "ghost"; onClicked: Displays.revert() }
+            UiButton { icon: "check"; text: "Manter ajuste"; kind: "accent"; onClicked: Displays.keep() }
+            UiButton { icon: "restore"; text: "Voltar ao anterior"; kind: "ghost"; onClicked: Displays.revert() }
+        }
+    }
+
+    SetSection {
+        visible: Displays.revertErr || (Displays.listErr && page.mons.length === 0)
+        title: ""
+        SetRow {
+            icon: "info"
+            label: Displays.revertErr ? "Não deu para voltar o ajuste" : "Não consegui ler os monitores"
+            description: Displays.revertErr ? "O Hyprland recusou o comando; mude a resolução ou a escala de novo" : "O hyprctl não respondeu; confira se o Hyprland está rodando"
+            UiButton { icon: "refresh"; text: "Tentar de novo"; kind: "ghost"; onClicked: { Displays.revertErr = false; Displays.refresh() } }
         }
     }
 
     // ---- a tela escolhida ----
     SetSection {
         title: "Tela"; icon: "monitor"
-        subtitle: page.sel ? page.sel.name + (page.sel.desc !== "" ? " · " + page.sel.desc : "") + " · " + page.sel.w + "×" + page.sel.h + " · escala " + Math.round(page.sel.scale * 100) + "%" : "Nenhum monitor encontrado"
+        subtitle: page.sel ? page.sel.name + (page.sel.desc !== "" ? " · " + page.sel.desc : "") + " · " + page.sel.w + "×" + page.sel.h + " · escala " + Math.round(page.sel.scale * 100) + " %" : "Nenhum monitor encontrado"
         SetRow { visible: SysAct.dry; icon: "info"; label: "Modo de teste"; description: "Nenhuma mudança é gravada nem aplicada; só aparece no log" }
         SetBlock {
             visible: !!page.sel
@@ -157,7 +168,7 @@ SetPage {
             icon: "cursorMove"; label: "Posição exata"; description: "Em pixels, a partir do canto da primeira tela"
             UiField { id: px; width: 70; horizontalAlignment: Text.AlignHCenter; placeholderText: "x"; text: page.sel ? String(page.sel.x) : ""; validator: IntValidator {} }
             UiField { id: py; width: 70; horizontalAlignment: Text.AlignHCenter; placeholderText: "y"; text: page.sel ? String(page.sel.y) : ""; validator: IntValidator {} }
-            UiButton { text: "Aplicar"; kind: "accent"; onClicked: Displays.apply(page.sel.name, { x: parseInt(px.text) || 0, y: parseInt(py.text) || 0 }) }
+            UiButton { text: "Aplicar posição"; kind: "accent"; onClicked: Displays.apply(page.sel.name, { x: parseInt(px.text) || 0, y: parseInt(py.text) || 0 }) }
         }
     }
 

@@ -30,7 +30,7 @@ SetPage {
                         spacing: 2
                         Row {
                             spacing: 6
-                            UiText { text: pr.modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                            UiText { width: Math.min(implicitWidth, 190); elide: Text.ElideRight; text: pr.modelData.name; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
                             Rectangle { visible: !!pr.modelData.aur; width: at.implicitWidth + 10; height: 16; radius: 8; color: Theme.tint(0.16); anchors.verticalCenter: parent.verticalCenter
                                 UiText { id: at; anchors.centerIn: parent; text: "AUR"; color: Theme.accent; font.pixelSize: 9; font.weight: Font.Bold } }
                         }
@@ -55,7 +55,7 @@ SetPage {
     SetSection {
         visible: SysTheme.busy !== "" || SysTheme.msg !== ""
         title: ""
-        SetRow { icon: SysTheme.busy !== "" ? "refresh" : "info"; label: SysTheme.busy || SysTheme.msg }
+        SetRow { icon: SysTheme.busy !== "" ? "refresh" : "info"; label: SysTheme.busy || SysTheme.msg.replace(/^1 arquivo\(s\) de fonte instalado\(s\)/, "1 arquivo de fonte instalado").replace("arquivo(s) de fonte instalado(s)", "arquivos de fonte instalados") }
     }
 
     // ---- mouse ----

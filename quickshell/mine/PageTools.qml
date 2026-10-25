@@ -68,7 +68,7 @@ SetPage {
         title: "Prateleira de arquivos"; icon: "layers"
         subtitle: "Solte arquivos num cartão na lateral e arraste depois para outro lugar; também pelo launcher: /prateleira"
         SetRow {
-            icon: "layers"; label: "Abrir ou fechar a prateleira"; description: Settings.list(Settings.shelfFiles).length + " arquivo(s) guardado(s)"
+            icon: "layers"; label: "Abrir ou fechar a prateleira"; description: { const n = Settings.list(Settings.shelfFiles).length; return n === 0 ? "Vazia: solte arquivos nela para guardar" : n === 1 ? "1 arquivo guardado" : n.toLocaleString(Qt.locale("pt_BR"), "f", 0) + " arquivos guardados" }
             UiButton { text: "Abrir"; kind: "accent"; onClicked: Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "shelf", "toggle"]) }
         }
     }

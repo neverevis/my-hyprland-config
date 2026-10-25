@@ -22,6 +22,7 @@ Singleton {
     property int pkgs: 0
     property bool loaded: false
     property bool loading: false
+    property bool listErr: false
     property bool hasFlatpak: false
     property string helper: ""          // paru ou yay ("" = nenhum)
     property int users: 0               // paginas que estao usando (a lista so carrega com a pagina aberta)
@@ -38,11 +39,12 @@ Singleton {
     property var pkgList: []
     property bool pkgLoaded: false
     property bool pkgLoading: false
+    property bool pkgErr: false
     property string pkgQuery: ""
     property string pkgFilter: "all"    // all | explicit | aur | orphan
     property string pkgSort: "name"     // name | size
     property string selPkg: ""
-    function loadPkgs() { if (pkgProc.running) return; pkgLoading = true; pkgProc.running = true }
+    function loadPkgs() { if (pkgProc.running) return; pkgLoading = true; pkgErr = false; pkgProc.running = true }
     readonly property var orphans: pkgList.filter(p => p.orphan)
     readonly property var pkgShown: {
         const q = pkgQuery.toLowerCase(), f = pkgFilter
@@ -56,7 +58,7 @@ Singleton {
         command: ["python3", root.script, "packages"]
         stdout: StdioCollector { onStreamFinished: {
             root.pkgLoading = false
-            try { root.pkgList = JSON.parse(text).pkgs || []; root.pkgLoaded = true } catch (e) { console.warn("Apps: pacotes invalidos", e) }
+            try { root.pkgList = JSON.parse(text).pkgs || []; root.pkgLoaded = true; root.pkgErr = false } catch (e) { console.warn("Apps: pacotes invalidos", e); root.pkgErr = true }
         } }
     }
     // remocao protegida: antes de rodar, confere (pacman -Rs --print, sem root) se sairia algo de que o shell precisa
@@ -64,15 +66,16 @@ Singleton {
     property var rmNames: []
     property string rmTitle: ""
     function removePkg(p) { removeMany("Removendo " + p.name, [p.name]) }
-    function removeOrphans() { removeMany("Removendo " + orphans.length + " órfãos", orphans.map(p => p.name)) }
+    function removeOrphans() { removeMany("Removendo " + orphans.length + (orphans.length === 1 ? " órfão" : " órfãos"), orphans.map(p => p.name)) }
     function removeMany(title, names) {
         const n = names.filter(validPkg)
         if (busy || n.length === 0) return
         rmNames = n; rmTitle = title
         jobTitle = "Conferindo " + (n.length === 1 ? n[0] : n.length + " pacotes"); jobLog = ""; jobAfter = null; jobState = "run"
+        retry = () => removeMany(title, names)
         chk.command = ["python3", root.script, "rmcheck"].concat(n); chk.running = false; chk.running = true
     }
-    function refuse(msg) { jobTitle = rmTitle; jobLog = msg; jobState = "err" }
+    function refuse(msg) { jobTitle = rmTitle; jobLog = msg; jobState = "err"; jobFriendly = msg.indexOf("O shell precisa") === 0 ? "" : "Não deu para conferir a remoção. Tente de novo." }
     Process {
         id: chk
         stdout: StdioCollector { onStreamFinished: {
@@ -84,7 +87,9 @@ Singleton {
             }
             if (d.err) { root.refuse("O pacman recusaria: " + d.err.slice(0, 500)); return }
             root.jobState = ""
-            root.runJob(root.rmTitle, ["pkexec", "pacman", "-Rns", "--noconfirm"].concat(root.rmNames))
+            const nm = root.rmNames, tt = root.rmTitle
+            root.runJob(tt, ["pkexec", "pacman", "-Rns", "--noconfirm"].concat(nm))
+            root.retry = () => root.removeMany(tt, nm)
         } }
     }
 
@@ -93,19 +98,20 @@ Singleton {
     property var updAur: []
     property bool updLoaded: false
     property bool updLoading: false
+    property bool updErr: false
     property bool updTool: true
-    function loadUpdates() { if (updProc.running) return; updLoading = true; updProc.running = true }
+    function loadUpdates() { if (updProc.running) return; updLoading = true; updErr = false; updProc.running = true }
     Process {
         id: updProc
         command: ["python3", root.script, "updates"]
         stdout: StdioCollector { onStreamFinished: {
             root.updLoading = false
-            try { const d = JSON.parse(text); root.updRepo = d.repo || []; root.updAur = d.aur || []; root.updTool = !!d.tool; root.updLoaded = true } catch (e) { console.warn("Apps: atualizacoes invalidas", e) }
+            try { const d = JSON.parse(text); root.updRepo = d.repo || []; root.updAur = d.aur || []; root.updTool = !!d.tool; root.updLoaded = true } catch (e) { console.warn("Apps: atualizacoes invalidas", e); root.updErr = true }
         } }
     }
     function load() {
         if (lister.running) return
-        loading = true; lister.running = true
+        loading = true; listErr = false; lister.running = true
     }
     Process {
         id: lister
@@ -118,7 +124,7 @@ Singleton {
                 root.hasFlatpak = !!(d.tools && d.tools.flatpak); root.helper = (d.tools && d.tools.helper) || ""
                 root.dryFile = !!d.dry
                 root.loaded = true
-            } catch (e) { console.warn("Apps: lista invalida", e) }
+            } catch (e) { console.warn("Apps: lista invalida", e); root.listErr = true }
         } }
     }
 
@@ -168,6 +174,8 @@ Singleton {
     property string jobTitle: ""
     property string jobState: ""        // "" | run | ok | err
     property string jobLog: ""
+    property string jobFriendly: ""     // frase em pt-BR do que falhou (o log cru fica em linha menor)
+    property var retry: null            // refaz a ultima tarefa (botao Tentar de novo)
     property var jobAfter: null
     readonly property bool busy: jobState === "run"
     function validPkg(p) { return /^[A-Za-z0-9][A-Za-z0-9@._+-]*$/.test(p) }
@@ -175,19 +183,22 @@ Singleton {
     function runJob(title, argv, after) {
         if (busy) return
         console.log("apps: " + (dry ? "[TESTE] " : "") + title + " -> " + argv.join(" "))
-        jobTitle = title; jobLog = ""; jobAfter = after || null; jobState = "run"
+        jobTitle = title; jobLog = ""; jobFriendly = ""; jobAfter = after || null; jobState = "run"
+        retry = () => runJob(title, argv, after)
         job.command = dry ? ["sh", "-c", 'echo "[teste] rodaria: $*"; sleep 1.2', "sh"].concat(argv) : argv
         if (!dry && argv[0] === "pkexec") SysAct.withAgent(() => job.running = true)   // garante quem peca a senha
         else job.running = true
     }
-    function closeJob() { if (!busy) { jobState = ""; jobLog = "" } }
+    function closeJob() { if (!busy) { jobState = ""; jobLog = ""; jobFriendly = ""; retry = null } }
+    function retryJob() { if (!busy && retry) retry() }
     Process {
         id: job
         stdout: SplitParser { onRead: line => { const l = line.split("\r").pop().trim(); if (l !== "") root.jobLog = (root.jobLog + "\n" + l).split("\n").slice(-14).join("\n").trim() } }
         stderr: SplitParser { onRead: line => { const l = line.split("\r").pop().trim(); if (l !== "") root.jobLog = (root.jobLog + "\n" + l).split("\n").slice(-14).join("\n").trim() } }
         onExited: code => {
             root.jobState = code === 0 ? "ok" : "err"
-            if (code !== 0 && root.jobLog === "") root.jobLog = "O comando terminou com erro (código " + code + ")."
+            if (code !== 0) root.jobFriendly = job.command[0] === "pkexec" && (code === 126 || code === 127) ? "A senha não foi confirmada, nada foi mudado. Tente de novo." : "Não deu para concluir. Tente de novo ou veja o detalhe abaixo."
+            if (code !== 0 && root.jobLog === "") root.jobLog = "Código de saída " + code + "."
             if (root.jobAfter) root.jobAfter(code)
             root.load()
             if (root.pkgLoaded) root.loadPkgs()
@@ -223,13 +234,15 @@ Singleton {
     property var startup: []
     function loadStartup() { auto.running = false; auto.running = true }
     Process { id: auto; command: ["python3", root.script, "autostart"]
-        stdout: StdioCollector { onStreamFinished: root.startup = root.parse(text) } }
+        stdout: StdioCollector { onStreamFinished: { root.startupLoaded = true; root.startup = root.parse(text) } } }
+    property bool startupLoaded: false
     function setStartup(file, on) {
         if (dry) { console.log("apps: [TESTE] autostart " + file + " " + (on ? "on" : "off")); return }
         autoSet.command = ["python3", script, "autostart-set", file, on ? "on" : "off"]
         autoSet.running = false; autoSet.running = true
     }
-    Process { id: autoSet; onExited: root.loadStartup() }
+    property bool startupErr: false
+    Process { id: autoSet; onExited: code => { root.startupErr = code !== 0; root.loadStartup() } }
 
     // consultas por IPC (so no modo de teste: nunca pulam a confirmacao fora dele)
     IpcHandler {

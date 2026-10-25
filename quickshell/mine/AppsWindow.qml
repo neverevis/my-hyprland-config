@@ -30,8 +30,13 @@ Scope {
         const u = ["B", "kB", "MB", "GB"]
         let i = 0, v = b
         while (v >= 1000 && i < 3) { v /= 1000; i++ }
-        return (i >= 2 ? v.toFixed(1) : Math.round(v)) + " " + u[i]
+        return (i >= 2 ? v.toFixed(1).replace(".", ",") : Math.round(v)) + " " + u[i]
     }
+    // inteiro com separador de milhar pt-BR (1.284); invalido vira "—"
+    function num(n) { const v = Number(n); return isFinite(v) ? v.toLocaleString(Qt.locale("pt_BR"), "f", 0) : "—" }
+    function plural(n, one, many) { return num(n) + " " + (Number(n) === 1 ? one : many) }
+    // mensagem do AUR em pt-BR (o texto cru do script nao vai para a tela)
+    function aurMsg(e) { return e ? "O AUR não respondeu. Confira a internet; repositório e Flatpak continuam valendo." : "" }
     function srcLabel(s) { return s === "pacman" ? "Pacman" : s === "aur" ? "AUR" : s === "flatpak" ? "Flatpak" : "Manual" }
 
     // frase de protecao do shell (a: item com .shell)
@@ -58,6 +63,16 @@ Scope {
         color: Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.1)
         border.width: 1; border.color: Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.4)
         Column { id: wc; x: SetK.md; y: SetK.md - 2; width: parent.width - SetK.md * 2; spacing: SetK.sm }
+    }
+    // erro dentro do bloco: frase do problema + saida (Tentar de novo)
+    component Fail: Row {
+        id: fl
+        property string msg
+        signal retry()
+        spacing: SetK.md
+        UiIcon { anchors.verticalCenter: parent.verticalCenter; name: "info"; size: 18; color: Theme.danger }
+        UiText { anchors.verticalCenter: parent.verticalCenter; width: Math.min(implicitWidth, fl.parent.width - 200); elide: Text.ElideRight; text: fl.msg; color: Theme.text; font.pixelSize: SetK.fDesc }
+        UiButton { anchors.verticalCenter: parent.verticalCenter; icon: "refresh"; text: "Tentar de novo"; kind: "ghost"; onClicked: fl.retry() }
     }
     // linha de rotulo/valor dos detalhes
     component KV: Row {
@@ -136,11 +151,13 @@ Scope {
                             width: parent.width; spacing: SetK.sm
                             UiIcon { anchors.verticalCenter: parent.verticalCenter; size: 18; color: Apps.jobState === "err" ? Theme.danger : Theme.accent
                                 name: Apps.jobState === "ok" ? "check" : Apps.jobState === "err" ? "info" : "refresh" }
-                            UiText { anchors.verticalCenter: parent.verticalCenter; width: parent.width - 120; elide: Text.ElideRight; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium
-                                text: Apps.jobTitle + (Apps.jobState === "run" ? "… (se pedir a senha, a janela aparece pelo shell)" : Apps.jobState === "ok" ? ": pronto" : ": não deu") }
+                            UiText { anchors.verticalCenter: parent.verticalCenter; width: parent.width - (Apps.jobState === "err" ? 290 : 120); elide: Text.ElideRight; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium
+                                text: Apps.jobTitle + (Apps.jobState === "run" ? "… (se pedir a senha, a janela aparece pelo shell)" : Apps.jobState === "ok" ? ": pronto" : ": não deu certo") }
+                            UiButton { visible: Apps.jobState === "err" && Apps.retry !== null; icon: "refresh"; text: "Tentar de novo"; kind: "ghost"; onClicked: Apps.retryJob() }
                             UiButton { visible: Apps.jobState !== "run"; text: "Fechar"; kind: "ghost"; onClicked: Apps.closeJob() }
                         }
-                        UiText { visible: Apps.jobLog !== ""; width: parent.width; wrapMode: Text.WrapAnywhere; text: Apps.jobLog; color: Apps.jobState === "err" ? Theme.danger : Theme.muted; font.pixelSize: 11; font.family: Settings.fontMono || "monospace" }
+                        UiText { visible: Apps.jobState === "err" && Apps.jobFriendly !== ""; width: parent.width; wrapMode: Text.WordWrap; text: Apps.jobFriendly; color: Theme.danger; font.pixelSize: SetK.fDesc }
+                        UiText { visible: Apps.jobLog !== ""; width: parent.width; wrapMode: Text.WrapAnywhere; text: Apps.jobLog; color: Apps.jobState === "err" && Apps.jobFriendly === "" ? Theme.danger : Theme.muted; font.pixelSize: 11; font.family: Settings.fontMono || "monospace" }
                     }
                 }
                 UiText {
@@ -181,10 +198,11 @@ Scope {
                 const s = q.toLowerCase()
                 return !s ? Apps.apps : Apps.apps.filter(a => (a.name + " " + a.pkg + " " + a.id).toLowerCase().includes(s))
             }
-            Head { id: hd; title: "Apps"; sub: Apps.loaded ? Apps.apps.length + " aplicativos do launcher; clique para ver os detalhes ou remover" : "Lendo os aplicativos…" }
+            Head { id: hd; title: "Apps"; sub: Apps.loaded ? root.plural(Apps.apps.length, "app do launcher", "apps do launcher") + "; clique para ver os detalhes ou remover" : Apps.listErr ? "Não foi possível ler os apps" : "Lendo os aplicativos…" }
             UiField { id: fld; anchors.top: hd.bottom; width: parent.width; placeholderText: "Buscar entre os apps…"; onTextChanged: tm.restart() }
             Timer { id: tm; interval: 120; onTriggered: { ap.q = fld.text.trim(); Apps.selected = "" } }
-            UiText { anchors.top: fld.bottom; anchors.topMargin: SetK.md; visible: Apps.loaded && ap.shown.length === 0; text: "Nenhum aplicativo encontrado."; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            UiText { anchors.top: fld.bottom; anchors.topMargin: SetK.md; visible: Apps.loaded && ap.shown.length === 0; text: ap.q !== "" ? "Nada encontrado para “" + ap.q + "”. Tente outro nome." : "Nenhum app com atalho no launcher ainda."; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            Fail { visible: Apps.listErr && !Apps.loaded; anchors.top: fld.bottom; anchors.topMargin: SetK.md; msg: "Não consegui ler a lista de apps."; onRetry: Apps.load() }
             ListView {
                 id: lv
                 anchors { top: fld.bottom; topMargin: SetK.sm; left: parent.left; right: parent.right; bottom: parent.bottom }
@@ -243,7 +261,7 @@ Scope {
                             Row {
                                 x: 8 + 32 + SetK.md; spacing: SetK.sm
                                 UiButton { icon: "play"; text: "Abrir"; kind: "accent"; onClicked: Quickshell.execDetached(["gtk-launch", dc.a.id.replace(/\.desktop$/, "")]) }
-                                UiButton { visible: dc.a.pkg !== "" && !dc.confirm; icon: "trash"; text: "Desinstalar"; kind: "danger"; enabled: !Apps.busy && !(dc.a.shell && dc.a.shell.level === "required"); onClicked: dc.confirm = true }
+                                UiButton { visible: dc.a.pkg !== "" && !dc.confirm; icon: "trash"; text: "Remover app"; kind: "danger"; enabled: !Apps.busy && !(dc.a.shell && dc.a.shell.level === "required"); onClicked: dc.confirm = true }
                             }
                             Warn {
                                 visible: dc.confirm
@@ -252,7 +270,7 @@ Scope {
                                     text: "Remover " + dc.a.name + "? " + (dc.a.shell ? root.shellWhy(dc.a) + " deixa de funcionar. " : "") + (dc.a.src === "flatpak" ? "O Flatpak sai do computador." : "Sai o pacote " + dc.a.pkg + " e as dependências que mais ninguém usa. Se outro programa precisar dele, o pacman recusa e a mensagem aparece lá em cima.") }
                                 Row { spacing: SetK.sm
                                     UiButton { text: "Cancelar"; kind: "ghost"; onClicked: dc.confirm = false }
-                                    UiButton { icon: "trash"; text: "Remover"; kind: "danger"; enabled: !Apps.busy; onClicked: { dc.confirm = false; Apps.selected = ""; Apps.uninstall(dc.a) } }
+                                    UiButton { icon: "trash"; text: "Remover app"; kind: "danger"; enabled: !Apps.busy; onClicked: { dc.confirm = false; Apps.selected = ""; Apps.uninstall(dc.a) } }
                                 }
                             }
                         }
@@ -269,7 +287,7 @@ Scope {
             id: pk
             property bool confirmOrph: false
             Component.onCompleted: if (!Apps.pkgLoaded) Apps.loadPkgs()
-            Head { id: hd; title: "Pacotes"; sub: Apps.pkgLoaded ? Apps.pkgList.length + " pacotes instalados · " + Apps.pkgShown.length + " na lista" : "Lendo o banco do pacman…" }
+            Head { id: hd; title: "Pacotes"; sub: Apps.pkgLoaded ? root.plural(Apps.pkgList.length, "pacote instalado", "pacotes instalados") + " · " + root.num(Apps.pkgShown.length) + " na lista" : Apps.pkgErr ? "Não foi possível ler os pacotes" : "Lendo o banco do pacman…" }
             UiField { id: fld; anchors.top: hd.bottom; width: parent.width; text: Apps.pkgQuery; placeholderText: "Buscar por nome ou descrição (ex.: polkit)…"; onTextChanged: tm.restart() }
             Timer { id: tm; interval: 120; onTriggered: { Apps.pkgQuery = fld.text.trim(); Apps.selPkg = "" } }
             Item {
@@ -291,7 +309,7 @@ Scope {
                 UiButton {
                     visible: Apps.pkgFilter === "orphan" && Apps.orphans.length > 0 && !pk.confirmOrph
                     anchors { left: segF.right; leftMargin: SetK.md; verticalCenter: parent.verticalCenter }
-                    icon: "trash"; text: "Remover órfãos (" + Apps.orphans.length + ")"; kind: "danger"; enabled: !Apps.busy
+                    icon: "trash"; text: "Remover órfãos (" + root.num(Apps.orphans.length) + ")"; kind: "danger"; enabled: !Apps.busy
                     onClicked: pk.confirmOrph = true
                 }
             }
@@ -301,13 +319,14 @@ Scope {
                 anchors { top: bar.bottom; topMargin: SetK.sm }
                 width: parent.width
                 UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.text; font.pixelSize: SetK.fDesc
-                    text: "Remover " + Apps.orphans.length + " pacotes órfãos (dependências que nada mais usa)? " + Apps.orphans.map(p => p.name).join(", ") }
+                    text: "Remover " + root.plural(Apps.orphans.length, "pacote órfão", "pacotes órfãos") + " (dependências que nada mais usa)? " + Apps.orphans.map(p => p.name).join(", ") }
                 Row { spacing: SetK.sm
                     UiButton { text: "Cancelar"; kind: "ghost"; onClicked: pk.confirmOrph = false }
                     UiButton { icon: "trash"; text: "Remover todos"; kind: "danger"; enabled: !Apps.busy; onClicked: { pk.confirmOrph = false; Apps.removeOrphans() } }
                 }
             }
-            UiText { anchors.top: pk.confirmOrph ? orphW.bottom : bar.bottom; anchors.topMargin: SetK.md; visible: Apps.pkgLoaded && Apps.pkgShown.length === 0; text: "Nenhum pacote encontrado."; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            UiText { anchors.top: pk.confirmOrph ? orphW.bottom : bar.bottom; anchors.topMargin: SetK.md; visible: Apps.pkgLoaded && Apps.pkgShown.length === 0; text: Apps.pkgQuery !== "" ? "Nada encontrado para “" + Apps.pkgQuery + "”. Tente outro nome ou limpe o filtro." : Apps.pkgFilter === "orphan" ? "Nenhum pacote órfão. Está tudo em uso." : "Nenhum pacote nesta lista."; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            Fail { visible: Apps.pkgErr && !Apps.pkgLoaded; anchors.top: pk.confirmOrph ? orphW.bottom : bar.bottom; anchors.topMargin: SetK.md; width: parent.width; msg: "Não consegui ler o banco do pacman."; onRetry: Apps.loadPkgs() }
             ListView {
                 id: lv
                 anchors { top: pk.confirmOrph ? orphW.bottom : bar.bottom; topMargin: SetK.sm; left: parent.left; right: parent.right; bottom: parent.bottom }
@@ -327,9 +346,9 @@ Scope {
                         Column {
                             anchors { left: parent.left; leftMargin: SetK.md; right: meta.left; rightMargin: SetK.md; verticalCenter: parent.verticalCenter }
                             spacing: 2
-                            Row { spacing: SetK.sm
-                                UiText { text: d.modelData.name; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium }
-                                UiText { anchors.verticalCenter: parent.verticalCenter; text: d.modelData.version; color: Theme.muted; font.pixelSize: 11 }
+                            Row { spacing: SetK.sm; width: parent.width
+                                UiText { width: Math.min(implicitWidth, parent.width - pv.implicitWidth - SetK.sm); elide: Text.ElideRight; text: d.modelData.name; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium }
+                                UiText { id: pv; anchors.verticalCenter: parent.verticalCenter; text: d.modelData.version; color: Theme.muted; font.pixelSize: 11; font.features: { "tnum": 1 } }
                             }
                             UiText { width: parent.width; elide: Text.ElideRight; text: d.modelData.desc; color: Theme.muted; font.pixelSize: SetK.fDesc }
                         }
@@ -360,20 +379,20 @@ Scope {
                                 KV { k: "Versão"; v: dc.a.version }
                                 KV { k: "Tamanho"; v: root.fmtSize(dc.a.size) }
                                 KV { visible: !!dc.a.shell; k: "Shell"; v: root.shellWhy(dc.a) }
-                                KV { k: "Necessário para"; v: dc.a.reqBy.length === 0 ? "nenhum pacote" : dc.a.reqBy.length + ": " + dc.a.reqBy.join(", ") }
+                                KV { k: "Necessário para"; v: dc.a.reqBy.length === 0 ? "nenhum pacote" : root.num(dc.a.reqBy.length) + ": " + dc.a.reqBy.join(", ") }
                             }
                             Row {
                                 x: SetK.md; spacing: SetK.sm
-                                UiButton { visible: !dc.confirm; icon: "trash"; text: "Remover"; kind: "danger"; enabled: !Apps.busy && !(dc.a.shell && dc.a.shell.level === "required"); onClicked: dc.confirm = true }
+                                UiButton { visible: !dc.confirm; icon: "trash"; text: "Remover pacote"; kind: "danger"; enabled: !Apps.busy && !(dc.a.shell && dc.a.shell.level === "required"); onClicked: dc.confirm = true }
                             }
                             Warn {
                                 visible: dc.confirm
                                 x: SetK.md; width: parent.width - SetK.md * 2
                                 UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.text; font.pixelSize: SetK.fDesc
-                                    text: "Remover " + dc.a.name + " e as dependências que mais ninguém usa (pacman -Rns)?" + (dc.a.shell ? " " + root.shellWhy(dc.a) + " deixa de funcionar." : "") + (dc.a.reqBy.length > 0 ? " Outros pacotes dependem dele (" + dc.a.reqBy.length + "): o pacman vai recusar e a mensagem aparece lá em cima." : "") }
+                                    text: "Remover " + dc.a.name + " e as dependências que mais ninguém usa (pacman -Rns)?" + (dc.a.shell ? " " + root.shellWhy(dc.a) + " deixa de funcionar." : "") + (dc.a.reqBy.length > 0 ? " Outros pacotes dependem dele (" + root.num(dc.a.reqBy.length) + "): o pacman vai recusar e a mensagem aparece lá em cima." : "") }
                                 Row { spacing: SetK.sm
                                     UiButton { text: "Cancelar"; kind: "ghost"; onClicked: dc.confirm = false }
-                                    UiButton { icon: "trash"; text: "Remover"; kind: "danger"; enabled: !Apps.busy; onClicked: { dc.confirm = false; Apps.selPkg = ""; Apps.removePkg(dc.a) } }
+                                    UiButton { icon: "trash"; text: "Remover pacote"; kind: "danger"; enabled: !Apps.busy; onClicked: { dc.confirm = false; Apps.selPkg = ""; Apps.removePkg(dc.a) } }
                                 }
                             }
                         }
@@ -396,7 +415,7 @@ Scope {
                 width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: SetK.fDesc
                 text: Apps.query.length < 2
                     ? "Digite pelo menos 2 letras. Do repositório instala direto (pede a senha); do AUR abre um terminal para você revisar" + (Apps.helper === "" ? " (precisa do paru ou do yay, que não estão instalados)." : " com o " + Apps.helper + ".")
-                    : (Apps.searching ? "Buscando…" : Apps.results.length === 0 ? "Nada encontrado." : "") + (Apps.aurErr !== "" ? " " + Apps.aurErr + "." : "")
+                    : (Apps.searching ? "Buscando…" : Apps.results.length === 0 ? "Nada encontrado para “" + Apps.query + "”. Tente outro nome ou parte dele." : "") + (Apps.aurErr !== "" ? " " + root.aurMsg(Apps.aurErr) : "")
             }
             ListView {
                 id: rv
@@ -413,10 +432,10 @@ Scope {
                     Column {
                         anchors { left: parent.left; leftMargin: 8; right: act.left; rightMargin: SetK.md; verticalCenter: parent.verticalCenter }
                         spacing: 3
-                        Row { spacing: SetK.sm
-                            UiText { text: r.modelData.name; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium }
-                            Badge { anchors.verticalCenter: parent.verticalCenter; src: r.modelData.src }
-                            UiText { anchors.verticalCenter: parent.verticalCenter; text: r.modelData.version; color: Theme.muted; font.pixelSize: 11 }
+                        Row { spacing: SetK.sm; width: parent.width
+                            UiText { width: Math.min(implicitWidth, parent.width - rb.width - rv2.implicitWidth - SetK.sm * 2); elide: Text.ElideRight; text: r.modelData.name; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium }
+                            Badge { id: rb; anchors.verticalCenter: parent.verticalCenter; src: r.modelData.src }
+                            UiText { id: rv2; anchors.verticalCenter: parent.verticalCenter; width: Math.min(implicitWidth, 120); elide: Text.ElideRight; text: r.modelData.version; color: Theme.muted; font.pixelSize: 11 }
                         }
                         UiText { width: parent.width; elide: Text.ElideRight; text: r.modelData.desc; color: Theme.muted; font.pixelSize: SetK.fDesc }
                     }
@@ -443,13 +462,14 @@ Scope {
             Component.onCompleted: if (!Apps.updLoaded) Apps.loadUpdates()
             readonly property var rows: Apps.updRepo.map(u => Object.assign({ src: "pacman" }, u)).concat(Apps.updAur.map(u => Object.assign({ src: "aur" }, u)))
             Head { id: hd; title: "Atualizações"
-                sub: Apps.updLoading ? "Verificando…" : !Apps.updTool ? "Falta o checkupdates (pacote pacman-contrib)" : up.rows.length === 0 ? "Tudo em dia" : up.rows.length + (up.rows.length === 1 ? " atualização pendente" : " atualizações pendentes") + (Apps.helper === "" ? "" : " (repositórios e AUR)") }
+                sub: Apps.updLoading ? "Verificando…" : Apps.updErr ? "Não foi possível verificar" : !Apps.updTool ? "Falta o checkupdates (pacote pacman-contrib); instale-o na aba Instalar" : up.rows.length === 0 ? "Tudo em dia" : root.plural(up.rows.length, "atualização pendente", "atualizações pendentes") + (Apps.helper === "" ? "" : " (repositórios e AUR)") }
             Row {
                 id: bt
                 anchors.top: hd.bottom; spacing: SetK.sm
                 UiButton { text: "Verificar"; icon: "refresh"; kind: "ghost"; enabled: !Apps.updLoading; onClicked: { Apps.loadUpdates(); SystemGuard.checkUpdates() } }
-                UiButton { icon: "download"; text: "Atualizar tudo"; kind: "accent"; onClicked: Apps.updateAll() }
+                UiButton { icon: "download"; text: "Atualizar tudo"; kind: "accent"; enabled: !Apps.busy; onClicked: Apps.updateAll() }
             }
+            Fail { visible: Apps.updErr && !Apps.updLoading; anchors.top: bt.bottom; anchors.topMargin: SetK.md; width: parent.width; msg: "A verificação de atualizações falhou."; onRetry: Apps.loadUpdates() }
             ListView {
                 id: lv
                 anchors { top: bt.bottom; topMargin: SetK.md; left: parent.left; right: parent.right; bottom: parent.bottom }
@@ -462,11 +482,11 @@ Scope {
                     Rectangle { width: parent.width - 16; x: 8; y: 0; height: 1; color: Theme.border; opacity: 0.4 }
                     Row {
                         x: 8; anchors.verticalCenter: parent.verticalCenter; spacing: SetK.sm
-                        UiText { text: d.modelData.name; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium }
+                        UiText { width: Math.min(implicitWidth, lv.width * 0.4); elide: Text.ElideRight; text: d.modelData.name; color: Theme.text; font.pixelSize: SetK.fRow; font.weight: Font.Medium }
                         Badge { visible: d.modelData.src === "aur"; anchors.verticalCenter: parent.verticalCenter; src: "aur" }
                     }
                     UiText { anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
-                        text: d.modelData.old + "  →  " + d.modelData.new; color: Theme.muted; font.pixelSize: SetK.fDesc; font.family: Settings.fontMono || "monospace" }
+                        width: Math.min(implicitWidth, lv.width * 0.5); elide: Text.ElideLeft; text: d.modelData.old + "  →  " + d.modelData.new; color: Theme.muted; font.pixelSize: SetK.fDesc; font.family: Settings.fontMono || "monospace" }
                 }
             }
         }

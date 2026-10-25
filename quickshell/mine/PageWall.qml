@@ -8,7 +8,7 @@ import QtQuick.Effects
 SetPage {
     id: page
     title: "Wallpaper"
-    subtitle: Wallpaper.files.length + " imagens em " + Wallpaper.dir
+    subtitle: (Wallpaper.files.length === 0 ? "Nenhuma imagem" : Wallpaper.files.length === 1 ? "1 imagem" : Wallpaper.files.length.toLocaleString(Qt.locale("pt_BR"), "f", 0) + " imagens") + " em " + Wallpaper.dir
 
     // ---- previa grande + troca rapida ----
     preview: SetPreview {
@@ -35,7 +35,7 @@ SetPage {
                 UiButton { icon: "prev"; kind: "ghost"; onClicked: Wallpaper.step(-1) }
                 UiButton { icon: "next"; kind: "ghost"; onClicked: Wallpaper.step(1) }
                 UiButton { icon: "dice"; kind: "ghost"; onClicked: Wallpaper.random() }
-                UiButton { icon: "images"; text: "Escolher"; kind: "accent"; onClicked: Settings.wpPickerOpen = true }
+                UiButton { icon: "images"; text: "Escolher imagem"; kind: "accent"; onClicked: Settings.wpPickerOpen = true }
             }
         }
     }
@@ -430,7 +430,7 @@ SetPage {
             canReset: Settings.lockWallpaper !== ""
             onReset: Settings.lockWallpaper = ""
             UiButton { icon: "eye"; kind: "ghost"; onClicked: Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "lockpreview", "toggle"]) }
-            UiButton { icon: "folderOpen"; text: "Escolher"; onClicked: Pick.image("Wallpaper da tela de bloqueio", p => Settings.lockWallpaper = p) }
+            UiButton { icon: "folderOpen"; text: "Escolher imagem"; onClicked: Pick.image("Wallpaper da tela de bloqueio", p => Settings.lockWallpaper = p) }
         }
     }
 

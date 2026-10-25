@@ -25,12 +25,13 @@ SetPage {
             const l = text.split("\n")
             page.uptimeS = parseInt(l[0]) || 0
             page.pkgs = (l[1] || "?").trim()
-            page.qsVer = (l[2] || "?").trim()
+            page.qsVer = (l[2] || "—").trim()
             page.gpuName = (l[3] || "").trim()
             page.host = (l[4] || "").trim()
         } }
     }
     Timer { interval: 60000; repeat: true; running: true; onTriggered: page.uptimeS += 60 }
+    function bytes(b) { return (b === undefined || b === null || !isFinite(b)) ? "—" : SysInfo.bytes(b).replace(".", ",") }
     function upText(s) {
         const d = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60)
         return (d ? d + " d " : "") + (h ? h + " h " : "") + m + " min"
@@ -70,7 +71,7 @@ SetPage {
 
     SetSection {
         title: "Sobre este computador"; icon: "info"
-        subtitle: (page.inf.distro || "Linux") + " · kernel " + (page.inf.kernel || "?")
+        subtitle: (page.inf.distro || "Linux") + " · kernel " + (page.inf.kernel || "—")
         SetBlock {
             Row {
                 spacing: SetK.lg
@@ -79,7 +80,7 @@ SetPage {
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: 6
                     UiText { text: page.inf.distro || "Linux"; color: Theme.text; font.pixelSize: 20; font.weight: Font.Bold }
-                    UiText { text: "Kernel " + (page.inf.kernel || "?") + (page.inf.host ? "  ·  " + page.inf.host : ""); color: Theme.muted; font.pixelSize: 13 }
+                    UiText { text: "Kernel " + (page.inf.kernel || "—") + (page.inf.host ? "  ·  " + page.inf.host : ""); color: Theme.muted; font.pixelSize: 13 }
                     Row {
                         Repeater {
                             model: ["primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer", "danger"]
@@ -96,19 +97,19 @@ SetPage {
                 }
             }
         }
-        SetRow { icon: "chip"; label: "Processador"; description: (page.inf.cpuModel || "?") + (page.inf.cores ? " · " + page.inf.cores + " threads" : "") + (SysInfo.temp !== null ? " · " + Math.round(SysInfo.temp) + " °C" : "") }
-        SetRow { icon: "gpu"; label: "Placa de vídeo"; description: (SysInfo.d.gpu ? SysInfo.d.gpu.name : (page.gpuName || "?")) + (SysInfo.d.gpu ? " · " + SysInfo.bytes(SysInfo.d.gpu.memUsed) + " de " + SysInfo.bytes(SysInfo.d.gpu.memTotal) : "") }
-        SetRow { icon: "memory"; label: "Memória"; description: (SysInfo.d.memTotal ? SysInfo.bytes(SysInfo.d.memUsed) + " de " + SysInfo.bytes(SysInfo.d.memTotal) : "?") + " · " + Math.round(SysInfo.mem * 100) + " % em uso" }
-        SetRow { icon: "disk"; label: "Disco"; description: SysInfo.disks.length ? SysInfo.bytes(SysInfo.disks[0].used) + " de " + SysInfo.bytes(SysInfo.disks[0].total) + " · " + Math.round(SysInfo.disk * 100) + " % em uso" : "?" }
+        SetRow { icon: "chip"; label: "Processador"; description: (page.inf.cpuModel || "—") + (page.inf.cores ? " · " + page.inf.cores + " threads" : "") + (SysInfo.temp !== null ? " · " + Math.round(SysInfo.temp) + " °C" : "") }
+        SetRow { icon: "gpu"; label: "Placa de vídeo"; description: (SysInfo.d.gpu ? SysInfo.d.gpu.name : (page.gpuName || "—")) + (SysInfo.d.gpu ? " · " + page.bytes(SysInfo.d.gpu.memUsed) + " de " + page.bytes(SysInfo.d.gpu.memTotal) : "") }
+        SetRow { icon: "memory"; label: "Memória"; description: (SysInfo.d.memTotal ? page.bytes(SysInfo.d.memUsed) + " de " + page.bytes(SysInfo.d.memTotal) : "—") + (isFinite(SysInfo.mem) ? " · " + Math.round(SysInfo.mem * 100) + " % em uso" : "") }
+        SetRow { icon: "disk"; label: "Disco"; description: SysInfo.disks.length ? page.bytes(SysInfo.disks[0].used) + " de " + page.bytes(SysInfo.disks[0].total) + (isFinite(SysInfo.disk) ? " · " + Math.round(SysInfo.disk * 100) + " % em uso" : "") : "—" }
         SetRow { icon: "clock"; label: "Ligado há"; description: page.upText(page.uptimeS) + " · desde o último boot" }
-        SetRow { icon: "package"; label: "Pacotes"; description: page.pkgs + " instalados (pacman)" }
+        SetRow { icon: "package"; label: "Pacotes"; description: /^\d+$/.test(page.pkgs) && page.pkgs !== "0" ? (page.pkgs === "1" ? "1 instalado" : Number(page.pkgs).toLocaleString(Qt.locale("pt_BR"), "f", 0) + " instalados") + " (pacman)" : "—" }
         SetRow {
             icon: "download"; label: "Atualizações"
-            description: SystemGuard.updates < 0 ? (SystemGuard.checking ? "Verificando…" : "Indisponível") : (SystemGuard.updates === 0 ? "Tudo em dia" : SystemGuard.updates + " pendentes")
+            description: SystemGuard.updates < 0 ? (SystemGuard.checking ? "Verificando…" : "Indisponível (falta o checkupdates)") : (SystemGuard.updates === 0 ? "Tudo em dia" : SystemGuard.updates === 1 ? "1 pendente" : SystemGuard.updates.toLocaleString(Qt.locale("pt_BR"), "f", 0) + " pendentes")
             UiButton { text: SystemGuard.updates > 0 ? "Atualizar" : "Verificar"; kind: "ghost"; onClicked: SystemGuard.updates > 0 ? SystemGuard.runUpdate() : SystemGuard.checkUpdates() }
         }
         SetRow { icon: "tune"; label: "Shell"; description: "Quickshell “mine” · " + page.qsVer
-            UiButton { icon: "refresh"; text: "Reiniciar"; kind: "ghost"; onClicked: Quickshell.execDetached(["mine-shell", "restart"]) } }
+            UiButton { icon: "refresh"; text: "Reiniciar shell"; kind: "ghost"; onClicked: Quickshell.execDetached(["mine-shell", "restart"]) } }
     }
 
     SetSection {

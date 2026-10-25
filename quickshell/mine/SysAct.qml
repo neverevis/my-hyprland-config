@@ -55,24 +55,29 @@ Singleton {
     property string jobTitle: ""
     property string jobState: ""        // "" | run | ok | err
     property string jobLog: ""
+    property string jobFriendly: ""     // frase em pt-BR do que falhou; o log cru fica numa linha menor
+    property var retry: null            // refaz a ultima tarefa
     property var jobAfter: null
     readonly property bool busy: jobState === "run"
     function runJob(title, argv, after) {
         if (busy) return
         console.log("sys: " + (dry ? "[TESTE] " : "") + title + " -> " + argv.join(" "))
-        jobTitle = title; jobLog = ""; jobAfter = after || null; jobState = "run"
+        jobTitle = title; jobLog = ""; jobFriendly = ""; jobAfter = after || null; jobState = "run"
+        retry = () => runJob(title, argv, after)
         job.command = dry ? ["sh", "-c", 'echo "[teste] rodaria: $*"; sleep 1', "sh"].concat(argv) : argv
         if (!dry && argv[0] === "pkexec") withAgent(() => job.running = true)
         else job.running = true
     }
-    function closeJob() { if (!busy) { jobState = ""; jobLog = "" } }
+    function closeJob() { if (!busy) { jobState = ""; jobLog = ""; jobFriendly = ""; retry = null } }
+    function retryJob() { if (!busy && retry) retry() }
     Process {
         id: job
         stdout: SplitParser { onRead: line => { const l = line.trim(); if (l !== "") root.jobLog = (root.jobLog + "\n" + l).split("\n").slice(-8).join("\n").trim() } }
         stderr: SplitParser { onRead: line => { const l = line.trim(); if (l !== "") root.jobLog = (root.jobLog + "\n" + l).split("\n").slice(-8).join("\n").trim() } }
         onExited: code => {
             root.jobState = code === 0 ? "ok" : "err"
-            if (code !== 0 && root.jobLog === "") root.jobLog = code === 126 || code === 127 ? "Cancelado ou sem permissão." : "O comando saiu com erro " + code + "."
+            if (code !== 0) root.jobFriendly = code === 126 || code === 127 ? "A senha não foi confirmada, então nada mudou. Tente de novo." : "Não deu para concluir a mudança. Tente de novo."
+            if (code !== 0 && root.jobLog === "") root.jobLog = "Código de saída " + code + "."
             if (root.jobAfter) root.jobAfter(code === 0)
             root.jobAfter = null
         }

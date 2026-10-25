@@ -594,7 +594,7 @@ Scope {
                 id: resCol
                 width: resFlick.width
                 spacing: 6
-                UiText { visible: root.results.length === 0 && root.index.length > 0; text: "Nada encontrado. Tente outra palavra (ex.: blur, mola, relógio, bloqueio)."; color: Theme.muted; font.pixelSize: 13 }
+                UiText { visible: root.results.length === 0 && root.index.length > 0; text: "Nada encontrado para “" + root.query + "”. Tente outra palavra (ex.: blur, mola, relógio, bloqueio)."; color: Theme.muted; font.pixelSize: 13 }
                 Repeater {
                     model: root.results
                     delegate: Rectangle {

@@ -13,6 +13,9 @@ Singleton {
     id: root
     property var mons: []          // [{ name, desc, w, h, lw, lh, x, y, scale, transform, mode, modes, vrr, disabled, focused }]
     property int users: 0
+    property bool listed: false     // a leitura do hyprctl ja respondeu (certo ou errado)
+    property bool listErr: false
+    property bool revertErr: false
     function use() { users++; refresh() }
     function release() { users = Math.max(0, users - 1) }
     function refresh() { if (!lister.running) lister.running = true }
@@ -29,7 +32,9 @@ Singleton {
                         modes: m.availableModes || [], vrr: !!m.vrr, disabled: !!m.disabled, focused: !!m.focused }
                 })
                 if (JSON.stringify(out) !== JSON.stringify(root.mons)) root.mons = out
-            } catch (e) { console.warn("Displays: hyprctl invalido", e) }
+                root.listErr = false
+            } catch (e) { console.warn("Displays: hyprctl invalido", e); root.listErr = true }
+            root.listed = true
         } }
     }
     Timer { id: refreshT; interval: 1100; onTriggered: root.refresh() }
@@ -62,6 +67,7 @@ Singleton {
         const b = before
         secsLeft = 0; before = null; pending = ""
         if (!b) return
+        revertErr = false
         if (!SysAct.real("monitor: voltar as configuracoes")) return
         Settings.hyprMonitor = b.legacy; Settings.hyprMonitors = b.map
         // aplica na hora o que era (o arquivo gerado so e relido no proximo reload)
@@ -70,7 +76,7 @@ Singleton {
         revertProc.running = true
         refreshT.restart()
     }
-    Process { id: revertProc }
+    Process { id: revertProc; onExited: code => root.revertErr = code !== 0 }
 
     IpcHandler {
         target: "displays"

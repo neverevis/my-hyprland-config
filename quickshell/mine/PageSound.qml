@@ -24,7 +24,7 @@ SetPage {
     readonly property var streams: nodes.filter(n => n.audio && n.isStream && n.type === PwNodeType.AudioOutStream && !isMeter(n))
     readonly property var inStreams: nodes.filter(n => n.audio && n.isStream && n.type === PwNodeType.AudioInStream && !isMeter(n))
     PwObjectTracker { objects: page.live ? page.nodes.filter(n => n.audio) : [] }
-    function nodeName(n) { return n ? (n.description || n.nickname || n.name || "?") : "" }
+    function nodeName(n) { return n ? (n.description || n.nickname || n.name || "Dispositivo sem nome") : "" }
     function appLabel(n) {
         const p = n.properties || {}
         const base = p["application.name"] || n.description || n.name || "App"
@@ -81,6 +81,7 @@ SetPage {
     SetSection {
         title: "Saída"; icon: "speaker"
         subtitle: page.sink ? page.nodeName(page.sink) : "Nenhuma saída de som encontrada"
+        SetRow { visible: page.sinks.length === 0; icon: "info"; label: "Sem saída de som"; description: "O PipeWire não listou nenhuma; confira se o serviço (pipewire e wireplumber) está rodando" }
         SetBlock {
             visible: page.sinks.length > 0
             Flow {
@@ -107,6 +108,7 @@ SetPage {
     SetSection {
         title: "Entrada"; icon: "mic"
         subtitle: page.source ? page.nodeName(page.source) : "Nenhum microfone encontrado"
+        SetRow { visible: page.sources.length === 0; icon: "info"; label: "Sem microfone"; description: "Conecte um microfone; se já estiver conectado, confira o PipeWire" }
         SetBlock {
             visible: page.sources.length > 0
             Flow {
@@ -132,17 +134,20 @@ SetPage {
             id: meter
             visible: !!page.source
             property int level: 0
+            property bool fail: false
             readonly property bool on: page.live && !!page.source && !(page.source.audio && page.source.audio.muted)
             onOnChanged: if (!on) level = 0
             Process {
                 id: meterProc
                 running: meter.on
+                onRunningChanged: if (running) meter.fail = false
+                onExited: code => { if (meter.on && code !== 0) meter.fail = true }
                 command: ["sh", "-c", 'exec pw-cat --record --rate 8000 --channels 1 --format s16 --latency 100ms - 2>/dev/null | exec python3 "$1"', "sh", Qt.resolvedUrl("scripts/miclevel.py").toString().replace("file://", "")]
                 stdout: SplitParser { onRead: line => meter.level = Math.max(0, Math.min(100, parseInt(line) || 0)) }
             }
             Item {
                 width: parent.width; height: 20
-                UiText { id: mlbl; anchors.verticalCenter: parent.verticalCenter; text: meter.on ? "Nível ao vivo" : "Microfone mudo"; color: Theme.muted; font.pixelSize: SetK.fDesc }
+                UiText { id: mlbl; anchors.verticalCenter: parent.verticalCenter; text: meter.fail ? "Medidor indisponível (precisa do pw-cat, do pipewire)" : meter.on ? "Nível ao vivo" : "Microfone mudo"; color: Theme.muted; font.pixelSize: SetK.fDesc }
                 Rectangle {
                     anchors { left: mlbl.right; leftMargin: SetK.md; right: parent.right; verticalCenter: parent.verticalCenter }
                     height: 8; radius: 4; color: Theme.track; border.width: 1; border.color: Theme.border
