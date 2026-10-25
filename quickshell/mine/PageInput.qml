@@ -1,13 +1,12 @@
-// Pagina "Mouse e teclado" (kit Set*): mouse, teclado, cursor e icones (cartoes com previa), fontes do sistema com download,
-// aplicativos padrao e webapps. Os temas vem de SysTheme.qml; o mouse e o teclado sao opcoes do Hyprland (HyprConf.qml).
+// Pagina "Mouse e teclado" (kit Set*): mouse, teclado, cursor e icones (cartoes com previa), fontes do sistema com download. Os temas vem de SysTheme.qml; o mouse e o teclado sao opcoes do Hyprland (HyprConf.qml).
 import Quickshell
 import QtQuick
 
 SetPage {
     id: page
     title: "Mouse e teclado"
-    subtitle: "Mouse, teclado, cursor, ícones, fontes e aplicativos padrão"
-    Component.onCompleted: { SysTheme.load(); HyprConf.refresh(); Webapps.refresh() }   // mostra os valores atuais do Hyprland
+    subtitle: "Mouse, teclado, cursor, ícones e fontes"
+    Component.onCompleted: { SysTheme.load(); HyprConf.refresh() }   // mostra os valores atuais do Hyprland
 
     // lista do que da para instalar (o que ja esta instalado aparece marcado)
     component Downloads: SetBlock {
@@ -232,45 +231,9 @@ SetPage {
         }
     }
 
-    // ---- apps padrao ----
+    // ---- apps padrao e webapps moram em Aplicativos ----
     SetSection {
-        title: "Aplicativos padrão"; icon: "apps"
-        subtitle: "O que abre ao configurar rede, Bluetooth, volume etc.; vazio usa o padrão mostrado"
-        Repeater {
-            model: AppCmds.items
-            delegate: SetRow {
-                id: ar
-                required property var modelData
-                icon: modelData.icon; label: modelData.label
-                UiField {
-                    width: 240
-                    text: (Settings.appCmds || ({}))[ar.modelData.id] || ""
-                    placeholderText: ar.modelData.def
-                    onAccepted: AppCmds.set(ar.modelData.id, text)
-                    onEditingFinished: AppCmds.set(ar.modelData.id, text)
-                }
-            }
-        }
-    }
-
-    // ---- webapps ----
-    SetSection {
-        title: "Webapps"; icon: "web"
-        subtitle: "Cada site vira um aplicativo sem abas, também no launcher"
-        Repeater {
-            model: Webapps.apps
-            delegate: SetRow {
-                id: wr
-                required property var modelData
-                icon: "web"; label: modelData.name; description: modelData.url
-                UiButton { icon: "play"; kind: "ghost"; onClicked: Quickshell.execDetached(["gtk-launch", "shell-webapp-" + wr.modelData.id]) }
-                UiButton { icon: "trash"; kind: "danger"; onClicked: Webapps.remove(wr.modelData.id) }
-            }
-        }
-        SetRow {
-            icon: "plus"; label: "Novo webapp"; description: Webapps.msg !== "" ? Webapps.msg : (Webapps.apps.length === 0 ? "Nenhum ainda; separe vários endereços por espaço" : "Separe vários endereços por espaço")
-            UiField { id: waF; width: 220; placeholderText: "web.whatsapp.com"; onAccepted: waB.clicked() }
-            UiButton { id: waB; icon: "plus"; text: Webapps.busy ? "Criando…" : "Criar"; kind: "accent"; enabled: !Webapps.busy; onClicked: { Webapps.add(waF.text); waF.text = "" } }
-        }
+        title: "Aplicativos"; icon: "apps"
+        SetRow { icon: "apps"; label: "Aplicativos padrão e webapps"; description: "Mudaram para a página Aplicativos"; link: true; onClicked: Settings.settingsPage = "apps" }
     }
 }

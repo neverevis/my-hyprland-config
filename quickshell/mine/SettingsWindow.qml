@@ -55,7 +55,7 @@ Scope {
             { id: "sound", label: "Som", icon: "volume", desc: "Saídas, entradas e volume por aplicativo." },
             { id: "net", label: "Rede e Bluetooth", icon: "wifi", desc: "Wi-Fi, cabo, VPN e dispositivos." },
             { id: "display", label: "Monitores", icon: "monitor", desc: "Resolução, escala e posição das telas." },
-            { id: "input", label: "Mouse e teclado", icon: "mouse", desc: "Cursor, mouse, ícones, fontes e apps padrão." },
+            { id: "input", label: "Mouse e teclado", icon: "mouse", desc: "Cursor, mouse, ícones e fontes." },
             { id: "power", label: "Energia e sessão", icon: "power", desc: "Bloqueio, inatividade, energia e hora." },
             { id: "time", label: "Data, hora e idioma", icon: "clockOutline", desc: "Fuso, formato e idioma." },
             { id: "tools", label: "Ferramentas", icon: "wrench", desc: "Captura, gravação, prateleira e painel de jogo." },
@@ -133,8 +133,7 @@ Scope {
     Component { id: accountC; PageAccount {} }
     Component { id: keysC; SetSoon { title: "Atalhos de teclado"; icon: "keyboard"; plans: ["Lista com busca", "Gravar uma tecla", "Criar e mudar atalhos do Hyprland"]
         links: [["Atalhos atuais (só leitura)", "keyboard", "win", "Atalhos"]] } }
-    Component { id: appsC; SetSoon { title: "Aplicativos"; icon: "apps"; plans: ["Instalar e remover programas", "Apps ao iniciar", "Apps padrão"]
-        links: [["Apps ao iniciar", "rocket", "win", "Apps ao iniciar"], ["Aplicativos padrão", "apps", "input", "Aplicativos padrão"], ["Webapps", "web", "input", "Webapps"]] } }
+    Component { id: appsC; PageApps {} }
     Component { id: soundC; SetSoon { title: "Som"; icon: "volume"; plans: ["Saídas e entradas", "Volume por aplicativo", "Equalizador"]
         links: [["Indicador de volume", "volume", "bars", "Indicador de volume"]] } }
     Component { id: netC; SetSoon { title: "Rede e Bluetooth"; icon: "wifi"; plans: ["Wi-Fi e cabo", "VPN", "Dispositivos Bluetooth"] } }

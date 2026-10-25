@@ -260,6 +260,7 @@ OPTIONAL=(
     kitty                                                      # terminal padrao do launcher (tema ao vivo)
     libqalculate                                               # calculadora do launcher (unidades, moedas)
     zenity                                                     # importar VPN e escolher arquivos
+    expac flatpak                                              # pagina Aplicativos: tamanhos mais rapidos (expac) e busca/instalacao no Flathub (flatpak); funciona sem eles
     brightnessctl upower                                       # brilho e bateria (notebooks)
     pciutils                                                   # GPU na pagina Sobre
     ydotool                                                    # teclado na tela digitar (systemctl --user enable --now ydotool)

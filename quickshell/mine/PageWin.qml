@@ -1,5 +1,5 @@
 // Pagina "Janelas" (kit Set*): previa de duas janelas com espacos, borda e cantos, sombras, blur do Hyprland e da moldura,
-// foco, layout, monitor, apps ao iniciar, atalhos e ajustes do Hyprland. So o que voce muda vira override (HyprConf.qml).
+// foco, layout, monitor, atalhos e ajustes do Hyprland. So o que voce muda vira override (HyprConf.qml).
 import Quickshell
 import Quickshell.Io
 import QtQuick
@@ -243,26 +243,6 @@ SetPage {
             options: [[0, "Normal"], [1, "90°"], [2, "180°"], [3, "270°"]]
             value: page.mon ? (Settings.hyprMonitor && Settings.hyprMonitor.transform !== undefined ? Settings.hyprMonitor.transform : page.mon.transform) : 0
             onPicked: v => page.applyMon({ transform: v })
-        }
-    }
-
-    // ---- apps ao iniciar ----
-    SetSection {
-        title: "Apps ao iniciar"; icon: "rocket"
-        subtitle: "Comandos que o Hyprland roda ao entrar na sessão, além dos seus arquivos"
-        Repeater {
-            model: Settings.list(Settings.hyprAutostart)
-            delegate: SetRow {
-                required property string modelData
-                required property int index
-                icon: "play"; label: modelData
-                UiButton { icon: "trash"; kind: "danger"; onClicked: { const l = Settings.list(Settings.hyprAutostart); l.splice(index, 1); Settings.hyprAutostart = l } }
-            }
-        }
-        SetRow {
-            icon: "plus"; label: "Novo comando"
-            UiField { id: asF; width: 260; placeholderText: "ex.: discord --start-minimized"; onAccepted: asB.clicked() }
-            UiButton { id: asB; icon: "plus"; text: "Adicionar"; kind: "accent"; onClicked: { const c = asF.text.trim(); if (!c) return; Settings.hyprAutostart = (Settings.list(Settings.hyprAutostart)).concat([c]); asF.text = "" } }
         }
     }
 

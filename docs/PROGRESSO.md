@@ -21,7 +21,7 @@ Resumo do que está pronto, do que está em andamento e do que vem depois. Atual
 Nova arquitetura com duas áreas, **Personalização** e **Sistema**, e um kit de componentes `Set*`.
 
 - Todas as páginas de Personalização já estão no novo formato: Início, Tema e cores, Wallpaper (com palco que toca as transições de verdade), Área de trabalho, Barras e moldura, Painéis, Janelas, Animações e Visuais.
-- Em Sistema, já migradas: Mouse e teclado, Energia e sessão, Ferramentas, Conta e Sobre. Atalhos de teclado, Aplicativos, Som, Rede, Monitores e Data/hora estão como "em breve" (ver Planejado).
+- Em Sistema, já migradas: Mouse e teclado, Energia e sessão, Ferramentas, Conta e Sobre. Aplicativos (instalar, remover, atualizar, ao iniciar, apps padrão e webapps; script `scripts/apps.py`, modo de teste com `QS_APPS_DRYRUN=1`). Atalhos de teclado, Som, Rede, Monitores e Data/hora estão como "em breve" (ver Planejado).
 - Pendências de acabamento: controles inline nas páginas antigas, cartão de usuário (avatar sobreposto) e composições de banner.
 
 ## Planejado: configurações do sistema operacional
@@ -29,14 +29,13 @@ Nova arquitetura com duas áreas, **Personalização** e **Sistema**, e um kit d
 Páginas de Sistema para dispensar outros painéis:
 
 1. **Editor de atalhos de teclado** (escreve em `~/.config/hypr/quickshell-keys.lua`; o formato já está pronto, veja [ATALHOS.md](ATALHOS.md))
-2. Instalar e desinstalar aplicativos
-3. Programas ao iniciar
-4. Aplicativos padrão
-5. Som
-6. Rede e Bluetooth
-7. Telas (monitores)
-8. Data e hora
-9. Energia
+2. Som
+3. Rede e Bluetooth
+4. Telas (monitores)
+5. Data e hora
+6. Energia
+
+(Aplicativos, programas ao iniciar e aplicativos padrão já estão prontos.)
 
 ## Problemas conhecidos e limites
 
