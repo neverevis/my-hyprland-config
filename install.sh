@@ -136,7 +136,7 @@ if [ "$UNINSTALL" = 1 ]; then
         run rm -f "$HYPR_DIR/quickshell-keys.lua" "$HYPR_DIR/quickshell-blur.lua"
         hypr_up && run hyprctl reload >/dev/null 2>&1 || true
     fi
-    for f in "$BIN_DIR/qs-close-or-kill" "$BIN_DIR/session-action"; do
+    for f in "$BIN_DIR/qs-close-or-kill" "$BIN_DIR/session-action" "$BIN_DIR/mine-shell"; do
         if [ -e "$f$ORIG" ]; then run mv -f "$f$ORIG" "$f"; else run rm -f "$f"; fi
     done
     KC="$CONF/kitty/kitty.conf"
@@ -352,7 +352,8 @@ fi
 # ---- scripts em ~/.local/bin (os atalhos chamam $HOME/.local/bin/...) ----
 put_file "$HERE/bin/qs-close-or-kill" "$BIN_DIR/qs-close-or-kill" 755
 put_file "$HERE/bin/session-action" "$BIN_DIR/session-action" 755
-say "Scripts instalados em $BIN_DIR (qs-close-or-kill: Super+Q; session-action: bloquear, menu de energia, midia)"
+put_file "$HERE/bin/mine-shell" "$BIN_DIR/mine-shell" 755
+say "Scripts instalados em $BIN_DIR (qs-close-or-kill: Super+Q; session-action: bloquear, menu de energia, midia; mine-shell: iniciar/reiniciar o shell)"
 
 # ================================================================ Hyprland (config Lua)
 if [ -f "$HYPR_DIR/hyprland.lua" ]; then
@@ -464,9 +465,9 @@ if [ "$START" = 1 ] && hypr_up; then
         qs kill -c mine >/dev/null 2>&1 || pkill -f "qs -c mine" || true; sleep 1
     fi
     say "Iniciando o shell"
-    if [ "$DRY" = 1 ]; then note "[dry-run] hyprctl dispatch 'hl.dsp.exec_cmd(\"qs -c mine\")' (inicia pelo Hyprland, com o ambiente certo)"
+    if [ "$DRY" = 1 ]; then note "[dry-run] hyprctl dispatch 'hl.dsp.exec_cmd(\"$BIN_DIR/mine-shell start\")' (inicia pelo Hyprland, com o ambiente certo)"
     else
-        hyprctl dispatch 'hl.dsp.exec_cmd("qs -c mine")' >/dev/null 2>&1 || setsid -f qs -c mine >/dev/null 2>&1
+        hyprctl dispatch "hl.dsp.exec_cmd(\"$BIN_DIR/mine-shell start\")" >/dev/null 2>&1 || setsid -f qs -c mine >/dev/null 2>&1
         for _ in $(seq 1 20); do shell_up && { started=1; break; }; sleep 1; done
         if [ "$started" = 1 ]; then say "O shell esta rodando"
         else warn "O shell nao respondeu em 20 s. Veja o erro com:  qs -c mine   (ou: qs log -c mine)"; fi

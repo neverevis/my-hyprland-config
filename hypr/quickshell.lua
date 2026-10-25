@@ -108,5 +108,6 @@ hl.layer_rule({ match = { namespace = "mine-wallpaper-picker" }, no_anim = true 
 pcall(require, "quickshell-blur")
 
 if AUTOSTART then
-    hl.on("hyprland.start", function() hl.exec_cmd("qs -c mine") end)
+    -- mine-shell (instalado pelo install.sh) libera o nome de notificacoes e grava log; sem ele, qs direto
+    hl.on("hyprland.start", function() hl.exec_cmd("sh -c '[ -x \"$HOME/.local/bin/mine-shell\" ] && exec \"$HOME/.local/bin/mine-shell\" start || exec qs -c mine'") end)
 end

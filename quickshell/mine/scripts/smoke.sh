@@ -9,7 +9,7 @@ restart=1
 for a in "$@"; do [ "$a" = "--no-restart" ] && restart=0; done
 
 if [ $restart = 1 ]; then
-    hyprctl dispatch 'hl.dsp.exec_cmd("shell-switch restart")' >/dev/null
+    hyprctl dispatch 'hl.dsp.exec_cmd("mine-shell restart")' >/dev/null
     sleep 2
 fi
 for _ in $(seq 1 40); do ipc panels status >/dev/null 2>&1 && break; sleep 0.25; done

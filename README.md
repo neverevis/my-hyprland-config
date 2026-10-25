@@ -124,7 +124,7 @@ A tabela abaixo (e [docs/ATALHOS.md](docs/ATALHOS.md)) é gerada de `hypr/quicks
 quickshell/mine/             o shell (QML e scripts)
 quickshell/settings.default.json   configurações padrão
 hypr/quickshell.lua          tabela de atalhos, regras de camada e autostart
-bin/                         scripts instalados em ~/.local/bin (session-action, qs-close-or-kill)
+bin/                         scripts instalados em ~/.local/bin (mine-shell, session-action, qs-close-or-kill)
 scripts/                     ajudante do instalador e gerador da documentação
 docs/                        RECURSOS, PROGRESSO, ATALHOS
 install.sh

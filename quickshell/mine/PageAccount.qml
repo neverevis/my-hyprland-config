@@ -108,7 +108,7 @@ SetPage {
             UiButton { text: SystemGuard.updates > 0 ? "Atualizar" : "Verificar"; kind: "ghost"; onClicked: SystemGuard.updates > 0 ? SystemGuard.runUpdate() : SystemGuard.checkUpdates() }
         }
         SetRow { icon: "tune"; label: "Shell"; description: "Quickshell “mine” · " + page.qsVer
-            UiButton { icon: "refresh"; text: "Reiniciar"; kind: "ghost"; onClicked: Quickshell.execDetached(["shell-switch", "restart"]) } }
+            UiButton { icon: "refresh"; text: "Reiniciar"; kind: "ghost"; onClicked: Quickshell.execDetached(["mine-shell", "restart"]) } }
     }
 
     SetSection {

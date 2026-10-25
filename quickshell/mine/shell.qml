@@ -4,7 +4,7 @@
 //   - ela e "click-through"; o espaco e reservado por janelinhas transparentes
 //   - cada barra tem uma janela propria (BarWindow) com os modulos
 //   - tudo vem de Settings (settings.json); a geometria, de Geometry.qml
-// Recarregue com: shell-switch restart
+// Recarregue com: mine-shell restart
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Io
@@ -16,7 +16,7 @@ import QtQuick.Effects
 ShellRoot {
     id: shell
     // sem recarregar sozinho ao salvar um .qml: com UseQApplication, desmontar as janelas no recarregamento as vezes
-    // aborta no Qt (QWindow::unsetCursor) e pode deixar o shell parado. Para aplicar mudancas: shell-switch restart
+    // aborta no Qt (QWindow::unsetCursor) e pode deixar o shell parado. Para aplicar mudancas: mine-shell restart
     settings.watchFiles: false
 
     readonly property color baseColor: Settings.barColor

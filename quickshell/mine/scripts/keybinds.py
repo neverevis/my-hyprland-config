@@ -76,7 +76,7 @@ def pretty(k):
     return " + ".join(r)
 
 SECTIONS = [("media", "Mídia"), ("bloqueio", "Sessão"), ("workspace", "Workspaces"), ("window group", "Janelas"), ("window", "Janelas"), ("janela", "Janelas"),
-            ("launcher", "Shell"), ("quickshell", "Shell"), ("noctalia", "Shell"), ("app", "Apps"), ("utilit", "Utilidades"),
+            ("launcher", "Shell"), ("quickshell", "Shell"), ("app", "Apps"), ("utilit", "Utilidades"),
             ("captura", "Utilidades"), ("media", "Mídia"), ("volume", "Volume"), ("brightness", "Brilho"), ("sleep", "Sessão"),
             ("bloqueio", "Sessão"), ("clipboard", "Área de transferência"), ("test", "Teste"), ("misc", "Workspaces")]
 def section_of(comment, cur):

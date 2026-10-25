@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Inicia, reinicia ou para o Quickshell "mine" (~/.config/quickshell/mine).
+#   mine-shell start     inicia se nao estiver rodando (login: chamado pelo quickshell.lua do Hyprland)
+#   mine-shell restart   reinicia (aplica mudancas nos arquivos .qml)
+#   mine-shell stop      para
+#   mine-shell status    diz se esta rodando
+# Log da ultima execucao: ~/.local/state/quickshell-mine/shell.log
+set -u
+CFG="mine"
+STATE="$HOME/.local/state/quickshell-mine"
+mkdir -p "$STATE"
+
+up() { pgrep -f "^(/usr/bin/)?qs -c $CFG( |$)" >/dev/null; }   # ancorado: nao casa com comandos que so citam o texto
+
+stop() {
+    up || return 0
+    qs -c "$CFG" kill >/dev/null 2>&1
+    for _ in 1 2 3 4 5 6 7 8 9 10; do up || return 0; sleep 0.2; done
+    pkill -f "^(/usr/bin/)?qs -c $CFG( |$)"
+    sleep 0.5
+}
+
+start() {
+    up && return 0
+    # o shell e o servidor de notificacoes: daemons de notificacao ativados pelo D-Bus seguram o nome antes dele
+    for s in dunst mako swaync; do systemctl --user stop "$s" 2>/dev/null; done
+    pkill -x dunst 2>/dev/null; pkill -x mako 2>/dev/null; pkill -x swaync 2>/dev/null
+    setsid -f qs -c "$CFG" >"$STATE/shell.log" 2>&1
+    for _ in $(seq 1 25); do up && return 0; sleep 0.2; done
+    return 1
+}
+
+case "${1:-status}" in
+    start)   start && echo "mine rodando" || { echo "falha ao iniciar; veja $STATE/shell.log"; exit 1; } ;;
+    restart) stop; start && echo "mine reiniciado" || { echo "falha ao iniciar; veja $STATE/shell.log"; exit 1; } ;;
+    stop)    stop; echo "mine parado" ;;
+    status)  up && echo "mine: rodando" || echo "mine: parado" ;;
+    *)       echo "uso: mine-shell {start|restart|stop|status}"; exit 1 ;;
+esac

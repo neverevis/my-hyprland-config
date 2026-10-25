@@ -2,7 +2,7 @@
 // Wallpaper desfocado, relogio grande, foto de perfil e o campo de senha (verificada pelo PAM, servico "login").
 // Ao desbloquear, tudo some num fade direto para a area de trabalho (precisa de misc:session_lock_xray no Hyprland).
 // Se o shell travar com a tela bloqueada: Ctrl+Alt+F3, entre no terminal e rode
-//   shell-switch restart && qs -c mine ipc call session lock      (depois volte com Ctrl+Alt+F1 e digite a senha)
+//   mine-shell restart && qs -c mine ipc call session lock      (depois volte com Ctrl+Alt+F1 e digite a senha)
 import Quickshell
 import Quickshell.Io
 import Quickshell.Wayland
