@@ -117,7 +117,7 @@ Singleton {
 
     readonly property string themeSig: themeActive + "/" + (themeActive ? themeLua() : "")
     // opcoes do Hyprland: mudar aplica ao vivo; tirar um override (restaurar) recarrega a config
-    readonly property string hyprSig: JSON.stringify(Settings.hyprCfg || {}) + JSON.stringify(Settings.hyprMonitor || {}) + JSON.stringify(Settings.hyprAutostart || [])
+    readonly property string hyprSig: JSON.stringify(Settings.hyprCfg || {}) + HyprConf.monSig + JSON.stringify(Settings.hyprAutostart || [])
     property var lastHypr: ({ cfg: {}, mon: "" })
     onHyprSigChanged: if (ready) timer.restart()
     property bool lastTheme: false
@@ -130,7 +130,7 @@ Singleton {
         lastTheme = themeActive
         lastAnim = animSig !== ""
         lastShadow = shadowSig !== ""
-        lastHypr = { cfg: Object.assign({}, Settings.hyprCfg || {}), mon: JSON.stringify(Settings.hyprMonitor || {}) }
+        lastHypr = { cfg: Object.assign({}, Settings.hyprCfg || {}), mon: HyprConf.monSig }
         out.setText(content())
         ready = true
     }
@@ -152,8 +152,8 @@ Singleton {
             const animOff = root.lastAnim && root.animSig === ""
             root.lastAnim = root.animSig !== ""
             const prevCfg = root.lastHypr.cfg, nowCfg = Settings.hyprCfg || {}
-            const hyprRemoved = Object.keys(prevCfg).some(k => nowCfg[k] === undefined) || (root.lastHypr.mon !== "{}" && JSON.stringify(Settings.hyprMonitor || {}) === "{}")
-            root.lastHypr = { cfg: Object.assign({}, nowCfg), mon: JSON.stringify(Settings.hyprMonitor || {}) }
+            const hyprRemoved = Object.keys(prevCfg).some(k => nowCfg[k] === undefined) || (root.lastHypr.mon !== "{}{}" && HyprConf.monEmpty)
+            root.lastHypr = { cfg: Object.assign({}, nowCfg), mon: HyprConf.monSig }
             if (root.ruleSig !== root.lastRule || themeOff || animOff || hyprRemoved || shadowOff) {
                 root.lastRule = root.ruleSig
                 runner.command = ["hyprctl", "reload"]

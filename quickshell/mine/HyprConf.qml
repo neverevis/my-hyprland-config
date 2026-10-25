@@ -84,7 +84,7 @@ Singleton {
     function overridden(key) { return cfg[key] !== undefined }
     function set(key, v) { const c = Object.assign({}, cfg); c[key] = v; Settings.hyprCfg = c }
     function reset(key) { const c = Object.assign({}, cfg); delete c[key]; Settings.hyprCfg = c }
-    function resetAll() { Settings.hyprCfg = ({}); Settings.hyprMonitor = ({}) }
+    function resetAll() { Settings.hyprCfg = ({}); Settings.hyprMonitor = ({}); Settings.hyprMonitors = ({}) }
 
     // ---- Lua para o quickshell-blur.lua / hyprctl eval ----
     function luaVal(v) {
@@ -105,13 +105,24 @@ Singleton {
         return Object.keys(t).length ? ser(t) : ""
     }
     function configLua() { const t = tableOf(cfg); return t ? "hl.config(" + t + ")" : "" }
+    // assinatura dos overrides de monitor (o antigo, de um monitor so, e o novo, por monitor)
+    readonly property string monSig: JSON.stringify(Settings.hyprMonitor || {}) + JSON.stringify(Settings.hyprMonitors || {})
+    readonly property bool monEmpty: monSig === "{}{}"
     function monitorLua() {
-        const m = Settings.hyprMonitor || {}
-        if (!m.output) return ""
-        const cur = monitors.find(x => x.name === m.output) ?? {}
-        return 'hl.monitor({ output = ' + luaVal(m.output) + ', mode = ' + luaVal(m.mode || cur.mode || "preferred")
-            + ', position = ' + luaVal(cur.x !== undefined ? cur.x + "x" + cur.y : "auto") + ', scale = ' + luaVal(m.scale || cur.scale || 1)
-            + (m.transform !== undefined ? ', transform = ' + Math.round(m.transform) : (cur.transform ? ', transform = ' + cur.transform : '')) + ' })'
+        const legacy = Settings.hyprMonitor || {}, map = Settings.hyprMonitors || {}
+        const all = {}
+        if (legacy.output) all[legacy.output] = { mode: legacy.mode, scale: legacy.scale, transform: legacy.transform }
+        for (const k of Object.keys(map)) all[k] = Object.assign({}, all[k] || {}, map[k])
+        const lines = []
+        for (const name of Object.keys(all)) {
+            const m = all[name]
+            const cur = monitors.find(x => x.name === name) ?? {}
+            const px = m.x !== undefined ? m.x : cur.x, py = m.y !== undefined ? m.y : cur.y
+            lines.push('hl.monitor({ output = ' + luaVal(name) + ', mode = ' + luaVal(m.mode || cur.mode || "preferred")
+                + ', position = ' + luaVal(px !== undefined ? Math.round(px) + "x" + Math.round(py) : "auto") + ', scale = ' + luaVal(m.scale || cur.scale || 1)
+                + (m.transform !== undefined ? ', transform = ' + Math.round(m.transform) : (cur.transform ? ', transform = ' + cur.transform : '')) + ' })')
+        }
+        return lines.join("\n")
     }
     function autostartLua() {
         const l = (Settings.list(Settings.hyprAutostart)).filter(x => x && x.trim())

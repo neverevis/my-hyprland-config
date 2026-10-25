@@ -342,6 +342,7 @@ Singleton {
     property alias launcherEngine: adapter.launcherEngine       // busca na web (prefixo "?"): a busca vai no fim
     property alias hyprCfg: adapter.hyprCfg                     // opcoes do Hyprland trocadas pela pagina Hyprland (ver HyprConf.qml)
     property alias hyprMonitor: adapter.hyprMonitor
+    property alias hyprMonitors: adapter.hyprMonitors           // por monitor: { nome: { mode, scale, transform, x, y } } (pagina Monitores)
     property alias hyprAutostart: adapter.hyprAutostart
     property alias settingsWindowed: adapter.settingsWindowed   // configuracoes numa janela normal do Hyprland (senao, camada do shell)
     property alias barPopups: adapter.barPopups                 // detalhes ao passar o mouse nos modulos da barra
@@ -1083,6 +1084,7 @@ Singleton {
             property bool settingsWindowed: true
             property var hyprCfg: ({})
             property var hyprMonitor: ({})
+            property var hyprMonitors: ({})
             property var hyprAutostart: []
             property int barPopupDelay: 450
             property bool barTips: true

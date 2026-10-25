@@ -35,4 +35,10 @@ Singleton {
         value = Math.max(0.01, Math.min(1, value + d))
         Quickshell.execDetached(["brightnessctl", "-q", "-c", "backlight", "set", Math.round(value * 100) + "%"])
     }
+    // valor absoluto (0..1) pela pagina Monitores; o minimo e 1%
+    function set(v) {
+        if (!available) return
+        value = Math.max(0.01, Math.min(1, v))
+        Quickshell.execDetached(["brightnessctl", "-q", "-c", "backlight", "set", Math.round(value * 100) + "%"])
+    }
 }

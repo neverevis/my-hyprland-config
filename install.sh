@@ -262,6 +262,7 @@ OPTIONAL=(
     zenity                                                     # importar VPN e escolher arquivos
     expac flatpak                                              # pagina Aplicativos: tamanhos mais rapidos (expac) e busca/instalacao no Flathub (flatpak); funciona sem eles
     brightnessctl upower                                       # brilho e bateria (notebooks)
+    ddcutil                                                    # pagina Monitores: brilho de monitor externo (precisa do modulo i2c-dev); funciona sem ele
     pciutils                                                   # GPU na pagina Sobre
     ydotool                                                    # teclado na tela digitar (systemctl --user enable --now ydotool)
     mangohud                                                   # limitador de FPS do overlay de jogo

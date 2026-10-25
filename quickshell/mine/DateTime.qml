@@ -1,4 +1,4 @@
-// Formatos de hora e data do shell num lugar so (Configuracoes > Sessao > Hora e data).
+// Formatos de hora e data do shell num lugar so (Configuracoes > Data, hora e idioma).
 // time(d) / date(d) / dateYear(d) / stamp(d) formatam; localize(fmt) troca o "HH:mm" de um formato livre pelo formato da hora escolhido.
 pragma Singleton
 

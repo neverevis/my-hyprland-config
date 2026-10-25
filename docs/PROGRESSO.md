@@ -21,7 +21,7 @@ Resumo do que está pronto, do que está em andamento e do que vem depois. Atual
 Nova arquitetura com duas áreas, **Personalização** e **Sistema**, e um kit de componentes `Set*`.
 
 - Todas as páginas de Personalização já estão no novo formato: Início, Tema e cores, Wallpaper (com palco que toca as transições de verdade), Área de trabalho, Barras e moldura, Painéis, Janelas, Animações e Visuais.
-- Em Sistema, já migradas: Mouse e teclado, Energia e sessão, Ferramentas, Conta e Sobre. Aplicativos (instalar, remover, atualizar, ao iniciar, apps padrão e webapps; script `scripts/apps.py`, modo de teste com `QS_APPS_DRYRUN=1`). Atalhos de teclado, Som, Rede, Monitores e Data/hora estão como "em breve" (ver Planejado).
+- Em Sistema, já migradas: Mouse e teclado, Energia e sessão, Ferramentas, Conta e Sobre. Aplicativos (instalar, remover, atualizar, ao iniciar, apps padrão e webapps; script `scripts/apps.py`, modo de teste com `QS_APPS_DRYRUN=1`). Som (saídas, entradas com medidor ao vivo, volume por app, sons do shell, equalizador), Rede e Bluetooth (Wi-Fi, cabo, VPN, pareamento), Monitores (disposição, resolução, escala, posição, brilho, luz noturna, VRR; pergunta de 15 s em `Displays.qml`) e Data, hora e idioma (formato, fuso e NTP por pkexec, idioma). Modo de teste dessas quatro: `QS_SYS_DRYRUN=1` ou o arquivo `~/.cache/quickshell-mine/sys-dryrun`. Atalhos de teclado continua como "em breve".
 - Pendências de acabamento: controles inline nas páginas antigas, cartão de usuário (avatar sobreposto) e composições de banner.
 
 ## Planejado: configurações do sistema operacional
@@ -29,17 +29,13 @@ Nova arquitetura com duas áreas, **Personalização** e **Sistema**, e um kit d
 Páginas de Sistema para dispensar outros painéis:
 
 1. **Editor de atalhos de teclado** (escreve em `~/.config/hypr/quickshell-keys.lua`; o formato já está pronto, veja [ATALHOS.md](ATALHOS.md))
-2. Som
-3. Rede e Bluetooth
-4. Telas (monitores)
-5. Data e hora
-6. Energia
+2. Energia (perfil e sessão)
 
-(Aplicativos, programas ao iniciar e aplicativos padrão já estão prontos.)
+(Aplicativos, Som, Rede e Bluetooth, Monitores e Data/hora já estão prontos.)
 
 ## Problemas conhecidos e limites
 
-- **Vários monitores**: a área de trabalho e parte dos painéis são pensadas para uma tela (camada de widgets só na principal; seletor e ajustes de monitor ainda não existem).
+- **Vários monitores**: a área de trabalho e parte dos painéis são pensadas para uma tela (camada de widgets só na principal; a página Monitores já ajusta cada tela, mas o seletor de monitor dos painéis ainda não existe).
 - Transições com shader foram feitas como aproximações e não foram conferidas visualmente em todos os casos.
 - Sem bateria ou backlight (PC de mesa) esses módulos somem; o visual da bateria não foi testado em notebook.
 - Vidro dos widgets é um gradiente estático (não é blur real de fundo).

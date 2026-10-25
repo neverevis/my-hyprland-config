@@ -52,12 +52,12 @@ Scope {
         { label: "Sistema", pages: [
             { id: "keys", label: "Atalhos de teclado", icon: "keyboard", desc: "Ver, criar e mudar atalhos." },
             { id: "apps", label: "Aplicativos", icon: "apps", desc: "Instalar, remover e abrir ao iniciar." },
-            { id: "sound", label: "Som", icon: "volume", desc: "Saídas, entradas e volume por aplicativo." },
-            { id: "net", label: "Rede e Bluetooth", icon: "wifi", desc: "Wi-Fi, cabo, VPN e dispositivos." },
-            { id: "display", label: "Monitores", icon: "monitor", desc: "Resolução, escala e posição das telas." },
+            { id: "sound", label: "Som", icon: "volume", desc: "Saídas, entradas, volume por aplicativo e equalizador." },
+            { id: "net", label: "Rede e Bluetooth", icon: "wifi", desc: "Wi-Fi, cabo, VPN e Bluetooth." },
+            { id: "display", label: "Monitores", icon: "monitor", desc: "Resolução, escala, posição, brilho e luz noturna." },
             { id: "input", label: "Mouse e teclado", icon: "mouse", desc: "Cursor, mouse, ícones e fontes." },
-            { id: "power", label: "Energia e sessão", icon: "power", desc: "Bloqueio, inatividade, energia e hora." },
-            { id: "time", label: "Data, hora e idioma", icon: "clockOutline", desc: "Fuso, formato e idioma." },
+            { id: "power", label: "Energia e sessão", icon: "power", desc: "Bloqueio, inatividade, menu de energia e bateria." },
+            { id: "time", label: "Data, hora e idioma", icon: "clockOutline", desc: "Hora, data, fuso horário e idioma." },
             { id: "tools", label: "Ferramentas", icon: "wrench", desc: "Captura, gravação, prateleira e painel de jogo." },
             { id: "account", label: "Conta e Sobre", icon: "accountCircle", desc: "Seu nome, a máquina e este computador." }
         ] }
@@ -134,13 +134,10 @@ Scope {
     Component { id: keysC; SetSoon { title: "Atalhos de teclado"; icon: "keyboard"; plans: ["Lista com busca", "Gravar uma tecla", "Criar e mudar atalhos do Hyprland"]
         links: [["Atalhos atuais (só leitura)", "keyboard", "win", "Atalhos"]] } }
     Component { id: appsC; PageApps {} }
-    Component { id: soundC; SetSoon { title: "Som"; icon: "volume"; plans: ["Saídas e entradas", "Volume por aplicativo", "Equalizador"]
-        links: [["Indicador de volume", "volume", "bars", "Indicador de volume"]] } }
-    Component { id: netC; SetSoon { title: "Rede e Bluetooth"; icon: "wifi"; plans: ["Wi-Fi e cabo", "VPN", "Dispositivos Bluetooth"] } }
-    Component { id: displayC; SetSoon { title: "Monitores"; icon: "monitor"; plans: ["Resolução e escala", "Posição das telas", "Luz noturna"]
-        links: [["Resolução e escala", "monitor", "win", "Monitor"]] } }
-    Component { id: timeC; SetSoon { title: "Data, hora e idioma"; icon: "clockOutline"; plans: ["Fuso horário", "Formato da hora", "Idioma e teclado"]
-        links: [["Formato do relógio", "clock", "power", "Hora e data"]] } }
+    Component { id: soundC; PageSound {} }
+    Component { id: netC; PageNet {} }
+    Component { id: displayC; PageDisplay {} }
+    Component { id: timeC; PageTime {} }
     function walk(o, card, out, src) {
         if (!o) return
         let c = card

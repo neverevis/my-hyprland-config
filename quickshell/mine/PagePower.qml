@@ -1,12 +1,12 @@
 // Pagina "Energia e sessao" (kit Set*): tela de bloqueio, inatividade, senha de administrador (polkit), menu de energia,
-// hora e data, atualizacoes e cuidados do sistema, volume e sons, bateria.
+// atualizacoes e cuidados do sistema, bateria (hora e data e volume e sons agora ficam nas paginas Data, hora e idioma e Som).
 import Quickshell
 import QtQuick
 
 SetPage {
     id: page
     title: "Energia e sessão"
-    subtitle: "Bloqueio, inatividade, menu de energia, hora, atualizações e sons"
+    subtitle: "Bloqueio, inatividade, menu de energia, atualizações e bateria"
 
     // ---- tela de bloqueio ----
     SetSection {
@@ -81,35 +81,11 @@ SetPage {
         }
     }
 
-    // ---- hora e data ----
+    // ---- hora e data (mudou para a pagina Data, hora e idioma; mesmas chaves) ----
     SetSection {
         title: "Hora e data"; icon: "clock"
-        subtitle: "Relógio da barra, da ilha, do bloqueio e dos detalhes (os widgets têm opção própria)"
-        SetBlock {
-            Row {
-                spacing: 14
-                UiText { anchors.verticalCenter: parent.verticalCenter; text: DateTime.time(clk.date); color: Theme.text; font.pixelSize: 30; font.weight: Font.Bold; font.features: { "tnum": 1 } }
-                Column {
-                    anchors.verticalCenter: parent.verticalCenter
-                    UiText { text: DateTime.date(clk.date); color: Theme.text; font.pixelSize: 14 }
-                    UiText { text: DateTime.dateYear(clk.date); color: Theme.muted; font.pixelSize: 12 }
-                }
-                SystemClock { id: clk; precision: Settings.clockSeconds ? SystemClock.Seconds : SystemClock.Minutes }
-            }
-        }
-        SetChoice {
-            icon: "clockOutline"; label: "Formato"
-            options: [["24", "24 horas", "clock"], ["ap", "12 h (am/pm)", "clockOutline"], ["AP", "12 h (AM/PM)", "clockOutline"]]
-            value: Settings.clock24 ? "24" : Settings.clockAmPm
-            onPicked: v => { if (v === "24") Settings.clock24 = true; else { Settings.clock24 = false; Settings.clockAmPm = v } }
-        }
-        SetRow { icon: "timer"; label: "Mostrar segundos"; description: "Na barra e na ilha (o bloqueio tem a sua opção)"; checked: Settings.clockSeconds; onToggled: on => Settings.clockSeconds = on }
-        SetExpander {
-            icon: "calendar"; label: "Formatos de data"; description: "Letras do Qt: d dd ddd dddd, M MM MMM MMMM, yy yyyy"
-            SetRow { sub: true; label: "Data curta"; UiField { width: 220; placeholderText: "ddd, dd/MM"; text: Settings.dateFormat; onEditingFinished: Settings.dateFormat = text } }
-            SetRow { sub: true; label: "Data longa"; description: "Vazio = padrão"; UiField { width: 220; placeholderText: "dddd, d 'de' MMMM"; text: Settings.dateLongFormat; onEditingFinished: Settings.dateLongFormat = text } }
-            SetRow { sub: true; label: "Data com ano"; UiField { width: 220; placeholderText: "dd/MM/yyyy"; text: Settings.dateYearFormat; onEditingFinished: Settings.dateYearFormat = text } }
-        }
+        subtitle: "Formato do relógio e da data, fuso horário e sincronização"
+        SetRow { icon: "clockOutline"; label: "Formato da hora e da data"; description: "Mudou para Data, hora e idioma"; link: true; onClicked: Settings.settingsPage = "time" }
     }
 
     // ---- atualizacoes e cuidados do sistema ----
@@ -143,15 +119,11 @@ SetPage {
         SetRow { sub: true; label: "Encerrar sozinho ao iniciar"; checked: Settings.killConflicts; onToggled: on => Settings.killConflicts = on }
     }
 
-    // ---- volume e sons ----
+    // ---- volume e sons (mudou para a pagina Som; mesmas chaves) ----
     SetSection {
         title: "Volume e sons"; icon: "volume"
-        SetRow { icon: "shield"; label: "Limitar o volume"; description: "Nunca passa do teto e um salto grande de uma vez é contido"; checked: Settings.volGuard; onToggled: on => Settings.volGuard = on }
-        SetSlider { visible: Settings.volGuard; sub: true; label: "Teto"; from: 30; to: 150; unit: " %"; value: Settings.volMax; onMoved: v => Settings.volMax = Math.round(v) }
-        SetSlider { visible: Settings.volGuard; sub: true; label: "Maior aumento de uma vez"; from: 0; to: 50; unit: " %"; zeroLabel: "Sem limite"; value: Settings.volJump; onMoved: v => Settings.volJump = Math.round(v) }
-        SetRow { icon: "speaker"; label: "Sons do shell"; description: "Notificação nova, captura de tela e erro"; checked: Settings.sounds; onToggled: on => Settings.sounds = on }
-        SetSlider { visible: Settings.sounds; sub: true; label: "Volume dos sons"; from: 10; to: 100; unit: " %"; value: Settings.soundVolume; onMoved: v => Settings.soundVolume = Math.round(v) }
-        SetRow { visible: Settings.sounds; sub: true; label: "Clique ao mudar o volume"; checked: Settings.soundVolChange; onToggled: on => Settings.soundVolChange = on }
+        subtitle: "Limite de volume e sons do shell"
+        SetRow { icon: "speaker"; label: "Limite de volume e sons do shell"; description: "Mudou para a página Som"; link: true; onClicked: Settings.settingsPage = "sound" }
     }
 
     // ---- bateria (so em computadores com bateria) ----

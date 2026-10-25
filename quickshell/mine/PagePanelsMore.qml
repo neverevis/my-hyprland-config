@@ -93,9 +93,6 @@ Column {
 
     SetSection {
         title: "Equalizador"; icon: "wave"; subtitle: "Efeitos de áudio pelo EasyEffects"
-        SetExpander {
-            icon: "wave"; label: "Equalizador e presets"; description: "Ligar efeitos, preset e 10 bandas"
-            lazy: Component { SetBlock { sub: true; EqCard { width: parent.width } } }
-        }
+        SetRow { icon: "wave"; label: "Equalizador e presets"; description: "Mudou para a página Som"; link: true; onClicked: { Settings.settingsReveal = "Equalizador"; Settings.settingsPage = "sound" } }
     }
 }

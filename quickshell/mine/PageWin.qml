@@ -25,20 +25,6 @@ SetPage {
     readonly property int nChanged: Object.keys(HyprConf.cfg).length
     Timer { id: refreshT; interval: 900; onTriggered: HyprConf.refresh() }
 
-    // ---- monitor: troca e pergunta se ficou bom (volta sozinha em 15 s) ----
-    readonly property var mon: HyprConf.monitors[0] ?? null
-    property var before: null
-    property int secsLeft: 0
-    Timer { interval: 1000; repeat: true; running: page.secsLeft > 0; onTriggered: { page.secsLeft--; if (page.secsLeft === 0) page.revert() } }
-    function applyMon(patch) {
-        if (!mon) return
-        before = JSON.parse(JSON.stringify(Settings.hyprMonitor || {}))
-        Settings.hyprMonitor = Object.assign({ output: mon.name, mode: mon.mode, scale: mon.scale }, Settings.hyprMonitor || {}, patch)
-        secsLeft = 15
-        refreshT.restart()
-    }
-    function revert() { secsLeft = 0; Settings.hyprMonitor = before || ({}); before = null; refreshT.restart() }
-
     // ---- previa: duas janelas sobre o wallpaper (parada; muda junto com as opcoes) ----
     preview: SetPreview {
         height: 200
@@ -206,44 +192,11 @@ SetPage {
         }
     }
 
-    // ---- monitor ----
+    // ---- monitor (mudou para a pagina Monitores; mesmas chaves em Settings) ----
     SetSection {
         title: "Monitor"; icon: "monitor"
-        subtitle: page.mon ? page.mon.name + " · " + page.mon.mode + " · escala " + page.mon.scale : "Resolução, taxa de atualização e escala"
-        SetRow {
-            visible: page.secsLeft > 0
-            icon: "timer"; label: "Ficou bom? Volta em " + page.secsLeft + " s"; description: "Se a tela ficar estranha, ela volta sozinha"
-            UiButton { icon: "check"; text: "Manter"; kind: "accent"; onClicked: { page.secsLeft = 0; page.before = null } }
-            UiButton { icon: "restore"; text: "Voltar"; kind: "ghost"; onClicked: page.revert() }
-        }
-        SetBlock {
-            Flow {
-                width: parent.width
-                spacing: SetK.sm
-                Repeater {
-                    // uma por resolucao/taxa arredondada (sem as quase iguais)
-                    model: { const seen = {}, out = []; for (const m of (page.mon ? page.mon.modes : [])) { const k = m.replace(/\.\d+Hz$/, ""); if (!seen[k]) { seen[k] = 1; out.push(m) } } return out.slice(0, 16) }
-                    delegate: UiButton {
-                        required property string modelData
-                        text: modelData.replace(/(\d+)\.\d+Hz$/, "$1 Hz").replace("@", "  ")
-                        kind: page.mon && page.mon.mode === modelData ? "accent" : "ghost"
-                        onClicked: page.applyMon({ mode: modelData })
-                    }
-                }
-            }
-        }
-        SetChoice {
-            icon: "resize"; label: "Escala"
-            options: [[1, "100%"], [1.25, "125%"], [1.5, "150%"], [1.75, "175%"], [2, "200%"]]
-            value: page.mon ? page.mon.scale : 1
-            onPicked: v => page.applyMon({ scale: v })
-        }
-        SetChoice {
-            icon: "rotate"; label: "Orientação"
-            options: [[0, "Normal"], [1, "90°"], [2, "180°"], [3, "270°"]]
-            value: page.mon ? (Settings.hyprMonitor && Settings.hyprMonitor.transform !== undefined ? Settings.hyprMonitor.transform : page.mon.transform) : 0
-            onPicked: v => page.applyMon({ transform: v })
-        }
+        subtitle: "Resolução, taxa de atualização, escala e posição das telas"
+        SetRow { icon: "monitor"; label: "Resolução, escala e posição"; description: "Mudou para a página Monitores"; link: true; onClicked: Settings.settingsPage = "display" }
     }
 
     // ---- atalhos (so leitura) ----
