@@ -72,6 +72,10 @@ Scope {
         id: bodyC
         Rectangle {
             color: "transparent"
+            // fechar (mesmo botao das Configuracoes); Esc tambem fecha
+            focus: true
+            Keys.onEscapePressed: Apps.windowOpen = false
+            UiButton { z: 10; anchors { right: parent.right; top: parent.top; margins: 14 } icon: "close"; kind: "ghost"; onClicked: Apps.windowOpen = false }
 
             // ---- trilho de abas ----
             Rectangle {
