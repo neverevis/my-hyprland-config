@@ -11,17 +11,17 @@ Item {
     signal canceled()
 
     readonly property string home: Quickshell.env("HOME")
-    property string dir: home + "/Imagens"
+    property string dir: Xdg.pictures
     property string query: ""
     property bool byTime: false
     readonly property var exts: ["png", "jpg", "jpeg", "webp", "bmp", "gif", "avif", "tif", "tiff"]
 
     readonly property var places: [
-        { label: "Imagens", icon: "image", path: home + "/Imagens" },
+        { label: "Imagens", icon: "image", path: Xdg.pictures },
         { label: "Wallpapers", icon: "wallpaper", path: Wallpaper.dir },
-        { label: "Capturas", icon: "frame", path: home + "/Imagens/Screenshots" },
-        { label: "Downloads", icon: "download", path: home + "/Downloads" },
-        { label: "Área de trabalho", icon: "desktop", path: home + "/Área de trabalho" },
+        { label: "Capturas", icon: "frame", path: Xdg.resolve(Settings.shotDir) || Xdg.pictures + "/Screenshots" },
+        { label: "Downloads", icon: "download", path: Xdg.download },
+        { label: "Área de trabalho", icon: "desktop", path: Xdg.desktop },
         { label: "Pasta pessoal", icon: "folderHome", path: home }
     ]
 

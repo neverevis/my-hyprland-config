@@ -399,7 +399,7 @@ SetPage {
         icon: "carousel"
         SetRow {
             icon: "folder"; label: "Pasta"
-            UiField { width: 240; text: Settings.wpDir; placeholderText: "~/Imagens/Wallpapers"; onEditingFinished: Settings.wpDir = text }
+            UiField { width: 240; text: Settings.wpDir; placeholderText: "$PICTURES/Wallpapers"; onEditingFinished: Settings.wpDir = text }
         }
         SetChoice { icon: "carousel"; label: "Disposição"; options: [["carousel", "Carrossel", "carousel"], ["grid", "Grade", "view_grid"]]; value: Settings.wpLayout; onPicked: v => Settings.wpLayout = v }
         SetChoice {

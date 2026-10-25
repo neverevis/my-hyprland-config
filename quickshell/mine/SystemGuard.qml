@@ -69,7 +69,7 @@ Singleton {
         id: busyProc
         property var cb: null
         // pkg = gerenciador de pacotes rodando (ou db.lck); dl = download em andamento (wget, aria2c, yt-dlp ou .part/.crdownload recente em Downloads)
-        command: ["sh", "-c", "if pgrep -x 'pacman|yay|paru|makepkg' >/dev/null || [ -e /var/lib/pacman/db.lck ]; then echo pkg; elif pgrep -x 'wget|aria2c|yt-dlp' >/dev/null || find \"$HOME/Downloads\" \"$HOME/Transferências\" -maxdepth 1 \\( -name '*.part' -o -name '*.crdownload' \\) -mmin -2 2>/dev/null | grep -q .; then echo dl; else echo 0; fi"]
+        command: ["sh", "-c", "if pgrep -x 'pacman|yay|paru|makepkg' >/dev/null || [ -e /var/lib/pacman/db.lck ]; then echo pkg; elif pgrep -x 'wget|aria2c|yt-dlp' >/dev/null || find \"" + Xdg.download + "\" -maxdepth 1 \\( -name '*.part' -o -name '*.crdownload' \\) -mmin -2 2>/dev/null | grep -q .; then echo dl; else echo 0; fi"]
         stdout: StdioCollector { onStreamFinished: { const f = busyProc.cb; busyProc.cb = null; const k = text.trim(); if (f) f(k === "pkg" || k === "dl", k) } }
     }
 
@@ -79,7 +79,7 @@ Singleton {
     function refreshWarnings() { warnProc.running = false; warnProc.running = true }
     Process {
         id: warnProc
-        command: ["sh", "-c", "if pgrep -x 'pacman|yay|paru|makepkg' >/dev/null || [ -e /var/lib/pacman/db.lck ]; then echo pkg; fi; if pgrep -x 'curl|wget|aria2c|yt-dlp' >/dev/null || find \"$HOME/Downloads\" \"$HOME/Transferências\" -maxdepth 1 \\( -name '*.part' -o -name '*.crdownload' \\) -mmin -2 2>/dev/null | grep -q .; then echo dl; fi"]
+        command: ["sh", "-c", "if pgrep -x 'pacman|yay|paru|makepkg' >/dev/null || [ -e /var/lib/pacman/db.lck ]; then echo pkg; fi; if pgrep -x 'curl|wget|aria2c|yt-dlp' >/dev/null || find \"" + Xdg.download + "\" -maxdepth 1 \\( -name '*.part' -o -name '*.crdownload' \\) -mmin -2 2>/dev/null | grep -q .; then echo dl; fi"]
         stdout: StdioCollector { onStreamFinished: { root.warnPkg = text.indexOf("pkg") >= 0; root.warnDl = text.indexOf("dl") >= 0 } }
     }
 

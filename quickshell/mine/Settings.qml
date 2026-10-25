@@ -663,7 +663,7 @@ Singleton {
         adapter.idleSuspend = 0
         adapter.idleMedia = true
         adapter.barsPanelMode = "push"
-        adapter.wpDir = "~/Imagens/Wallpapers"
+        adapter.wpDir = "$PICTURES/Wallpapers"
         adapter.wpTransition = "circle"
         adapter.wpParallax = 20
         adapter.wpWipeAngle = 0
@@ -906,7 +906,7 @@ Singleton {
             property string whApiKey: ""
             property int overviewCols: 5
             property string barsPanelMode: "push"
-            property string wpDir: "~/Imagens/Wallpapers"
+            property string wpDir: "$PICTURES/Wallpapers"
             property string wallpaper: ""
             property string wpTransition: "circle"
             property int wpParallax: 20
@@ -1026,8 +1026,8 @@ Singleton {
             property bool regionOutlines: true
             property bool oskPinned: false
             property string oskLayout: "abnt2"
-            property string shotDir: "~/Imagens/Screenshots"
-            property string recDir: "~/Vídeos/Gravações"
+            property string shotDir: "$PICTURES/Screenshots"
+            property string recDir: "$VIDEOS/Recordings"
             property int recFps: 0
             property string lockClockPos: "top"
             property string lockChars: "dots"

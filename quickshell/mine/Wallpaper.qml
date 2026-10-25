@@ -11,7 +11,7 @@ Singleton {
     id: root
 
     readonly property string home: Quickshell.env("HOME")
-    readonly property string dir: Settings.wpDir.replace(/^~/, home)
+    readonly property string dir: Xdg.resolve(Settings.wpDir)
     property var files: []   // [{ path, name }] imagens (e videos) da pasta que esta sendo vista
     property var dirs: []    // subpastas da pasta vista (so o seletor mostra)
     property string browse: ""   // pasta vista no seletor ("" = a pasta de wallpapers das configuracoes); volta ao fechar o seletor

@@ -61,7 +61,7 @@ Singleton {
     }
     Process {
         id: proc
-        environment: ({ QS_SHOTDIR: Settings.shotDir, QS_SEARCHURL: Settings.imageSearchUrl, QS_TRANSTO: Settings.translateTarget })
+        environment: ({ QS_SHOTDIR: Xdg.resolve(Settings.shotDir), QS_SEARCHURL: Settings.imageSearchUrl, QS_TRANSTO: Settings.translateTarget })
         stdout: StdioCollector { id: out }
         onExited: {
             root.busy = ""

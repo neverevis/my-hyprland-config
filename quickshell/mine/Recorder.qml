@@ -1,5 +1,5 @@
 // Gravacao de tela (wf-recorder): tela inteira ou uma area (slurp), com ou sem o audio do sistema.
-// Salva em ~/Vídeos/Gravações; ao parar, notifica. IPC: qs -c mine ipc call recorder toggle | region | stop
+// Salva na pasta de Videos (Settings.recDir); ao parar, notifica. IPC: qs -c mine ipc call recorder toggle | region | stop
 pragma Singleton
 
 import Quickshell
@@ -16,7 +16,7 @@ Singleton {
     readonly property string elapsed: { const s = Math.max(0, Math.round((now - started) / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0") }
     property string file: ""
     property string geo: ""   // area gravada ("x,y wxh", coordenadas globais); vazio = tela inteira
-    readonly property string dir: (Settings.recDir || "~/Vídeos/Gravações").replace(/^~/, Quickshell.env("HOME"))
+    readonly property string dir: Xdg.resolve(Settings.recDir || "$VIDEOS/Recordings")
     // audio: none | system (o que toca no PC) | mic (microfone) | both (os dois misturados) - pelo PipeWire (nomes do pulse)
     readonly property string audioArg: Settings.recAudio === "system" ? '--audio="@DEFAULT_MONITOR@" ' : Settings.recAudio === "mic" ? '--audio="@DEFAULT_SOURCE@" ' : ""
 

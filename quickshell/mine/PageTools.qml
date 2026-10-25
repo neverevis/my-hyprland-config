@@ -23,7 +23,7 @@ SetPage {
         }
         SetRow {
             icon: "folder"; label: "Pasta das capturas"; description: "Vazio = só copiar, não salvar"
-            UiField { width: 240; text: Settings.shotDir; placeholderText: "~/Imagens/Screenshots"; onEditingFinished: Settings.shotDir = text.trim() }
+            UiField { width: 240; text: Settings.shotDir; placeholderText: "$PICTURES/Screenshots"; onEditingFinished: Settings.shotDir = text.trim() }
         }
         SetRow { visible: Capture.lastMsg !== ""; icon: "info"; label: "Última"; description: Capture.lastMsg }
         SetExpander {
@@ -60,7 +60,7 @@ SetPage {
             value: Settings.recAudio; onPicked: v => Settings.recAudio = v
         }
         SetSlider { icon: "speed"; label: "Quadros por segundo"; from: 0; to: 144; unit: " fps"; zeroLabel: "Do monitor"; def: 0; value: Settings.recFps; onMoved: v => Settings.recFps = Math.round(v) }
-        SetRow { icon: "folder"; label: "Pasta das gravações"; UiField { width: 240; text: Settings.recDir; placeholderText: "~/Vídeos/Gravações"; onEditingFinished: Settings.recDir = text.trim() || "~/Vídeos/Gravações" } }
+        SetRow { icon: "folder"; label: "Pasta das gravações"; UiField { width: 240; text: Settings.recDir; placeholderText: "$VIDEOS/Recordings"; onEditingFinished: Settings.recDir = text.trim() || "$VIDEOS/Recordings" } }
     }
 
     // ---- prateleira ----

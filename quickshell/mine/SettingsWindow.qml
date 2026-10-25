@@ -399,7 +399,7 @@ Scope {
                                     id: navMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                                     onClicked: { search.text = ""; body.peek = false; Settings.settingsPage = nav.modelData.id }
                                     onContainsMouseChanged: {
-                                        if (containsMouse && body.collapsed) { tip.text = nav.modelData.label; tip.y = nav.mapToItem(body, 0, 0).y + (nav.height - tip.height) / 2 }
+                                        if (!tip) return; if (containsMouse && body.collapsed) { tip.text = nav.modelData.label; tip.y = nav.mapToItem(body, 0, 0).y + (nav.height - tip.height) / 2 }
                                         else if (tip.text === nav.modelData.label) tip.text = ""
                                     }
                                 }

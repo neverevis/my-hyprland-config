@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Acoes do seletor de area (RegionSelector.qml) sobre a tela congelada:
 #   capture.py <acao> <tela.png> x y w h [circle]
-# acoes: copy (copia e salva em ~/Imagens/Screenshots), ocr (copia o texto), translate (texto traduzido para o
+# acoes: copy (copia e salva em a pasta de capturas), ocr (copia o texto), translate (texto traduzido para o
 # portugues), annotate (abre no satty), lens (envia para o litterbox.catbox.moe, apaga em 1 h, e abre QS_SEARCHURL + url; padrao Google Lens)
 # translate usa QS_TRANSTO (codigo do idioma, padrao pt)
 # Imprime uma linha JSON {ok, msg, text?, path?}.
@@ -10,7 +10,7 @@ from PIL import Image, ImageDraw
 
 HOME = os.path.expanduser("~")
 # QS_SHOTDIR (Ferramentas > Captura): pasta das capturas; definido e vazio = so copia, nao salva
-SHOTS = os.environ.get("QS_SHOTDIR", os.path.join(HOME, "Imagens", "Screenshots"))
+SHOTS = os.environ.get("QS_SHOTDIR", os.path.join(HOME, "Pictures", "Screenshots"))
 if SHOTS.startswith("~"): SHOTS = os.path.expanduser(SHOTS)
 
 def out(**kw):

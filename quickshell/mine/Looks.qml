@@ -146,11 +146,11 @@ Singleton {
         proc.command = ["python3", script, "export", tmpJson]
         proc.running = true
     }
-    function scan() { if (busy) return; busy = "scan"; proc.command = ["python3", script, "scan", Settings.wpDir]; proc.running = true }
+    function scan() { if (busy) return; busy = "scan"; proc.command = ["python3", script, "scan", Xdg.resolve(Settings.wpDir)]; proc.running = true }
     function importZip(path) {
         if (busy) return
         busy = "import"
-        proc.command = ["python3", script, "import", path, Settings.wpDir, JSON.stringify(allKeys.concat(Object.keys(legacy)))]
+        proc.command = ["python3", script, "import", path, Xdg.resolve(Settings.wpDir), JSON.stringify(allKeys.concat(Object.keys(legacy)))]
         proc.running = true
     }
     Process {

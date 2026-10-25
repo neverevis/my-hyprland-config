@@ -26,8 +26,18 @@ def walk(v, fn):
         return fn(v)
     return v
 
+def xdg_download():
+    # pasta de downloads do usuario (XDG), qualquer idioma
+    try:
+        for line in open(os.path.join(HOME, ".config", "user-dirs.dirs")):
+            if line.startswith("XDG_DOWNLOAD_DIR="):
+                return line.split("=", 1)[1].strip().strip('"').replace("$HOME", HOME)
+    except OSError:
+        pass
+    return os.path.join(HOME, "Downloads")
+
 def out_dir():
-    for d in (os.path.join(HOME, "Downloads"), os.path.join(HOME, "Transferências"), HOME):
+    for d in (xdg_download(), os.path.join(HOME, "Downloads"), HOME):
         if os.path.isdir(d):
             return d
     return HOME
@@ -71,7 +81,7 @@ def read_look(z):
 def scan(wpdir):
     wpdir = os.path.expanduser(wpdir) if wpdir else ""
     seen, res = set(), []
-    for d in (os.path.join(HOME, "Downloads"), os.path.join(HOME, "Transferências"), HOME, wpdir):
+    for d in (xdg_download(), os.path.join(HOME, "Downloads"), HOME, wpdir):
         if not d or not os.path.isdir(d):
             continue
         for f in sorted(os.listdir(d)):

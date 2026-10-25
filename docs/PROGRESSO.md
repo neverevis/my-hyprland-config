@@ -20,8 +20,8 @@ Resumo do que está pronto, do que está em andamento e do que vem depois. Atual
 
 Nova arquitetura com duas áreas, **Personalização** e **Sistema**, e um kit de componentes `Set*`.
 
-- Feitas no novo formato: **Início**, **Tema e cores**, **Wallpaper**.
-- Em migração: Moldura, Barras, Widgets, Painéis, Launcher, Notificações, Visuais, Animações, Blur, Sessão, Hyprland, Ferramentas, Sistema, Sobre.
+- Todas as páginas de Personalização já estão no novo formato: Início, Tema e cores, Wallpaper (com palco que toca as transições de verdade), Área de trabalho, Barras e moldura, Painéis, Janelas, Animações e Visuais.
+- Em Sistema, já migradas: Mouse e teclado, Energia e sessão, Ferramentas, Conta e Sobre. Atalhos de teclado, Aplicativos, Som, Rede, Monitores e Data/hora estão como "em breve" (ver Planejado).
 - Pendências de acabamento: controles inline nas páginas antigas, cartão de usuário (avatar sobreposto) e composições de banner.
 
 ## Planejado: configurações do sistema operacional
@@ -41,7 +41,6 @@ Páginas de Sistema para dispensar outros painéis:
 ## Problemas conhecidos e limites
 
 - **Vários monitores**: a área de trabalho e parte dos painéis são pensadas para uma tela (camada de widgets só na principal; seletor e ajustes de monitor ainda não existem).
-- Caminhos fixos em português no código do shell (`~/Imagens/Screenshots` em `Actions.qml`, `ImageBrowser.qml` e `scripts/capture.py`; `~/Vídeos/Gravações` como padrão em `Recorder.qml` e `PageTools.qml`; `~/Imagens/Wallpapers` em `Settings.qml`). Em sistemas em inglês o `settings.json` criado pelo instalador usa as pastas XDG, mas esses pontos ainda apontam para as pastas em português.
 - Transições com shader foram feitas como aproximações e não foram conferidas visualmente em todos os casos.
 - Sem bateria ou backlight (PC de mesa) esses módulos somem; o visual da bateria não foi testado em notebook.
 - Vidro dos widgets é um gradiente estático (não é blur real de fundo).
