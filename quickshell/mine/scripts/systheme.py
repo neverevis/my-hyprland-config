@@ -90,6 +90,7 @@ def find_icon(dirs, names):
 
 def icons():
     res = []
+    apps = app_icon_names()
     for n in all_names():
         dirs = theme_dirs(n)
         info = {}
@@ -108,8 +109,44 @@ def icons():
             if parent and parent not in ("hicolor",):
                 look += theme_dirs(parent)
         samples = [s for s in (find_icon(look, grp) for grp in SAMPLES) if s]
-        res.append({"name": n, "label": info.get("Name", n), "samples": samples[:6]})
+        # quantos apps instalados ganham icone deste tema (o resto cai no icone do proprio app): tema bonito mas que
+        # quase nao cobre os apps parece "nao aplicar"
+        names = theme_names(look)
+        cov = round(100 * len(apps & names) / len(apps)) if apps else None
+        res.append({"name": n, "label": info.get("Name", n), "samples": samples[:6], "cover": cov})
     return res
+
+
+def app_icon_names():
+    out = set()
+    for d in ("/usr/share/applications", os.path.expanduser("~/.local/share/applications"),
+              os.path.expanduser("~/.local/share/flatpak/exports/share/applications"), "/var/lib/flatpak/exports/share/applications"):
+        try:
+            files = os.listdir(d)
+        except OSError:
+            continue
+        for f in files:
+            if not f.endswith(".desktop"):
+                continue
+            try:
+                t = open(os.path.join(d, f), encoding="utf-8", errors="ignore").read()
+            except OSError:
+                continue
+            if re.search(r"^NoDisplay=true", t, re.M):
+                continue
+            m = re.search(r"^Icon=(.+)$", t, re.M)
+            if m and "/" not in m.group(1):
+                out.add(m.group(1).strip())
+    return out
+
+
+def theme_names(dirs):
+    s = set()
+    for d in dirs:
+        for root, _sub, files in os.walk(d, followlinks=True):
+            for f in files:
+                s.add(f.rsplit(".", 1)[0])
+    return s
 
 
 # ---- cursores: le o arquivo Xcursor e grava a maior imagem ate 48 px como PNG ----

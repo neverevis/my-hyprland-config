@@ -130,7 +130,7 @@ SetPage {
         SetChoice {
             label: ""
             style: "tiles"; columns: 4; thumbHeight: 64
-            options: SysTheme.icons.map(i => [i.name, i.label, "", i.samples])
+            options: SysTheme.icons.map(i => [i.name, i.cover === null || i.cover === undefined ? i.label : i.label + " · " + i.cover + "% dos apps", "", i.samples])
             value: SysTheme.cur.icons
             onPicked: v => SysTheme.setIcons(v)
             thumb: Item {
