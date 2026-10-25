@@ -1,6 +1,8 @@
 // Pagina "Inicio" das configuracoes (kit Set*): o visual de agora num relance (miniatura, paleta, claro/escuro),
 // ajustes rapidos, atalhos para as paginas mais usadas, os visuais salvos e a barra/tela.
 import Quickshell
+import Quickshell.Networking
+import Quickshell.Bluetooth
 import QtQuick
 
 SetPage {
@@ -56,7 +58,7 @@ SetPage {
         }
     }
 
-    // ---- ajustes rapidos ----
+    // ---- ajustes rapidos (os mesmos botoes e a mesma ordem do painel Inicio: Settings.homeToggles via Toggles) ----
     SetSection {
         title: "Ajustes rápidos"
         icon: "tune"
@@ -68,21 +70,20 @@ SetPage {
             spacing: SetK.sm
             readonly property real tw: (width - spacing * (columns - 1)) / columns
             Repeater {
-                model: [
-                    { icon: "glass", label: "Vidro", on: () => Settings.glass, run: () => Settings.glass = !Settings.glass },
-                    { icon: "dashboard", label: "Widgets", on: () => Settings.desktopOn, run: () => Settings.desktopOn = !Settings.desktopOn },
-                    { icon: "night", label: "Luz noturna", on: () => NightLight.active, run: () => NightLight.toggle() },
-                    { icon: "bellOff", label: "Não perturbe", on: () => Settings.notifDnd, run: () => Settings.notifDnd = !Settings.notifDnd },
-                    { icon: "eyeOff", label: "Contra clarão", on: () => Settings.antiFlash, run: () => Settings.antiFlash = !Settings.antiFlash },
-                    { icon: "palette", label: "Tema de cores", on: () => Settings.themeOn, run: () => Settings.themeOn = !Settings.themeOn },
-                    { icon: "coffee", label: "Manter acordado", on: () => Idle.paused, run: () => Idle.paused = !Idle.paused },
-                    { icon: "blur", label: "Desfoque widgets", on: () => Settings.desktopBlur, run: () => Settings.desktopBlur = !Settings.desktopBlur }
-                ]
+                model: Toggles.norm(Settings.homeToggles)
                 delegate: Rectangle {
                     id: qt
                     required property var modelData
-                    readonly property bool on: { Settings.glass; Settings.desktopOn; Settings.notifDnd; Settings.antiFlash; Settings.themeOn; Settings.desktopBlur; NightLight.active; Idle.paused; return modelData.on() }
+                    readonly property var t: Toggles.find(modelData.id)
+                    readonly property bool bi: !!(t && t.builtin)
+                    // Wi-Fi e Bluetooth vem direto dos servicos; Energia e do painel (abre o painel)
+                    readonly property string id: modelData.id
+                    readonly property bool on: { Toggles.deps(); Networking.wifiEnabled; return id === "wifi" ? Networking.wifiEnabled : id === "bt" ? !!(Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) : id === "profile" ? false : (t ? t.on() : false) }
+                    readonly property bool avail: { Toggles.deps(); return id === "bt" ? !!Bluetooth.defaultAdapter : (t && t.avail ? t.avail() : true) }
+                    readonly property string icn: { Toggles.deps(); return id === "wifi" ? (Networking.wifiEnabled ? "wifi" : "wifiOff") : id === "bt" ? (on ? "bluetooth" : "btOff") : (t ? (t.iconNow ? t.iconNow() : t.icon) : "cog") }
+                    readonly property string sub: { Toggles.deps(); return id === "wifi" ? (Networking.wifiEnabled ? "Ligado" : "Desligado") : id === "bt" ? (!Bluetooth.defaultAdapter ? "Sem adaptador" : (on ? "Ligado" : "Desligado")) : id === "profile" ? "Abre o painel" : (t ? t.sub() : "") }
                     width: qg.tw; height: 60; radius: 16
+                    opacity: avail ? 1 : 0.55
                     color: on ? Theme.accent : (qm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1))
                     border.width: 1; border.color: on ? Theme.accent : Theme.border
                     scale: qm.pressed ? 0.97 : 1
@@ -93,49 +94,62 @@ SetPage {
                         x: SetK.md; anchors.verticalCenter: parent.verticalCenter
                         width: 36; height: 36; radius: 12
                         color: qt.on ? Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.16) : Theme.tint(0.14)
-                        UiIcon { anchors.centerIn: parent; name: qt.modelData.icon; size: 18; color: qt.on ? Theme.accentText : Theme.accent }
+                        UiIcon { anchors.centerIn: parent; name: qt.icn; size: 18; color: qt.on ? Theme.accentText : Theme.accent }
                     }
                     Column {
                         anchors { left: qi.right; leftMargin: 10; right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
-                        UiText { width: parent.width; elide: Text.ElideRight; text: qt.modelData.label; color: qt.on ? Theme.accentText : Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                        UiText { text: qt.on ? "Ligado" : "Desligado"; color: qt.on ? Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.75) : Theme.muted; font.pixelSize: 11 }
+                        UiText { width: parent.width; elide: Text.ElideRight; text: qt.t ? qt.t.label : ""; color: qt.on ? Theme.accentText : Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                        UiText { width: parent.width; elide: Text.ElideRight; text: qt.sub; color: qt.on ? Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.75) : Theme.muted; font.pixelSize: 11 }
                     }
-                    MouseArea { id: qm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: qt.modelData.run() }
+                    MouseArea {
+                        id: qm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (!qt.avail) return
+                            if (qt.id === "wifi") Networking.wifiEnabled = !Networking.wifiEnabled
+                            else if (qt.id === "bt") Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
+                            else if (qt.id === "profile") Settings.homeOpen = true
+                            else if (qt.t) qt.t.click()
+                        }
+                    }
                 }
             }
         }
+        UiText {
+            leftPadding: SetK.xs
+            color: Theme.muted; font.pixelSize: SetK.fDesc
+            textFormat: Text.RichText
+            text: "Os mesmos do painel Início · <a href=\"edit\" style=\"color:" + Theme.accent + "\">Editar</a>"
+            onLinkActivated: { Settings.settingsSub = "home"; Settings.settingsReveal = "Painel Início"; Settings.settingsPage = "panels" }
+            HoverHandler { cursorShape: parent.hoveredLink !== "" ? Qt.PointingHandCursor : Qt.ArrowCursor }
+        }
     }
 
-    // ---- atalhos para as paginas mais usadas ----
+    // ---- atalhos (uma fileira leve de chips; o menu lateral e o caminho principal) ----
     SetSection {
         title: "Ir para"
         icon: "link"
         boxed: false
-        Grid {
-            id: sg
+        Flow {
             width: parent.width
-            columns: width > 600 ? 3 : 2
-            spacing: SetK.sm
-            readonly property real tw: (width - spacing * (columns - 1)) / columns
+            spacing: 6
             Repeater {
                 model: [["theme", "Tema e cores", "palette"], ["wall", "Wallpaper", "wallpaper"], ["bars", "Barras e moldura", "bars"],
                         ["desktop", "Área de trabalho", "view_grid"], ["panels", "Painéis", "dock"], ["anim", "Animações", "animation"]]
                 delegate: Rectangle {
                     id: sc
                     required property var modelData
-                    width: sg.tw; height: 56; radius: 16
-                    color: scm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1)
+                    height: 30; width: scr.implicitWidth + 22; radius: 15
+                    scale: scm.pressed ? 0.97 : 1
+                    Behavior on scale { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                    color: scm.containsMouse ? Theme.tint(0.16) : Theme.track
                     border.width: 1; border.color: scm.containsMouse ? Theme.tint(0.5) : Theme.border
-                    Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: SetK.fast } }
-                    Rectangle {
-                        id: si
-                        x: SetK.md; anchors.verticalCenter: parent.verticalCenter
-                        width: 32; height: 32; radius: 10
-                        color: Theme.tint(0.14)
-                        UiIcon { anchors.centerIn: parent; name: sc.modelData[2]; size: 17; color: Theme.accent }
+                    Row {
+                        id: scr
+                        anchors.centerIn: parent
+                        spacing: 6
+                        UiIcon { name: sc.modelData[2]; size: 13; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
+                        UiText { text: sc.modelData[1]; color: Theme.text; font.pixelSize: SetK.fDesc; anchors.verticalCenter: parent.verticalCenter }
                     }
-                    UiText { anchors { left: si.right; leftMargin: SetK.md; right: chev.left; rightMargin: 6; verticalCenter: parent.verticalCenter } elide: Text.ElideRight; text: sc.modelData[1]; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
-                    UiIcon { id: chev; anchors { right: parent.right; rightMargin: SetK.md; verticalCenter: parent.verticalCenter } name: "chevRight"; size: 16; color: Theme.muted }
                     MouseArea { id: scm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.settingsPage = sc.modelData[0] }
                 }
             }
@@ -144,7 +158,7 @@ SetPage {
 
     // ---- visuais salvos ----
     SetSection {
-        title: "Visuais"
+        title: "Visuais salvos"
         icon: "layers"
         SetRow {
             visible: !!Looks.undoData

@@ -90,6 +90,8 @@ Scope {
             // fechar (mesmo botao das Configuracoes); Esc tambem fecha
             focus: true
             Keys.onEscapePressed: Apps.windowOpen = false
+            // fundo do conteudo com piso de opacidade (0.86): texto de outra janela nao atravessa o vidro
+            Rectangle { x: 200; width: parent.width - 200; height: parent.height; color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Math.max(0.86, Theme.gl(Theme.bg, 1).a)) }
             UiButton { z: 10; anchors { right: parent.right; top: parent.top; margins: 14 } icon: "close"; kind: "ghost"; onClicked: Apps.windowOpen = false }
 
             // ---- trilho de abas ----

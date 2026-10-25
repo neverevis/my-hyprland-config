@@ -211,7 +211,7 @@ SetPage {
     SetSection {
         title: "Mais"; icon: "layers"
         SetExpander {
-            icon: "layers"; label: "Layouts prontos"; description: "Trocam só os widgets; o visual inteiro fica em Visuais"
+            icon: "layers"; label: "Layouts prontos"; description: "Trocam só os widgets; o visual inteiro fica em Visuais salvos"
             lazy: Component {
                 SetBlock {
                     sub: true
@@ -247,7 +247,7 @@ SetPage {
                     Row {
                         spacing: 8
                         UiButton { icon: "restore"; text: "Desfazer"; kind: "ghost"; visible: !!Looks.undoData; onClicked: Looks.undo() }
-                        UiButton { icon: "layers"; text: "Abrir Visuais"; kind: "ghost"; onClicked: Settings.settingsPage = "looks" }
+                        UiButton { icon: "layers"; text: "Abrir Visuais salvos"; kind: "ghost"; onClicked: Settings.settingsPage = "looks" }
                     }
                 }
             }

@@ -35,30 +35,34 @@ Scope {
     property bool alive: false   // janela existe (fica ate a animacao de saida terminar)
 
 
-    // ---- arquitetura: dois grupos (Personalizacao e Sistema). Paginas novas usam o kit Set*; as antigas ficam
+    // ---- arquitetura: quatro grupos (Aparencia, Area de trabalho e paineis, Sistema, Conta). Paginas novas usam o kit Set*; as antigas ficam
     // hospedadas na entrada mais proxima ate serem migradas. ids antigos continuam valendo (aliases abaixo).
     readonly property var groups: [
-        { label: "Personalização", pages: [
-            { id: "start", label: "Início", icon: "home", desc: "O visual de agora e os ajustes rápidos." },
+        { label: "Aparência", pages: [
+            { id: "start", label: "Visão geral", icon: "home", desc: "O visual de agora e os ajustes rápidos." },
             { id: "theme", label: "Tema e cores", icon: "palette", desc: "Paleta, claro ou escuro, transparência e fontes." },
+            { id: "looks", label: "Visuais salvos", icon: "layers", desc: "Salvar, aplicar e trocar o visual inteiro." },
             { id: "wall", label: "Wallpaper", icon: "wallpaper", desc: "Imagem de fundo, estilo, transição e o seletor." },
+            { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e molas de tudo o que se move." }
+        ] },
+        { label: "Área de trabalho e painéis", pages: [
             { id: "desktop", label: "Área de trabalho", icon: "view_grid", desc: "Widgets sobre o wallpaper e layouts prontos." },
             { id: "bars", label: "Barras e moldura", icon: "bars", desc: "Onde ficam as barras, o que mostram e a moldura." },
             { id: "panels", label: "Painéis", icon: "dock", desc: "Início, launcher, notificações, visão geral e barra lateral." },
-            { id: "win", label: "Janelas", icon: "window", desc: "Hyprland: espaços, bordas, sombras e desfoque." },
-            { id: "anim", label: "Animações", icon: "animation", desc: "Curvas e molas de tudo o que se move." },
-            { id: "looks", label: "Visuais", icon: "layers", desc: "Salvar, aplicar e trocar o visual inteiro." }
+            { id: "win", label: "Janelas", icon: "window", desc: "Hyprland: espaços, bordas, sombras e desfoque." }
         ] },
         { label: "Sistema", pages: [
-            { id: "keys", label: "Atalhos de teclado", icon: "keyboard", desc: "Ver, criar e mudar atalhos." },
             { id: "apps", label: "Aplicativos", icon: "apps", desc: "Instalar, remover e abrir ao iniciar." },
             { id: "sound", label: "Som", icon: "volume", desc: "Saídas, entradas, volume por aplicativo e equalizador." },
             { id: "net", label: "Rede e Bluetooth", icon: "wifi", desc: "Wi-Fi, cabo, VPN e Bluetooth." },
             { id: "display", label: "Monitores", icon: "monitor", desc: "Resolução, escala, posição, brilho e luz noturna." },
             { id: "input", label: "Mouse e teclado", icon: "mouse", desc: "Cursor, mouse, ícones e fontes." },
+            { id: "keys", label: "Atalhos de teclado", icon: "keyboard", desc: "Ver, criar e mudar atalhos." },
             { id: "power", label: "Energia e sessão", icon: "power", desc: "Bloqueio, inatividade, menu de energia e bateria." },
             { id: "time", label: "Data, hora e idioma", icon: "clockOutline", desc: "Hora, data, fuso horário e idioma." },
-            { id: "tools", label: "Ferramentas", icon: "wrench", desc: "Captura, gravação, prateleira e painel de jogo." },
+            { id: "tools", label: "Ferramentas", icon: "wrench", desc: "Captura, gravação, prateleira e painel de jogo." }
+        ] },
+        { label: "Conta", pages: [
             { id: "account", label: "Conta e Sobre", icon: "accountCircle", desc: "Seu nome, a máquina e este computador." }
         ] }
     ]
@@ -178,7 +182,7 @@ Scope {
         id: body
         anchors.fill: parent
         radius: root.windowed ? 0 : 22
-        color: Theme.gl(Theme.bg, 1)
+        color: Theme.gl(Theme.bg, 1)   // so aparece nos cantos; o fundo da coluna de conteudo tem piso de opacidade
         clip: true
         focus: true
         // ---- busca e abrir um resultado (iguais nas duas formas de janela) ----
@@ -403,6 +407,21 @@ Scope {
             }
             }
 
+            // sombra suave quando a lista rola: so no lado onde ainda ha mais paginas
+            Rectangle {
+                anchors { left: navFlick.left; right: navFlick.right; top: navFlick.top }
+                height: 24; z: 3
+                opacity: navFlick.contentY > 2 ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: SetK.fast } }
+                gradient: Gradient { GradientStop { position: 0; color: Theme.sidebar } GradientStop { position: 1; color: Qt.rgba(Theme.sidebar.r, Theme.sidebar.g, Theme.sidebar.b, 0) } }
+            }
+            Rectangle {
+                anchors { left: navFlick.left; right: navFlick.right; bottom: navFlick.bottom }
+                height: 24; z: 3
+                opacity: navFlick.contentY < navFlick.contentHeight - navFlick.height - 2 ? 1 : 0
+                Behavior on opacity { NumberAnimation { duration: SetK.fast } }
+                gradient: Gradient { GradientStop { position: 0; color: Qt.rgba(Theme.sidebar.r, Theme.sidebar.g, Theme.sidebar.b, 0) } GradientStop { position: 1; color: Theme.sidebar } }
+            }
             // arquivo de configuracao (clique abre, direito copia o caminho) e restaurar (pede confirmacao)
             Column {
                 id: sideBottom
@@ -467,6 +486,8 @@ Scope {
             readonly property bool kit: !!(pageLoader.item && pageLoader.item.kitPage) && root.query === ""
             readonly property real colW: Math.min(kit ? SetK.maxWidth : 900, width - 72)
             readonly property real colX: Math.max(36, (width - colW) / 2)
+            // fundo da coluna de conteudo: segue o Vidro, mas nunca abaixo de 0.86 (texto de outra janela nao atravessa os rotulos)
+            Rectangle { anchors.fill: parent; color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, Math.max(0.86, Theme.gl(Theme.bg, 1).a)) }
 
             UiButton { id: closeBtn; z: 10; anchors { right: parent.right; top: parent.top; margins: 14 } icon: "close"; kind: "ghost"; onClicked: Settings.settingsOpen = false }
 

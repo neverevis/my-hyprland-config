@@ -29,7 +29,7 @@ Column {
         width: parent.width
         height: rows.implicitHeight
         radius: SetK.boxRadius
-        color: sec.boxed ? Theme.glc(Theme.card, 1) : "transparent"
+        color: sec.boxed ? Qt.rgba(Theme.card.r, Theme.card.g, Theme.card.b, Math.max(0.8, Theme.glc(Theme.card, 1).a)) : "transparent"   // piso 0.8: contraste do texto no vidro
         border.width: sec.boxed ? 1 + sec.glow : (sec.glow > 0.01 ? 1 + sec.glow : 0)
         border.color: sec.glow > 0.01 ? Qt.rgba(Theme.accent.r, Theme.accent.g, Theme.accent.b, 0.35 + 0.65 * sec.glow) : Theme.border
         Column { id: rows; width: parent.width }

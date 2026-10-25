@@ -409,8 +409,35 @@ Scope {
         // barra do modo de edicao: pilula no topo, no centro
         Rectangle {
             id: tbar
-            anchors.horizontalCenter: parent.horizontalCenter
-            y: win.area.y + (DeskState.editing ? 0 : -16)
+            // posicao: a primeira que nao cobre nenhum widget (topo ou base; centro, depois deslocada para os lados);
+            // se todas cobrem algo, a que cobre menos area
+            property bool low: false
+            property real cx: 0.5
+            function place() {
+                const rects = []
+                for (let i = 0; i < view.count; i++) {
+                    const it = view.itemAt(i); if (!it || !it.visible) continue
+                    const p = it.mapToItem(win.contentItem, 0, 0)
+                    rects.push([p.x, p.y, p.x + it.width, p.y + it.height])
+                }
+                const w = tbar.width, h = tbar.height
+                let best = null
+                for (const lo of [false, true]) {
+                    for (const c of [0.5, 0.36, 0.64, 0.24, 0.76]) {
+                        const x0 = win.width * c - w / 2, x1 = x0 + w
+                        const y0 = lo ? win.area.y + win.area.height - h : win.area.y, y1 = y0 + h
+                        let area = 0
+                        for (const r of rects) area += Math.max(0, Math.min(x1, r[2]) - Math.max(x0, r[0])) * Math.max(0, Math.min(y1, r[3]) - Math.max(y0, r[1]))
+                        if (!best || area < best.area) best = { area: area, lo: lo, c: c }
+                        if (area === 0) break
+                    }
+                    if (best && best.area === 0) break
+                }
+                low = best.lo; cx = best.c
+            }
+            Connections { target: DeskState; function onEditingChanged() { if (DeskState.editing) tbar.place() } function onDraggingChanged() { if (DeskState.dragging === "" && DeskState.editing) tbar.place() } }
+            x: Math.max(8, Math.min(win.width - width - 8, win.width * cx - width / 2))
+            y: low ? win.area.y + win.area.height - height + (DeskState.editing ? 0 : 16) : win.area.y + (DeskState.editing ? 0 : -16)
             Behavior on y { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
             opacity: DeskState.editing ? 1 : 0
             visible: opacity > 0

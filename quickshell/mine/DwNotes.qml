@@ -196,7 +196,7 @@ Item {
                 // a area de trabalho so recebe teclado quando um campo pede (mouse em cima ou escrevendo)
                 onActiveFocusChanged: { DeskState.wantKeys("notes-f-" + w.wid, activeFocus); if (!activeFocus && w.shown !== "") w.setText(w.shown, text) }
                 Keys.onEscapePressed: ed.focus = false
-                UiText { visible: !ed.text && !ed.activeFocus; text: "Clique para escrever…"; color: w.dim; font.pixelSize: ed.font.pixelSize }
+                UiText { visible: !ed.text && !ed.activeFocus; width: ed.width; wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight; text: "Clique para escrever…"; color: w.dim; font.pixelSize: ed.font.pixelSize }
                 onCursorRectangleChanged: { if (cursorRectangle.y + cursorRectangle.height > fl.contentY + fl.height) fl.contentY = cursorRectangle.y + cursorRectangle.height - fl.height }
             }
         }

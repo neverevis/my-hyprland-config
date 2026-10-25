@@ -465,10 +465,12 @@ Scope {
                                     function onSearchFor(q) { if (root.alive) { input.text = q; root.pending = "" } }
                                 }
                                 onTextChanged: { root.query = text; view.currentIndex = 0 }
-                                UiText { visible: input.text === ""; anchors.verticalCenter: parent.verticalCenter; text: "Buscar…"; color: Theme.muted; font.pixelSize: 16 }
+                                UiText { visible: input.text === ""; anchors.verticalCenter: parent.verticalCenter; text: chips.hint !== "" ? chips.hint : "Buscar…"; color: Theme.muted; font.pixelSize: 16 }
                                 // dicas dos prefixos (some ao digitar)
                                 Row {
                                     id: chips
+                                    property string hint: ""   // nome e exemplo do prefixo sob o mouse (aparece no lugar de "Buscar...")
+                                    readonly property var examples: ({ "conta": "2+2", "comando": "ls -la", "web": "arch linux", "emoji": "coração", "símbolos": "seta", "traduzir": "olá", "ações": "bloquear", "atalhos": "copiar", "só apps": "fire" })
                                     // sem espaco para os nomes: so o caractere (o nome aparece ao passar o mouse)
                                     readonly property bool compact: parent.width < 820
                                     visible: input.text === "" && parent.width > 420
@@ -481,7 +483,10 @@ Scope {
                                             height: 22; width: pt.implicitWidth + 12; radius: 6
                                             color: pm.containsMouse ? Theme.cardHi : Theme.track
                                             UiText { id: pt; anchors.centerIn: parent; text: chips.compact && !pm.containsMouse ? modelData[0] : modelData[0] + " " + modelData[1]; color: Theme.muted; font.pixelSize: 11 }
-                                            MouseArea { id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { input.text = modelData[0]; input.forceActiveFocus() } }
+                                            MouseArea {
+                                                id: pm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { input.text = modelData[0]; input.forceActiveFocus() }
+                                                onContainsMouseChanged: { const h = modelData[0] + "  " + modelData[1] + (chips.examples[modelData[1]] ? "  ·  " + modelData[0] + chips.examples[modelData[1]] : ""); if (containsMouse) chips.hint = h; else if (chips.hint === h) chips.hint = "" }
+                                            }
                                         }
                                     }
                                 }

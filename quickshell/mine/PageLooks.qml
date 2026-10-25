@@ -6,7 +6,7 @@ import QtQuick
 
 SetPage {
     id: page
-    title: "Visuais"
+    title: "Visuais salvos"
     subtitle: "Salve, aplique e troque o visual inteiro do shell"
     property string toast: ""
     Timer { id: toastT; interval: 2600; onTriggered: page.toast = "" }

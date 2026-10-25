@@ -276,6 +276,15 @@ Scope {
                                         Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
                                         UiIcon { anchors.centerIn: parent; name: rt.modelData.icon; size: 20; color: rt.on ? Theme.accentText : (rtm.containsMouse ? Theme.text : Theme.muted) }
                                         MouseArea { id: rtm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.tab = rt.modelData.id }
+                                        Rectangle {   // nome da aba ao passar o mouse
+                                            id: rtTip
+                                            visible: rtm.containsMouse
+                                            z: 50
+                                            x: parent.width + 8; y: (parent.height - height) / 2
+                                            width: rtTipT.implicitWidth + 20; height: 28; radius: 8
+                                            color: Theme.bg; border.width: 1; border.color: Theme.border
+                                            UiText { id: rtTipT; anchors.centerIn: parent; text: rt.modelData.label; color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium }
+                                        }
                                     }
                                 }
                             }
@@ -285,6 +294,8 @@ Scope {
                                 color: pwm.containsMouse ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : "transparent"
                                 UiIcon { anchors.centerIn: parent; name: "power"; size: 20; color: pwm.containsMouse ? Theme.danger : Theme.muted }
                                 MouseArea { id: pwm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Power.menuOpen = true }
+                                Rectangle { visible: pwm.containsMouse; z: 50; x: parent.width + 8; y: 7; width: pwT.implicitWidth + 20; height: 28; radius: 8; color: Theme.bg; border.width: 1; border.color: Theme.border
+                                    UiText { id: pwT; anchors.centerIn: parent; text: "Energia"; color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium } }
                             }
                             Rectangle {
                                 id: gearBtn
@@ -293,6 +304,8 @@ Scope {
                                 color: gm.containsMouse ? Theme.cardHi : "transparent"
                                 UiIcon { anchors.centerIn: parent; name: "cog"; size: 20; color: gm.containsMouse ? Theme.text : Theme.muted }
                                 MouseArea { id: gm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.settingsOpen = true }
+                                Rectangle { visible: gm.containsMouse; z: 50; x: parent.width + 8; y: 7; width: gT.implicitWidth + 20; height: 28; radius: 8; color: Theme.bg; border.width: 1; border.color: Theme.border
+                                    UiText { id: gT; anchors.centerIn: parent; text: "Configurações"; color: Theme.text; font.pixelSize: 12; font.weight: Font.Medium } }
                             }
                         }
 
