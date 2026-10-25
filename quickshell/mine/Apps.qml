@@ -100,7 +100,8 @@ Singleton {
         console.log("apps: " + (dry ? "[TESTE] " : "") + title + " -> " + argv.join(" "))
         jobTitle = title; jobLog = ""; jobAfter = after || null; jobState = "run"
         job.command = dry ? ["sh", "-c", 'echo "[teste] rodaria: $*"; sleep 1.2', "sh"].concat(argv) : argv
-        job.running = true
+        if (!dry && argv[0] === "pkexec") SysAct.withAgent(() => job.running = true)   // garante quem peca a senha
+        else job.running = true
     }
     function closeJob() { if (!busy) { jobState = ""; jobLog = "" } }
     Process {

@@ -1,6 +1,6 @@
 // Agente de polkit do shell (pedidos de senha de administrador: instalar, montar disco, mudar configuracoes do sistema).
-// Desligado por padrao (Settings.polkitOn): so um agente pode estar registrado por sessao e o polkit-gnome costuma
-// ser iniciado pelo Hyprland; para usar este, tire o polkit-gnome do autostart. Visual do cartao da tela de bloqueio.
+// Liga com Settings.polkitOn ou sozinho quando nenhum outro agente (polkit-gnome, hyprpolkitagent...) esta rodando
+// (SysAct.shellAgent): so um agente pode estar registrado por sessao e sem nenhum o pkexec falha. Visual do cartao da tela de bloqueio.
 import Quickshell
 import Quickshell.Wayland
 import Quickshell.Hyprland
@@ -8,7 +8,7 @@ import Quickshell.Services.Polkit
 import QtQuick
 
 LazyLoader {
-    active: Settings.polkitOn   // o agente so existe (e se registra) quando ligado
+    active: SysAct.shellAgent   // ligado nas configuracoes, ou sozinho quando nenhum outro agente esta rodando
 
     Scope {
     id: root

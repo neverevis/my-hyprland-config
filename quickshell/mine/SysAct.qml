@@ -16,7 +16,38 @@ Singleton {
     // paginas chamam ao abrir (o arquivo pode ter sido criado depois do shell iniciar)
     function check() { if (!chk.running) chk.running = true }
     Process { id: chk; command: ["sh", "-c", 'test -e "$HOME/.cache/quickshell-mine/sys-dryrun"']; onExited: code => root.dryFile = code === 0 }
-    Component.onCompleted: check()
+    Component.onCompleted: { check(); agentChk.running = true }
+
+    // ---- agente de polkit: sem nenhum agente na sessao o pkexec falha ("textual authentication agent").
+    // Se nenhum outro agente estiver rodando, o do shell (PolkitWindow) se liga sozinho, mesmo com Settings.polkitOn desligado.
+    property bool otherAgent: true
+    property bool agentChecked: false
+    readonly property bool shellAgent: Settings.polkitOn || (agentChecked && !otherAgent)
+    Process {
+        id: agentChk
+        command: ["pgrep", "-f", "polkit-gnome-authentication-agent|polkit-kde-authentication-agent|hyprpolkitagent|lxpolkit|polkit-mate|mate-polkit|xfce-polkit|polkit-efl"]
+        onExited: code => { root.otherAgent = code === 0; root.agentChecked = true }
+    }
+    // roda fn quando houver quem pedir a senha: confere de novo os agentes e espera o do shell registrar (ate 3 s)
+    property var pendingFns: []
+    function withAgent(fn) {
+        if (Settings.polkitRegistered) { fn(); return }
+        pendingFns = pendingFns.concat([fn])
+        agentChk.running = true
+        agentWait.n = 0; agentWait.restart()
+    }
+    Timer {
+        id: agentWait
+        property int n: 0
+        interval: 150; repeat: true
+        onTriggered: {
+            n++
+            if (!(Settings.polkitRegistered || (root.agentChecked && root.otherAgent) || n >= 20)) return
+            stop()
+            const fns = root.pendingFns; root.pendingFns = []
+            for (const f of fns) f()
+        }
+    }
     // registra a acao; true = pode executar de verdade
     function real(what) { console.log("sys: " + (dry ? "[TESTE] " : "") + what); return !dry }
 
@@ -31,7 +62,8 @@ Singleton {
         console.log("sys: " + (dry ? "[TESTE] " : "") + title + " -> " + argv.join(" "))
         jobTitle = title; jobLog = ""; jobAfter = after || null; jobState = "run"
         job.command = dry ? ["sh", "-c", 'echo "[teste] rodaria: $*"; sleep 1', "sh"].concat(argv) : argv
-        job.running = true
+        if (!dry && argv[0] === "pkexec") withAgent(() => job.running = true)
+        else job.running = true
     }
     function closeJob() { if (!busy) { jobState = ""; jobLog = "" } }
     Process {

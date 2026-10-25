@@ -57,9 +57,9 @@ SetPage {
     SetSection {
         title: "Senha de administrador (polkit)"; icon: "shieldLock"
         subtitle: "Pedidos de permissão (montar disco, instalar) aparecem num cartão do shell"
-        SetRow { icon: "lock"; label: "Usar o shell para os pedidos de senha"; checked: Settings.polkitOn; onToggled: on => Settings.polkitOn = on }
+        SetRow { icon: "lock"; label: "Usar sempre o shell para os pedidos de senha"; description: SysAct.shellAgent && !Settings.polkitOn ? "Já está em uso: nenhum outro agente está rodando" : "Desligado, o shell só assume quando nenhum outro agente está rodando"; checked: Settings.polkitOn; onToggled: on => Settings.polkitOn = on }
         SetRow {
-            visible: Settings.polkitOn
+            visible: SysAct.shellAgent
             sub: true; label: Settings.polkitRegistered ? "Ativo: os pedidos vão aparecer aqui" : "Não deu para registrar"
             description: Settings.polkitRegistered ? "" : "Outro agente (talvez o polkit-gnome do execs.lua) já roda; tire-o do autostart"
         }
