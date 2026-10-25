@@ -1,82 +1,110 @@
-// Pagina "Ferramentas": captura (seletor de area e as acoes), gravacao de tela (audio, pasta, quadros por segundo) e a
-// prateleira de arquivos.
+// Pagina "Ferramentas" (kit Set*): captura (acoes e seletor de area), gravacao de tela, prateleira de arquivos e painel de jogo.
 import Quickshell
 import QtQuick
 
-Column {
-    spacing: 14
+SetPage {
+    id: page
+    title: "Ferramentas"
+    subtitle: "Captura, gravação de tela, prateleira de arquivos e painel de jogo"
 
-    Card {
-        icon: "frame"
-        title: "Captura"
-        subtitle: "O seletor congela a tela: arraste uma área ou clique numa janela. Teclas 1-6 trocam a ação, C alterna retângulo, círculo e traço livre, Enter pega a tela inteira."
-        Flow {
-            width: parent.width
-            spacing: 6
-            Repeater {
-                model: Capture.actions
-                delegate: UiButton { required property var modelData; icon: modelData.icon; text: modelData.label; onClicked: { Settings.settingsOpen = false; Qt.callLater(() => Capture.start(modelData.id)) } }
+    // ---- captura ----
+    SetSection {
+        title: "Captura"; icon: "camera"
+        subtitle: "Arraste uma área ou clique numa janela; teclas 1-6 trocam a ação, C a forma, Enter pega a tela toda"
+        SetBlock {
+            Flow {
+                width: parent.width
+                spacing: SetK.sm
+                Repeater {
+                    model: Capture.actions
+                    delegate: UiButton { required property var modelData; icon: modelData.icon; text: modelData.label; onClicked: { Settings.settingsOpen = false; Qt.callLater(() => Capture.start(modelData.id)) } }
+                }
             }
         }
-        Row {
-            spacing: 10
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Pasta das capturas"; color: Theme.text; font.pixelSize: 13 }
-            UiField { width: 320; text: Settings.shotDir; placeholderText: "Vazio = só copiar, não salvar"; onEditingFinished: Settings.shotDir = text.trim() }
+        SetRow {
+            icon: "folder"; label: "Pasta das capturas"; description: "Vazio = só copiar, não salvar"
+            UiField { width: 240; text: Settings.shotDir; placeholderText: "~/Imagens/Screenshots"; onEditingFinished: Settings.shotDir = text.trim() }
         }
-        UiSwitch { label: "Contornar todas as janelas no seletor"; icon: "window"; checked: Settings.regionOutlines; onToggled: on => Settings.regionOutlines = on }
-        UiSwitch { label: "Linhas-guia seguindo o cursor"; icon: "cursorMove"; checked: Settings.regionAimLines; onToggled: on => Settings.regionAimLines = on }
-        Row {
-            spacing: 10
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Buscar por imagem (URL base)"; color: Theme.text; font.pixelSize: 13 }
-            UiField { width: 320; text: Settings.imageSearchUrl; placeholderText: "https://lens.google.com/uploadbyurl?url="; onEditingFinished: Settings.imageSearchUrl = text.trim() }
+        SetRow { visible: Capture.lastMsg !== ""; icon: "info"; label: "Última"; description: Capture.lastMsg }
+        SetExpander {
+            icon: "tune"; label: "Seletor de área"; description: "Contornos das janelas e linhas-guia"
+            SetRow { sub: true; label: "Contornar todas as janelas"; checked: Settings.regionOutlines; onToggled: on => Settings.regionOutlines = on }
+            SetRow { sub: true; label: "Linhas-guia seguindo o cursor"; checked: Settings.regionAimLines; onToggled: on => Settings.regionAimLines = on }
         }
-        Row {
-            spacing: 10
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Traduzir para (código)"; color: Theme.text; font.pixelSize: 13 }
-            UiField { width: 80; text: Settings.translateTarget; placeholderText: "pt"; onEditingFinished: Settings.translateTarget = text.trim() || "pt" }
+        SetExpander {
+            icon: "search"; label: "Buscar por imagem e traduzir"; description: "Endereço da busca e idioma da tradução"
+            SetRow { sub: true; label: "Buscar por imagem (URL base)"; UiField { width: 260; text: Settings.imageSearchUrl; placeholderText: "https://lens.google.com/uploadbyurl?url="; onEditingFinished: Settings.imageSearchUrl = text.trim() } }
+            SetRow { sub: true; label: "Traduzir para (código)"; UiField { width: 80; text: Settings.translateTarget; placeholderText: "pt"; onEditingFinished: Settings.translateTarget = text.trim() || "pt" } }
         }
-        UiText { width: parent.width; wrapMode: Text.WordWrap; color: Theme.muted; font.pixelSize: 12
-            text: "Para o Print Screen abrir este seletor, troque nos atalhos do Hyprland o comando por:  qs -c mine ipc call region open copy" }
-        UiText { visible: Capture.lastMsg !== ""; width: parent.width; wrapMode: Text.WordWrap; text: "Última: " + Capture.lastMsg; color: Theme.text; font.pixelSize: 12 }
+        SetExpander {
+            icon: "keyboard"; label: "Usar no Print Screen"; description: "Troque o comando do atalho nos arquivos do Hyprland"
+            SetRow {
+                sub: true; label: "Comando"; description: "qs -c mine ipc call region open copy"
+                UiButton { icon: "copy"; text: "Copiar"; kind: "ghost"; onClicked: Quickshell.execDetached(["sh", "-c", 'printf "%s" "$1" | wl-copy', "sh", "qs -c mine ipc call region open copy"]) }
+            }
+        }
     }
 
-    Card {
-        icon: "monitor"
-        title: "Gravação de tela"
-        subtitle: Recorder.active ? "Gravando " + Recorder.elapsed : "Grave a tela inteira ou uma área (ação Gravar do seletor, botão do Início ou módulo da barra)."
-        UiLabel { text: "Áudio" }
-        UiSeg { options: [["none", "Sem som", "volumeOff"], ["system", "Som do PC", "speaker"], ["mic", "Microfone", "mic"], ["both", "Os dois", "speaker"]]; value: Settings.recAudio; onPicked: v => Settings.recAudio = v }
-        UiSlider { label: "Quadros por segundo (0 = do monitor)"; from: 0; to: 144; value: Settings.recFps; onMoved: v => Settings.recFps = Math.round(v) }
-        Row {
-            spacing: 10
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: "Pasta"; color: Theme.text; font.pixelSize: 13 }
-            UiField { width: 360; text: Settings.recDir; placeholderText: "~/Vídeos/Gravações"; onEditingFinished: Settings.recDir = text.trim() || "~/Vídeos/Gravações" }
-        }
-        Row {
-            spacing: 8
-            UiButton { icon: Recorder.active ? "pause" : "monitor"; text: Recorder.active ? "Parar" : "Gravar a tela inteira"; kind: Recorder.active ? "danger" : "accent"; onClicked: { if (Recorder.active) Recorder.stop(); else { Settings.settingsOpen = false; Qt.callLater(() => Recorder.start(false)) } } }
+    // ---- gravacao ----
+    SetSection {
+        title: "Gravação de tela"; icon: "record"
+        subtitle: Recorder.active ? "Gravando " + Recorder.elapsed : "A tela inteira ou uma área (ação Gravar do seletor, botão do Início ou módulo da barra)"
+        SetRow {
+            icon: Recorder.active ? "stopCircle" : "recordRec"; label: Recorder.active ? "Gravando " + Recorder.elapsed : "Gravar a tela inteira"
+            UiButton { icon: Recorder.active ? "pause" : "monitor"; text: Recorder.active ? "Parar" : "Gravar"; kind: Recorder.active ? "danger" : "accent"; onClicked: { if (Recorder.active) Recorder.stop(); else { Settings.settingsOpen = false; Qt.callLater(() => Recorder.start(false)) } } }
             UiButton { icon: "folderOpen"; text: "Abrir a pasta"; kind: "ghost"; onClicked: Qt.openUrlExternally("file://" + Recorder.dir) }
         }
+        SetChoice {
+            icon: "speaker"; label: "Áudio"
+            options: [["none", "Sem som", "volumeOff"], ["system", "Som do PC", "speaker"], ["mic", "Microfone", "mic"], ["both", "Os dois", "headphones"]]
+            value: Settings.recAudio; onPicked: v => Settings.recAudio = v
+        }
+        SetSlider { icon: "speed"; label: "Quadros por segundo"; from: 0; to: 144; unit: " fps"; zeroLabel: "Do monitor"; def: 0; value: Settings.recFps; onMoved: v => Settings.recFps = Math.round(v) }
+        SetRow { icon: "folder"; label: "Pasta das gravações"; UiField { width: 240; text: Settings.recDir; placeholderText: "~/Vídeos/Gravações"; onEditingFinished: Settings.recDir = text.trim() || "~/Vídeos/Gravações" } }
     }
 
-    Card {
-        icon: "layers"
-        title: "Prateleira de arquivos"
-        subtitle: "Um cartão na lateral onde você solta arquivos e depois arrasta para outro lugar (como o dropover). Também pelo launcher: \"/prateleira\"."
-        UiButton { icon: "layers"; text: "Abrir / fechar a prateleira"; onClicked: Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "shelf", "toggle"]) }
-        UiText { text: Settings.list(Settings.shelfFiles).length + " arquivo(s) guardado(s)"; color: Theme.muted; font.pixelSize: 12 }
+    // ---- prateleira ----
+    SetSection {
+        title: "Prateleira de arquivos"; icon: "layers"
+        subtitle: "Solte arquivos num cartão na lateral e arraste depois para outro lugar; também pelo launcher: /prateleira"
+        SetRow {
+            icon: "layers"; label: "Abrir ou fechar a prateleira"; description: Settings.list(Settings.shelfFiles).length + " arquivo(s) guardado(s)"
+            UiButton { text: "Abrir"; kind: "accent"; onClicked: Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "shelf", "toggle"]) }
+        }
     }
 
-    Card {
-        icon: "gamepad"
-        title: "Painel de jogo"
-        subtitle: "Mini-janelas por cima de tudo: mira, notas, imagem, gravação, volume por app e sistema. Com o painel aberto você move e fixa; fixadas ficam por cima do jogo sem pegar o mouse. Atalho sugerido: Super+G com  qs -c mine ipc call overlay toggle"
-        UiButton { icon: "gamepad"; text: "Abrir o painel"; kind: "accent"; onClicked: { Settings.settingsOpen = false; Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "overlay", "open"]) } }
-        UiSlider { label: "Opacidade das fixadas"; from: 20; to: 100; value: Settings.overlayPinnedOpacity; suffix: " %"; onMoved: v => Settings.overlayPinnedOpacity = Math.round(v) }
-        UiLabel { text: "Mira" }
-        UiSeg { options: [["cross", "Cruz"], ["dot", "Ponto"], ["both", "Cruz e ponto"], ["circle", "Círculo"]]; value: Settings.overlayCrossStyle; onPicked: v => Settings.overlayCrossStyle = v }
-        UiSlider { label: "Tamanho da mira"; from: 8; to: 60; value: Settings.overlayCrossSize; suffix: " px"; onMoved: v => Settings.overlayCrossSize = Math.round(v) }
-        ColorField { label: "Cor da mira"; value: Settings.overlayCrossColor; onPicked: c => Settings.overlayCrossColor = c.toString() }
-        UiSlider { label: "Tamanho da imagem flutuante"; from: 10; to: 150; value: Settings.overlayImageScale; suffix: " %"; onMoved: v => Settings.overlayImageScale = Math.round(v) }
+    // ---- painel de jogo ----
+    SetSection {
+        title: "Painel de jogo"; icon: "gamepad"
+        subtitle: "Mini-janelas por cima de tudo: mira, notas, imagem, gravação, volume e sistema"
+        SetRow {
+            icon: "gamepad"; label: "Abrir o painel"; description: "Aberto você move e fixa; as fixadas não pegam o mouse. Atalho sugerido: Super+G"
+            UiButton { text: "Abrir"; kind: "accent"; onClicked: { Settings.settingsOpen = false; Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "overlay", "open"]) } }
+        }
+        SetSlider { icon: "opacity"; label: "Opacidade das fixadas"; from: 20; to: 100; unit: " %"; value: Settings.overlayPinnedOpacity; onMoved: v => Settings.overlayPinnedOpacity = Math.round(v) }
+        SetSlider { icon: "image"; label: "Tamanho da imagem flutuante"; from: 10; to: 150; unit: " %"; value: Settings.overlayImageScale; onMoved: v => Settings.overlayImageScale = Math.round(v) }
+        SetExpander {
+            icon: "target"; label: "Mira"; description: "Formato, tamanho e cor"
+            SetChoice {
+                sub: true; label: ""
+                style: "tiles"; columns: 4; thumbHeight: 48
+                options: [["cross", "Cruz"], ["dot", "Ponto"], ["both", "Cruz e ponto"], ["circle", "Círculo"]]
+                value: Settings.overlayCrossStyle; onPicked: v => Settings.overlayCrossStyle = v
+                thumb: Item {
+                    id: ct
+                    property var opt
+                    property bool on
+                    property bool hovered
+                    readonly property string m: opt ? opt[0] : "cross"
+                    readonly property color c: Settings.overlayCrossColor
+                    Rectangle { visible: ct.m === "cross" || ct.m === "both"; anchors.centerIn: parent; width: 22; height: 2; color: ct.c }
+                    Rectangle { visible: ct.m === "cross" || ct.m === "both"; anchors.centerIn: parent; width: 2; height: 22; color: ct.c }
+                    Rectangle { visible: ct.m === "dot" || ct.m === "both"; anchors.centerIn: parent; width: 6; height: 6; radius: 3; color: ct.c }
+                    Rectangle { visible: ct.m === "circle"; anchors.centerIn: parent; width: 22; height: 22; radius: 11; color: "transparent"; border.width: 2; border.color: ct.c }
+                }
+            }
+            SetSlider { sub: true; label: "Tamanho da mira"; from: 8; to: 60; unit: " px"; value: Settings.overlayCrossSize; onMoved: v => Settings.overlayCrossSize = Math.round(v) }
+            SetColor { sub: true; label: "Cor da mira"; mode: "hex"; value: Settings.overlayCrossColor; onPicked: v => Settings.overlayCrossColor = v.toString() }
+        }
     }
 }

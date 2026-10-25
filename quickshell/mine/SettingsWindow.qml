@@ -124,13 +124,13 @@ Scope {
     Component { id: launcherC; PageLauncher {} }
     Component { id: notifC; PageNotifications {} }
     Component { id: moreC; PagePanelsMore {} }
-    Component { id: winC; Column { spacing: 14; PageHypr { width: parent.width } ShadowCard { width: parent.width } PageBlur { width: parent.width } } }
+    Component { id: winC; PageWin {} }
     Component { id: animC; PageAnim {} }
     Component { id: looksC; PageLooks {} }
-    Component { id: systemC; PageSystem {} }
-    Component { id: sessionC; PageSession {} }
+    Component { id: systemC; PageInput {} }
+    Component { id: sessionC; PagePower {} }
     Component { id: toolsC; PageTools {} }
-    Component { id: accountC; Column { spacing: 14; PageProfile { width: parent.width } PageAbout { width: parent.width } } }
+    Component { id: accountC; PageAccount {} }
     Component { id: keysC; SetSoon { title: "Atalhos de teclado"; icon: "keyboard"; plans: ["Lista com busca", "Gravar uma tecla", "Criar e mudar atalhos do Hyprland"]
         links: [["Atalhos atuais (só leitura)", "keyboard", "win", "Atalhos"]] } }
     Component { id: appsC; SetSoon { title: "Aplicativos"; icon: "apps"; plans: ["Instalar e remover programas", "Apps ao iniciar", "Apps padrão"]
