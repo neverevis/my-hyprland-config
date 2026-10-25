@@ -151,13 +151,26 @@ Singleton {
             + (style ? ', style = "' + style + '"' : "") + ' })'
     }
     // tudo o que o Hyprland deve usar (vazio quando o Hyprland nao segue o shell)
+    // a troca de workspace tem escolha propria (cfg.ws: estilo, "none" = sem animacao, vazio = a do Hyprland), que vale mesmo
+    // com o Hyprland seguindo as proprias animacoes; cfg.wsMs: duracao (0 = a da curva de "Trocar de workspace")
+    function wsLua(cfg) {
+        const ws = cfg.ws ?? ""
+        if (ws === "") return []
+        if (ws === "none") return ['hl.animation({ leaf = "workspaces", enabled = false })']
+        let a = Object.assign({}, animFor("hyprWorkspaces", false))
+        if ((cfg.wsMs ?? 0) > 0) {   // a duracao escolhida e absoluta (nao segue a velocidade geral); mola nao tem duracao: vira uma desaceleracao
+            if ((a.type ?? "bezier") === "spring") a = { type: "bezier", x1: 5, y1: 70, x2: 10, y2: 100 }
+            a.duration = cfg.wsMs * speed
+        }
+        return [hyprCurve("mine_workspaces", a), hyprLeaf("workspaces", "mine_workspaces", a, ws)]
+    }
     function hyprLua() {
         const cfg = Settings.animCfg ?? {}
-        if (!cfg.hypr) return ""
+        if (!cfg.hypr) return wsLua(cfg).join("\n")
         const st = cfg.hyprStyle ?? {}
-        const lines = []
+        const lines = wsLua(cfg)
         for (const t of Settings.animTargets) {
-            if (!t.hypr) continue
+            if (!t.hypr || (t.id === "hyprWorkspaces" && lines.length)) continue
             for (const ph of t.phases ? [false, true] : [false]) {
                 const leaf = ph ? t.hypr[1] : t.hypr[0]
                 if (!leaf) continue

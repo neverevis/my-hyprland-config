@@ -280,6 +280,65 @@ SetPage {
         }
     }
 
+    // ---- troca de workspace: estilo proprio, vale mesmo com o Hyprland usando o animations.lua dele ----
+    readonly property var wsOpts: [["", "Do Hyprland", "cog"], ["slide", "Deslizar", "arrow_right"], ["slidevert", "Vertical", "arrowDown"],
+        ["slidefade 20%", "Deslizar + fade", "arrow_right"], ["slidefadevert 20%", "Vertical + fade", "arrowDown"], ["fade", "Fade", "opacity"], ["none", "Nenhuma", "close"]]
+    readonly property string ws: (Settings.animCfg ?? {}).ws ?? ""
+    SetSection {
+        title: "Troca de workspace"; icon: "swap_horizontal"; subtitle: "Como a tela muda ao ir para outro workspace. Passe o mouse para ver"
+        SetChoice {
+            label: ""
+            style: "tiles"; minTile: 96; thumbHeight: 54
+            options: page.wsOpts
+            value: page.ws
+            onPicked: v => Settings.setAnimCfg({ ws: v })
+            thumb: Item {
+                id: wt
+                property var opt
+                property bool on
+                property bool hovered
+                readonly property string st: opt ? opt[0] : ""
+                readonly property bool vert: st.indexOf("vert") >= 0
+                readonly property bool fades: st.indexOf("fade") >= 0
+                readonly property real far: st === "fade" || st === "none" ? 0 : fades ? 0.2 : 1   // quanto anda (fracao da tela)
+                UiIcon { visible: wt.st === ""; anchors.centerIn: parent; name: "cog"; size: 20; color: wt.on ? Theme.accent : Theme.muted }
+                Item {
+                    id: wd
+                    visible: wt.st !== ""
+                    anchors.fill: parent
+                    clip: true
+                    property real p: 0.5   // parado no meio da troca; com o mouse em cima, ensaia em loop
+                    NumberAnimation on p { running: wt.hovered && wt.st !== ""; from: 0; to: 1; duration: 1200; loops: Animation.Infinite; easing.type: Easing.InOutCubic; onRunningChanged: if (!running) wd.p = 0.5 }
+                    Rectangle { anchors.fill: parent; radius: 9; color: Theme.track }
+                    Repeater {
+                        model: 2   // 0 = workspace que sai, 1 = o que entra
+                        delegate: Rectangle {
+                            required property int index
+                            readonly property real t: index === 0 ? -wd.p : 1 - wd.p   // posicao relativa: 0 = na tela
+                            width: wd.width; height: wd.height; radius: 9
+                            color: index === 0 ? Theme.secondaryContainer : Theme.primaryContainer
+                            x: wt.vert ? 0 : t * wd.width * wt.far
+                            y: wt.vert ? t * wd.height * wt.far : 0
+                            opacity: wt.st === "none" ? ((index === 1) === (wd.p >= 0.5) ? 1 : 0) : wt.fades ? 1 - Math.abs(t) : 1
+                            // janelinhas de cada workspace
+                            Rectangle { x: 6; y: 6; width: parent.width * (index === 0 ? 0.42 : 0.6) - 9; height: parent.height - 12; radius: 4; color: index === 0 ? Theme.secondary : Theme.primary; opacity: 0.8 }
+                            Rectangle { x: parent.width * (index === 0 ? 0.42 : 0.6) + 3; y: 6; width: parent.width * (index === 0 ? 0.58 : 0.4) - 9; height: index === 0 ? parent.height - 12 : (parent.height - 15) / 2; radius: 4; color: index === 0 ? Theme.secondary : Theme.primary; opacity: 0.5 }
+                            Rectangle { visible: index === 1; x: parent.width * 0.6 + 3; y: 9 + (parent.height - 15) / 2; width: parent.width * 0.4 - 9; height: (parent.height - 15) / 2; radius: 4; color: Theme.primary; opacity: 0.5 }
+                        }
+                    }
+                }
+            }
+        }
+        SetSlider {
+            enabled: page.ws !== "" && page.ws !== "none"
+            icon: "timer"; label: "Duração"
+            description: page.ws === "" ? "Escolha um estilo para ajustar" : (page.ws !== "none" && !((Settings.animCfg ?? {}).wsMs > 0)) ? "A de \"Trocar de workspace\" em Onde cada animação é usada (" + Motion.durationOf("hyprWorkspaces", false) + " ms)" : ""
+            from: 0; to: 1500; step: 25; unit: " ms"; zeroLabel: "Auto"; def: 0
+            value: (Settings.animCfg ?? {}).wsMs ?? 0
+            onMoved: v => Settings.setAnimCfg({ wsMs: Math.round(v / 25) * 25 })
+        }
+    }
+
     // ---- velocidade ----
     SetSection {
         title: "Velocidade"; icon: "speed"; subtitle: "Acelera ou desacelera tudo de uma vez, inclusive as janelas se o Hyprland segue o shell"
@@ -317,12 +376,6 @@ SetPage {
                             options: Settings.hyprStyleOptions.windows
                             value: (Settings.animCfg.hyprStyle ?? {}).windows ?? Settings.hyprStyleDefaults.windows
                             onPicked: v => { const st = Object.assign({}, Settings.animCfg.hyprStyle ?? {}); st.windows = v; Settings.setAnimCfg({ hyprStyle: st }) }
-                        }
-                        SetChoice {
-                            visible: grp.isHypr && page.hypr; sub: true; label: "Workspaces"
-                            options: Settings.hyprStyleOptions.workspaces
-                            value: (Settings.animCfg.hyprStyle ?? {}).workspaces ?? Settings.hyprStyleDefaults.workspaces
-                            onPicked: v => { const st = Object.assign({}, Settings.animCfg.hyprStyle ?? {}); st.workspaces = v; Settings.setAnimCfg({ hyprStyle: st }) }
                         }
                         SetChoice {
                             visible: grp.isHypr && page.hypr; sub: true; label: "Camadas"
