@@ -78,10 +78,16 @@ SetPage {
                     readonly property bool bi: !!(t && t.builtin)
                     // Wi-Fi e Bluetooth vem direto dos servicos; Energia e do painel (abre o painel)
                     readonly property string id: modelData.id
-                    readonly property bool on: { Toggles.deps(); Networking.wifiEnabled; return id === "wifi" ? Networking.wifiEnabled : id === "bt" ? !!(Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) : id === "profile" ? false : (t ? t.on() : false) }
+                    // rede: o mesmo rotulo e estado do painel Inicio (Wi-Fi quando ha placa; senao Rede e o cabo)
+                    readonly property var devs: Networking.devices.values
+                    readonly property var wdev: devs.find(d => d.type === DeviceType.Wifi) ?? null
+                    readonly property var cdev: devs.find(d => d.type === DeviceType.Wired && d.connected) ?? null
+                    readonly property var wcur: wdev ? (wdev.networks.values.find(n => n.connected) ?? null) : null
+                    readonly property string lbl: id === "wifi" ? (wdev ? "Wi-Fi" : "Rede") : (t ? t.label : "")
+                    readonly property bool on: { Toggles.deps(); Networking.wifiEnabled; return id === "wifi" ? (wdev ? Networking.wifiEnabled : !!cdev) : id === "bt" ? !!(Bluetooth.defaultAdapter && Bluetooth.defaultAdapter.enabled) : id === "profile" ? false : (t ? t.on() : false) }
                     readonly property bool avail: { Toggles.deps(); return id === "bt" ? !!Bluetooth.defaultAdapter : (t && t.avail ? t.avail() : true) }
-                    readonly property string icn: { Toggles.deps(); return id === "wifi" ? (Networking.wifiEnabled ? "wifi" : "wifiOff") : id === "bt" ? (on ? "bluetooth" : "btOff") : (t ? (t.iconNow ? t.iconNow() : t.icon) : "cog") }
-                    readonly property string sub: { Toggles.deps(); return id === "wifi" ? (Networking.wifiEnabled ? "Ligado" : "Desligado") : id === "bt" ? (!Bluetooth.defaultAdapter ? "Sem adaptador" : (on ? "Ligado" : "Desligado")) : id === "profile" ? "Abre o painel" : (t ? t.sub() : "") }
+                    readonly property string icn: { Toggles.deps(); return id === "wifi" ? (wdev ? (Networking.wifiEnabled ? "wifi" : "wifiOff") : (cdev ? "ethernet" : "wifiOff")) : id === "bt" ? (on ? "bluetooth" : "btOff") : (t ? (t.iconNow ? t.iconNow() : t.icon) : "cog") }
+                    readonly property string sub: { Toggles.deps(); return id === "wifi" ? (wdev ? (!Networking.wifiEnabled ? "Desligado" : (wcur ? wcur.name : (cdev ? "Cabo conectado" : "Ligado"))) : (cdev ? "Cabo · " + cdev.name : "Sem conexão")) : id === "bt" ? (!Bluetooth.defaultAdapter ? "Sem adaptador" : (on ? "Ligado" : "Desligado")) : id === "profile" ? "Abre o painel" : (t ? t.sub() : "") }
                     width: qg.tw; height: 60; radius: 16
                     opacity: avail ? 1 : 0.55
                     color: on ? Theme.accent : (qm.containsMouse ? Theme.cardHi : Theme.glc(Theme.card, 1))
@@ -98,14 +104,14 @@ SetPage {
                     }
                     Column {
                         anchors { left: qi.right; leftMargin: 10; right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
-                        UiText { width: parent.width; elide: Text.ElideRight; text: qt.t ? qt.t.label : ""; color: qt.on ? Theme.accentText : Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
+                        UiText { width: parent.width; elide: Text.ElideRight; text: qt.lbl; color: qt.on ? Theme.accentText : Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold }
                         UiText { width: parent.width; elide: Text.ElideRight; text: qt.sub; color: qt.on ? Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.75) : Theme.muted; font.pixelSize: 11 }
                     }
                     MouseArea {
                         id: qm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             if (!qt.avail) return
-                            if (qt.id === "wifi") Networking.wifiEnabled = !Networking.wifiEnabled
+                            if (qt.id === "wifi") { if (qt.wdev) Networking.wifiEnabled = !Networking.wifiEnabled; else Settings.settingsPage = "net" }
                             else if (qt.id === "bt") Bluetooth.defaultAdapter.enabled = !Bluetooth.defaultAdapter.enabled
                             else if (qt.id === "profile") Settings.homeOpen = true
                             else if (qt.t) qt.t.click()
