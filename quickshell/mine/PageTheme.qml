@@ -12,10 +12,10 @@ SetPage {
     readonly property real paneAlpha: Settings.glass ? (Settings.glassAuto ? Settings.glassOpacityAuto : Settings.glassOpacity) / 100 : 1
     readonly property real cardAlpha: Settings.glass && Settings.glassSplit ? Settings.glassContent / 100 : paneAlpha
     readonly property var variantInfo: ({
-        auto: "Decide pela imagem: calma vira neutro", wallpaper: "Três cores que existem na imagem",
-        tonalspot: "Padrão do Android, suave", vibrant: "Mais saturado", expressive: "Gira as cores para criar contraste",
-        fidelity: "A cor exata da imagem", content: "Fiel, com terciária vizinha", neutral: "Quase cinza",
-        monochrome: "Só tons de cinza", rainbow: "Bem colorido, pouco ligado à imagem", fruitsalad: "Ainda mais colorido"
+        auto: "Escolhe sozinho pela imagem: se ela for calma, usa tons neutros", wallpaper: "As cores que mais aparecem na imagem",
+        tonalspot: "Tons suaves da cor principal", vibrant: "Cores mais vivas e saturadas", expressive: "Gira as cores para dar mais contraste",
+        fidelity: "A cor principal da imagem, sem mudar", content: "Fiel à imagem, com cores vizinhas de apoio", neutral: "Quase cinza, com um toque da cor",
+        monochrome: "Só tons de cinza", rainbow: "Várias cores, pouco ligadas à imagem", fruitsalad: "Ainda mais cores, bem alegre"
     })
 
     // conta-gotas: a cor escolhida vira a semente da paleta
@@ -168,7 +168,7 @@ SetPage {
             icon: "magic"; label: "Estilo da paleta"
             description: page.variantInfo[Settings.themeVariant] ?? ""
             style: "tiles"; minTile: 104; thumbHeight: 44
-            options: [["auto", "Automático", "auto"], ["wallpaper", "Do wallpaper", "wallpaper"], ["tonalspot", "Tonal", "palette"], ["vibrant", "Vibrante", "lightning"],
+            options: [["auto", "Automático", "auto"], ["wallpaper", "Wallpaper", "wallpaper"], ["tonalspot", "Tonal", "palette"], ["vibrant", "Vibrante", "lightning"],
                       ["expressive", "Expressivo", "magic"], ["fidelity", "Fiel", "eye"], ["content", "Conteúdo", "image"], ["neutral", "Neutro", "balance"],
                       ["monochrome", "Mono", "moon"], ["rainbow", "Arco-íris", "firework"], ["fruitsalad", "Salada", "leaf"]]
             value: Settings.themeVariant

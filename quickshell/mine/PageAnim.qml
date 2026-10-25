@@ -110,20 +110,36 @@ SetPage {
             icon: page.isSpring ? "wave" : "curve"; label: page.cur.name; description: page.locked ? "Do sistema (só leitura): duplique para editar" : (page.isSpring ? "Mola" : "Curva") + " sua"
             open: true
             lazy: Component {
-                SetChoice {
-                    sub: true
-                    label: ""
-                    style: "tiles"; minTile: 92; thumbHeight: 52
-                    options: page.names.map(n => [n, n, "curve"])
-                    value: page.sel
-                    onPicked: v => page.sel = v
-                    thumb: Item {
-                        id: th
-                        property var opt
-                        property bool on
-                        property bool hovered
-                        readonly property var a: opt ? Settings.findAnim(opt[0]) : null
-                        CurveThumb { anchors.centerIn: parent; width: Math.min(parent.width, parent.height) - 4; height: width; pad: 4; anim: th.a; stroke: th.on ? Theme.accent : Theme.muted; playing: th.hovered }
+                Column {
+                    width: parent ? parent.width : 300
+                    Repeater {
+                        model: [["Do sistema", "sys"], ["Suas curvas", "curve"], ["Suas molas", "spring"]]
+                        delegate: SetChoice {
+                            id: grp
+                            required property var modelData
+                            width: parent ? parent.width : 300
+                            readonly property var opts: page.names.filter(n => {
+                                const a = Settings.findAnim(n)
+                                if (!a) return false
+                                const k = a.builtin ? "sys" : (a.type === "spring" ? "spring" : "curve")
+                                return k === grp.modelData[1]
+                            }).map(n => [n, n, "curve"])
+                            visible: opts.length > 0
+                            sub: true
+                            label: modelData[0]
+                            style: "tiles"; minTile: 92; thumbHeight: 52
+                            options: opts
+                            value: page.sel
+                            onPicked: v => page.sel = v
+                            thumb: Item {
+                                id: th
+                                property var opt
+                                property bool on
+                                property bool hovered
+                                readonly property var a: opt ? Settings.findAnim(opt[0]) : null
+                                CurveThumb { anchors.centerIn: parent; width: Math.min(parent.width, parent.height) - 4; height: width; pad: 4; anim: th.a; stroke: th.on ? Theme.accent : Theme.muted; playing: th.hovered }
+                            }
+                        }
                     }
                 }
             }

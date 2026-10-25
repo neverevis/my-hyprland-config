@@ -118,14 +118,31 @@ Item {
             id: lv
             visible: !w.inEditor
             anchors { top: head.bottom; topMargin: 10; left: parent.left; right: parent.right; bottom: parent.bottom }
-            clip: true; spacing: w.cards ? 8 : w.lk === "lines" ? 0 : 6
+            clip: true; spacing: w.cards ? 8 : w.lk === "lines" ? 0 : (w.rows >= 3 ? 9 : 6)
             boundsBehavior: Flickable.StopAtBounds
             model: w.inEditor ? [] : w.notes
+            // linha discreta no fim: mesma acao do botao +, para o espaco livre parecer proposital
+            footer: Item {
+                width: lv.width; height: w.notes.length > 0 && w.rows >= 2 ? 52 : 0
+                visible: height > 0
+                Rectangle {
+                    anchors { left: parent.left; right: parent.right; top: parent.top; topMargin: 9 }
+                    height: 40; radius: w.cards ? w.rowR : 14
+                    color: fm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.08) : "transparent"
+                    border.width: 1; border.color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, fm.containsMouse ? 0.3 : 0.16)
+                    Row {
+                        anchors.centerIn: parent; spacing: 6
+                        UiIcon { name: "plus"; size: 14; color: w.dim; anchors.verticalCenter: parent.verticalCenter }
+                        UiText { text: "Nova nota"; color: w.dim; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                    }
+                    MouseArea { id: fm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: w.addNote() }
+                }
+            }
             delegate: Item {
                 id: row
                 required property var modelData
                 required property int index
-                width: lv.width; height: w.cards ? 55 : w.lk === "lines" ? 40 : 44
+                width: lv.width; height: w.cards ? 55 : w.lk === "lines" ? 40 : (w.rows >= 3 ? 50 : 44)
                 readonly property color tone: index % 3 === 0 ? w.ac : index % 3 === 1 ? w.ac2 : w.contInk
                 readonly property color ink: w.cards ? w.rowInk(index) : w.fg
                 readonly property var lines: row.modelData.text.split("\n").filter(l => l.trim() !== "")

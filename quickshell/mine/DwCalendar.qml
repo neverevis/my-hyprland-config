@@ -152,7 +152,7 @@ Item {
                 Row {
                     anchors.centerIn: parent
                     spacing: 6 * tr.u
-                    UiText { text: w.today.toLocaleDateString(w.loc, "MMM").replace(".", ""); color: w.accInk; font.pixelSize: Math.round(16 * tr.u); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                    UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "MMM").replace(".", "")); color: w.accInk; font.pixelSize: Math.round(16 * tr.u); font.weight: Font.Bold; font.features: { "tnum": 1 } }
                     UiText { text: w.today.toLocaleDateString(w.loc, "ddd").replace(".", ""); color: Qt.rgba(w.accInk.r, w.accInk.g, w.accInk.b, 0.7); font.pixelSize: Math.round(16 * tr.u); font.features: { "tnum": 1 } }
                 }
             }
@@ -218,7 +218,7 @@ Item {
                 spacing: 2 * sd.u
                 DwParts.Badge { shape: w.badgeShape; icon: "calendar"; bg: w.acc; size: 40 * sd.u }
                 Item { width: 1; height: 8 * sd.u }
-                UiText { text: w.today.toLocaleDateString(w.loc, "MMMM").toUpperCase(); color: w.fg; font.pixelSize: Math.round(14 * sd.u); font.weight: Font.Bold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
+                UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM")); color: w.fg; font.pixelSize: Math.round(14 * sd.u); font.weight: Font.Bold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
                 UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.dim; font.pixelSize: Math.round(17 * sd.u); font.features: { "tnum": 1 } }
                 UiText { text: w.today.getDate(); color: w.acc; font.pixelSize: Math.round(66 * sd.u); font.weight: Font.Bold; lineHeight: 0.9 }
             }
@@ -242,8 +242,8 @@ Item {
                     Row {
                         anchors.centerIn: parent
                         spacing: 6
-                        UiText { text: w.today.toLocaleDateString(w.loc, "MMM").replace(".", "").toUpperCase(); color: Theme.accentText; font.pixelSize: 15; font.weight: Font.Bold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
-                        UiText { text: w.today.toLocaleDateString(w.loc, "ddd").replace(".", "").toUpperCase(); color: Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.7); font.pixelSize: 15; font.weight: Font.DemiBold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
+                        UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "MMM").replace(".", "")); color: Theme.accentText; font.pixelSize: 15; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                        UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "ddd").replace(".", "")); color: Theme.accentText; font.pixelSize: 15; font.weight: Font.DemiBold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
                     }
                 }
                 UiText {
@@ -295,7 +295,7 @@ Item {
                 spacing: 2
                 ShapeIcon { shape: "gem"; icon: "calendar"; size: 46; padding: 11; color: w.ac; iconColor: Theme.accentText }
                 Item { width: 1; height: 6 }
-                UiText { text: w.today.toLocaleDateString(w.loc, "MMMM").toUpperCase(); color: w.dim; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
+                UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM")); color: w.dim; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
                 UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.fg; font.pixelSize: 17; font.weight: Font.Medium; font.features: { "tnum": 1 } }
                 UiText { text: w.today.getDate(); color: w.ac; font.pixelSize: 58; font.weight: Font.Bold; lineHeight: 0.9 }
             }
