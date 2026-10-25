@@ -38,7 +38,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 20
-        color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.97)
+        color: Theme.gl(Theme.bg, 1)
         border.width: 1; border.color: Theme.border
         // o painel nao deixa o clique cair no fundo (que fecharia a edicao)
         MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }

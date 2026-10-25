@@ -48,7 +48,7 @@ Scope {
                 Behavior on width { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
                 Behavior on height { NumberAnimation { duration: 260; easing.type: Easing.OutCubic } }
                 clip: true
-                color: Theme.bg
+                color: Theme.gl(Theme.bg, 1)
                 border.width: 1; border.color: Theme.border
                 MouseArea { anchors.fill: parent }   // clique no cartao nao fecha
 

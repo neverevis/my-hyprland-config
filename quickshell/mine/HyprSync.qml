@@ -22,10 +22,10 @@ Singleton {
             + ", brightness = " + (Settings.blurBrightness / 100).toFixed(2)
             + ", vibrancy = " + (Settings.blurVibrancy / 100).toFixed(2) + " }"
     }
-    // blur da moldura e das janelas de vidro do shell (configuracoes e launcher); o launcher tambem sem animacao propria do Hyprland
+    // blur da moldura e das janelas de vidro do shell (configuracoes, launcher, senha do polkit, editor de foto); o launcher tambem sem animacao propria do Hyprland
     function ruleLine(): string {
         const tail = ", blur = " + Settings.shellBlur + ", ignore_alpha = " + (Settings.shellIgnoreAlpha / 100).toFixed(2) + " })"
-        return ["mine-frame", "mine-settings", "mine-launcher", "mine-launcher-docked"].map(n => 'hl.layer_rule({ match = { namespace = "' + n + '" }' + tail).join("\n")
+        return ["mine-frame", "mine-settings", "mine-launcher", "mine-launcher-docked", "mine-polkit", "mine-photo"].map(n => 'hl.layer_rule({ match = { namespace = "' + n + '" }' + tail).join("\n")
             + '\nhl.layer_rule({ match = { namespace = "mine-launcher-docked" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-notifications" }, no_anim = true })'
             + '\nhl.layer_rule({ match = { namespace = "mine-settings" }, no_anim = true })'

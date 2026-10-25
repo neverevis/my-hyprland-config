@@ -129,7 +129,17 @@ Singleton {
         if (!l.length) return ""
         return 'hl.on("hyprland.start", function()\n' + l.map(c => '    hl.exec_cmd(' + luaVal(c.trim()) + ')').join("\n") + '\nend)'
     }
-    function lua() { return [configLua(), monitorLua(), autostartLua()].filter(x => x).join("\n") }
+    // opacidade das janelas: muitas configs (a do end4, a sua) tem uma regra "opacity = X override" para todas as janelas,
+    // que ignora decoration:active_opacity. Por isso o valor escolhido vira uma regra tambem, carregada depois das suas.
+    // As janelas do proprio shell ficam fora: elas seguem o Vidro (Aparencia), nao a opacidade dos apps.
+    function opacityLua() {
+        const ka = "decoration:active_opacity", ki = "decoration:inactive_opacity"
+        const shell = 'hl.window_rule({ match = { class = "org.quickshell" }, opacity = "1 override 1 override" })'
+        if (cfg[ka] === undefined && cfg[ki] === undefined) return shell
+        const a = cfg[ka] ?? cur[ka] ?? 1, i = cfg[ki] ?? a
+        return 'hl.window_rule({ match = { fullscreen = false }, opacity = "' + luaVal(a) + ' override ' + luaVal(i) + ' override" })\n' + shell
+    }
+    function lua() { return [configLua(), opacityLua(), monitorLua(), autostartLua()].filter(x => x).join("\n") }
 
     // ---- leitura dos valores atuais ----
     readonly property string script: Qt.resolvedUrl("scripts/hyprget.py").toString().replace("file://", "")

@@ -31,7 +31,7 @@ Item {
         width: Math.min(700, g.width - 60)
         height: Math.min(g.height - 80, 124 + g.maxRows * 198 + 14)
         radius: 22
-        color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.98)
+        color: Theme.gl(Theme.bg, 1)   // segue o Vidro (Aparencia); o blur vem da regra da camada mine-desktop
         border.width: 1; border.color: Theme.border
         opacity: g.k
         scale: 0.97 + 0.03 * g.k

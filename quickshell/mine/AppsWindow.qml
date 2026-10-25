@@ -17,7 +17,7 @@ Scope {
             implicitWidth: 1000
             implicitHeight: 700
             minimumSize: Qt.size(760, 520)
-            color: Theme.bg
+            color: "transparent"   // fundo desenhado no corpo: segue o Vidro (Aparencia), como as Configuracoes
             onClosed: Apps.windowOpen = false
             Component.onCompleted: { Apps.use(); Apps.loadStartup() }
             Component.onDestruction: Apps.release()
@@ -71,7 +71,7 @@ Scope {
     Component {
         id: bodyC
         Rectangle {
-            color: "transparent"
+            color: Theme.gl(Theme.bg, 1)
             // fechar (mesmo botao das Configuracoes); Esc tambem fecha
             focus: true
             Keys.onEscapePressed: Apps.windowOpen = false
@@ -81,7 +81,7 @@ Scope {
             Rectangle {
                 id: rail
                 width: 200; height: parent.height
-                color: Theme.sidebar
+                color: Theme.gl(Theme.sidebar, 1)
                 Column {
                     x: SetK.md; y: SetK.lg; width: parent.width - SetK.md * 2; spacing: 4
                     UiText { x: SetK.sm; text: "Aplicativos"; color: Theme.text; font.family: Theme.fontTitle; font.pixelSize: 20; font.weight: Font.Bold; bottomPadding: SetK.md }

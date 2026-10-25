@@ -277,7 +277,7 @@ Scope {
                 width: w0
                 height: mcol.implicitHeight + 12
                 radius: 14
-                color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.98)
+                color: Theme.gl(Theme.bg, 1)
                 border.width: 1; border.color: Theme.border
                 scale: 0.94 + 0.06 * k; opacity: k
                 property real k: 0
@@ -341,7 +341,7 @@ Scope {
                     height: scol.implicitHeight + 24
                     y: Math.max(8, Math.min(main.y, win.height - height - 8))
                     radius: 14
-                    color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.98)
+                    color: Theme.gl(Theme.bg, 1)
                     border.width: 1; border.color: Theme.border
                     scale: 0.94 + 0.06 * k; opacity: k
                     property real k: 0

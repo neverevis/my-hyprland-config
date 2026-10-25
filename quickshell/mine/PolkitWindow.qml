@@ -58,7 +58,7 @@ LazyLoader {
                 anchors.centerIn: parent
                 width: 440; height: col.implicitHeight + 48
                 radius: 26
-                color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.97)
+                color: Theme.gl(Theme.bg, 1)
                 border.width: 1; border.color: Theme.border
                 scale: 0.94 + 0.06 * win.k; opacity: win.k
                 property real shake: 0
