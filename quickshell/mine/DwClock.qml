@@ -17,6 +17,7 @@ Item {
     property color cont: Theme.primaryContainer   // versao suave do tom (a flor)
     property color contInk: Theme.primaryContainerInk
     property bool bare: false
+    property var comp: ({})                       // composicao vinda do cartao (destaque, raio, caixas internas)
     property real posX: 0.5                       // posicao na tela (0 = esquerda, 1 = direita): alinhamento "pelo lugar"
     function o(k) { return DeskState.opt({ type: "clock", opts: w.opts }, k) }
     readonly property bool ownBackground: style === "analog"   // a flor ja e o fundo (o DeskView nao poe sombra)
@@ -43,6 +44,9 @@ Item {
     readonly property string greet: { const h = clk.date.getHours(); return h < 5 ? "Boa noite" : h < 12 ? "Bom dia" : h < 18 ? "Boa tarde" : "Boa noite" }
 
     readonly property real bodyH: height - quoteH
+    // composicao "end4" liga as tres cores e o corpo cheio da flor; as opcoes soltas valem sozinhas no "atual"
+    readonly property bool e4: o("look") === "end4"
+    readonly property bool trio: e4 || o("colorTrio")
     property bool locked: false            // o DeskView avisa quando este relogio esta na tela de bloqueio
     // linha de status: so na tela de bloqueio
     Row {
@@ -86,8 +90,8 @@ Item {
                 anchors.right: dig.al === Text.AlignRight ? parent.right : undefined
                 spacing: 0
                 Repeater {
-                    model: dig.line1.split("")
-                    delegate: Roll { required property var modelData; ch: modelData; size: dig.fs }
+                    model: dig.line1.length   // modelo estavel: com o texto como modelo o Repeater recriava todos os digitos a cada segundo
+                    delegate: Roll { required property int index; ch: dig.line1.charAt(index); size: dig.fs; still: dig.showSecs && index >= dig.line1.length - 2 }   // segundos sem rolar: rolar a cada segundo redesenhava a area de trabalho inteira ~25x/s
                 }
                 UiText { visible: w.h12; text: " " + w.ampm; color: w.dim; font.family: w.fontFam; font.pixelSize: dig.fs * 0.3; font.weight: Font.DemiBold; anchors.baseline: parent.bottom; anchors.baselineOffset: -dig.fs * 0.18 }
             }
@@ -95,7 +99,7 @@ Item {
                 visible: dig.vert
                 anchors.horizontalCenter: dig.al === Text.AlignHCenter ? parent.horizontalCenter : undefined
                 anchors.right: dig.al === Text.AlignRight ? parent.right : undefined
-                Repeater { model: w.mm.split(""); delegate: Roll { required property var modelData; ch: modelData; size: dig.fs; tint: w.ac } }
+                Repeater { model: 2; delegate: Roll { required property int index; ch: w.mm.charAt(index); size: dig.fs; tint: w.ac } }
             }
             UiText {
                 visible: dig.dateH > 0
@@ -112,6 +116,7 @@ Item {
     component Roll: Item {
         id: rl
         property string ch: "0"
+        property bool still: false
         property real size: 40
         property color tint: w.fg
         property string fam: w.fontFam
@@ -120,7 +125,7 @@ Item {
         property real k: 1
         width: Math.max(cur.implicitWidth, old.implicitWidth); height: cur.implicitHeight * 0.92
         clip: true
-        onChChanged: { if (w.o("animate") && w.style !== "pixel") { prev = old.text; k = 0; rollA.restart() } else old.text = ch }
+        onChChanged: { if (w.o("animate") && w.style !== "pixel" && !still) { prev = old.text; k = 0; rollA.restart() } else old.text = ch }
         NumberAnimation { id: rollA; target: rl; property: "k"; from: 0; to: 1; duration: 420; easing.type: Easing.OutCubic; onFinished: old.text = rl.ch }
         UiText { id: old; text: rl.ch; y: -rl.k * rl.height * 0.9; opacity: 1 - rl.k; color: rl.tint; font.family: rl.fam; font.pixelSize: rl.size; font.weight: rl.wt; font.features: { "tnum": 1 }; font.variableAxes: w.axes; visible: rl.k < 1 }
         UiText { id: cur; text: rl.ch; y: (1 - rl.k) * rl.height * 0.9; opacity: rl.k; color: rl.tint; font.family: rl.fam; font.pixelSize: rl.size; font.weight: rl.wt; font.features: { "tnum": 1 }; font.variableAxes: w.axes }
@@ -133,8 +138,11 @@ Item {
         width: parent.width; height: w.bodyH
         readonly property real d: Math.min(width, height) * Math.min(1, 0.9 * w.sc + 0.1)
         // como no relogio do end4: a flor no tom suave, marcas no texto sobre ele, horas no destaque, minutos na companheira
-        readonly property color body: w.bare ? w.cont : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.14)
-        readonly property color ink: w.bare ? w.contInk : Qt.tint(w.ac, Qt.rgba(1, 1, 1, 0.35))
+        readonly property string fill: { const f = w.o("bodyFill"); return f === "auto" ? (w.trio ? "solid" : "mine") : f }
+        readonly property color body: fill === "solid" ? w.cont : fill === "glass" ? Qt.rgba(w.cont.r, w.cont.g, w.cont.b, 0.5) : fill === "none" ? "transparent" : (w.bare ? w.cont : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.14))
+        // as marcas: no trio o secundario misturado 15 % com o container; a cor de info: destaque misturado 55 % com o container
+        readonly property color ink: w.trio ? Qt.tint(Theme.secondary, Qt.rgba(w.cont.r, w.cont.g, w.cont.b, 0.15)) : (w.bare ? w.contInk : Qt.tint(w.ac, Qt.rgba(1, 1, 1, 0.35)))
+        readonly property color info: w.trio ? Qt.tint(w.ac, Qt.rgba(w.cont.r, w.cont.g, w.cont.b, 0.55)) : w.ac
         Item {
             id: face
             width: an.d; height: an.d
@@ -143,6 +151,7 @@ Item {
                 anchors.fill: parent
                 sides: w.o("sides")
                 color: an.body
+                border: an.fill === "none" ? an.ink : "transparent"; borderWidth: an.fill === "none" ? 2.5 : 0
                 RotationAnimation on spin { running: w.o("rotate") && an.visible; from: 0; to: 360; duration: 40000; loops: Animation.Infinite }
             }
             // mostrador
@@ -150,7 +159,8 @@ Item {
                 id: dial
                 anchors.fill: parent
                 readonly property string mode: w.o("dial")
-                readonly property var deps: [mode, an.ink, w.fg, width]
+                readonly property int nowH: w.o("markNow") ? clk.date.getHours() % 12 : -1
+                readonly property var deps: [mode, an.ink, w.fg, width, nowH, w.ac]
                 onDepsChanged: requestPaint()
                 onPaint: {
                     const c = getContext("2d"); c.reset()
@@ -159,13 +169,14 @@ Item {
                     for (let i = 0; i < 60; i++) {
                         const a = i / 60 * Math.PI * 2, hour = i % 5 === 0, big = i % 15 === 0
                         const sx = Math.sin(a), cy = -Math.cos(a)
+                        const now = hour && i / 5 === nowH
                         if (mode === "dots" && hour) {
-                            c.fillStyle = big ? an.ink : Qt.rgba(an.ink.r, an.ink.g, an.ink.b, 0.6)
-                            c.beginPath(); c.arc(r + sx * R, r + cy * R, big ? r * 0.045 : r * 0.03, 0, Math.PI * 2); c.fill()
+                            c.fillStyle = now ? w.ac : big ? an.ink : Qt.rgba(an.ink.r, an.ink.g, an.ink.b, 0.6)
+                            c.beginPath(); c.arc(r + sx * R, r + cy * R, now ? r * 0.06 : big ? r * 0.045 : r * 0.03, 0, Math.PI * 2); c.fill()
                         } else if (mode === "lines" || mode === "full") {
                             if (mode === "full" && hour) continue
-                            c.strokeStyle = Qt.rgba(an.ink.r, an.ink.g, an.ink.b, hour ? 0.9 : 0.35)
-                            c.lineWidth = hour ? r * 0.035 : r * 0.015; c.lineCap = "round"
+                            c.strokeStyle = now ? w.ac : Qt.rgba(an.ink.r, an.ink.g, an.ink.b, hour ? 0.9 : 0.35)
+                            c.lineWidth = now ? r * 0.055 : hour ? r * 0.035 : r * 0.015; c.lineCap = "round"
                             const r0 = hour ? R - r * 0.1 : R - r * 0.04
                             c.beginPath(); c.moveTo(r + sx * r0, r + cy * r0); c.lineTo(r + sx * R, r + cy * R); c.stroke()
                         }
@@ -192,7 +203,7 @@ Item {
                 anchors.centerIn: parent
                 Rectangle {
                     anchors.fill: parent; radius: width / 2
-                    color: an.ink
+                    color: w.trio ? an.info : an.ink
                     Repeater {
                         model: 12
                         Item {
@@ -222,14 +233,14 @@ Item {
                 readonly property real fs: face.width * (marks.on ? 0.15 : 0.25)
                 readonly property color col: marks.on ? an.body : an.ink
                 Repeater {
-                    model: [w.hh, w.mm]
+                    model: 2
                     delegate: Row {
-                        required property var modelData
                         required property int index
+                        readonly property string modelData: index === 0 ? w.hh : w.mm
                         anchors.horizontalCenter: parent.horizontalCenter
                         Repeater {
-                            model: modelData.split("")
-                            delegate: Roll { required property var modelData; ch: modelData; size: mid.fs; tint: mid.col; fam: w.o("font") || Theme.font; wt: Font.Black }
+                            model: modelData.length
+                            delegate: Roll { required property int index; ch: parent.modelData.charAt(index); size: mid.fs; tint: mid.col; fam: w.o("font") || Theme.font; wt: Font.Black }
                         }
                     }
                 }
@@ -244,7 +255,7 @@ Item {
                 width: ds === "rect" ? face.width * 0.13 : dtx.implicitWidth + face.width * 0.06
                 height: ds === "rect" ? face.width * 0.2 : face.width * 0.13
                 radius: height * 0.3
-                color: ds === "rect" ? w.ac : Qt.rgba(w.ac.r, w.ac.g, w.ac.b, 0.28)
+                color: ds === "rect" ? an.info : Qt.rgba(an.info.r, an.info.g, an.info.b, 0.28)
                 UiText {
                     id: dtx
                     anchors.centerIn: parent
@@ -313,9 +324,9 @@ Item {
                 property bool tail: false
                 onTargetChanged: { unw += ((target - unw) % 360 + 540) % 360 - 180; angle = unw }
                 Component.onCompleted: { unw = target; angle = target; ready = true }
-                Behavior on angle { enabled: hd.ready; NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1] } }
-                Behavior on thick { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
-                Behavior on col { ColorAnimation { duration: 250 } }
+                Behavior on angle { enabled: hd.ready && an.visible; NumberAnimation { duration: 300; easing.type: Easing.BezierSpline; easing.bezierCurve: [0.05, 0.7, 0.1, 1, 1, 1] } }
+                Behavior on thick { enabled: an.visible; NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+                Behavior on col { enabled: an.visible; ColorAnimation { duration: 250 } }
                 width: thick; height: face.width / 2 * len + (tail ? face.width * 0.08 : 0)
                 x: face.width / 2 - width / 2; y: face.width / 2 - face.width / 2 * len
                 transformOrigin: Item.Top
@@ -503,7 +514,7 @@ Item {
                                     required property var modelData
                                     width: px.ps * 0.82; height: width; radius: width * 0.3
                                     color: modelData === "1" ? (lineRow.index === 1 ? w.ac : w.fg) : Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07)
-                                    Behavior on color { enabled: w.o("animate"); ColorAnimation { duration: 260 } }
+                                    Behavior on color { enabled: w.o("animate") && w.style === "pixel"; ColorAnimation { duration: 260 } }
                                 }
                             }
                         }
@@ -515,7 +526,7 @@ Item {
 
     // ================= frase =================
     // digital: texto solto; flor e pixel: pilula com aspas (como o chip do end4)
-    readonly property bool quoteChip: style === "analog" || style === "pixel"
+    readonly property bool quoteChip: o("quoteLook") === "pill" || o("look") === "end4" && o("quoteLook") === "auto" ? true : o("quoteLook") === "plain" ? false : (style === "analog" || style === "pixel")
     Rectangle {
         visible: w.quote !== "" && w.quoteChip
         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom }

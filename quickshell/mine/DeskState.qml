@@ -40,6 +40,7 @@ Singleton {
     readonly property var catalog: [
         { type: "clock", group: "time", name: "Relógio", icon: "clock", desc: "Digital, flor com ponteiros, diário ou pixel; com frase opcional.",
           sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [3, 2]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"]] },
             { sec: "Estilo", key: "style", label: "Estilo", type: "seg", preview: true, def: "auto", options: [["auto", "Automático", "auto"], ["digital", "Digital", "clockDigital"], ["analog", "Flor", "flowerOutline"], ["daily", "Diário", "calendar"], ["pixel", "Pixel", "grid"]] },
             { sec: "Hora e data", key: "seconds", label: "Segundos", icon: "timer", type: "switch", def: true },
             { sec: "Hora e data", key: "date", label: "Mostrar a data", icon: "calendar", type: "switch", def: true },
@@ -57,6 +58,9 @@ Singleton {
             { sec: "Flor", key: "centerTime", label: "Horas no meio", icon: "numeric", desc: "Os números da hora no centro da flor, rolando ao trocar.", type: "switch", def: false, when: { style: "analog" } },
             { sec: "Flor", key: "hourMarks", label: "Disco com marcas das horas", icon: "dotsCircle", desc: "Um disco no meio com as 12 marcas.", type: "switch", def: false, when: { style: "analog" } },
             { sec: "Flor", key: "dateStyle", label: "Data no mostrador", type: "seg", preview: true, def: "bubble", options: [["bubble", "Bolha"], ["border", "Borda"], ["rect", "Etiqueta"], ["hide", "Sem"]], when: { style: "analog" } },
+            { sec: "Flor", key: "bodyFill", label: "Corpo da flor", type: "seg", def: "auto", options: [["auto", "Automático", "auto"], ["solid", "Cheio", "circleOutline"], ["glass", "Vidro", "glass"], ["none", "Só o contorno", "circleOutline"]], when: { style: "analog" } },
+            { sec: "Flor", key: "colorTrio", label: "Três cores (container, destaque, terciária)", icon: "palette", desc: "Corpo no container, marcas no secundário e ponteiros em duas cores, como no end4.", type: "switch", def: false, when: { style: "analog" } },
+            { sec: "Flor", key: "markNow", label: "Destacar a hora de agora no mostrador", icon: "clockOutline", type: "switch", def: false, when: { style: "analog", dial: ["dots", "lines"] } },
             { sec: "Flor", key: "rotate", label: "Flor girando devagar", icon: "rotate", type: "switch", def: false, when: { style: "analog" } },
             { sec: "Ponteiros", key: "hourHand", label: "Horas", type: "seg", preview: true, def: "fill", options: [["classic", "Clássico"], ["fill", "Cheio"], ["hollow", "Vazado"], ["hide", "Sem"]], when: { style: "analog" } },
             { sec: "Ponteiros", key: "minuteHand", label: "Minutos", type: "seg", preview: true, def: "medium", options: [["classic", "Clássico"], ["thin", "Fino"], ["medium", "Médio"], ["bold", "Grosso"], ["hide", "Sem"]], when: { style: "analog" } },
@@ -65,6 +69,7 @@ Singleton {
             { sec: "Pixel", key: "orientation", label: "Orientação", icon: "swap_vertical", type: "seg", def: "auto", options: [["auto", "Automática", "auto"], ["vertical", "Vertical", "swap_vertical"], ["horizontal", "Horizontal", "swap_horizontal"]], when: { style: "pixel" } },
             { sec: "Pixel", key: "pixelSize", label: "Tamanho do pixel", icon: "grid", type: "slider", from: 3, to: 14, step: 1, suffix: " px", def: 7, when: { style: "pixel" } },
             { sec: "Frase", key: "quote", label: "Frase embaixo", icon: "quoteClose", type: "text", def: "" },
+            { sec: "Frase", key: "quoteLook", label: "Visual da frase", type: "seg", def: "auto", options: [["auto", "Automático", "auto"], ["plain", "Texto solto", "text"], ["pill", "Pílula", "quoteClose"]] },
             { sec: "Frase", key: "quoteFont", label: "Frase na fonte do relógio", icon: "font", type: "switch", def: true },
             { sec: "Tela de bloqueio", key: "lockStyle", label: "Estilo na tela de bloqueio", type: "seg", preview: true, previewAs: "style", def: "same", options: [["same", "O mesmo", "check"], ["digital", "Digital", "clockDigital"], ["analog", "Flor", "flowerOutline"], ["daily", "Diário", "calendar"], ["pixel", "Pixel", "grid"]], when: { lock: true } }
           ] },
@@ -75,8 +80,14 @@ Singleton {
           ] },
         { type: "world", group: "time", name: "Relógio mundial", icon: "web", desc: "Várias cidades ao mesmo tempo.", sizes: [[2, 1], [2, 2], [3, 1], [1, 2]], options: [
             { sec: "Cidades", key: "zones", label: "Fusos (um por linha: Região/Cidade; ou use a engrenagem do widget)", type: "list", def: ["America/Sao_Paulo", "Europe/London", "Asia/Tokyo", "America/New_York"] },
+            { sec: "Visual", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["tiles", "Um cartão por cidade", "dashboard"]] },
             { sec: "Visual", key: "faces", label: "Mostrar como", type: "seg", preview: true, def: "digital", options: [["digital", "Digital", "clockDigital"], ["analog", "Ponteiros", "clockOutline"]] },
             { sec: "Visual", key: "hours", label: "Horas", type: "seg", def: "auto", options: [["auto", "Do shell", "auto"], ["24", "24 h", "clockOutline"], ["12", "12 h (AM/PM)", "clockOutline"]] },
+            { sec: "Visual", key: "dayRole", label: "Cor do dia", type: "role", def: "auto", roles: ["auto", "primary", "secondary", "tertiary", "primaryContainer", "secondaryContainer", "tertiaryContainer"] },
+            { sec: "Visual", key: "nightRole", label: "Cor da noite", type: "role", def: "auto", roles: ["auto", "primaryContainer", "secondaryContainer", "tertiaryContainer", "surfaceVariant", "surfaceHigh", "bg", "track"] },
+            { sec: "Visual", key: "showOffset", label: "Mostrar a diferença de fuso (UTC)", icon: "earth", type: "switch", def: true, when: { faces: "digital" } },
+            { sec: "Visual", key: "showSun", label: "Sol e lua no cartão", icon: "wSun", type: "switch", def: true, when: { faces: "digital" } },
+            { sec: "Visual", key: "copyOnClick", label: "Clicar numa cidade copia a hora", icon: "copy", type: "switch", def: false },
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false }
           ] },
         { type: "calendar", group: "time", name: "Calendário", icon: "calendar", desc: "O mês, a semana ou o dia de hoje.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2]], options: [
@@ -88,6 +99,10 @@ Singleton {
             { sec: "Mês", key: "weekNumbers", label: "Número da semana", icon: "numeric", type: "switch", def: false }
           ] },
         { type: "media", group: "media", name: "Mídia", icon: "music", desc: "Capa, música, controles e letra sincronizada.", sizes: [[2, 1], [3, 1], [2, 2], [1, 1], [3, 2], [2, 3]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["flush", "Capa colada na borda", "image"], ["full", "Capa no cartão todo", "fullscreen"], ["label", "Cabeçalho e letra", "view_column"]] },
+            { sec: "Estilo", key: "controlsStyle", label: "Botões", type: "seg", def: "badge", options: [["badge", "Selo no play", "play"], ["pill", "Pílula", "dotsGrid"], ["bare", "Soltos", "dotsGrid"]], when: { look: ["end4", "flush", "full", "label"] } },
+            { sec: "Estilo", key: "progressStyle", label: "Progresso", type: "seg", def: "line", options: [["line", "Linha", "alignVCenter"], ["none", "Sem", "close"]], when: { look: ["end4", "flush", "full", "label"] } },
+            { sec: "Estilo", key: "coverTint", label: "Cores da capa", icon: "palette", desc: "Destaque e botões tirados da cor dominante da capa.", type: "switch", def: false, when: { look: ["end4", "flush", "full", "label"] } },
             { sec: "Conteúdo", key: "onlyActive", label: "Só o player ativo", icon: "play", desc: "Ignora players pausados: sem nada tocando mostra 'Nada tocando'.", type: "switch", def: false },
             { sec: "Conteúdo", key: "controls", label: "Controles", icon: "play", type: "switch", def: true },
             { sec: "Conteúdo", key: "titles", label: "Título e artista", icon: "text", type: "switch", def: true },
@@ -97,12 +112,16 @@ Singleton {
             { sec: "Capa", key: "blurBg", label: "Fundo com a capa desfocada", icon: "blur", type: "switch", def: true }
           ] },
         { type: "visualizer", group: "media", name: "Visualizador", icon: "pulse", desc: "As frequências do som tocando (precisa do cava).", sizes: [[3, 1], [2, 1], [4, 1], [2, 2]], options: [
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"]] },
             { sec: "Estilo", key: "vstyle", label: "Estilo", type: "seg", def: "bars", options: [["bars", "Barras", "equalizer"], ["mirror", "Espelho", "swap_vertical"], ["wave", "Onda", "sineWave"], ["dots", "Pontos", "dotsCircle"], ["ring", "Anel", "circleOutline"], ["aurora", "Aurora", "wave2"]] },
             { sec: "Estilo", key: "colors", label: "Cores", type: "seg", def: "theme", options: [["theme", "Tema", "palette"], ["cover", "Capa da música", "album"], ["mono", "Uma cor", "swatch"]] },
             { sec: "Som", key: "bars", label: "Faixas", icon: "equalizer", type: "slider", from: 8, to: 64, step: 4, def: 32 },
             { sec: "Som", key: "sensitivity", label: "Sensibilidade", icon: "gauge", type: "slider", from: 30, to: 300, step: 10, suffix: " %", def: 100 },
             { sec: "Som", key: "idleHide", label: "Esconder quando nada toca", icon: "eyeOff", type: "switch", def: true },
             { sec: "Detalhes", key: "peaks", label: "Pontas que caem devagar", icon: "equalizer", type: "switch", def: false, when: { vstyle: "bars" } },
+            { sec: "Detalhes", key: "gradient", label: "Degradê das barras", type: "seg", def: "vertical", options: [["vertical", "De baixo para cima", "alignVCenter"], ["intensity", "Pela intensidade", "pulse"], ["flat", "Cor única", "circleOutline"]], when: { vstyle: ["bars", "mirror", "dots"] } },
+            { sec: "Detalhes", key: "capShape", label: "Pontas das barras", type: "seg", def: "round", options: [["round", "Redondas", "circleOutline"], ["square", "Retas", "image"]], when: { vstyle: ["bars", "mirror"] } },
+            { sec: "Detalhes", key: "floor", label: "Reflexo no chão", icon: "wave2", type: "switch", def: false, when: { vstyle: "bars" } },
             { sec: "Detalhes", key: "pulse", label: "Pulsar no grave", icon: "pulse", type: "switch", def: false },
             { sec: "Detalhes", key: "cover", label: "Capa no meio do anel", icon: "album", type: "switch", def: true, when: { vstyle: "ring" } },
             { sec: "Detalhes", key: "bandH", label: "Altura das faixas", icon: "alignVCenter", type: "slider", from: 30, to: 100, step: 5, suffix: " %", def: 100, when: { vstyle: ["bars", "mirror", "wave", "dots", "aurora"] } },
@@ -112,7 +131,11 @@ Singleton {
         { type: "system", group: "system", name: "Sistema", icon: "chip", desc: "CPU, memória, disco, temperatura, GPU e rede.", sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [1, 2], [1, 3]], options: [
             { sec: "Medidas", key: "metrics", label: "O que mostrar", type: "seg", def: "basic", options: [["basic", "CPU, RAM, disco", "chip"], ["hot", "CPU, temperatura, GPU", "thermo"], ["all", "Tudo", "dashboard"]] },
             { sec: "Visual", key: "look", label: "Visual", type: "seg", preview: true, def: "tiles", options: [["tiles", "Cartões", "dashboard"], ["rings", "Anéis", "chartDonut"], ["bars", "Barras", "bars"], ["graph", "Gráfico", "chart"]] },
-            { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false, when: { look: "tiles" } }
+            { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false, when: { look: "tiles" } },
+            { sec: "Visual", key: "tileRoles", label: "Cores dos cartões", type: "seg", def: "trio", options: [["trio", "Três cores", "palette"], ["same", "Todos iguais", "circleOutline"]], when: { look: "tiles" } },
+            { sec: "Visual", key: "badge", label: "Selo do cartão", type: "seg", def: "shape", options: [["shape", "Forma", "shape"], ["ring", "Forma com anel de uso", "circleOutline"], ["none", "Sem", "close"]], when: { look: "tiles" } },
+            { sec: "Visual", key: "warn", label: "Avisar em vermelho acima de 85 %", icon: "bell", type: "switch", def: false, when: { look: "tiles" } },
+            { sec: "Visual", key: "clickOpen", label: "Clicar abre o monitor de tarefas", icon: "chart", type: "switch", def: false }
           ] },
         { type: "user", group: "system", name: "Usuário", icon: "account", desc: "Sua foto, saudação e o computador.", sizes: [[2, 1], [3, 1], [1, 1], [2, 2], [1, 2], [2, 3]], options: [
             { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Coluna (atual)", "auto"], ["end4", "Como o end4", "view_grid"], ["box", "Caixa", "view_grid"], ["hero", "Capa", "image"], ["photo", "Só a foto", "account"], ["strip", "Faixa", "view_column"]] },
@@ -210,7 +233,7 @@ Singleton {
         if (o[key] !== undefined) return o[key]
         // tom: widgets antigos guardavam "fg" (auto | theme | custom)
         if (key === "tone" && o.fg !== undefined) return ({ theme: "primary", custom: "custom" })[o.fg] ?? "global"
-        if (key === "card") return (w && w.type === "system" && (o.look ?? "tiles") === "tiles") ? "none" : (cardDefaults[w ? w.type : ""] ?? "auto")
+        if (key === "card") return (w && w.type === "system" && (o.look ?? "tiles") === "tiles") || (w && w.type === "world" && o.look === "tiles") ? "none" : (cardDefaults[w ? w.type : ""] ?? "auto")
         const d = optionsOf(w ? w.type : "").find(x => x.key === key)
         return d ? d.def : undefined
     }

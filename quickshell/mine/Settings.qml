@@ -923,7 +923,7 @@ Singleton {
             property string wpBlurWhen: "windows"
             property string wpBlurSplit: "100"
             property string wpBlurSide: "left"
-            property bool wpPreview: true
+            property bool wpPreview: false
             property bool wpCenterLocked: false
             property string wpCollageTree: ""
             property bool wpCollageEntrance: true

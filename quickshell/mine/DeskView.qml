@@ -120,8 +120,9 @@ Item {
             z: (Settings.desktopWidgets || []).findIndex(x => x.id === wid) + (moving ? 100 : 0) + (DeskState.selected === wid || DeskState.inSel(wid) ? 50 : 0)
             Behavior on x { enabled: !card.moving && !card.resizing && !card.follower; MotionAnim { use: "desktop" } }
             Behavior on y { enabled: !card.moving && !card.resizing && !card.follower; MotionAnim { use: "desktop" } }
-            Behavior on width { enabled: !card.resizing; MotionAnim { use: "desktop" } }
-            Behavior on height { enabled: !card.resizing; MotionAnim { use: "desktop" } }
+            // troca de tamanho: transicao curta (a mola da animacao "desktop" deixava o redimensionar lento)
+            Behavior on width { enabled: !card.resizing; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+            Behavior on height { enabled: !card.resizing; NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
             property real born: 0
             Component.onCompleted: { wKeep = wNow; born = 1 }
             onDyingChanged: born = dying ? 0 : 1
@@ -447,7 +448,12 @@ Item {
                     }
                     onReleased: {
                         if (!rsz.free) {
-                            if (card.pvC > 0 && (card.pvC !== card.w.cols || card.pvR !== card.w.rows)) DeskState.setSize(card.wid, card.pvC, card.pvR)
+                            if (card.pvC > 0 && (card.pvC !== card.w.cols || card.pvR !== card.w.rows)) {
+                                // canto de cima/esquerda parado (como o contorno): a posicao e fracao da sobra, entao recalcula fx/fy
+                                const a = view.area, nw = DeskState.pxW(card.pvC), nh = DeskState.pxH(card.pvR)
+                                const nx = Math.max(a.x, Math.min(x0, a.x + a.width - nw)), ny = Math.max(a.y, Math.min(y0, a.y + a.height - nh))
+                                DeskState.setGeom(card.wid, card.pvC, card.pvR, Math.max(0, Math.min(1, (nx - a.x) / Math.max(1, a.width - nw))), Math.max(0, Math.min(1, (ny - a.y) / Math.max(1, a.height - nh))))
+                            }
                             card.pvC = 0; card.pvR = 0
                             return
                         }

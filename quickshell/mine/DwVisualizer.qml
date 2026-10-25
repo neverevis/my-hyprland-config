@@ -16,6 +16,7 @@ Item {
     property color cont: Theme.primaryContainer
     property color contInk: Theme.primaryContainerInk
     property bool bare: false
+    property var comp: ({})                       // composicao vinda do cartao (destaque fixo)
     function o(k) { return DeskState.opt({ type: "visualizer", opts: w.opts }, k) }
     // cava so roda com o widget visivel e algo tocando (ou editando, para ver o preview)
     readonly property bool wantCava: w.visible && (w.player !== null || DeskState.editing)
@@ -25,7 +26,9 @@ Item {
     Component.onDestruction: if (usingCava) { usingCava = false; Cava.release() }
     function syncCava() { if (wantCava && !usingCava) { usingCava = true; Cava.use() } else if (!wantCava && usingCava) { usingCava = false; Cava.release() } }
 
-    readonly property int n: o("bars")
+    // composicao "end4": uma barra de 4 px a cada 12 px, cor entre o container e o destaque pela intensidade, altura maxima 240
+    readonly property bool e4: o("look") === "end4"
+    readonly property int n: e4 ? Math.max(8, Math.min(128, Math.floor(width / 12))) : o("bars")
     readonly property real gain: o("sensitivity") / 100
     // reamostra as 64 faixas para n
     readonly property var vals: {
@@ -38,9 +41,10 @@ Item {
     property color coverCol: w.ac
     property color coverCol2: w.ac2
     property color coverCol3: w.ac
-    readonly property color c1: o("colors") === "mono" ? w.fg : o("colors") === "cover" ? coverCol : w.ac
-    readonly property color c2: o("colors") === "mono" ? w.fg : o("colors") === "cover" ? coverCol2 : w.ac2
-    readonly property color c3: o("colors") === "mono" ? w.fg : o("colors") === "cover" ? coverCol3 : Qt.tint(w.ac, Qt.rgba(w.ac2.r, w.ac2.g, w.ac2.b, 0.5))
+    readonly property bool oneAcc: !!comp.accentRole && comp.accentRole !== "auto" && comp.accentRole !== "mix"
+    readonly property color c1: o("colors") === "mono" ? w.fg : o("colors") === "cover" ? coverCol : oneAcc ? comp.accent : w.ac
+    readonly property color c2: o("colors") === "mono" ? w.fg : o("colors") === "cover" ? coverCol2 : oneAcc ? comp.accent : w.ac2
+    readonly property color c3: o("colors") === "mono" ? w.fg : o("colors") === "cover" ? coverCol3 : oneAcc ? comp.accent : Qt.tint(w.ac, Qt.rgba(w.ac2.r, w.ac2.g, w.ac2.b, 0.5))
     // pontas que caem (peaks) e pulso do grave
     property var peaks: []
     property real bass: 0
@@ -102,25 +106,36 @@ Item {
     Canvas {
         id: cv
         visible: Cava.available && w.opacity > 0.01
-        readonly property string st: w.o("vstyle")
+        readonly property string st: w.e4 ? "bars" : w.o("vstyle")
+        readonly property string gr: w.e4 ? "intensity" : w.o("gradient")
+        readonly property bool sq: w.o("capShape") === "square"
+        readonly property bool refl: w.o("floor") && st === "bars"
         anchors.bottom: parent.bottom; anchors.left: parent.left; anchors.right: parent.right
-        height: st !== "ring" ? parent.height * w.bandK : parent.height
+        height: st !== "ring" ? (w.e4 ? Math.min(240, parent.height) : parent.height * w.bandK) : parent.height
         Connections { target: Cava; function onValuesChanged() { cv.requestPaint() } }
         onPaint: {
             const c = getContext("2d"); c.reset()
             const v = w.vals, n = v.length, W = width, H = height
             const grad = c.createLinearGradient(0, H, 0, 0)
             grad.addColorStop(0, w.c1); grad.addColorStop(st === "ring" ? 0.5 : 1, w.c2); if (st === "ring") grad.addColorStop(1, w.c3)
-            c.fillStyle = grad; c.strokeStyle = grad
+            const flat = gr === "flat" && (st === "bars" || st === "mirror" || st === "dots")
+            const lo = w.o("colors") === "theme" ? w.cont : Qt.tint(w.c1, Qt.rgba(0, 0, 0, 0.5))
+            c.fillStyle = flat ? w.c1 : grad; c.strokeStyle = grad
             if (st === "bars" || st === "mirror") {
-                const bw = W / n
+                const bw = W / n, base = refl ? H * 0.82 : H
                 for (let i = 0; i < n; i++) {
-                    const h = Math.max(2, v[i] * (st === "mirror" ? H / 2 : H) * (w.o("pulse") ? 1 + 0.12 * w.bass : 1))
-                    const x = i * bw + bw * 0.15, ww = bw * 0.7, r = Math.min(ww / 2, 6)
-                    const y = st === "mirror" ? H / 2 - h : H - h, hh = st === "mirror" ? h * 2 : h
+                    const h = Math.max(2, v[i] * (st === "mirror" ? H / 2 : base) * (w.o("pulse") ? 1 + 0.12 * w.bass : 1))
+                    const ww = w.e4 ? Math.min(4, bw) : bw * 0.7, x = i * bw + (bw - ww) / 2, r = sq ? 1 : Math.min(ww / 2, 6)
+                    const y = st === "mirror" ? H / 2 - h : base - h, hh = st === "mirror" ? h * 2 : h
+                    if (gr === "intensity") c.fillStyle = Qt.tint(lo, Qt.rgba(w.c1.r, w.c1.g, w.c1.b, Math.min(1, v[i] * 1.2)))
                     c.beginPath(); c.roundedRect(x, y, ww, hh, r, r); c.fill()
+                    if (refl) {
+                        // reflexo no chao: a barra de novo, de ponta-cabeca, curta e fraca
+                        const rh = Math.min(h * 0.35, H - base - 2)
+                        if (rh > 1) { c.globalAlpha = 0.16; c.beginPath(); c.roundedRect(x, base + 2, ww, rh, r, r); c.fill(); c.globalAlpha = 1 }
+                    }
                     if (w.o("peaks") && st === "bars" && w.peaks[i] !== undefined) {
-                        const py = H - Math.max(2, w.peaks[i] * H) - 5
+                        const py = base - Math.max(2, w.peaks[i] * base) - 5
                         c.beginPath(); c.roundedRect(x, Math.max(0, py), ww, 3, 1.5, 1.5); c.fill()
                     }
                 }
@@ -134,6 +149,7 @@ Item {
                 const bw = W / n, rows = Math.max(4, Math.floor(H / (bw * 0.9)))
                 for (let i = 0; i < n; i++) for (let j = 0; j < rows; j++) {
                     if (j / rows > v[i]) break
+                    if (gr === "intensity") c.fillStyle = Qt.tint(lo, Qt.rgba(w.c1.r, w.c1.g, w.c1.b, j / rows * 1.2))
                     c.beginPath(); c.arc(i * bw + bw / 2, H - j * (H / rows) - bw / 2, bw * 0.32, 0, Math.PI * 2); c.fill()
                 }
             } else if (st === "aurora") {

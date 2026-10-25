@@ -3,6 +3,7 @@
 import Quickshell
 import Quickshell.Services.UPower
 import QtQuick
+import "dwparts.js" as U
 
 Item {
     id: w
@@ -17,19 +18,23 @@ Item {
     property color contInk: Theme.primaryContainerInk
     property bool bare: false
     property string wid: ""
+    property var comp: ({})                       // composicao vinda do cartao (caixas internas, selos, destaque)
     function o(k) { return DeskState.opt({ type: "system", opts: w.opts }, k) }
     Component.onCompleted: SysInfo.use()
     Component.onDestruction: SysInfo.release()
 
-    readonly property color c2: w.ac2
-    readonly property color c3: Qt.tint(w.ac, Qt.rgba(w.ac2.r, w.ac2.g, w.ac2.b, 0.5))
+    // destaque fixo (primary/secondary/tertiary): todas as medidas na mesma cor; auto/mix: as tres cores de sempre
+    readonly property bool oneAcc: !!comp.accentRole && comp.accentRole !== "auto" && comp.accentRole !== "mix"
+    readonly property color c2: oneAcc ? comp.accent : w.ac2
+    readonly property color c1: oneAcc ? comp.accent : w.ac
+    readonly property color c3: oneAcc ? comp.accent : Qt.tint(w.ac, Qt.rgba(w.ac2.r, w.ac2.g, w.ac2.b, 0.5))
     readonly property var all: ({
-        cpu: { label: "CPU", icon: "chip", v: SysInfo.cpu, t: Math.round(SysInfo.cpu * 100) + "%", h: SysInfo.hist.cpu, col: w.ac },
+        cpu: { label: "CPU", icon: "chip", v: SysInfo.cpu, t: Math.round(SysInfo.cpu * 100) + "%", h: SysInfo.hist.cpu, col: w.c1 },
         mem: { label: "RAM", icon: "memory", v: SysInfo.mem, t: Math.round(SysInfo.mem * 100) + "%", h: SysInfo.hist.mem, col: w.c2 },
         disk: { label: "Disco", icon: "disk", v: SysInfo.disk, t: Math.round(SysInfo.disk * 100) + "%", h: [], col: w.c3 },
         temp: { label: "Temp.", icon: "temperature", v: SysInfo.temp !== null ? Math.min(1, SysInfo.temp / 100) : 0, t: SysInfo.temp !== null ? SysInfo.temp + "°" : "--", h: [], col: SysInfo.temp > 80 ? Theme.danger : w.c3 },
         gpu: { label: "GPU", icon: "gpuCard", v: SysInfo.gpu, t: SysInfo.d.gpu ? Math.round(SysInfo.gpu * 100) + "%" : "--", h: SysInfo.hist.gpu, col: w.c2 },
-        net: { label: "Rede", icon: "network", v: Math.min(1, (SysInfo.d.rx ?? 0) / 5e6), t: "↓" + SysInfo.bytes(SysInfo.d.rx ?? 0) + "/s", h: SysInfo.hist.rx.map(x => Math.min(1, x / 5e6)), col: w.ac }
+        net: { label: "Rede", icon: "network", v: Math.min(1, (SysInfo.d.rx ?? 0) / 5e6), t: "↓" + SysInfo.bytes(SysInfo.d.rx ?? 0) + "/s", h: SysInfo.hist.rx.map(x => Math.min(1, x / 5e6)), col: w.c1 }
     })
     // bateria (so notebooks): nos tiles ela troca o disco
     readonly property var bat: UPower.displayDevice
@@ -40,13 +45,21 @@ Item {
         bat: { pal: 2, shape: "cookie12" }, temp: { pal: 2, shape: "sunny" }, gpu: { pal: 1, shape: "bun" }, net: { pal: 0, shape: "clover4" }
     })
     readonly property var tilePal: [[w.cont, w.contInk], [Theme.secondaryContainer, Theme.secondaryContainerInk], [Theme.tertiaryContainer, Theme.tertiaryContainerInk]]
+    readonly property bool sameRoles: o("tileRoles") === "same" || (!!comp.innerRole && comp.innerRole !== "auto")
+    readonly property string sameRole: !!comp.innerRole && comp.innerRole !== "auto" ? comp.innerRole : "primaryContainer"
+    readonly property real tileA: comp.innerAlpha > 0 ? comp.innerAlpha : 1
     readonly property var tileItems: {
         const out = []
+        const fam = U.inkRole(w.sameRole)
         for (const k of w.keys) {
             let id = k, d = w.all[k]
-            if (k === "disk" && hasBat) { id = "bat"; d = { label: "Bateria", icon: "battery", t: Math.round(batV * 100) + "%" } }
+            if (k === "disk" && hasBat) { id = "bat"; d = { label: "Bateria", icon: "battery", t: Math.round(batV * 100) + "%", v: batV } }
             const ti = w.tileInfo[id]
-            out.push({ label: d.label, icon: d.icon, t: d.t, shape: ti.shape, bg: w.tilePal[ti.pal][0], ink: w.tilePal[ti.pal][1] })
+            let bg = w.tilePal[ti.pal][0], ink = w.tilePal[ti.pal][1]
+            if (w.sameRoles) { bg = Theme.role(w.sameRole); ink = Theme.role(fam) }
+            bg = Qt.rgba(bg.r, bg.g, bg.b, w.tileA)
+            const hot = w.o("warn") && d.v > 0.85
+            out.push({ label: d.label, icon: d.icon, t: d.t, v: d.v, hot: hot, shape: !!comp.badgeShape && comp.badgeShape !== "auto" ? comp.badgeShape : ti.shape, bg: bg, ink: ink })
         }
         return (cols === 1 && rows === 1) ? out.slice(0, 1) : out
     }
@@ -66,9 +79,10 @@ Item {
         readonly property real th: w.vert ? (height - (n - 1) * gap) / n : height
         HoverHandler { id: tlHover }
         Repeater {
-            model: w.tileItems
+            model: w.tileItems.length   // modelo estavel: com o array (refeito a cada segundo) o Repeater recriava tudo por segundo
             delegate: Rectangle {
-                required property var modelData
+                id: tile
+                readonly property var modelData: w.tileItems[index] ?? ({})
                 required property int index
                 x: w.vert ? 0 : index * (tl.tw + tl.gap)
                 y: w.vert ? index * (tl.th + tl.gap) : 0
@@ -81,15 +95,40 @@ Item {
                 Behavior on height { NumberAnimation { duration: 350; easing.type: Easing.OutCubic } }
                 readonly property real m: Math.min(width, height)
                 ShapeIcon {
+                    id: bdg
+                    visible: w.o("badge") !== "none"
                     anchors { top: parent.top; right: parent.right; margins: parent.m * 0.1 }
-                    size: Math.max(26, parent.m * 0.4); padding: size * 0.24
+                    size: Math.max(26, parent.m * 0.4) * (w.o("badge") === "ring" ? 0.8 : 1); padding: size * 0.24
                     shape: modelData.shape; icon: modelData.icon
                     color: Qt.rgba(modelData.ink.r, modelData.ink.g, modelData.ink.b, 0.16); iconColor: modelData.ink
+                    // anel de uso em volta do selo (repinta so quando o numero inteiro muda)
+                    Loader {
+                        active: w.o("badge") === "ring"
+                        anchors.centerIn: parent
+                        width: parent.width + 8; height: width
+                        sourceComponent: Canvas {
+                            readonly property int pct: Math.round(tile.modelData.v * 100)
+                            readonly property color ink: tile.modelData.hot ? Theme.role("error") : tile.modelData.ink
+                            onPctChanged: requestPaint()
+                            onInkChanged: requestPaint()
+                            onWidthChanged: requestPaint()
+                            onPaint: {
+                                const c = getContext("2d"); c.reset()
+                                const r = width / 2 - 2
+                                c.lineWidth = 2.5; c.lineCap = "round"
+                                c.strokeStyle = Qt.rgba(ink.r, ink.g, ink.b, 0.22)
+                                c.beginPath(); c.arc(width / 2, height / 2, r, 0, Math.PI * 2); c.stroke()
+                                c.strokeStyle = ink
+                                c.beginPath(); c.arc(width / 2, height / 2, r, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * Math.max(0.01, Math.min(1, pct / 100))); c.stroke()
+                            }
+                        }
+                    }
                 }
+                MouseArea { anchors.fill: parent; enabled: w.o("clickOpen"); cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor; onClicked: AppCmds.run("taskManager") }
                 Column {
                     anchors { left: parent.left; bottom: parent.bottom; margins: parent.m * 0.12 }
                     spacing: 0
-                    UiText { text: modelData.t; color: modelData.ink; font.pixelSize: Math.max(14, parent.parent.m * 0.3); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                    UiText { text: modelData.t; color: modelData.hot ? Theme.role("error") : modelData.ink; font.pixelSize: Math.max(14, parent.parent.m * 0.3); font.weight: Font.Bold; font.features: { "tnum": 1 } }
                     UiText { text: modelData.label; color: modelData.ink; opacity: 0.6; font.pixelSize: Math.max(10, parent.parent.m * 0.13); font.weight: Font.DemiBold }
                 }
             }
@@ -117,9 +156,10 @@ Item {
         spacing: 10
         readonly property real s: Math.min((w.width - (columns - 1) * 10) / columns, (w.height - (nr - 1) * 10) / nr)
         Repeater {
-            model: w.shown
+            model: w.shown.length   // modelo estavel: com o array (refeito a cada segundo) o Repeater recriava tudo por segundo
             delegate: Item {
-                required property var modelData
+                required property int index
+                readonly property var modelData: w.shown[index] ?? ({})
                 width: parent.s; height: parent.s
                 Canvas {
                     anchors.fill: parent
@@ -151,9 +191,10 @@ Item {
         width: parent.width
         spacing: Math.max(6, (w.height - w.shown.length * 30) / Math.max(1, w.shown.length + 1))
         Repeater {
-            model: w.shown
+            model: w.shown.length   // modelo estavel: com o array (refeito a cada segundo) o Repeater recriava tudo por segundo
             delegate: Column {
-                required property var modelData
+                required property int index
+                readonly property var modelData: w.shown[index] ?? ({})
                 width: parent.width
                 spacing: 4
                 Item {
@@ -179,9 +220,10 @@ Item {
         readonly property int nr: Math.ceil(w.shown.length / columns)
         spacing: 8
         Repeater {
-            model: w.shown
+            model: w.shown.length   // modelo estavel: com o array (refeito a cada segundo) o Repeater recriava tudo por segundo
             delegate: Item {
-                required property var modelData
+                required property int index
+                readonly property var modelData: w.shown[index] ?? ({})
                 width: (w.width - (parent.columns - 1) * 8) / parent.columns
                 height: (w.height - (parent.nr - 1) * 8) / parent.nr
                 Row { spacing: 5; z: 2

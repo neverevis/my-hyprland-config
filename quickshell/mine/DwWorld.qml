@@ -5,6 +5,7 @@
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import "dwparts.js" as U
 
 Item {
     id: w
@@ -19,6 +20,7 @@ Item {
     property color contInk: Theme.primaryContainerInk
     property bool bare: false
     property string wid: ""
+    property var comp: ({})                       // composicao vinda do cartao (caixas internas, selos, destaque)
     function o(k) { return DeskState.opt({ type: "world", opts: w.opts }, k) }
 
     readonly property var zones: (o("zones") || []).slice(0, 8)
@@ -48,7 +50,16 @@ Item {
 
     readonly property bool vert: o("vertical") || rows > cols
     readonly property bool analog: o("faces") === "analog"
-    readonly property bool hdr: cols >= 2 && rows >= 2
+    // composicao: auto (a de sempre), end4 (cabecalho + cartoes de dia/noite como no end4) ou tiles (um cartao por cidade)
+    readonly property string lk: o("look")
+    readonly property bool tilesLook: lk === "tiles"
+    readonly property string dayRole: o("dayRole")
+    readonly property string nightRole: o("nightRole")
+    readonly property color dayCol: dayRole !== "auto" ? Theme.role(dayRole) : w.ac
+    readonly property color dayInk: dayRole !== "auto" ? Theme.role(U.inkRole(dayRole)) : Theme.accentText
+    readonly property color nightCol: nightRole !== "auto" ? Theme.role(nightRole) : tilesLook ? w.cont : lk === "end4" ? (w.analog ? w.cont : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.2)) : (w.analog ? w.cont : Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.1))
+    readonly property color nightInk: nightRole !== "auto" ? Theme.role(U.inkRole(nightRole)) : tilesLook ? w.contInk : lk === "end4" ? (w.analog ? w.contInk : w.fg) : (w.analog ? w.contInk : w.fg)
+    readonly property bool hdr: cols >= 2 && rows >= 2 && !tilesLook
     property bool back: false
     property real sx: 1
     function flip() {
@@ -112,7 +123,7 @@ Item {
                 width: parent.width; height: parent.height - y
                 columns: w.vert ? 1 : Math.max(1, Math.min(w.rows_.length, w.rows > 1 ? Math.ceil(w.rows_.length / 2) : w.rows_.length))
                 readonly property int nrows: Math.ceil(w.rows_.length / columns)
-                spacing: 6
+                spacing: w.tilesLook ? 10 : 6
                 Repeater {
                     model: w.rows_
                     delegate: Rectangle {
@@ -121,9 +132,13 @@ Item {
                         height: (parent.height - (parent.nrows - 1) * parent.spacing) / parent.nrows
                         readonly property bool day: modelData.hh >= 6 && modelData.hh < 18
                         readonly property bool narrow: width < 100
-                        radius: Math.min(18, Math.min(width, height) * 0.28)
-                        color: day ? w.ac : (w.analog ? w.cont : Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.1))
-                        readonly property color ink: day ? Theme.accentText : (w.analog ? w.contInk : w.fg)
+                        radius: w.lk === "auto" ? Math.min(18, Math.min(width, height) * 0.28) : Math.min(comp.innerRadius > 0 ? comp.innerRadius : (w.tilesLook ? 30 : 17), Math.min(width, height) * (w.tilesLook ? 0.32 : 0.5))
+                        color: day ? w.dayCol : w.nightCol
+                        readonly property color ink: day ? w.dayInk : w.nightInk
+                        MouseArea {
+                            anchors.fill: parent; enabled: w.o("copyOnClick"); cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                            onClicked: Quickshell.execDetached(["wl-copy", w.fmt(modelData.hh, modelData.mm) + " " + w.utc(modelData.off)])
+                        }
                         // ponteiros (estilo AndroidClock: tile cheio, ponteiros claros, miolo)
                         Item {
                             visible: w.analog
@@ -139,8 +154,8 @@ Item {
                             visible: !w.analog
                             anchors { fill: parent; margins: 8 }
                             UiText { id: cn; text: modelData.city; color: parent.parent.ink; font.pixelSize: parent.parent.narrow ? 10 : 12; font.weight: Font.DemiBold; width: parent.width - 18; elide: Text.ElideRight }
-                            UiIcon { anchors { top: parent.top; right: parent.right } name: parent.parent.day ? "wSun" : "wNight"; size: 12; color: parent.parent.ink }
-                            UiText { anchors.top: cn.bottom; visible: parent.height > 40; text: w.utc(modelData.off); color: parent.parent.ink; opacity: 0.65; font.pixelSize: 10 }
+                            UiIcon { visible: w.o("showSun"); anchors { top: parent.top; right: parent.right } name: parent.parent.day ? "wSun" : "wNight"; size: 12; color: parent.parent.ink }
+                            UiText { anchors.top: cn.bottom; visible: parent.height > 40 && w.o("showOffset"); text: w.utc(modelData.off); color: parent.parent.ink; opacity: 0.65; font.pixelSize: 10 }
                             UiText { anchors { left: parent.left; bottom: parent.bottom } text: w.fmt(modelData.hh, modelData.mm); color: parent.parent.ink; font.weight: Font.Bold; font.features: { "tnum": 1 }
                                 font.pixelSize: Math.max(12, Math.min(parent.height * 0.42, parent.width * (Settings.clock24 ? 0.3 : 0.22))) }
                         }
