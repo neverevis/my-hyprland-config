@@ -62,3 +62,8 @@ Páginas em duas áreas, **Personalização** (Início, Tema e cores, Wallpaper 
 ## Integração por linha de comando
 
 Tudo é controlável por `qs -c mine ipc call <alvo> <função>` (alvos como `settings`, `launcher`, `home`, `wallpaper`, `overview`, `session`, `media`, `region`, `recorder`, `desktop`, `notifications`, `night`, `looks`...). Os atalhos usam isso.
+
+## Aplicativos (janela)
+- `qs -c mine ipc call apps window` alterna a janela; `apps open <apps|pkgs|install|updates>` abre numa aba; também está no launcher ("Aplicativos") e em Configurações > Aplicativos.
+- Pacotes: todos os do pacman, com busca, filtros (explícitos, AUR, órfãos), ordem por nome/tamanho, "Necessário para" e remoção protegida (`pacman -Rs --print` antes; bloqueia o que o shell exige, avisa o que é recurso opcional).
+- Nada roda com a janela fechada; AUR e Flathub só são consultados quando você busca em Instalar.

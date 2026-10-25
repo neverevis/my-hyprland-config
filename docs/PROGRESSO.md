@@ -50,3 +50,4 @@ Páginas de Sistema para dispensar outros painéis:
 - **Sistema (Y1/Y2)**: bloqueio, gravação, seletor de área, menu de sessão, polkit, EQ, teclado na tela.
 - **Painéis (S1/S2/W2)**: áudio, VPN, launcher, overview, seletor de wallpaper, Wallhaven, barra lateral esquerda com IA.
 - **Wallpaper (W1)**: transições com shader, mosaico, desfoque dividido.
+- **Aplicativos (janela própria)**: gerenciador separado das Configurações (apps, todos os pacotes, instalar, atualizações), com proteção dos pacotes que o shell usa (data/shell-deps.json, gerado do install.sh por scripts/gen-shell-deps.py).

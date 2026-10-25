@@ -2,6 +2,11 @@
 # Aplicativos (Configuracoes > Aplicativos): lista os apps instalados e busca o que instalar. So le, nunca instala nada.
 #   apps.py list                  -> JSON {tools, dry, pkgs, apps: [{id, name, icon, path, pkg, src, size, version, desc, flatpak}], pkgs: N}
 #                                    src: pacman | aur | flatpak | local. Um passo so pelo banco do pacman (sem pacman -Qo por app).
+#   apps.py packages              -> JSON {pkgs: [{name, version, desc, size, explicit, foreign, orphan, reqBy: [nomes]}]}  (todos os pacotes, so le o banco local;
+#                                    orfao = dependencia que nada usa, como pacman -Qdtq)
+#                                    shell: {level, why} quando o pacote e do data/shell-deps.json (gerado do install.sh)
+#   apps.py rmcheck <pacotes>     -> JSON {remove: [...], required: [{pkg, why}], optional: [{pkg, why}], err}  (pacman -Rs --print (mesmo conjunto do -Rns), sem root; nao remove nada)
+#   apps.py updates               -> JSON {repo: [{name, old, new}], aur: [{name, old, new}], tool: bool, helper}  (checkupdates e yay/paru -Qua)
 #   apps.py search-repo <texto>   -> JSON [{pkg, repo, version, desc, installed}]  (pacman -Ss, ate 30)
 #   apps.py search-aur <texto>    -> JSON [{pkg, version, desc, installed, votes}]  (AUR RPC v5, ate 30)
 #   apps.py search-flatpak <texto>-> JSON [{pkg(id), name, version, desc, installed}]  (se o flatpak existir)
@@ -21,7 +26,7 @@ def out(o):
 
 def run(cmd, t=20):
     try:
-        return subprocess.run(cmd, capture_output=True, text=True, timeout=t).stdout
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=t, env=dict(os.environ, LC_ALL="C")).stdout
     except Exception:
         return ""
 
@@ -95,6 +100,7 @@ def flatpak_list():
 def cmd_list():
     owner, info, npk = pkgdb()
     foreign = set(run(["pacman", "-Qmq"]).split())
+    sd = shell_deps()
     fl = flatpak_list()
     apps = {}
     for dirs, kind in ((APPDIRS, "sys"), (FLATDIRS, "flat")):
@@ -121,10 +127,104 @@ def cmd_list():
                     i = info.get(pk, {})
                     a.update(pkg=pk, src="aur" if pk in foreign else "pacman", size=i.get("size", 0), version=i.get("version", ""))
                 apps[id] = a   # a do usuario (lida depois) vale mais que a do sistema
+    for a in apps.values():
+        if a["pkg"] in sd:
+            a["shell"] = {"level": sd[a["pkg"]]["level"], "why": sd[a["pkg"]]["why"]}
     lst = sorted(apps.values(), key=lambda a: a["name"].lower())
     helper = shutil.which("paru") and "paru" or shutil.which("yay") and "yay" or ""
     dry = os.environ.get("QS_APPS_DRYRUN") == "1" or os.path.exists(HOME + "/.cache/quickshell-mine/apps-dryrun")
     out({"apps": lst, "pkgs": npk, "tools": {"flatpak": bool(shutil.which("flatpak")), "helper": helper, "expac": bool(shutil.which("expac"))}, "dry": dry})
+
+
+def dep_name(d):
+    return re.split(r"[<>=:]", d, maxsplit=1)[0].strip()
+
+
+def section(desc, key):
+    m = re.search(r"%" + key + r"%\n((?:.+\n)*)", desc)
+    return [x.strip() for x in m.group(1).split("\n") if x.strip()] if m else []
+
+
+def shell_deps():
+    try:
+        return {d["pkg"]: d for d in json.load(open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "shell-deps.json")))}
+    except Exception:
+        return {}
+
+
+def cmd_rmcheck(pkgs):
+    sd = shell_deps()
+    try:
+        r = subprocess.run(["pacman", "-Rs", "--print", "--print-format", "%n"] + pkgs, capture_output=True, text=True, timeout=30)
+    except Exception as e:
+        return out({"remove": [], "required": [], "optional": [], "err": str(e)})
+    rem = r.stdout.split() if r.returncode == 0 else []
+    err = ""
+    if r.returncode != 0:
+        err = " ".join(l for l in (r.stdout + "\n" + r.stderr).split("\n") if l.strip())
+    cand = rem if rem else pkgs
+    out({"remove": rem, "err": err,
+         "required": [{"pkg": p, "why": sd[p]["why"]} for p in dict.fromkeys(cand) if p in sd and sd[p]["level"] == "required"],
+         "optional": [{"pkg": p, "why": sd[p]["why"]} for p in dict.fromkeys(cand) if p in sd and sd[p]["level"] == "optional"]})
+
+
+def cmd_packages():
+    sd = shell_deps()
+    foreign = set(run(["pacman", "-Qmq"]).split())
+    pk, prov, deps = {}, {}, {}
+    try:
+        names = os.listdir(DB)
+    except Exception:
+        return out({"pkgs": []})
+    for n in names:
+        try:
+            desc = open(DB + "/" + n + "/desc", errors="ignore").read()
+        except Exception:
+            continue
+        m = re.search(r"%NAME%\n(.+)", desc)
+        if not m:
+            continue
+        name = m.group(1).strip()
+        v = section(desc, "VERSION")
+        s = section(desc, "SIZE")
+        ds = section(desc, "DESC")
+        rs = section(desc, "REASON")
+        pk[name] = {"name": name, "version": v[0] if v else "", "desc": ds[0] if ds else "", "size": int(s[0]) if s else 0,
+                    "explicit": not rs or rs[0] == "0", "foreign": name in foreign, "reqBy": []}
+        prov.setdefault(name, set()).add(name)
+        for x in section(desc, "PROVIDES"):
+            prov.setdefault(dep_name(x), set()).add(name)
+        deps[name] = [dep_name(x) for x in section(desc, "DEPENDS")]
+    for name, ds in deps.items():
+        for d in ds:
+            for t in prov.get(d, ()):
+                if t != name and name not in pk[t]["reqBy"]:
+                    pk[t]["reqBy"].append(name)
+    orph = set(run(["pacman", "-Qdtq"]).split())
+    lst = sorted(pk.values(), key=lambda a: a["name"])
+    for a in lst:
+        a["orphan"] = a["name"] in orph
+        if a["name"] in sd:
+            a["shell"] = {"level": sd[a["name"]]["level"], "why": sd[a["name"]]["why"]}
+        a["reqBy"].sort()
+    out({"pkgs": lst})
+
+
+def parse_upd(txt):
+    res = []
+    for l in txt.split("\n"):
+        m = re.match(r"(\S+) (\S+) -> (\S+)", l.strip())
+        if m:
+            res.append({"name": m.group(1), "old": m.group(2), "new": m.group(3)})
+    return res
+
+
+def cmd_updates():
+    tool = bool(shutil.which("checkupdates"))
+    helper = shutil.which("paru") and "paru" or shutil.which("yay") and "yay" or ""
+    repo = parse_upd(run(["checkupdates"], 90)) if tool else []
+    aur = parse_upd(run([helper, "-Qua"], 60)) if helper else []
+    out({"repo": repo, "aur": aur, "tool": tool, "helper": helper})
 
 
 def clean(q):
@@ -223,6 +323,9 @@ if __name__ == "__main__":
     c = a[0] if a else ""
     try:
         if c == "list": cmd_list()
+        elif c == "packages": cmd_packages()
+        elif c == "rmcheck": cmd_rmcheck(a[1:])
+        elif c == "updates": cmd_updates()
         elif c == "search-repo": cmd_repo(" ".join(a[1:]))
         elif c == "search-aur": cmd_aur(" ".join(a[1:]))
         elif c == "search-flatpak": cmd_flatpak(" ".join(a[1:]))

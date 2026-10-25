@@ -1,0 +1,252 @@
+[
+ {
+  "pkg": "quickshell",
+  "level": "required",
+  "why": "o próprio shell"
+ },
+ {
+  "pkg": "hyprland",
+  "level": "required",
+  "why": "o compositor (janelas e atalhos)"
+ },
+ {
+  "pkg": "pipewire",
+  "level": "required",
+  "why": "áudio"
+ },
+ {
+  "pkg": "pipewire-audio",
+  "level": "required",
+  "why": "áudio"
+ },
+ {
+  "pkg": "wireplumber",
+  "level": "required",
+  "why": "áudio"
+ },
+ {
+  "pkg": "qt6-multimedia",
+  "level": "required",
+  "why": "wallpaper em vídeo e quadros dele"
+ },
+ {
+  "pkg": "qt6-multimedia-ffmpeg",
+  "level": "required",
+  "why": "wallpaper em vídeo e quadros dele"
+ },
+ {
+  "pkg": "ffmpeg",
+  "level": "required",
+  "why": "wallpaper em vídeo e quadros dele"
+ },
+ {
+  "pkg": "python",
+  "level": "required",
+  "why": "scripts (posição dos widgets, capturas, miniaturas)"
+ },
+ {
+  "pkg": "python-pillow",
+  "level": "required",
+  "why": "scripts (posição dos widgets, capturas, miniaturas)"
+ },
+ {
+  "pkg": "ttf-jetbrains-mono-nerd",
+  "level": "required",
+  "why": "fonte dos ícones da interface"
+ },
+ {
+  "pkg": "libnotify",
+  "level": "required",
+  "why": "avisos, clima/letras, tema GTK, abrir arquivos"
+ },
+ {
+  "pkg": "curl",
+  "level": "required",
+  "why": "avisos, clima/letras, tema GTK, abrir arquivos"
+ },
+ {
+  "pkg": "glib2",
+  "level": "required",
+  "why": "avisos, clima/letras, tema GTK, abrir arquivos"
+ },
+ {
+  "pkg": "xdg-utils",
+  "level": "required",
+  "why": "avisos, clima/letras, tema GTK, abrir arquivos"
+ },
+ {
+  "pkg": "procps-ng",
+  "level": "required",
+  "why": "avisos, clima/letras, tema GTK, abrir arquivos"
+ },
+ {
+  "pkg": "wl-clipboard",
+  "level": "required",
+  "why": "área de transferência, capturas, conta-gotas"
+ },
+ {
+  "pkg": "cliphist",
+  "level": "required",
+  "why": "área de transferência, capturas, conta-gotas"
+ },
+ {
+  "pkg": "grim",
+  "level": "required",
+  "why": "área de transferência, capturas, conta-gotas"
+ },
+ {
+  "pkg": "slurp",
+  "level": "required",
+  "why": "área de transferência, capturas, conta-gotas"
+ },
+ {
+  "pkg": "hyprpicker",
+  "level": "required",
+  "why": "área de transferência, capturas, conta-gotas"
+ },
+ {
+  "pkg": "pacman-contrib",
+  "level": "required",
+  "why": "aviso de atualizações (checkupdates), sons"
+ },
+ {
+  "pkg": "sound-theme-freedesktop",
+  "level": "required",
+  "why": "aviso de atualizações (checkupdates), sons"
+ },
+ {
+  "pkg": "cava",
+  "level": "optional",
+  "why": "visualizador de música (widget e ilha)"
+ },
+ {
+  "pkg": "hyprsunset",
+  "level": "optional",
+  "why": "luz noturna"
+ },
+ {
+  "pkg": "tesseract",
+  "level": "optional",
+  "why": "copiar texto da tela (OCR)"
+ },
+ {
+  "pkg": "tesseract-data-por",
+  "level": "optional",
+  "why": "copiar texto da tela (OCR)"
+ },
+ {
+  "pkg": "tesseract-data-eng",
+  "level": "optional",
+  "why": "copiar texto da tela (OCR)"
+ },
+ {
+  "pkg": "translate-shell",
+  "level": "optional",
+  "why": "tradutor (launcher \"!\" e traduzir a tela)"
+ },
+ {
+  "pkg": "satty",
+  "level": "optional",
+  "why": "anotar capturas"
+ },
+ {
+  "pkg": "wf-recorder",
+  "level": "optional",
+  "why": "gravar a tela"
+ },
+ {
+  "pkg": "easyeffects",
+  "level": "optional",
+  "why": "equalizador"
+ },
+ {
+  "pkg": "power-profiles-daemon",
+  "level": "optional",
+  "why": "perfis de energia"
+ },
+ {
+  "pkg": "gnome-keyring",
+  "level": "optional",
+  "why": "destravar o chaveiro junto com a tela de bloqueio"
+ },
+ {
+  "pkg": "networkmanager",
+  "level": "optional",
+  "why": "páginas de Wi-Fi e Bluetooth"
+ },
+ {
+  "pkg": "bluez",
+  "level": "optional",
+  "why": "páginas de Wi-Fi e Bluetooth"
+ },
+ {
+  "pkg": "bluez-utils",
+  "level": "optional",
+  "why": "páginas de Wi-Fi e Bluetooth"
+ },
+ {
+  "pkg": "kitty",
+  "level": "optional",
+  "why": "terminal padrão do launcher (tema ao vivo)"
+ },
+ {
+  "pkg": "libqalculate",
+  "level": "optional",
+  "why": "calculadora do launcher (unidades, moedas)"
+ },
+ {
+  "pkg": "zenity",
+  "level": "optional",
+  "why": "importar VPN e escolher arquivos"
+ },
+ {
+  "pkg": "expac",
+  "level": "optional",
+  "why": "página Aplicativos: tamanhos mais rápidos (expac) e busca/instalação no Flathub (flatpak); funciona sem eles"
+ },
+ {
+  "pkg": "flatpak",
+  "level": "optional",
+  "why": "página Aplicativos: tamanhos mais rápidos (expac) e busca/instalação no Flathub (flatpak); funciona sem eles"
+ },
+ {
+  "pkg": "brightnessctl",
+  "level": "optional",
+  "why": "brilho e bateria (notebooks)"
+ },
+ {
+  "pkg": "upower",
+  "level": "optional",
+  "why": "brilho e bateria (notebooks)"
+ },
+ {
+  "pkg": "ddcutil",
+  "level": "optional",
+  "why": "página Monitores: brilho de monitor externo (precisa do modulo i2c-dev); funciona sem ele"
+ },
+ {
+  "pkg": "pciutils",
+  "level": "optional",
+  "why": "GPU na página Sobre"
+ },
+ {
+  "pkg": "ydotool",
+  "level": "optional",
+  "why": "teclado na tela digitar (systemctl --user enable --now ydotool)"
+ },
+ {
+  "pkg": "mangohud",
+  "level": "optional",
+  "why": "limitador de FPS do overlay de jogo"
+ },
+ {
+  "pkg": "imagemagick",
+  "level": "optional",
+  "why": "ícones dos webapps (.ico)"
+ },
+ {
+  "pkg": "polkit",
+  "level": "required",
+  "why": "pedir a senha em ações de administrador"
+ }
+]

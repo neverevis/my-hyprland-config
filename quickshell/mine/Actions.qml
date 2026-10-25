@@ -50,6 +50,7 @@ Singleton {
         { id: "overview", name: "Visão geral dos workspaces", icon: "view_grid", keys: "overview workspaces janelas exposicao", run: () => Quickshell.execDetached(["qs", "-c", "mine", "ipc", "call", "overview", "toggle"]) },
         { id: "left", name: "Barra lateral esquerda (IA e tradutor)", icon: "robot", keys: "ia chat ollama tradutor lateral esquerda", run: () => Settings.leftOpen = true },
         { id: "home", name: "Painel Início", icon: "home", keys: "inicio painel", run: () => Settings.homeOpen = true },
+        { id: "apps", name: "Aplicativos", icon: "apps", keys: "aplicativos pacotes instalar remover desinstalar atualizar pacman aur flatpak", run: () => Apps.openWindow("apps") },
         { id: "restart", name: "Reiniciar o shell", icon: "refresh", keys: "reload restart quickshell", run: () => sh("mine-shell restart") }
     ]
     function find(id) { return list.find(a => a.id === id) ?? null }

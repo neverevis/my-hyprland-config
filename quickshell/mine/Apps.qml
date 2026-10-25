@@ -1,6 +1,7 @@
 // Aplicativos (Configuracoes > Aplicativos): lista dos instalados, busca para instalar (repositorio, AUR, Flatpak), remover,
 // atualizar tudo num terminal e programas ao iniciar. Tudo so roda com a pagina aberta (use() / release()); o trabalho
 // pesado fica em scripts/apps.py (so le). Instalar/remover usa pkexec (o agente polkit do shell pede a senha) e mostra a saida.
+// A janela "Aplicativos" (AppsWindow.qml) usa tambem: pacotes (apps.py packages), orfaos e atualizacoes (apps.py updates), carregados 1x por abertura.
 // Modo de teste: QS_APPS_DRYRUN=1 ou o arquivo ~/.cache/quickshell-mine/apps-dryrun trocam todo comando por um echo (e logam).
 pragma Singleton
 
@@ -26,6 +27,82 @@ Singleton {
     property int users: 0               // paginas que estao usando (a lista so carrega com a pagina aberta)
     function use() { users++; if (!loaded && !loading) load() }
     function release() { users = Math.max(0, users - 1) }
+
+    // ---- janela Aplicativos (so existe aberta; ao fechar descarta pacotes e atualizacoes) ----
+    property bool windowOpen: false
+    property string tab: "apps"         // apps | pkgs | install | updates
+    onWindowOpenChanged: if (!windowOpen) { pkgList = []; pkgLoaded = false; pkgQuery = ""; pkgFilter = "all"; updLoaded = false; updRepo = []; updAur = []; selPkg = "" }
+    function openWindow(t) { if (t) tab = t; windowOpen = true }
+
+    // ---- pacotes (todos do banco local) ----
+    property var pkgList: []
+    property bool pkgLoaded: false
+    property bool pkgLoading: false
+    property string pkgQuery: ""
+    property string pkgFilter: "all"    // all | explicit | aur | orphan
+    property string pkgSort: "name"     // name | size
+    property string selPkg: ""
+    function loadPkgs() { if (pkgProc.running) return; pkgLoading = true; pkgProc.running = true }
+    readonly property var orphans: pkgList.filter(p => p.orphan)
+    readonly property var pkgShown: {
+        const q = pkgQuery.toLowerCase(), f = pkgFilter
+        let l = pkgList.filter(p => (f === "all" || (f === "explicit" && p.explicit) || (f === "aur" && p.foreign) || (f === "orphan" && p.orphan))
+            && (q === "" || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)))
+        if (pkgSort === "size") l = l.slice().sort((a, b) => b.size - a.size)
+        return l
+    }
+    Process {
+        id: pkgProc
+        command: ["python3", root.script, "packages"]
+        stdout: StdioCollector { onStreamFinished: {
+            root.pkgLoading = false
+            try { root.pkgList = JSON.parse(text).pkgs || []; root.pkgLoaded = true } catch (e) { console.warn("Apps: pacotes invalidos", e) }
+        } }
+    }
+    // remocao protegida: antes de rodar, confere (pacman -Rs --print, sem root) se sairia algo de que o shell precisa
+    // ou se o pacman recusaria por dependencias; so entao chama o pkexec. Dados do shell: data/shell-deps.json (gerado do install.sh).
+    property var rmNames: []
+    property string rmTitle: ""
+    function removePkg(p) { removeMany("Removendo " + p.name, [p.name]) }
+    function removeOrphans() { removeMany("Removendo " + orphans.length + " órfãos", orphans.map(p => p.name)) }
+    function removeMany(title, names) {
+        const n = names.filter(validPkg)
+        if (busy || n.length === 0) return
+        rmNames = n; rmTitle = title
+        jobTitle = "Conferindo " + (n.length === 1 ? n[0] : n.length + " pacotes"); jobLog = ""; jobAfter = null; jobState = "run"
+        chk.command = ["python3", root.script, "rmcheck"].concat(n); chk.running = false; chk.running = true
+    }
+    function refuse(msg) { jobTitle = rmTitle; jobLog = msg; jobState = "err" }
+    Process {
+        id: chk
+        stdout: StdioCollector { onStreamFinished: {
+            let d = null
+            try { d = JSON.parse(text) } catch (e) { root.refuse("Não consegui conferir as dependências."); return }
+            if (d.required.length > 0) {
+                root.refuse("O shell precisa disto para funcionar: " + d.required.map(r => r.pkg + " (" + r.why + ")").join("; ") + ". A remoção foi bloqueada.")
+                return
+            }
+            if (d.err) { root.refuse("O pacman recusaria: " + d.err.slice(0, 500)); return }
+            root.jobState = ""
+            root.runJob(root.rmTitle, ["pkexec", "pacman", "-Rns", "--noconfirm"].concat(root.rmNames))
+        } }
+    }
+
+    // ---- atualizacoes pendentes (checkupdates + AUR) ----
+    property var updRepo: []
+    property var updAur: []
+    property bool updLoaded: false
+    property bool updLoading: false
+    property bool updTool: true
+    function loadUpdates() { if (updProc.running) return; updLoading = true; updProc.running = true }
+    Process {
+        id: updProc
+        command: ["python3", root.script, "updates"]
+        stdout: StdioCollector { onStreamFinished: {
+            root.updLoading = false
+            try { const d = JSON.parse(text); root.updRepo = d.repo || []; root.updAur = d.aur || []; root.updTool = !!d.tool; root.updLoaded = true } catch (e) { console.warn("Apps: atualizacoes invalidas", e) }
+        } }
+    }
     function load() {
         if (lister.running) return
         loading = true; lister.running = true
@@ -113,13 +190,14 @@ Singleton {
             if (code !== 0 && root.jobLog === "") root.jobLog = "O comando terminou com erro (código " + code + ")."
             if (root.jobAfter) root.jobAfter(code)
             root.load()
+            if (root.pkgLoaded) root.loadPkgs()
             if (!root.dry) SystemGuard.checkUpdates()
         }
     }
     function uninstall(a) {
         if (a.src === "flatpak") { if (validPkg(a.flatpak)) runJob("Removendo " + a.name, ["flatpak", "uninstall", "-y", a.flatpak]); return }
         if (a.pkg === "" || !validPkg(a.pkg)) return
-        runJob("Removendo " + a.name, ["pkexec", "pacman", "-Rns", "--noconfirm", a.pkg])
+        removeMany("Removendo " + a.name, [a.pkg])
     }
     function install(r) {
         const id = r.pkg
@@ -156,7 +234,15 @@ Singleton {
     // consultas por IPC (so no modo de teste: nunca pulam a confirmacao fora dele)
     IpcHandler {
         target: "apps"
-        function open(id: string): void { root.selected = id }
+        function open(t: string): void { root.openWindow(t) }          // abre a janela (apps | pkgs | install | updates)
+        function window(): void { root.windowOpen = !root.windowOpen }  // alterna
+        function close(): void { root.windowOpen = false }
+        function select(id: string): void { root.selected = id }
+        function findpkg(q: string): string {                           // teste: nomes filtrados na aba Pacotes
+            root.pkgQuery = q
+            if (!root.pkgLoaded) { root.loadPkgs(); return "carregando" }
+            return root.pkgShown.length + ": " + root.pkgShown.slice(0, 30).map(p => p.name).join(" ")
+        }
         function dry(): string { return root.dry ? "sim" : "nao" }
         function find(q: string): void { root.search(q) }
         function counts(): string { return root.apps.length + " apps; busca: repo " + root.repo.length + ", flatpak " + root.flat.length + ", aur " + root.aur.length + (root.aurErr ? " (" + root.aurErr + ")" : "") }
@@ -164,6 +250,8 @@ Singleton {
             if (!root.dry) return "so no modo de teste"
             if (kind === "uninstall") root.uninstall({ src: src, pkg: pkg, flatpak: pkg, name: pkg })
             else if (kind === "install") root.install({ src: src, pkg: pkg, name: pkg })
+            else if (kind === "rmpkg") root.removePkg({ name: pkg })
+            else if (kind === "rmorphans") root.removeOrphans()
             else if (kind === "update") root.updateAll()
             else return "?"
             return "ok"
