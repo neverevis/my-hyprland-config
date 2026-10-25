@@ -82,8 +82,8 @@ Item {
             UiIcon { anchors.centerIn: parent; name: insp.info ? insp.info.icon : "dashboard"; size: 20; color: Theme.accent } }
         Column {
             anchors { left: hi.right; leftMargin: 12; right: hc.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
-            UiText { width: parent.width; elide: Text.ElideRight; text: insp.info ? insp.info.name : ""; color: Theme.text; font.pixelSize: 16; font.weight: Font.Bold }
-            UiText { width: parent.width; elide: Text.ElideRight; text: insp.info ? insp.info.desc : ""; color: Theme.muted; font.pixelSize: 11 }
+            UiText { width: parent.width; elide: Text.ElideRight; text: insp.info ? insp.info.name : ""; color: Theme.text; font.pixelSize: 16; font.weight: Font.DemiBold }
+            UiText { width: parent.width; elide: Text.ElideRight; text: insp.info ? insp.info.desc : ""; color: Theme.muted; font.pixelSize: 12 }
         }
         UiButton { id: hc; anchors.right: parent.right; icon: "close"; kind: "ghost"; onClicked: DeskState.selected = "" }
     }

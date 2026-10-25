@@ -403,8 +403,8 @@ Item {
                     UiText { anchors.verticalCenter: parent.verticalCenter; text: String(clk.date.getDate()).padStart(2, "0"); color: w.fg; font.family: w.fontFam; font.pixelSize: 44 * dl.u; font.weight: Font.Bold }
                     Column {
                         anchors.verticalCenter: parent.verticalCenter
-                        UiText { text: w.cap(clk.date.toLocaleDateString(w.loc, "ddd")).replace(".", ""); color: w.ac; font.family: w.fontFam; font.pixelSize: 17 * dl.u; font.weight: Font.Bold }
-                        UiText { text: w.cap(clk.date.toLocaleDateString(w.loc, "MMMM")); color: w.dim; font.family: w.fontFam; font.pixelSize: 14 * dl.u }
+                        UiText { text: w.cap(clk.date.toLocaleDateString(w.loc, "ddd")).replace(".", ""); color: w.ac; font.family: w.fontFam; font.pixelSize: 17 * dl.u; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                        UiText { text: w.cap(clk.date.toLocaleDateString(w.loc, "MMMM")); color: w.dim; font.family: w.fontFam; font.pixelSize: 14 * dl.u; font.features: { "tnum": 1 } }
                     }
                 }
                 UiText { visible: dl.v === "badge"; text: dl.greetS; color: w.fg; font.family: w.fontFam; font.pixelSize: 19 * dl.u; font.weight: Font.Light }
@@ -446,7 +446,7 @@ Item {
                 Rectangle {
                     visible: dl.v === "script" && w.o("date")
                     height: 26 * dl.u; width: sdt.implicitWidth + 24 * dl.u; radius: height / 2; color: w.cont
-                    UiText { id: sdt; anchors.centerIn: parent; text: clk.date.toLocaleDateString(w.loc, "d MMM yyyy").replace(".", "."); color: w.contInk; font.family: w.fontFam; font.pixelSize: 13 * dl.u; font.weight: Font.Medium }
+                    UiText { id: sdt; anchors.centerIn: parent; text: clk.date.toLocaleDateString(w.loc, "d MMM yyyy").replace(".", "."); color: w.contInk; font.family: w.fontFam; font.pixelSize: 13 * dl.u; font.weight: Font.Medium; font.features: { "tnum": 1 } }
                 }
                 UiText { visible: dl.v === "script" && dl.wxOk; width: Math.min(260 * dl.u, implicitWidth); wrapMode: Text.WordWrap
                     text: w.wxSentence; color: w.dim; font.family: w.fontFam; font.pixelSize: 11 * dl.u }
@@ -460,13 +460,13 @@ Item {
                         anchors { left: parent.left; leftMargin: 20 * dl.u; verticalCenter: parent.verticalCenter }
                         spacing: -2 * dl.u
                         UiText { text: String(clk.date.getDate()).padStart(2, "0"); color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 22 * dl.u; font.weight: Font.Medium }
-                        UiText { text: clk.date.toLocaleDateString(w.loc, "MMM").replace(".", "").toUpperCase() + "."; color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 60 * dl.u; font.weight: Font.Black }
+                        UiText { text: clk.date.toLocaleDateString(w.loc, "MMM").replace(".", "").toUpperCase() + "."; color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 60 * dl.u; font.weight: Font.Black; font.features: { "tnum": 1 } }
                         UiText { text: "Hoje é " + dl.wday.toLowerCase(); color: Qt.rgba(parent.parent.ink.r, parent.parent.ink.g, parent.parent.ink.b, 0.75); font.family: w.fontFam; font.pixelSize: 13 * dl.u }
                     }
                     Column {
                         anchors { right: parent.right; rightMargin: 18 * dl.u; verticalCenter: parent.verticalCenter }
                         spacing: 2 * dl.u
-                        UiText { visible: dl.wxOk; anchors.right: parent.right; text: w.wxTemp; color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 30 * dl.u; font.weight: Font.Bold }
+                        UiText { visible: dl.wxOk; anchors.right: parent.right; text: w.wxTemp; color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 30 * dl.u; font.weight: Font.Bold; font.features: { "tnum": 1 } }
                         UiText { visible: dl.wxOk; anchors.right: parent.right; text: w.cap(w.wxDesc); color: Qt.rgba(parent.parent.ink.r, parent.parent.ink.g, parent.parent.ink.b, 0.75); font.family: w.fontFam; font.pixelSize: 11 * dl.u }
                         UiText { anchors.right: parent.right; text: dl.timeS; color: parent.parent.ink; font.family: w.fontFam; font.pixelSize: 24 * dl.u; font.weight: Font.Bold; font.features: { "tnum": 1 } }
                         Rectangle { anchors.right: parent.right; width: 34 * dl.u; height: Math.max(1, 3 * dl.u); radius: 2; color: Qt.rgba(parent.parent.ink.r, parent.parent.ink.g, parent.parent.ink.b, 0.6) }

@@ -73,6 +73,6 @@ Rectangle {
         anchors { left: parent.left; bottom: parent.bottom; margins: 8 }
         width: lbl.implicitWidth + 16; height: 22; radius: 11
         color: Qt.rgba(0, 0, 0, 0.45)
-        UiText { id: lbl; anchors.centerIn: parent; text: "Prévia"; color: "white"; font.pixelSize: 10; font.weight: Font.DemiBold }
+        UiText { id: lbl; anchors.centerIn: parent; text: "Prévia"; color: "white"; font.pixelSize: 11; font.weight: Font.Medium }
     }
 }

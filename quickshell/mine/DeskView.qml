@@ -413,11 +413,13 @@ Item {
             Rectangle {
                 id: rsz
                 readonly property bool free: card.w ? !!DeskState.info(card.w.type).free : false
-                anchors { right: parent.right; bottom: parent.bottom; margins: -7 }
-                width: 14; height: 14; radius: 7
+                anchors { right: parent.right; bottom: parent.bottom; margins: -8 }
+                width: 16; height: 16; radius: 8
                 z: 20
-                color: Theme.accent
-                border.width: 2; border.color: Theme.accentText
+                color: rszM.pressed ? Theme.accent : Theme.bg
+                border.width: 1; border.color: Theme.accent
+                scale: rszM.pressed ? 0.9 : 1
+                Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                 opacity: view.editable && DeskState.editing && !DeskState.locked && !card.moving && (dragArea.containsMouse || rszM.containsMouse || rszM.pressed || card.resizing || DeskState.selected === card.wid) ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 140 } }
@@ -500,12 +502,14 @@ Item {
                 opacity: rot.can && view.editable && DeskState.editing && !DeskState.locked && !card.moving && (dragArea.containsMouse || rotM.containsMouse || rotM.pressed || DeskState.selected === card.wid) ? 1 : 0
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: 140 } }
-                Rectangle { anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom } width: 2; height: 12; color: Theme.accent }
+                Rectangle { anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom } width: 1; height: 12; color: Theme.accent }
                 Rectangle {
                     width: 24; height: 24; radius: 12
-                    color: rotM.pressed || rotM.containsMouse ? Theme.accent : Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.95)
-                    border.width: 2; border.color: Theme.accent
-                    UiIcon { anchors.centerIn: parent; name: "rotate"; size: 13; color: rotM.pressed || rotM.containsMouse ? Theme.accentText : Theme.accent }
+                    color: rotM.pressed ? Theme.accent : Theme.bg
+                    border.width: 1; border.color: Theme.accent
+                    scale: rotM.pressed ? 0.92 : 1
+                    Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                    UiIcon { anchors.centerIn: parent; name: "rotate"; size: 13; color: rotM.pressed ? Theme.accentText : Theme.accent }
                     UiText { visible: rotM.pressed; anchors { left: parent.right; leftMargin: 6; verticalCenter: parent.verticalCenter } text: Math.round(rotM.angle) + "°"
                         color: Theme.text; font.pixelSize: 12; font.weight: Font.Bold; style: Text.Outline; styleColor: Theme.bg }
                 }
@@ -541,7 +545,7 @@ Item {
                 anchors.right: parent.right
                 y: above ? -height - 10 + (1 - k) * 6 : parent.height + 10 - (1 - k) * 6
                 width: crow.implicitWidth + 12; height: 34; radius: 17
-                color: Qt.rgba(Theme.bg.r, Theme.bg.g, Theme.bg.b, 0.96)
+                color: Theme.bg
                 border.width: 1; border.color: Theme.border
                 Row {
                     id: crow
@@ -550,8 +554,10 @@ Item {
                     Rectangle {
                         visible: !DeskState.locked
                         height: 28; width: sz.implicitWidth + 24; radius: 14
-                        color: szm.containsMouse ? Theme.accent : "transparent"
-                        UiText { id: sz; anchors.centerIn: parent; text: card.w ? Math.round(card.w.cols * 10) / 10 + "×" + Math.round(card.w.rows * 10) / 10 : ""; color: szm.containsMouse ? Theme.accentText : Theme.text; font.pixelSize: 12; font.weight: Font.Bold }
+                        color: szm.containsMouse ? Theme.cardHi : "transparent"
+                        scale: szm.pressed ? 0.97 : 1
+                        Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                        UiText { id: sz; anchors.centerIn: parent; text: card.w ? Math.round(card.w.cols * 10) / 10 + "×" + Math.round(card.w.rows * 10) / 10 : ""; color: Theme.text; font.pixelSize: 12; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
                         MouseArea { id: szm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: DeskState.cycleSize(card.wid) }
                     }
                     Repeater {
@@ -559,8 +565,10 @@ Item {
                         delegate: Rectangle {
                             required property var modelData
                             width: 28; height: 28; radius: 14
-                            color: tbm.containsMouse ? (modelData[2] ? Theme.danger : Theme.accent) : "transparent"
-                            UiIcon { anchors.centerIn: parent; name: modelData[0]; size: 15; color: tbm.containsMouse ? (modelData[2] ? "white" : Theme.accentText) : (modelData[0] === "tune" && DeskState.inspOpen ? Theme.accent : Theme.text) }
+                            color: tbm.containsMouse ? (modelData[2] ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.cardHi) : "transparent"
+                            scale: tbm.pressed ? 0.92 : 1
+                            Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
+                            UiIcon { anchors.centerIn: parent; name: modelData[0]; size: 16; color: modelData[2] ? Theme.danger : (modelData[0] === "tune" && DeskState.inspOpen ? Theme.accent : (tbm.containsMouse ? Theme.text : Theme.muted)) }
                             MouseArea { id: tbm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: modelData[1]() }
                         }
                     }

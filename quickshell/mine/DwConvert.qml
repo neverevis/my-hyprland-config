@@ -131,7 +131,7 @@ Item {
                     readonly property bool on: w.o("format") === modelData
                     width: fl.implicitWidth + 14; height: 22; radius: 11
                     color: on ? w.ac : (fm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12) : Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.06))
-                    UiText { id: fl; anchors.centerIn: parent; text: modelData.toUpperCase(); color: parent.on ? Theme.accentText : w.dim; font.pixelSize: 10; font.weight: Font.Bold }
+                    UiText { id: fl; anchors.centerIn: parent; text: modelData.toUpperCase(); color: parent.on ? Theme.accentText : w.dim; font.pixelSize: 11; font.weight: Font.Bold }
                     MouseArea { id: fm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: if (w.wid !== "") DeskState.setOpt(w.wid, "format", modelData) }
                 }
             }

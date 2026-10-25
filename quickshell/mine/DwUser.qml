@@ -312,7 +312,7 @@ Item {
                             Rectangle { visible: index > 0; width: 1; height: 28; anchors.verticalCenter: parent.verticalCenter; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.18) }
                             Column {
                                 UiText { anchors.horizontalCenter: parent.horizontalCenter; text: String(modelData[0]); color: w.fg; font.pixelSize: 20; font.weight: Font.Bold; font.features: { "tnum": 1 } }
-                                UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData[1]; color: w.dim; font.pixelSize: 10 }
+                                UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData[1]; color: w.dim; font.pixelSize: 11 }
                             }
                         }
                     }
@@ -348,8 +348,8 @@ Item {
             Column {
                 visible: w.cols >= 3 && w.rows === 1
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
-                UiText { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold }
-                UiText { anchors.right: parent.right; text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "ddd, d MMM"); return s.charAt(0).toUpperCase() + s.slice(1) } color: w.ac; font.pixelSize: 13 }
+                UiText { anchors.right: parent.right; text: Qt.formatDateTime(clk.date, "HH:mm"); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                UiText { anchors.right: parent.right; text: { const s = clk.date.toLocaleDateString(Qt.locale("pt_BR"), "ddd, d MMM"); return s.charAt(0).toUpperCase() + s.slice(1) } color: w.ac; font.pixelSize: 13; font.features: { "tnum": 1 } }
             }
         }
     }

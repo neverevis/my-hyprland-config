@@ -71,7 +71,7 @@ Item {
     function flipTo(fn) { pending = fn; flipA.restart() }
     SequentialAnimation {
         id: flipA
-        NumberAnimation { target: face; property: "xs"; to: 0; duration: 75; easing.type: Easing.InQuad }
+        NumberAnimation { target: face; property: "xs"; to: 0; duration: 75; easing.type: Easing.OutQuad }
         ScriptAction { script: { if (w.pending) w.pending(); w.pending = null } }
         NumberAnimation { target: face; property: "xs"; to: 1; duration: 75; easing.type: Easing.OutQuad }
     }

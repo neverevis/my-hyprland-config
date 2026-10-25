@@ -62,7 +62,7 @@ Item {
             id: mh
             visible: mv.head
             width: parent.width; height: mv.head ? 28 * mv.u : 0
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: w.cap(w.month.toLocaleDateString(w.loc, "MMMM")) + (w.month.getFullYear() !== w.today.getFullYear() ? " " + w.month.getFullYear() : ""); color: w.fg; font.pixelSize: Math.round(16 * mv.u); font.weight: Font.Bold }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: w.cap(w.month.toLocaleDateString(w.loc, "MMMM")) + (w.month.getFullYear() !== w.today.getFullYear() ? " " + w.month.getFullYear() : ""); color: w.fg; font.pixelSize: Math.round(16 * mv.u); font.weight: Font.Bold; font.features: { "tnum": 1 } }
             Row {
                 visible: mv.nav !== "hidden"
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
@@ -152,8 +152,8 @@ Item {
                 Row {
                     anchors.centerIn: parent
                     spacing: 6 * tr.u
-                    UiText { text: w.today.toLocaleDateString(w.loc, "MMM").replace(".", ""); color: w.accInk; font.pixelSize: Math.round(16 * tr.u); font.weight: Font.Bold }
-                    UiText { text: w.today.toLocaleDateString(w.loc, "ddd").replace(".", ""); color: Qt.rgba(w.accInk.r, w.accInk.g, w.accInk.b, 0.7); font.pixelSize: Math.round(16 * tr.u) }
+                    UiText { text: w.today.toLocaleDateString(w.loc, "MMM").replace(".", ""); color: w.accInk; font.pixelSize: Math.round(16 * tr.u); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                    UiText { text: w.today.toLocaleDateString(w.loc, "ddd").replace(".", ""); color: Qt.rgba(w.accInk.r, w.accInk.g, w.accInk.b, 0.7); font.pixelSize: Math.round(16 * tr.u); font.features: { "tnum": 1 } }
                 }
             }
             UiText {
@@ -218,8 +218,8 @@ Item {
                 spacing: 2 * sd.u
                 DwParts.Badge { shape: w.badgeShape; icon: "calendar"; bg: w.acc; size: 40 * sd.u }
                 Item { width: 1; height: 8 * sd.u }
-                UiText { text: w.today.toLocaleDateString(w.loc, "MMMM").toUpperCase(); color: w.fg; font.pixelSize: Math.round(14 * sd.u); font.weight: Font.Bold; font.letterSpacing: 1 }
-                UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.dim; font.pixelSize: Math.round(17 * sd.u) }
+                UiText { text: w.today.toLocaleDateString(w.loc, "MMMM").toUpperCase(); color: w.fg; font.pixelSize: Math.round(14 * sd.u); font.weight: Font.Bold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
+                UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.dim; font.pixelSize: Math.round(17 * sd.u); font.features: { "tnum": 1 } }
                 UiText { text: w.today.getDate(); color: w.acc; font.pixelSize: Math.round(66 * sd.u); font.weight: Font.Bold; lineHeight: 0.9 }
             }
             MonthView { x: dc.width + 16 * sd.u; width: parent.width - x; height: parent.height; u: sd.u }
@@ -242,8 +242,8 @@ Item {
                     Row {
                         anchors.centerIn: parent
                         spacing: 6
-                        UiText { text: w.today.toLocaleDateString(w.loc, "MMM").replace(".", "").toUpperCase(); color: Theme.accentText; font.pixelSize: 15; font.weight: Font.Bold; font.letterSpacing: 1 }
-                        UiText { text: w.today.toLocaleDateString(w.loc, "ddd").replace(".", "").toUpperCase(); color: Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.7); font.pixelSize: 15; font.weight: Font.DemiBold; font.letterSpacing: 1 }
+                        UiText { text: w.today.toLocaleDateString(w.loc, "MMM").replace(".", "").toUpperCase(); color: Theme.accentText; font.pixelSize: 15; font.weight: Font.Bold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
+                        UiText { text: w.today.toLocaleDateString(w.loc, "ddd").replace(".", "").toUpperCase(); color: Qt.rgba(Theme.accentText.r, Theme.accentText.g, Theme.accentText.b, 0.7); font.pixelSize: 15; font.weight: Font.DemiBold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
                     }
                 }
                 UiText {
@@ -260,7 +260,7 @@ Item {
                 Rectangle {
                     height: 28; width: ptxt.implicitWidth + 28; radius: 14
                     color: w.ac
-                    UiText { id: ptxt; anchors.centerIn: parent; text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM yyyy")) + (w.o("weekNumbers") ? "  ·  semana " + w.isoWeek(w.today) : ""); color: Theme.accentText; font.pixelSize: 14; font.weight: Font.Bold }
+                    UiText { id: ptxt; anchors.centerIn: parent; text: w.cap(w.today.toLocaleDateString(w.loc, "MMMM yyyy")) + (w.o("weekNumbers") ? "  ·  semana " + w.isoWeek(w.today) : ""); color: Theme.accentText; font.pixelSize: 14; font.weight: Font.Bold; font.features: { "tnum": 1 } }
                 }
                 Row {
                     width: parent.width
@@ -295,8 +295,8 @@ Item {
                 spacing: 2
                 ShapeIcon { shape: "gem"; icon: "calendar"; size: 46; padding: 11; color: w.ac; iconColor: Theme.accentText }
                 Item { width: 1; height: 6 }
-                UiText { text: w.today.toLocaleDateString(w.loc, "MMMM").toUpperCase(); color: w.dim; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 1 }
-                UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.fg; font.pixelSize: 17; font.weight: Font.Medium }
+                UiText { text: w.today.toLocaleDateString(w.loc, "MMMM").toUpperCase(); color: w.dim; font.pixelSize: 12; font.weight: Font.DemiBold; font.letterSpacing: 1; font.features: { "tnum": 1 } }
+                UiText { text: w.cap(w.today.toLocaleDateString(w.loc, "dddd")); color: w.fg; font.pixelSize: 17; font.weight: Font.Medium; font.features: { "tnum": 1 } }
                 UiText { text: w.today.getDate(); color: w.ac; font.pixelSize: 58; font.weight: Font.Bold; lineHeight: 0.9 }
             }
 
@@ -307,7 +307,7 @@ Item {
                 Item {
                     id: head
                     width: parent.width; height: 30
-                    UiText { anchors.verticalCenter: parent.verticalCenter; text: w.cap(w.month.toLocaleDateString(w.loc, "MMMM")) + (w.month.getFullYear() !== w.today.getFullYear() ? " " + w.month.getFullYear() : ""); color: w.fg; font.pixelSize: 17; font.weight: Font.Bold }
+                    UiText { anchors.verticalCenter: parent.verticalCenter; text: w.cap(w.month.toLocaleDateString(w.loc, "MMMM")) + (w.month.getFullYear() !== w.today.getFullYear() ? " " + w.month.getFullYear() : ""); color: w.fg; font.pixelSize: 17; font.weight: Font.Bold; font.features: { "tnum": 1 } }
                     Row {
                         anchors { right: parent.right; verticalCenter: parent.verticalCenter }
                         spacing: 2

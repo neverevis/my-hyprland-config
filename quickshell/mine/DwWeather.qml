@@ -73,7 +73,7 @@ Item {
             anchors.centerIn: parent
             spacing: 5 * et.u
             UiIcon { anchors.verticalCenter: parent.verticalCenter; name: et.icon; size: Math.round(16 * et.u); color: w.acc }
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: et.value; color: et.vcol; font.pixelSize: Math.round(14 * et.u); font.weight: Font.DemiBold }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: et.value; color: et.vcol; font.pixelSize: Math.round(14 * et.u); font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
         }
         Row {
             visible: !et.compact
@@ -84,7 +84,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 width: parent.width - 28 * et.u
                 UiText { width: parent.width; elide: Text.ElideRight; text: et.label; color: Qt.rgba(et.ink.r, et.ink.g, et.ink.b, 0.7); font.pixelSize: Math.round(11 * et.u) }
-                UiText { width: parent.width; elide: Text.ElideRight; text: et.value; color: et.vcol; font.pixelSize: Math.round(15 * et.u); font.weight: Font.DemiBold }
+                UiText { width: parent.width; elide: Text.ElideRight; text: et.value; color: et.vcol; font.pixelSize: Math.round(15 * et.u); font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
             }
         }
     }
@@ -106,7 +106,7 @@ Item {
             anchors.centerIn: parent
             spacing: 5
             UiIcon { anchors.verticalCenter: parent.verticalCenter; name: tl.icon; size: 14; color: w.ac }
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: tl.value; color: w.fg; font.pixelSize: 12; font.weight: Font.DemiBold }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: tl.value; color: w.fg; font.pixelSize: 12; font.weight: Font.DemiBold; font.features: { "tnum": 1 } }
         }
         Column {
             visible: !tl.compact
@@ -114,8 +114,8 @@ Item {
             width: parent.width - 12
             spacing: 1
             UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: tl.icon; size: Math.min(20, tl.height * 0.3); color: w.ac }
-            UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: tl.value; color: w.fg; font.pixelSize: Math.min(15, tl.height * 0.22); font.weight: Font.Bold }
-            UiText { visible: tl.height > 58; width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: tl.label; color: w.dim; font.pixelSize: 10 }
+            UiText { width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: tl.value; color: w.fg; font.pixelSize: Math.min(15, tl.height * 0.22); font.weight: Font.Bold; font.features: { "tnum": 1 } }
+            UiText { visible: tl.height > 58; width: parent.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: tl.label; color: w.dim; font.pixelSize: 11 }
         }
     }
 
@@ -125,9 +125,9 @@ Item {
         anchors.centerIn: parent
         spacing: 6
         UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: Weather.error ? "wCloudy" : "refresh"; size: 26; color: w.dim
-            RotationAnimation on rotation { running: Weather.busy; from: 0; to: 360; duration: 1200; loops: Animation.Infinite } }
+            RotationAnimation on rotation { running: Weather.busy && !Weather.ready && w.visible; from: 0; to: 360; duration: 1200; loops: Animation.Infinite } }
         UiText { visible: w.cols > 1; anchors.horizontalCenter: parent.horizontalCenter; width: w.width; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
-            text: Weather.error || "Buscando o clima…"; color: w.dim; font.pixelSize: 12 }
+            text: Weather.error ? Weather.error : (Weather.busy ? "Buscando o clima…" : "Sem dados do clima. Confira a cidade nas opções."); color: w.dim; font.pixelSize: 12 }
     }
 
 
@@ -153,7 +153,7 @@ Item {
             Column {
                 anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
                 spacing: -2 * m.u
-                UiText { text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.round(32 * m.u); font.weight: Font.Bold }
+                UiText { text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.round(32 * m.u); font.weight: Font.Bold; font.features: { "tnum": 1 } }
                 UiText { width: parent.width; elide: Text.ElideRight; text: Weather.place; color: w.dim; font.pixelSize: Math.round(14 * m.u) }
             }
         }
@@ -171,7 +171,7 @@ Item {
                     anchors.centerIn: parent
                     spacing: 4 * m.u
                     E4Badge { anchors.horizontalCenter: parent.horizontalCenter; size: 34 * m.u }
-                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.round(24 * m.u); font.weight: Font.Bold }
+                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.round(24 * m.u); font.weight: Font.Bold; font.features: { "tnum": 1 } }
                 }
             }
             Item {
@@ -204,7 +204,7 @@ Item {
                 E4Badge { anchors.verticalCenter: parent.verticalCenter; size: 44 * m.u }
                 Column {
                     anchors.verticalCenter: parent.verticalCenter
-                    UiText { text: w.t(w.n.temp); color: w.acc; font.pixelSize: Math.round(30 * m.u); font.weight: Font.Bold }
+                    UiText { text: w.t(w.n.temp); color: w.acc; font.pixelSize: Math.round(30 * m.u); font.weight: Font.Bold; font.features: { "tnum": 1 } }
                     UiText { text: Weather.describe(w.n.code); color: w.dim; font.pixelSize: Math.round(12 * m.u) }
                 }
             }
@@ -233,7 +233,7 @@ Item {
             readonly property real u: Math.max(0.3, Math.min(width / 392, height / 92))
             Row {
                 spacing: 12 * m.u
-                UiText { text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.round(40 * m.u); font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.round(40 * m.u); font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter; font.features: { "tnum": 1 } }
                 Column {
                     anchors.verticalCenter: parent.verticalCenter
                     UiText { text: Weather.describe(w.n.code); color: w.fg; font.pixelSize: Math.round(16 * m.u) }
@@ -261,7 +261,7 @@ Item {
                 width: parent.width
                 spacing: 18 * m.u
                 Column {
-                    UiText { text: w.t(w.n.temp); color: w.acc; font.pixelSize: Math.round(44 * m.u); font.weight: Font.Bold }
+                    UiText { text: w.t(w.n.temp); color: w.acc; font.pixelSize: Math.round(44 * m.u); font.weight: Font.Bold; font.features: { "tnum": 1 } }
                     Row {
                         spacing: 4 * m.u
                         UiIcon { name: "mapMarker"; size: Math.round(14 * m.u); color: w.acc; anchors.verticalCenter: parent.verticalCenter }
@@ -305,13 +305,13 @@ Item {
                 id: hh
                 width: parent.width
                 spacing: 14 * hb.u
-                UiText { id: ht; text: w.t(w.n.temp); color: w.acc; font.pixelSize: Math.round((hb.tall ? 60 : 50) * hb.u); font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+                UiText { id: ht; text: w.t(w.n.temp); color: w.acc; font.pixelSize: Math.round((hb.tall ? 60 : 50) * hb.u); font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter; font.features: { "tnum": 1 } }
                 Column {
                     anchors.verticalCenter: parent.verticalCenter
                     width: parent.width - ht.implicitWidth - hbg.width - 28 * hb.u
                     UiText { width: parent.width; elide: Text.ElideRight; text: Weather.describe(w.n.code); color: w.fg; font.pixelSize: Math.round(16 * hb.u); font.weight: Font.Medium }
                     UiText { width: parent.width; elide: Text.ElideRight; text: Weather.place; color: w.dim; font.pixelSize: Math.round(13 * hb.u) }
-                    UiText { visible: hb.tall; width: parent.width; elide: Text.ElideRight; text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) + "  ↓ " + w.t(Weather.days[0].min) + "  ·  sensação " + w.t(w.n.feels) : ""; color: w.dim; font.pixelSize: Math.round(12 * hb.u) }
+                    UiText { visible: hb.tall; width: parent.width; elide: Text.ElideRight; text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) + "  ↓ " + w.t(Weather.days[0].min) + "  ·  sensação " + w.t(w.n.feels) : ""; color: w.dim; font.pixelSize: Math.round(12 * hb.u); font.features: { "tnum": 1 } }
                 }
                 E4Badge { id: hbg; anchors.verticalCenter: parent.verticalCenter; size: (hb.tall ? 72 : 56) * hb.u }
             }
@@ -343,9 +343,9 @@ Item {
                 anchors.fill: parent
                 spacing: 3
                 ShapeIcon { anchors.horizontalCenter: parent.horizontalCenter; shape: "cookie12"; icon: Weather.icon(w.n.code, w.n.day); size: 48; padding: 10; color: w.ac; iconColor: Theme.accentText }
-                UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: 30; font.weight: Font.Bold }
+                UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: 30; font.weight: Font.Bold; font.features: { "tnum": 1 } }
                 UiText { anchors.horizontalCenter: parent.horizontalCenter; width: w.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: Weather.describe(w.n.code); color: w.fg; font.pixelSize: 12; font.weight: Font.Medium }
-                UiText { anchors.horizontalCenter: parent.horizontalCenter; text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) + "  ↓ " + w.t(Weather.days[0].min) : ""; color: w.dim; font.pixelSize: 11 }
+                UiText { anchors.horizontalCenter: parent.horizontalCenter; text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) + "  ↓ " + w.t(Weather.days[0].min) : ""; color: w.dim; font.pixelSize: 11; font.features: { "tnum": 1 } }
                 UiText { anchors.horizontalCenter: parent.horizontalCenter; width: w.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight; text: Weather.place; color: w.dim; font.pixelSize: 11 }
                 Repeater {
                     model: w.rows >= 3 ? Weather.days.slice(1, 3) : []
@@ -355,7 +355,7 @@ Item {
                         spacing: 6
                         UiText { anchors.verticalCenter: parent.verticalCenter; text: w.loc.dayName(modelData.date.getDay(), Locale.ShortFormat).replace(".", ""); color: w.dim; font.pixelSize: 11; font.weight: Font.DemiBold }
                         UiIcon { anchors.verticalCenter: parent.verticalCenter; name: Weather.icon(modelData.code, true); size: 18; color: w.ac }
-                        UiText { anchors.verticalCenter: parent.verticalCenter; text: w.t(modelData.max) + " " + w.t(modelData.min); color: w.fg; font.pixelSize: 11 }
+                        UiText { anchors.verticalCenter: parent.verticalCenter; text: w.t(modelData.max) + " " + w.t(modelData.min); color: w.fg; font.pixelSize: 11; font.features: { "tnum": 1 } }
                     }
                 }
             }
@@ -375,7 +375,7 @@ Item {
                         anchors.centerIn: parent
                         spacing: 2
                         ShapeIcon { anchors.horizontalCenter: parent.horizontalCenter; shape: "cookie12"; icon: Weather.icon(w.n.code, w.n.day); size: 52; padding: 11; color: w.ac; iconColor: Theme.accentText }
-                        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold }
+                        UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.t(w.n.temp); color: w.fg; font.pixelSize: 34; font.weight: Font.Bold; font.features: { "tnum": 1 } }
                         UiText { anchors.horizontalCenter: parent.horizontalCenter; text: Weather.place; color: w.dim; font.pixelSize: 11; width: w.width; horizontalAlignment: Text.AlignHCenter; elide: Text.ElideRight }
                     }
                     Row {
@@ -388,11 +388,11 @@ Item {
                             spacing: 0
                             Row {
                                 spacing: 8
-                                UiText { text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.min(nowBox.height * 0.42, 52); font.weight: Font.Bold }
+                                UiText { text: w.t(w.n.temp); color: w.fg; font.pixelSize: Math.min(nowBox.height * 0.42, 52); font.weight: Font.Bold; font.features: { "tnum": 1 } }
                                 Column {
                                     anchors.bottom: parent.bottom; anchors.bottomMargin: 6
-                                    UiText { text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) : ""; color: w.dim; font.pixelSize: 12 }
-                                    UiText { text: Weather.days.length ? "↓ " + w.t(Weather.days[0].min) : ""; color: w.dim; font.pixelSize: 12 }
+                                    UiText { text: Weather.days.length ? "↑ " + w.t(Weather.days[0].max) : ""; color: w.dim; font.pixelSize: 12; font.features: { "tnum": 1 } }
+                                    UiText { text: Weather.days.length ? "↓ " + w.t(Weather.days[0].min) : ""; color: w.dim; font.pixelSize: 12; font.features: { "tnum": 1 } }
                                 }
                             }
                             UiText { text: Weather.describe(w.n.code); color: w.fg; font.pixelSize: 14; font.weight: Font.Medium }
@@ -459,9 +459,9 @@ Item {
                                 text: w.show === "days" ? (index === 0 ? "Hoje" : w.loc.dayName(modelData.date.getDay(), Locale.ShortFormat).replace(".", "")) : Qt.formatDateTime(modelData.time, "HH'h'")
                                 color: w.dim; font.pixelSize: 11; font.weight: Font.DemiBold }
                             UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: Weather.icon(modelData.code, w.show === "days" ? true : modelData.day); size: 22; color: w.ac }
-                            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.show === "days" ? w.t(modelData.max) : w.t(modelData.temp); color: w.fg; font.pixelSize: 13; font.weight: Font.Bold }
-                            UiText { visible: w.show === "days" && !fc.side; anchors.horizontalCenter: parent.horizontalCenter; text: w.t(modelData.min); color: w.dim; font.pixelSize: 11 }
-                            UiText { visible: !fc.side && (modelData.rain ?? 0) > 10; anchors.horizontalCenter: parent.horizontalCenter; text: modelData.rain + "%"; color: w.ac2; font.pixelSize: 10 }
+                            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: w.show === "days" ? w.t(modelData.max) : w.t(modelData.temp); color: w.fg; font.pixelSize: 13; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                            UiText { visible: w.show === "days" && !fc.side; anchors.horizontalCenter: parent.horizontalCenter; text: w.t(modelData.min); color: w.dim; font.pixelSize: 11; font.features: { "tnum": 1 } }
+                            UiText { visible: !fc.side && (modelData.rain ?? 0) > 10; anchors.horizontalCenter: parent.horizontalCenter; text: modelData.rain + "%"; color: w.ac2; font.pixelSize: 11; font.features: { "tnum": 1 } }
                         }
                     }
                 }

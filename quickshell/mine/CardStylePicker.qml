@@ -43,7 +43,7 @@ Flow {
                 Rectangle { visible: tile.st === "none"; anchors.centerIn: parent; width: parent.width * 0.4; height: 3; radius: 1.5; color: "white" }
             }
             UiText { anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 4 } text: tile.modelData[1]
-                color: tile.on ? Theme.accent : Theme.muted; font.pixelSize: 10; font.weight: Font.DemiBold }
+                color: tile.on ? Theme.accent : Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
             MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: cs.picked(tile.modelData[0]) }
         }
     }

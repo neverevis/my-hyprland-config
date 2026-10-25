@@ -70,7 +70,7 @@ Item {
     }
     SequentialAnimation {
         id: flipAnim
-        NumberAnimation { target: w; property: "sx"; to: 0; duration: 150; easing.type: Easing.InQuad }
+        NumberAnimation { target: w; property: "sx"; to: 0; duration: 150; easing.type: Easing.OutQuad }
         ScriptAction { script: w.back = !w.back }
         NumberAnimation { target: w; property: "sx"; to: 1; duration: 150; easing.type: Easing.OutQuad }
     }
@@ -116,7 +116,7 @@ Item {
                 Column {
                     anchors { right: parent.right; bottom: parent.bottom }
                     UiText { anchors.right: parent.right; text: w.fmt(clk.date.getHours(), clk.date.getMinutes()); color: w.fg; font.pixelSize: Math.min(42, front.hh * 0.5); font.weight: Font.Bold; font.features: { "tnum": 1 } }
-                    UiText { anchors.right: parent.right; text: DateTime.long(clk.date, "dddd, d MMM yyyy"); color: w.dim; font.pixelSize: 11 }
+                    UiText { anchors.right: parent.right; text: DateTime.long(clk.date, "dddd, d MMM yyyy"); color: w.dim; font.pixelSize: 11; font.features: { "tnum": 1 } }
                 }
             }
             Grid {
@@ -149,7 +149,7 @@ Item {
                             Rectangle { width: 4; height: parent.r * 0.55; radius: 2; color: parent.parent.ink; x: parent.width / 2 - 2; y: (parent.height - 12) / 2 - height; transformOrigin: Item.Bottom; rotation: (modelData.hh % 12 + modelData.mm / 60) * 30 }
                             Rectangle { width: 3; height: parent.r * 0.82; radius: 1.5; color: parent.parent.ink; x: parent.width / 2 - 1.5; y: (parent.height - 12) / 2 - height; transformOrigin: Item.Bottom; rotation: modelData.mm * 6 }
                             Rectangle { width: 8; height: 8; radius: 4; color: parent.parent.ink; x: parent.width / 2 - 4; y: (parent.height - 12) / 2 - 4 }
-                            UiText { anchors { bottom: parent.bottom; bottomMargin: 3; horizontalCenter: parent.horizontalCenter } text: modelData.city; color: parent.parent.ink; font.pixelSize: 10; font.weight: Font.DemiBold; width: Math.min(implicitWidth, parent.width - 6); elide: Text.ElideRight }
+                            UiText { anchors { bottom: parent.bottom; bottomMargin: 3; horizontalCenter: parent.horizontalCenter } text: modelData.city; color: parent.parent.ink; font.pixelSize: 11; font.weight: Font.DemiBold; width: Math.min(implicitWidth, parent.width - 6); elide: Text.ElideRight }
                         }
                         // digital
                         Item {
@@ -157,7 +157,7 @@ Item {
                             anchors { fill: parent; margins: 8 }
                             UiText { id: cn; text: modelData.city; color: parent.parent.ink; font.pixelSize: parent.parent.narrow ? 10 : 12; font.weight: Font.DemiBold; width: parent.width - 18; elide: Text.ElideRight }
                             UiIcon { visible: w.o("showSun"); anchors { top: parent.top; right: parent.right } name: parent.parent.day ? "wSun" : "wNight"; size: 12; color: parent.parent.ink }
-                            UiText { anchors.top: cn.bottom; visible: parent.height > 40 && w.o("showOffset"); text: w.utc(modelData.off); color: parent.parent.ink; opacity: 0.65; font.pixelSize: 10 }
+                            UiText { anchors.top: cn.bottom; visible: parent.height > 40 && w.o("showOffset"); text: w.utc(modelData.off); color: parent.parent.ink; opacity: 0.65; font.pixelSize: 11 }
                             UiText { anchors { left: parent.left; bottom: parent.bottom } text: w.fmt(modelData.hh, modelData.mm); color: parent.parent.ink; font.weight: Font.Bold; font.features: { "tnum": 1 }
                                 font.pixelSize: Math.max(12, Math.min(parent.height * 0.42, parent.width * (Settings.clock24 ? 0.3 : 0.22))) }
                         }

@@ -62,7 +62,7 @@ Item {
             spacing: 8
             UiIcon { name: "listCheck"; size: 16; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
             UiText { text: "Tarefas"; color: w.fg; font.pixelSize: 15; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
-            UiText { text: w.items.length ? w.doneCount + "/" + w.items.length : ""; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+            UiText { text: w.items.length ? w.doneCount + "/" + w.items.length : ""; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; font.features: { "tnum": 1 } }
         }
         // cabecalho do end4: titulo grande, contagem e botao +
         Row {
@@ -70,7 +70,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
             spacing: 8
             UiText { text: "Tarefas"; color: w.fg; font.pixelSize: 22; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
-            UiText { text: w.items.length ? w.doneCount + "/" + w.items.length : ""; color: w.dim; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+            UiText { text: w.items.length ? w.doneCount + "/" + w.items.length : ""; color: w.dim; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter; font.features: { "tnum": 1 } }
         }
         DwParts.RoundBtn {
             visible: w.cards && w.hdr === "title"
@@ -165,7 +165,7 @@ Item {
                 }
             }
         }
-        UiText { visible: lv.count === 0; anchors.centerIn: parent; text: w.items.length ? "Tudo feito!" : "Nada por aqui"; color: w.dim; font.pixelSize: 13 }
+        UiText { visible: lv.count === 0; anchors.centerIn: parent; text: w.items.length ? "Tudo feito!" : (w.adding ? "" : "Nenhuma tarefa. Toque em + para adicionar"); width: parent.width - 24; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap; color: w.dim; font.pixelSize: 13 }
     }
     Rectangle {
         id: entry

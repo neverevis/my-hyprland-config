@@ -133,7 +133,7 @@ Item {
                     anchors { left: parent.left; bottom: parent.bottom; margins: parent.m * 0.12 }
                     spacing: 0
                     UiText { text: modelData.t; color: modelData.hot ? Theme.role("error") : modelData.ink; font.pixelSize: Math.max(14, parent.parent.m * 0.3); font.weight: Font.Bold; font.features: { "tnum": 1 } }
-                    UiText { text: modelData.label; color: modelData.ink; opacity: 0.6; font.pixelSize: Math.max(10, parent.parent.m * 0.13); font.weight: Font.DemiBold }
+                    UiText { text: modelData.label; color: modelData.ink; opacity: 0.6; font.pixelSize: Math.max(11, parent.parent.m * 0.13); font.weight: Font.DemiBold }
                 }
             }
         }
@@ -183,7 +183,7 @@ Item {
                     anchors.centerIn: parent
                     UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: modelData.icon; size: Math.max(11, parent.parent.width * 0.15); color: w.dim }
                     UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.t; color: w.fg; font.pixelSize: Math.max(11, parent.parent.width * (modelData.t.length > 5 ? 0.13 : 0.2)); font.weight: Font.Bold; font.features: { "tnum": 1 } }
-                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: w.dim; font.pixelSize: Math.max(9, parent.parent.width * 0.1); font.weight: Font.DemiBold }
+                    UiText { anchors.horizontalCenter: parent.horizontalCenter; text: modelData.label; color: w.dim; font.pixelSize: Math.max(11, parent.parent.width * 0.1); font.weight: Font.DemiBold }
                 }
             }
         }

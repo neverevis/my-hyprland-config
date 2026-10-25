@@ -98,7 +98,7 @@ Column {
                         visible: !!form.sectionIcons[row.modelData.sec]
                         UiIcon { anchors.centerIn: parent; name: form.sectionIcons[row.modelData.sec] ?? ""; size: 13; color: Theme.accent }
                     }
-                    UiText { text: row.modelData.sec ?? ""; color: Theme.text; font.pixelSize: 13; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+                    UiText { text: row.modelData.sec ?? ""; color: Theme.text; font.pixelSize: 14; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
                 }
             }
             // bloco: linhas coladas, cantos arredondados so no comeco e no fim da secao
@@ -152,9 +152,9 @@ Column {
         Row {
             spacing: 8
             UiIcon { visible: !!lb.dd.icon; name: lb.dd.icon ?? ""; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-            UiText { text: lb.dd.label ?? ""; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+            UiText { text: lb.dd.label ?? ""; color: Theme.text; font.pixelSize: 14; font.weight: Font.Medium; anchors.verticalCenter: parent.verticalCenter }
         }
-        UiText { visible: !!lb.dd.desc; width: parent.width; text: lb.dd.desc ?? ""; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
+        UiText { visible: !!lb.dd.desc; width: parent.width; text: lb.dd.desc ?? ""; color: Theme.muted; font.pixelSize: 12; wrapMode: Text.WordWrap }
     }
 
     Component {
@@ -267,7 +267,7 @@ Column {
                 suffix: slc.dd.suffix ?? ""
                 onMoved: v => { const st = slc.dd.step ?? 1; form.set(slc.dd.key, Math.round(v / st) * st) }
             }
-            UiText { visible: !!slc.dd.desc; width: slc.width; topPadding: 4; text: slc.dd.desc ?? ""; color: Theme.muted; font.pixelSize: 11; wrapMode: Text.WordWrap }
+            UiText { visible: !!slc.dd.desc; width: slc.width; topPadding: 4; text: slc.dd.desc ?? ""; color: Theme.muted; font.pixelSize: 12; wrapMode: Text.WordWrap }
         }
     }
     Component {
@@ -334,7 +334,7 @@ Column {
             Row {
                 spacing: 8
                 UiIcon { name: fc.dd.icon ?? "font"; size: 15; color: Theme.muted; anchors.verticalCenter: parent.verticalCenter }
-                UiText { text: fc.dd.label ?? ""; color: Theme.text; font.pixelSize: 13; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: fc.dd.label ?? ""; color: Theme.text; font.pixelSize: 14; font.weight: Font.Medium; anchors.verticalCenter: parent.verticalCenter }
                 UiText { text: fc.vv ? "" : "(a do shell)"; color: Theme.muted; font.pixelSize: 11; anchors.verticalCenter: parent.verticalCenter }
             }
             UiField {
@@ -455,8 +455,8 @@ Column {
             Column {
                 anchors { left: ith.right; leftMargin: 10; right: ib.left; rightMargin: 8; verticalCenter: parent.verticalCenter }
                 spacing: 4
-                UiText { width: parent.width; elide: Text.ElideRight; text: ic.dd.label ?? ""; color: Theme.text; font.pixelSize: 13 }
-                UiText { width: parent.width; elide: Text.ElideMiddle; text: ic.vv ? ic.vv.split("/").pop() : "nenhuma"; color: Theme.muted; font.pixelSize: 11 }
+                UiText { width: parent.width; elide: Text.ElideRight; text: ic.dd.label ?? ""; color: Theme.text; font.pixelSize: 14; font.weight: Font.Medium }
+                UiText { width: parent.width; elide: Text.ElideMiddle; text: ic.vv ? ic.vv.split("/").pop() : "nenhuma"; color: Theme.muted; font.pixelSize: 12 }
             }
             UiButton {
                 id: ib

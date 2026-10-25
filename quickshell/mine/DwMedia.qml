@@ -81,7 +81,7 @@ Item {
             readonly property bool tiny: w.cols === 1 && w.rows === 1
             readonly property bool strip: w.cols === 2 && w.rows >= 3 && !w.lyr
             readonly property bool lyrBox: w.lyr && tall && w.rows >= 2 && w.cols >= 3
-            readonly property real coverS: tiny ? Math.min(width, height) : (tall ? Math.min(lyrBox ? width * 0.42 : width, strip ? height - 118 : height * (lyrBox ? 0.62 : 0.55)) : height)
+            readonly property real coverS: tiny ? Math.min(width, height) : (tall ? Math.min(lyrBox ? width * 0.42 : width, strip ? height - 118 : height * (lyrBox ? 0.62 : (width > height * 1.3 ? 0.46 : 0.55))) : height)
             ShapedImage {
                 id: cover
                 width: body.coverS; height: body.coverS

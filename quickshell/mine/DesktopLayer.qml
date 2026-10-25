@@ -279,10 +279,12 @@ Scope {
                 radius: 14
                 color: Theme.gl(Theme.bg, 1)
                 border.width: 1; border.color: Theme.border
-                scale: 0.94 + 0.06 * k; opacity: k
+                scale: 0.95 + 0.05 * k; opacity: k
+                // cresce a partir do ponto do clique (submenu: da borda de onde nasce)
+                transformOrigin: isSub ? (menu.toLeft ? Item.Right : Item.Left) : (DeskMenu.x > win.width - width - 8 ? (DeskMenu.y > win.height - height - 8 ? Item.BottomRight : Item.TopRight) : (DeskMenu.y > win.height - height - 8 ? Item.BottomLeft : Item.TopLeft))
                 property real k: 0
                 Component.onCompleted: k = 1
-                Behavior on k { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                Behavior on k { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
                 MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
                 Column {
                     id: mcol
@@ -292,17 +294,17 @@ Scope {
                         delegate: Item {
                             required property var modelData
                             width: mcol.width
-                            height: modelData.sep ? 9 : modelData.head ? 26 : 32
+                            height: modelData.sep ? 9 : modelData.head ? 28 : 34
                             Rectangle { visible: !!modelData.sep; anchors.centerIn: parent; width: parent.width - 16; height: 1; color: Theme.border }
-                            UiText { visible: !!modelData.head; x: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData.head ?? ""; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                            UiText { visible: !!modelData.head; x: 10; anchors.verticalCenter: parent.verticalCenter; text: modelData.head ?? ""; color: Theme.muted; font.pixelSize: 12; font.weight: Font.Medium }
                             Rectangle {
                                 visible: !modelData.sep && !modelData.head
                                 anchors.fill: parent; radius: 9
                                 color: im.containsMouse || (modelData.sub && DeskMenu.sub === modelData.sub) ? (modelData.danger ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.cardHi) : "transparent"
-                                UiIcon { id: mi; x: 10; anchors.verticalCenter: parent.verticalCenter; name: modelData.icon ?? ""; size: 16; color: modelData.danger ? Theme.danger : (modelData.checked ? Theme.accent : Theme.muted) }
+                                UiIcon { id: mi; x: 10; anchors.verticalCenter: parent.verticalCenter; name: modelData.icon ?? ""; size: 16; color: modelData.danger ? Theme.danger : Theme.muted }
                                 UiText { anchors { left: mi.right; leftMargin: 10; verticalCenter: parent.verticalCenter; right: parent.right; rightMargin: 24 } elide: Text.ElideRight
-                                    text: modelData.label ?? ""; color: modelData.danger ? Theme.danger : Theme.text; font.pixelSize: 13; font.weight: modelData.checked ? Font.DemiBold : Font.Normal }
-                                UiIcon { visible: !!modelData.sub || !!modelData.checked; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter } name: modelData.sub ? "chevRight" : "check"; size: 14; color: Theme.muted }
+                                    text: modelData.label ?? ""; color: modelData.danger ? Theme.danger : Theme.text; font.pixelSize: 13; font.weight: Font.Normal }
+                                UiIcon { visible: !!modelData.sub || !!modelData.checked; anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter } name: modelData.sub ? "chevRight" : "check"; size: 14; color: modelData.sub ? Theme.muted : Theme.accent }
                                 MouseArea {
                                     id: im; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                                     onEntered: if (!ml.isSub && modelData.sub) DeskMenu.sub = modelData.sub; else if (!ml.isSub) DeskMenu.sub = ""
@@ -343,16 +345,17 @@ Scope {
                     radius: 14
                     color: Theme.gl(Theme.bg, 1)
                     border.width: 1; border.color: Theme.border
-                    scale: 0.94 + 0.06 * k; opacity: k
+                    scale: 0.95 + 0.05 * k; opacity: k
+                    transformOrigin: menu.toLeft ? Item.Right : Item.Left
                     property real k: 0
                     Component.onCompleted: k = 1
-                    Behavior on k { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+                    Behavior on k { NumberAnimation { duration: 170; easing.type: Easing.OutCubic } }
                     MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
                     Column {
                         id: scol
                         x: 12; y: 12; width: parent.width - 24
                         spacing: 8
-                        UiText { text: "Esquema de cores"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                        UiText { text: "Esquema de cores"; color: Theme.muted; font.pixelSize: 12; font.weight: Font.Medium }
                         Flow {
                             width: parent.width
                             spacing: 6
@@ -370,7 +373,7 @@ Scope {
                                 }
                             }
                         }
-                        UiText { text: "Wallpaper"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                        UiText { text: "Wallpaper"; color: Theme.muted; font.pixelSize: 12; font.weight: Font.Medium }
                         UiSeg { fill: true; value: Settings.wpMode; options: [["fill", "Preencher"], ["centered", "Centralizado"], ["collage", "Mosaico"]]; onPicked: v => Settings.wpMode = v }
                         Flickable {
                             visible: Settings.wpMode === "centered"
@@ -383,7 +386,7 @@ Scope {
                             ShapePicker { id: shapeRow; width: Shapes.list.length * 80; value: Settings.wpCenterShape; sides: Settings.wpCenterSides; onPicked: v => Settings.wpCenterShape = v }
                         }
                         UiSlider { visible: Settings.wpMode === "centered"; height: visible ? 50 : 0; label: "Tamanho"; from: 20; to: 95; value: Settings.wpCenterSize; suffix: " %"; onMoved: v => Settings.wpCenterSize = Math.round(v) }
-                        UiText { text: "Transição"; color: Theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold }
+                        UiText { text: "Transição"; color: Theme.muted; font.pixelSize: 12; font.weight: Font.Medium }
                         Flow {
                             width: parent.width
                             spacing: 5
