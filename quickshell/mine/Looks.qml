@@ -17,7 +17,7 @@ Singleton {
         { id: "widgets", label: "Widgets", icon: "dashboard", def: true,
           keys: ["desktopWidgets", "desktopOn", "desktopCardStyle", "desktopCard", "desktopShadow", "desktopTone", "desktopToneColor"] },
         { id: "wallpaper", label: "Wallpaper", icon: "wallpaper", def: true,
-          keys: ["wallpaper", "wpTransition", "wpDuration", "wpEasing", "wpWipeAngle", "wpParallax"] },
+          keys: ["wallpaper", "wpTransition", "wpDuration", "wpTransMs", "wpEasing", "wpWipeAngle", "wpParallax"] },
         { id: "bars", label: "Barras e moldura", icon: "bars", def: true,
           keys: ["bars", "edge", "cornerRadius", "fillet", "topRadius", "outline", "barsPanelMode", "hideDelay", "showDelay"] },
         { id: "colors", label: "Cores e vidro", icon: "palette", def: true,

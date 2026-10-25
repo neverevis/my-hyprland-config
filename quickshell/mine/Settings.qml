@@ -289,6 +289,7 @@ Singleton {
     property alias wpParallax: adapter.wpParallax       // % da largura que os wallpapers andam junto com a cortina
     property alias wpTransition: adapter.wpTransition   // fade | slide | wipe | circle | zoom | random | none
     property alias wpDuration: adapter.wpDuration       // ms
+    property alias wpTransMs: adapter.wpTransMs         // duracao propria da transicao (0 = a da animacao escolhida)
     property alias wpEasing: adapter.wpEasing           // smooth | decel | snappy | linear
     property alias wpInterval: adapter.wpInterval       // troca automatica, em minutos (0 = desligada)
     property alias wpShuffle: adapter.wpShuffle         // ordem aleatoria na troca automatica
@@ -332,7 +333,9 @@ Singleton {
     property alias launcherOffset: adapter.launcherOffset
     property alias launcherFillet: adapter.launcherFillet       // curva onde o painel acoplado encontra a moldura
     property bool settingsOpen: false                           // janela de configuracoes aberta (nao e salvo)
-    property string settingsPage: "overview"                        // pagina aberta nas configuracoes (nao e salvo; paginas podem levar a outras)
+    property string settingsPage: "start"                       // pagina aberta nas configuracoes (nao e salvo; ids antigos viram os novos)
+    property string settingsSub: ""                             // sub-pagina (ex.: Paineis > launcher; nao e salvo)
+    property string settingsReveal: ""                          // titulo de secao/cartao para rolar ate ele ao abrir (nao e salvo)
     property bool launcherOpen: false                           // launcher aberto (nao e salvo)
     property alias launcherPos: adapter.launcherPos             // center | top
     property alias launcherUsage: adapter.launcherUsage         // { id do app: vezes aberto } (ordena os resultados)
@@ -665,6 +668,7 @@ Singleton {
         adapter.wpParallax = 20
         adapter.wpWipeAngle = 0
         adapter.wpDuration = 900
+        adapter.wpTransMs = 0
         adapter.wpEasing = "smooth"
         adapter.wpInterval = 0
         adapter.wpShuffle = true
@@ -1032,6 +1036,7 @@ Singleton {
             property bool lockPower: true
             property int wpWipeAngle: 0
             property int wpDuration: 900
+            property int wpTransMs: 0
             property string wpEasing: "smooth"
             property int wpInterval: 0
             property bool wpShuffle: true

@@ -50,7 +50,8 @@ Singleton {
         robot: 0xF06A9, creation: 0xF0674, dotsH: 0xF01D8, openNew: 0xF03CC, earth: 0xF01E7,
         dotsGrid: 0xF15FC, squareOutline: 0xF0763, loading: 0xF0772,
         snowflake: 0xF0717, backspace: 0xF030D, keyboardReturn: 0xF0311, shiftKey: 0xF0632, keyboardClose: 0xF0309, keyboardTab: 0xF0312, undo: 0xF054C, redo: 0xF044E, dotsV: 0xF01D9, paste: 0xF0192,
-        battery: 0xF0079, batteryCharging: 0xF0084, batteryAlert: 0xF0083, batteryOutline: 0xF008E, batteryUnknown: 0xF0091, pin: 0xF0403, pinOff: 0xF0404, translate: 0xF05CA
+        battery: 0xF0079, batteryCharging: 0xF0084, batteryAlert: 0xF0083, batteryOutline: 0xF008E, batteryUnknown: 0xF0091, pin: 0xF0403, pinOff: 0xF0404, translate: 0xF05CA,
+        wrench: 0xF05B7, progressClock: 0xF0996, menuOpen: 0xF0BAB, accountCog: 0xF1370
     })
     function g(name: string): string { const c = map[name]; return c ? String.fromCodePoint(c) : "" }
 }

@@ -75,7 +75,7 @@ Singleton {
         linear: [0, 0, 1, 1, 1, 1]
     })
     readonly property var curve: Settings.animOf("wallpaper").curve
-    readonly property int duration: Settings.animOf("wallpaper").duration
+    readonly property int duration: Settings.wpTransMs > 0 ? Settings.wpTransMs : Settings.animOf("wallpaper").duration
     readonly property var shaderTransitions: ["dissolve", "pixelate", "ripple", "blinds", "swirl", "circlepit", "circleselect", "magic", "doom", "peel", "transition", "stripes", "crt", "glitch", "shatter"]
     readonly property var transitions: ["fade", "slide", "wipe", "circle", "zoom"].concat(shaderTransitions)
 
