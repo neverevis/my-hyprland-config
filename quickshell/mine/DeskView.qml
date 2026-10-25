@@ -256,6 +256,7 @@ Item {
                     anchors.fill: parent
                     anchors.margins: content.item && content.item.pad !== undefined && content.item.pad >= 0 ? content.item.pad : card.bare ? 4 : 18
                     sourceComponent: DeskWidgets.component(card.w ? card.w.type : "")
+                    asynchronous: true   // varios widgets novos (preset, inicio) entram em quadros seguidos em vez de travar
                     onLoaded: card.feed()
                     // sem fundo: sombra suave para ler em cima de qualquer wallpaper
                     // (menos nos que tem fundo proprio, como o relogio flor: a sombra virava uma copia da forma por baixo)

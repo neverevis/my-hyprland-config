@@ -8,6 +8,11 @@ Column {
     spacing: 14
     property string toast: ""
     property string openId: DeskState.selected
+    // ids dos widgets: so muda quando entra/sai um widget (o array novo a cada opcao alterada recriava a lista inteira)
+    property var wids: []
+    function syncIds() { const n = (Settings.desktopWidgets || []).map(w => w.id); if (n.join("|") !== wids.join("|")) wids = n }
+    Connections { target: Settings; function onDesktopWidgetsChanged() { page.syncIds() } }
+    Component.onCompleted: syncIds()
     Timer { id: toastT; interval: 2200; onTriggered: page.toast = "" }
     function say(s) { toast = s; toastT.restart() }
 
@@ -139,7 +144,7 @@ Column {
         subtitle: "Clique num widget para ver todas as opções dele (as mesmas do inspetor na área de trabalho)."
         UiText { visible: !(Settings.desktopWidgets || []).length; text: "Nenhum widget ainda."; color: Theme.muted; font.pixelSize: 13 }
         Repeater {
-            model: (Settings.desktopWidgets || []).map(w => w.id)
+            model: page.wids
             delegate: Rectangle {
                 id: row
                 required property var modelData
@@ -147,7 +152,7 @@ Column {
                 readonly property var info: w ? DeskState.info(w.type) : null
                 readonly property bool open: page.openId === modelData
                 width: parent.width
-                height: head.height + (open ? body.implicitHeight + 16 : 0)
+                height: head.height + (open && body.item ? body.item.implicitHeight + 16 : 0)
                 radius: 12
                 clip: true
                 color: open ? Theme.cardHi : (hm.containsMouse ? Qt.rgba(Theme.cardHi.r, Theme.cardHi.g, Theme.cardHi.b, 0.6) : "transparent")
@@ -173,11 +178,16 @@ Column {
                         UiIcon { anchors.verticalCenter: parent.verticalCenter; name: row.open ? "chevUp" : "chevDown"; size: 16; color: Theme.muted }
                     }
                 }
-                Column {
+                // opcoes (previa ao vivo + formulario com miniaturas): so existem para o widget aberto, criadas sem travar
+                Loader {
                     id: body
+                    active: row.open
+                    asynchronous: true
                     visible: row.open
                     x: 16; y: head.height
                     width: row.width - 32
+                    sourceComponent: Column {
+                    width: body.width
                     spacing: 12
                     WidgetPreview {
                         width: parent.width
@@ -202,6 +212,7 @@ Column {
                         get: k => row.w ? DeskState.opt(row.w, k) : undefined
                         set: (k, v) => DeskState.setOpt(row.modelData, k, v)
                         isShown: d => row.w ? DeskState.shown(row.w, d) : false
+                    }
                     }
                 }
             }
