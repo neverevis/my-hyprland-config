@@ -69,13 +69,13 @@ Item {
                 id: col
                 spacing: 1
                 Label {
-                    width: col.width
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: root.vertical ? Qt.formatDateTime(clk.date, Settings.clock24 ? "HH\nmm" : "h\nmm") : DateTime.formatted(clk.date, root.opts.format)
                 }
                 // barra lateral: data curta (dia/mes) embaixo da hora
                 Label {
                     visible: root.vertical && root.opts.shortDate !== false
-                    width: col.width
+                    anchors.horizontalCenter: parent.horizontalCenter
                     text: Qt.formatDateTime(clk.date, "dd/MM")
                     font.pixelSize: 11
                     opacity: 0.7

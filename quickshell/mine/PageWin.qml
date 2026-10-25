@@ -82,7 +82,7 @@ SetPage {
     SetSection {
         title: "Espaços e bordas"; icon: "window"
         subtitle: page.nChanged > 0 ? (page.nChanged === 1 ? "1 ajuste seu por cima" : page.nChanged + " ajustes seus por cima") + " dos arquivos do Hyprland" : "Valem na hora; \"Restaurar\" volta ao que está nos arquivos do Hyprland"
-        SetHypr { keys: ["general:gaps_in", "general:gaps_out", "general:border_size", "decoration:rounding", "decoration:active_opacity"] }
+        SetHypr { keys: ["general:gaps_in", "general:gaps_out", "mine:single_gaps_out", "general:border_size", "decoration:rounding", "decoration:active_opacity"] }
         SetExpander {
             icon: "tune"; label: "Mais ajustes"; description: "Forma do canto, opacidade das outras janelas e espaço entre workspaces"
             SetHypr { sub: true; keys: ["decoration:rounding_power", "decoration:inactive_opacity", "general:gaps_workspaces"] }

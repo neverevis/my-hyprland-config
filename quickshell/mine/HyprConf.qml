@@ -21,6 +21,8 @@ Singleton {
     readonly property var options: [
         { key: "general:gaps_in", group: "windows", label: "Espaço entre janelas", type: "slider", from: 0, to: 40, suffix: " px" },
         { key: "general:gaps_out", group: "windows", label: "Espaço até a borda da tela", type: "slider", from: 0, to: 60, suffix: " px" },
+        // do shell (nao e opcao do Hyprland): vira regra de workspace; sem valor proprio, segue o espaco ate a borda
+        { key: "mine:single_gaps_out", group: "windows", label: "Até a borda com uma janela só", type: "slider", from: 0, to: 60, suffix: " px" },
         { key: "general:gaps_workspaces", group: "windows", label: "Espaço entre workspaces (ao trocar)", type: "slider", from: 0, to: 200, suffix: " px" },
         { key: "general:border_size", group: "windows", label: "Espessura da borda", type: "slider", from: 0, to: 8, suffix: " px" },
         { key: "decoration:rounding", group: "windows", label: "Arredondamento", type: "slider", from: 0, to: 40, suffix: " px" },
@@ -80,7 +82,11 @@ Singleton {
     readonly property var cfg: Settings.hyprCfg || ({})
     property var cur: ({})            // valores lidos do Hyprland
     property var monitors: []
-    function value(key) { return cfg[key] !== undefined ? cfg[key] : cur[key] }
+    function value(key) {
+        if (cfg[key] !== undefined) return cfg[key]
+        if (key === "mine:single_gaps_out") return value("general:gaps_out")
+        return cur[key]
+    }
     function overridden(key) { return cfg[key] !== undefined }
     function set(key, v) { const c = Object.assign({}, cfg); c[key] = v; Settings.hyprCfg = c }
     function reset(key) { const c = Object.assign({}, cfg); delete c[key]; Settings.hyprCfg = c }
@@ -95,7 +101,7 @@ Singleton {
     function tableOf(map) {
         const t = {}
         for (const k in map) {
-            if (!opt(k)) continue
+            if (!opt(k) || k.startsWith("mine:")) continue
             const path = k.split(":")
             let o = t
             for (let i = 0; i < path.length - 1; i++) { o[path[i]] = o[path[i]] ?? {}; o = o[path[i]] }
@@ -139,14 +145,22 @@ Singleton {
         const a = cfg[ka] ?? cur[ka] ?? 1, i = cfg[ki] ?? a
         return 'hl.window_rule({ match = { fullscreen = false }, opacity = "' + luaVal(a) + ' override ' + luaVal(i) + ' override" })\n' + shell
     }
-    function lua() { return [configLua(), opacityLua(), monitorLua(), autostartLua()].filter(x => x).join("\n") }
+    // espaco ate a borda: muitas configs (a do end4, a sua) tem regras de workspace "uma janela so" com gaps_out
+    // proprio (w[tv1], f[1]), que passavam por cima do valor escolhido. Viram regras tambem, carregadas depois.
+    function gapsLua() {
+        const kg = "general:gaps_out", ks = "mine:single_gaps_out"
+        if (cfg[kg] === undefined && cfg[ks] === undefined) return ""
+        const v = luaVal(value(ks))
+        return ["w[tv1]s[false]", "f[1]s[false]"].map(w => 'hl.workspace_rule({ workspace = "' + w + '", gaps_out = ' + v + ' })').join("\n")
+    }
+    function lua() { return [configLua(), opacityLua(), gapsLua(), monitorLua(), autostartLua()].filter(x => x).join("\n") }
 
     // ---- leitura dos valores atuais ----
     readonly property string script: Qt.resolvedUrl("scripts/hyprget.py").toString().replace("file://", "")
     function refresh() { proc.running = false; proc.running = true }
     Process {
         id: proc
-        command: ["python3", root.script].concat(root.options.map(o => o.key))
+        command: ["python3", root.script].concat(root.options.map(o => o.key).filter(k => !k.startsWith("mine:")))
         stdout: StdioCollector { onStreamFinished: { try { const d = JSON.parse(text); root.monitors = d._monitors || []; delete d._monitors; root.cur = d } catch (e) {} } }
     }
 }
