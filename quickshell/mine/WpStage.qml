@@ -14,6 +14,7 @@ Item {
     property real progress: 0
     property bool playing: false
     property bool fwd: true
+    property int plays: 4               // trocas que ainda toca; depois para (sem quadros) ate trocar a escolha, passar o mouse ou clicar
     readonly property bool isShader: Wallpaper.shaderTransitions.indexOf(trans) >= 0
 
     readonly property int fi: Wallpaper.files.findIndex(f => f.path === Wallpaper.current)
@@ -43,18 +44,18 @@ Item {
     onSelChanged: restartLoop()
     onActiveChanged: if (!active) { anim.stop(); playing = false; progress = 0 }
     function restartLoop() {
-        anim.stop(); playing = false; progress = 0
+        anim.stop(); playing = false; progress = 0; plays = 4
         hold.interval = 250; hold.restart()
     }
 
     Timer {
         id: hold
         interval: 700
-        running: st.active && !st.playing
+        running: st.active && !st.playing && st.plays > 0
         repeat: false
         onTriggered: {
             interval = 700
-            if (st.sel === "none" || Wallpaper.duration <= 0) { st.fwd = !st.fwd; restart(); return }
+            if (st.sel === "none" || Wallpaper.duration <= 0) { st.fwd = !st.fwd; st.plays--; restart(); return }
             st.trans = st.sel === "random" ? st.pool[st.rnd++ % st.pool.length] : st.sel
             st.progress = 0
             fx.seed = Math.random() * 10
@@ -70,7 +71,7 @@ Item {
         duration: Math.max(1, Wallpaper.duration)
         easing.type: Easing.BezierSpline
         easing.bezierCurve: Wallpaper.curve
-        onFinished: { st.fwd = !st.fwd; st.progress = 0; st.playing = false; hold.restart() }
+        onFinished: { st.fwd = !st.fwd; st.progress = 0; st.playing = false; st.plays--; if (st.plays > 0) hold.restart() }
     }
 
     Item {
@@ -178,4 +179,21 @@ Item {
         border.color: Theme.glc(Theme.card, 1)
     }
     Rectangle { anchors.fill: parent; radius: SetK.boxRadius - 2; color: "transparent"; border.width: 1; border.color: Theme.border }
+    // parado: clicar (ou passar o mouse) toca de novo
+    MouseArea {
+        id: ma
+        anchors.fill: parent
+        hoverEnabled: true
+        cursorShape: Qt.PointingHandCursor
+        onClicked: st.restartLoop()
+        onContainsMouseChanged: if (containsMouse && st.plays <= 0) st.restartLoop()
+    }
+    Rectangle {
+        anchors { right: parent.right; bottom: parent.bottom; margins: 10 }
+        width: 28; height: 28; radius: 14
+        color: Qt.rgba(0, 0, 0, 0.45)
+        opacity: st.plays <= 0 && !st.playing ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+        UiIcon { anchors.centerIn: parent; name: "refresh"; size: 16; color: "white" }
+    }
 }
