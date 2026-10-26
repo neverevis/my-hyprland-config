@@ -361,7 +361,10 @@ Singleton {
     property alias launcherFuzzy: adapter.launcherFuzzy         // busca aproximada (letras na ordem, ex.: "ffx" acha Firefox)
     property alias launcherFavs: adapter.launcherFavs           // apps favoritos (ids): primeiro na lista
     property alias launcherHidden: adapter.launcherHidden       // apps escondidos (ids)
-    property alias launcherTerminal: adapter.launcherTerminal   // terminal do modo comando
+    property alias launcherTerminal: adapter.launcherTerminal   // terminal do modo comando (antigo; vale no automatico, ver Terminal.qml)
+    property alias defaultTerminal: adapter.defaultTerminal     // terminal padrao ("" = automatico: o primeiro instalado)
+    property alias termLook: adapter.termLook                   // visual do terminal: so o que foi trocado (Terminal.qml)
+    property alias termPrompt: adapter.termPrompt               // prompt montado aqui: so o que foi trocado (TermPrompt.qml)
     property alias launcherClipHide: adapter.launcherClipHide   // esconde o texto do historico da area de transferencia
     property alias launcherClipPins: adapter.launcherClipPins   // textos fixados na area de transferencia
     property alias launcherPick: adapter.launcherPick           // emoji e simbolo: copy (copiar) | type (digitar no app)
@@ -1101,6 +1104,9 @@ Singleton {
             property var launcherFavs: []
             property var launcherHidden: []
             property string launcherTerminal: "kitty"
+            property string defaultTerminal: ""
+            property var termLook: ({})
+            property var termPrompt: ({})
             property var launcherClipPins: []
             property bool launcherClipHide: false
             property string launcherPick: "copy"

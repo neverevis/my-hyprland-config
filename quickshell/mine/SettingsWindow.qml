@@ -53,6 +53,7 @@ Scope {
         ] },
         { label: "Sistema", pages: [
             { id: "apps", label: "Aplicativos", icon: "apps", desc: "Instalar, remover e abrir ao iniciar." },
+            { id: "terminal", label: "Terminal", icon: "console", desc: "Terminal padrão, visual e prompt." },
             { id: "sound", label: "Som", icon: "volume", desc: "Saídas, entradas, volume por aplicativo e equalizador." },
             { id: "net", label: "Rede e Bluetooth", icon: "wifi", desc: "Wi-Fi, cabo, VPN e Bluetooth." },
             { id: "display", label: "Monitores", icon: "monitor", desc: "Resolução, escala, posição, brilho e luz noturna." },
@@ -112,7 +113,7 @@ Scope {
 
     // ---- paginas e indice de busca (fora da janela: o launcher tambem procura opcoes com ela fechada) ----
     readonly property var comps: ({ start: startC, theme: themeC, wall: wallC, desktop: desktopC, bars: barsC, panels: panelsC, win: winC, anim: animC, looks: looksC,
-        keys: keysC, apps: appsC, sound: soundC, net: netC, display: displayC, input: systemC, power: sessionC, time: timeC, tools: toolsC, account: accountC })
+        keys: keysC, apps: appsC, terminal: terminalC, sound: soundC, net: netC, display: displayC, input: systemC, power: sessionC, time: timeC, tools: toolsC, account: accountC })
     // o que a busca percorre: cada entrada; Paineis vira uma fonte por painel (a sub-pagina vai junto no resultado)
     readonly property var indexSources: allPages.reduce((a, pg) => a.concat(pg.id === "panels"
         ? [{ pg: pg, comp: homeC, sub: "home" }, { pg: pg, comp: launcherC, sub: "launcher" }, { pg: pg, comp: notifC, sub: "notifications" }, { pg: pg, comp: moreC, sub: "more" }]
@@ -137,6 +138,7 @@ Scope {
     Component { id: accountC; PageAccount {} }
     Component { id: keysC; PageKeys {} }
     Component { id: appsC; PageApps {} }
+    Component { id: terminalC; PageTerminal {} }
     Component { id: soundC; PageSound {} }
     Component { id: netC; PageNet {} }
     Component { id: displayC; PageDisplay {} }

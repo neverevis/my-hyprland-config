@@ -94,19 +94,28 @@ Scope {
         return best
     }
     readonly property string rest: mode ? query.replace(/^\s+/, "").slice(pfx[mode].length) : query
+    readonly property var termWords: ["terminal", "term", "console", "linha de comando"]
     function appItems(q) {
         q = q.trim().toLowerCase()
         const usage = Settings.launcherUsage ?? {}, favs = root.arr(Settings.launcherFavs), hidden = root.arr(Settings.launcherHidden)
         const apps = DesktopEntries.applications.values.filter(e => !e.noDisplay && hidden.indexOf(e.id) < 0)
         const scored = []
+        const tid = Terminal.cur.dsk ? Terminal.cur.dsk.replace(/\.desktop$/, "").toLowerCase() : ""
         for (const e of apps) {
             const fav = favs.indexOf(e.id) >= 0
             const boost = Math.min(usage[e.id] ?? 0, 30) * 4 + (fav ? (q === "" ? 10000 - favs.indexOf(e.id) : 200) : 0)
-            if (q === "") scored.push({ e: e, s: boost, fav: fav })
-            else { const r = rank(e, q); if (r > 0) scored.push({ e: e, s: r + boost, fav: fav }) }
+            const isTerm = tid !== "" && (e.id ?? "").toLowerCase() === tid
+            if (q === "") scored.push({ e: e, s: boost, fav: fav, term: isTerm })
+            else {
+                let r = rank(e, q)
+                if (isTerm) { r = Math.max(r, rank({ name: "Terminal" }, q)); if (q.length >= 2 && termWords.some(w => w.startsWith(norm(q)))) r = Math.max(r, 850) }
+                if (r > 0) scored.push({ e: e, s: r + boost, fav: fav, term: isTerm })
+            }
         }
         scored.sort((a, b) => b.s - a.s || (a.e.name ?? "").localeCompare(b.e.name ?? ""))
         return scored.map(x => { const da = x.e.actions ? Array.from(x.e.actions) : []
+            if (x.term) return { name: "Terminal", desc: Terminal.termName, icon: x.e.icon || Terminal.termIcon, fav: x.fav, appId: x.e.id, dact: null,
+                     act: () => root.launch(x.e, true), alt: () => root.toggleFav(x.e.id), altHint: x.fav ? "tirar dos favoritos" : "favoritar" }
             return { name: x.e.name, desc: x.e.comment || x.e.genericName || "", icon: x.e.icon, fav: x.fav, appId: x.e.id, dact: da.length ? da : null,
                      act: () => root.launch(x.e), alt: da.length ? () => { root.expandId = root.expandId === x.e.id ? "" : x.e.id } : () => root.toggleFav(x.e.id),
                      altHint: da.length ? "ações do app (seta direita)" : (x.fav ? "tirar dos favoritos" : "favoritar") } })
@@ -309,8 +318,8 @@ Scope {
         const c = q.trim()
         if (c === "") return [{ name: "Digite um comando", desc: "Enter roda em segundo plano; a segunda opção abre no terminal", glyph: "send", act: () => {} }]
         return [{ name: "Executar: " + c, desc: "Em segundo plano (sem terminal)", glyph: "send", act: () => Quickshell.execDetached(["sh", "-c", c]) },
-                { name: "Executar no terminal: " + c, desc: (Settings.launcherTerminal || "kitty") + " (fica aberto no fim)", glyph: "desktop",
-                  act: () => Quickshell.execDetached([Settings.launcherTerminal || "kitty", "sh", "-c", c + '; echo; read -rp "[Enter fecha] " _']) }]
+                { name: "Executar no terminal: " + c, desc: Terminal.termName + " (fica aberto no fim)", glyph: "desktop",
+                  act: () => Quickshell.execDetached(Terminal.runIn(["sh", "-c", c + '; echo; read -rp "[Enter fecha] " _'])) }]
     }
     // opcoes do shell (indice da janela de configuracoes): abre direto no cartao
     property var settingsRef: null
@@ -345,12 +354,13 @@ Scope {
     }
     onAliveChanged: if (alive) { userScan.running = false; userScan.running = true; if (dflt.settings && settingsRef && !settingsRef.index.length) settingsRef.buildIndex() }
     function run(it) { if (!it) return; Settings.launcherOpen = false; it.act() }
-    function launch(e) {
+    function launch(e, asTerminal) {
         if (!e) return
         const u = Object.assign({}, Settings.launcherUsage ?? {})
         u[e.id] = (u[e.id] ?? 0) + 1
         Settings.launcherUsage = u
-        if (e.runInTerminal && e.command && e.command.length) Quickshell.execDetached({ command: [Settings.launcherTerminal || "kitty", "-e"].concat(Array.from(e.command)), workingDirectory: e.workingDirectory || "" })
+        if (e.runInTerminal && e.command && e.command.length) Quickshell.execDetached({ command: Terminal.runIn(Array.from(e.command)), workingDirectory: e.workingDirectory || "" })
+        else if (asTerminal) AppCmds.run("terminal")
         else e.execute()
     }
 

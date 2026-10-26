@@ -105,7 +105,7 @@ Column {
         }
         SetChoice { icon: "sticker"; label: "Ao escolher emoji ou símbolo"; options: [["copy", "Copiar", "cards"], ["type", "Digitar", "keyboard"]]; value: Settings.launcherPick; onPicked: v => Settings.launcherPick = v }
         SetRow { icon: "eyeOff"; label: "Esconder a área de transferência"; description: "Na busca com ; os textos viram bolinhas e as miniaturas somem"; checked: Settings.launcherClipHide; onToggled: on => Settings.launcherClipHide = on }
-        SetRow { icon: "keyboard"; label: "Terminal do modo comando"; UiField { width: 140; text: Settings.launcherTerminal; placeholderText: "kitty"; onEditingFinished: Settings.launcherTerminal = text.trim() || "kitty" } }
+        SetRow { icon: "console"; label: "Terminal do modo comando"; description: "Usa o terminal padrão: " + Terminal.termName; UiButton { text: "Mudar"; kind: "ghost"; onClicked: Settings.settingsPage = "terminal" } }
     }
 
     SetSection {

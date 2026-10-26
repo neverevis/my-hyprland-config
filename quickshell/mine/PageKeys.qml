@@ -284,7 +284,7 @@ SetPage {
         if (!SysAct.real("abrir " + userFile)) return
         const ed = editor || "xdg-open"
         const tui = ["nvim", "vim", "nano", "micro", "hx", "helix", "vi", "emacs"]
-        Quickshell.execDetached(tui.indexOf(ed) >= 0 ? [Settings.launcherTerminal || "kitty", "-e", ed, userFile] : [ed, userFile])
+        Quickshell.execDetached(tui.indexOf(ed) >= 0 ? Terminal.runIn([ed, userFile]) : [ed, userFile])
     }
 
     readonly property var icons: ({ settings: "cog", looks: "layers", wallpaper: "wallpaper", wp_random: "dice", launcher: "apps", home: "home", home_super: "home",

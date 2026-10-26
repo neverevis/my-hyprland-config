@@ -221,7 +221,7 @@ Singleton {
     // ---- terminal (AUR e atualizar tudo: interativo, voce revisa e digita a senha la) ----
     function term(title, shcmd, args) {
         const full = 'echo "' + title + '"; echo; ' + shcmd + '; st=$?; echo; if [ $st -eq 0 ]; then echo "Pronto."; else echo "Terminou com erro ($st)."; fi; read -rp "[Enter fecha] " _'
-        const argv = ["sh", "-c", '$0 -e sh -c "$1" sh "$@"', AppCmds.cmd("terminal") || "kitty", full].concat(args || [])
+        const argv = Terminal.runWith(AppCmds.cmd("terminal"), ["sh", "-c", full, "sh"].concat(args || []))
         console.log("apps: " + (dry ? "[TESTE] terminal -> " : "terminal -> ") + full + " " + (args || []).join(" "))
         if (dry) return
         Quickshell.execDetached(argv)
@@ -248,6 +248,7 @@ Singleton {
     IpcHandler {
         target: "apps"
         function open(t: string): void { root.openWindow(t) }          // abre a janela (apps | pkgs | install | updates)
+        function terminal(): void { AppCmds.run("terminal") }          // abre o terminal padrao
         function window(): void { root.windowOpen = !root.windowOpen }  // alterna
         function close(): void { root.windowOpen = false }
         function select(id: string): void { root.selected = id }

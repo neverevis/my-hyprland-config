@@ -12,11 +12,11 @@ Singleton {
         { id: "network", label: "Rede (Wi-Fi)", icon: "wifi", def: "nm-connection-editor" },
         { id: "ethernet", label: "Rede (cabo)", icon: "link", def: "nm-connection-editor" },
         { id: "mixer", label: "Mixer de volume", icon: "speaker", def: "pavucontrol" },
-        { id: "taskManager", label: "Monitor de tarefas", icon: "chart", def: "kitty -e btop" },
+        { id: "taskManager", label: "Monitor de tarefas", icon: "chart", def: Terminal.prefix + "btop" },
         { id: "browser", label: "Navegador dos webapps (Chromium)", icon: "web", def: "brave" },
-        { id: "terminal", label: "Terminal", icon: "desktop", def: "kitty" },
-        { id: "update", label: "Atualizar o sistema", icon: "download", def: "kitty -e sh -c 'sudo pacman -Syu; echo; read -rp \"[Enter fecha] \" _'" },
-        { id: "password", label: "Trocar a senha", icon: "lock", def: "kitty -e passwd" },
+        { id: "terminal", label: "Terminal", icon: "desktop", def: Terminal.term },
+        { id: "update", label: "Atualizar o sistema", icon: "download", def: Terminal.prefix + "sh -c 'sudo pacman -Syu; echo; read -rp \"[Enter fecha] \" _'" },
+        { id: "password", label: "Trocar a senha", icon: "lock", def: Terminal.prefix + "passwd" },
         { id: "users", label: "Gerenciar usuários", icon: "account", def: "kcmshell6 kcm_users" }
     ]
     function cmd(id: string): string {

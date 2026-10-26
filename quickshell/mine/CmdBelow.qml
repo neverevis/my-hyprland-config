@@ -53,7 +53,7 @@ Column {
             if (t !== "" && n.toLowerCase().indexOf(t) < 0 && (e.genericName ?? "").toLowerCase().indexOf(t) < 0) continue
             const cmd = Array.from(e.command ?? []).map(a => /[\s"'\\$]/.test(a) ? "'" + a.replace(/'/g, "'\\''") + "'" : a).join(" ").replace(/%[A-Za-z%]/g, "").replace(/\s+/g, " ").trim()
             if (cmd === "") continue
-            out.push({ name: n, cmd: (e.runInTerminal ? "kitty -e " : "") + cmd, icon: Icons.path(e.icon, "application-x-executable") })
+            out.push({ name: n, cmd: (e.runInTerminal ? Terminal.prefix : "") + cmd, icon: Icons.path(e.icon, "application-x-executable") })
         }
         out.sort((a, b) => a.name.localeCompare(b.name))
         return out

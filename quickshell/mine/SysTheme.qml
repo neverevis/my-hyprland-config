@@ -115,7 +115,7 @@ Singleton {
         if (term.running) return
         const cmd = p.aur ? "yay -S --needed " + p.pkg : "sudo pacman -S --needed " + p.pkg
         busy = "Instalando " + p.name + " no terminal…"
-        term.command = [Settings.launcherTerminal || "kitty", "-e", "sh", "-c", "echo 'Instalando " + p.name + " (" + p.pkg + ")'; echo; " + cmd + "; echo; echo 'Pronto. Enter fecha esta janela.'; read x"]
+        term.command = Terminal.runIn(["sh", "-c", "echo 'Instalando " + p.name + " (" + p.pkg + ")'; echo; " + cmd + "; echo; echo 'Pronto. Enter fecha esta janela.'; read x"])
         term.running = true
     }
     Process { id: term; onExited: { root.busy = ""; root.load() } }
