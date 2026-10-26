@@ -5,6 +5,7 @@
 // Nada roda parado: o cursor so pisca com a janela visivel e a opcao ligada.
 import Quickshell
 import QtQuick
+import QtQuick.Effects
 
 Item {
     id: root
@@ -17,7 +18,20 @@ Item {
     readonly property int fpx: Math.max(12, Math.min(18, Math.round(Terminal.fontPt * 1.33)))
     readonly property int lineH: Math.round(fpx * 1.5)
     readonly property real opq: (Terminal.look("opacity") ?? 100) / 100
-    readonly property color termBg: Qt.darker(Theme.card, 1.5)
+    readonly property color termBg: real.pal.bg !== "" ? real.pal.bg : Qt.darker(Theme.card, 1.5)
+    readonly property color termFg: real.pal.fg !== "" ? real.pal.fg : Theme.text
+    // saida de verdade (fastfetch/starship); "Organizar peças" mostra as pecas arrastaveis no lugar dela
+    property bool organize: false
+    readonly property bool org: organize || (real.settled && !real.ok)
+    readonly property int rounding: HyprConf.value("decoration:rounding") ?? 12
+    readonly property int bw: HyprConf.value("general:border_size") ?? 1
+    readonly property bool blurOn: Settings.blurEnabled && opq < 1
+    readonly property real scl: root.fpx / Math.max(1, Terminal.fontPt * 1.33)
+    // imagem: colunas do terminal; durante o arrasto vale a escolha provisoria
+    property int dragCols: 0
+    readonly property int imgCols: dragCols > 0 ? dragCols : TermFetch.imgSize
+    readonly property real imgW: imgCols > 0 ? imgCols * charW : 112
+    TermReal { id: real; cols: Math.max(20, Math.floor((mock.width - mock.pad * 2) / Math.max(1, root.charW))) }
     readonly property string bgImg: Terminal.hasImage ? (Terminal.look("image") || "") : ""
     readonly property string layout: Terminal.look("layout") || "tile"
     readonly property real charW: tm.advanceWidth
@@ -93,6 +107,70 @@ Item {
         onCanceled: { if (moved) { moved = false; ctl.endDrag() } }
         onClicked: if (tray && !wasMoved) ctl.api(group).place(key, 9999)
     }
+    // imagem das boas-vindas (a escolhida ou a atual do usuario); handle = puxador de tamanho no canto
+    component ImgBox: Rectangle {
+        id: ib
+        property var ctl
+        property bool handle: false
+        visible: TermFetch.canImage
+        width: ctl.imgW
+        height: fImg.status === Image.Ready && fImg.implicitWidth > 0 ? Math.max(20, Math.round(width * fImg.implicitHeight / fImg.implicitWidth)) : Math.min(width, 112)
+        radius: 8; clip: true
+        color: "transparent"
+        border.width: fImg.status === Image.Ready ? 0 : 1; border.color: Theme.border
+        Image { id: fImg; anchors.fill: parent; asynchronous: true; fillMode: Image.PreserveAspectFit; sourceSize.width: 512
+                source: TermFetch.image !== "" ? "file://" + TermFetch.image : "" }
+        Column {
+            visible: fImg.status !== Image.Ready
+            anchors.centerIn: parent; spacing: 4
+            UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "image"; size: 22; color: Theme.muted }
+            UiText { text: TermFetch.image === "" ? "Sem imagem" : "Carregando…"; color: Theme.muted; font.pixelSize: SetK.fDesc }
+        }
+        Rectangle { anchors.fill: parent; radius: 8; color: Theme.tint(0.16); visible: imgMa.containsMouse || hm.containsMouse || hm.pressed; border.width: 1; border.color: Theme.accent }
+        MouseArea { id: imgMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ctl.pickImage() }
+        Rectangle {
+            visible: TermFetch.image !== "" && imgMa.containsMouse
+            x: parent.width - 22; y: 6; width: 16; height: 16; radius: 8; z: 2
+            color: nm.containsMouse ? Theme.danger : Theme.cardHi; border.width: 1; border.color: Theme.border
+            UiIcon { anchors.centerIn: parent; name: "close"; size: 10; color: nm.containsMouse ? Theme.card : Theme.muted }
+            MouseArea { id: nm; anchors.fill: parent; anchors.margins: -3; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: TermFetch.set("image", "none") }
+        }
+        // puxador: arrastar muda a largura em colunas (encaixa em colunas inteiras); soltar grava
+        Rectangle {
+            visible: ib.handle && (imgMa.containsMouse || hm.containsMouse || hm.pressed)
+            x: parent.width - width; y: parent.height - height; width: 16; height: 16; z: 3
+            color: Theme.tint(0.3); border.width: 2; border.color: Theme.accent; radius: 4
+            MouseArea {
+                id: hm
+                anchors.fill: parent; anchors.margins: -3; hoverEnabled: true; cursorShape: Qt.SizeFDiagCursor
+                property real w0: 0
+                property real x0: 0
+                onPressed: m => { w0 = ib.width; x0 = mapToItem(ib.ctl, m.x, m.y).x; ib.ctl.dragCols = Math.round(w0 / ib.ctl.charW) }
+                onPositionChanged: m => { if (pressed) ib.ctl.dragCols = Math.max(10, Math.min(60, Math.round((w0 + mapToItem(ib.ctl, m.x, m.y).x - x0) / ib.ctl.charW))) }
+                onReleased: { const c = ib.ctl.dragCols; ib.ctl.dragCols = 0; if (c > 0) TermFetch.set("imgSize", c) }
+                onCanceled: ib.ctl.dragCols = 0
+            }
+        }
+    }
+    // cursor da maquete (o da peca "organizar" fica abaixo, em cursorLine)
+    component Cur: Item {
+        id: cu
+        property var ctl
+        width: ctl.charW; height: ctl.lineH - 4
+        Rectangle {
+            readonly property string shape: Terminal.look("cursor") || "block"
+            color: cu.ctl.termFg
+            width: shape === "beam" ? 2 : parent.width
+            height: shape === "underline" ? 2 : parent.height
+            y: shape === "underline" ? parent.height - 2 : 0
+            SequentialAnimation on opacity {
+                running: cu.visible && cu.ctl.visible && Terminal.look("blink") === true
+                loops: Animation.Infinite
+                NumberAnimation { to: 0; duration: 500 }
+                NumberAnimation { to: 1; duration: 500 }
+            }
+        }
+    }
     // x que tira a peca da maquete
     component DropX: Rectangle {
         id: dx
@@ -115,16 +193,30 @@ Item {
         Rectangle {
             id: mock
             width: parent.width
-            height: Math.max(190, content.implicitHeight + Math.min(60, Terminal.look("pad") ?? 0) * 2 + 8)
-            radius: 12
+            height: Math.max(190, (root.org ? content.implicitHeight : realCol.implicitHeight) + mock.pad * 2 + 8)
+            radius: Math.min(root.rounding, 24)
             clip: true
             color: "transparent"
-            border.width: 1; border.color: Theme.border
-            readonly property int pad: Math.max(10, Math.min(48, Terminal.look("pad") ?? 0))
+            border.width: Math.max(1, root.bw); border.color: Theme.border
+            readonly property int pad: Math.max(8, Math.min(60, Math.round((Terminal.look("pad") ?? 0) * root.scl)))
 
+            // fundo desfocado como o Hyprland faz em janelas transparentes (so com o blur ligado e a janela translucida)
             Image {
-                anchors.fill: parent; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 900
+                id: wpImg
+                anchors.fill: parent; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 600
                 source: Wallpaper.stillUrl(Wallpaper.current)
+            }
+            Loader {
+                anchors.fill: parent
+                active: root.blurOn && mock.visible
+                sourceComponent: Item {
+                    ShaderEffectSource { id: wpSrc; anchors.fill: parent; sourceItem: wpImg; hideSource: true; visible: false }
+                    MultiEffect {
+                        anchors.fill: parent; source: wpSrc; autoPaddingEnabled: false
+                        blurEnabled: true; blur: 1
+                        blurMax: Math.max(4, Math.min(64, Math.round(Settings.blurSize * Settings.blurPasses * 1.6)))
+                    }
+                }
             }
             Rectangle { anchors.fill: parent; color: root.termBg; opacity: root.opq }
             Image {
@@ -135,14 +227,53 @@ Item {
             }
             Rectangle { visible: root.bgImg !== ""; anchors.fill: parent; color: root.termBg; opacity: ((Terminal.look("tint") ?? 0) / 100) * root.opq }
             MouseArea { id: bgClick; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.visualRequested() }
+            UiButton {
+                z: 5
+                anchors { right: parent.right; top: parent.top; margins: 8 }
+                icon: "swap_vertical"; text: root.organize ? "Concluir" : "Organizar peças"; checked: root.organize
+                visible: root.showPrompt || root.showFetch
+                onClicked: root.organize = !root.organize
+            }
             UiText {
-                visible: bgClick.containsMouse && !root.dragging
+                visible: bgClick.containsMouse && !root.dragging && !root.organize
                 anchors { right: parent.right; bottom: parent.bottom; margins: 8 }
                 text: "Clique no fundo para ajustar o visual"; color: Theme.text; opacity: 0.7; font.pixelSize: 11
             }
 
+            // saida de verdade do fastfetch e do starship
+            Column {
+                id: realCol
+                visible: !root.org
+                x: mock.pad; y: mock.pad
+                width: mock.width - mock.pad * 2
+                Row {
+                    visible: real.fetchHtml !== "" || TermFetch.canImage
+                    spacing: SetK.lg
+                    bottomPadding: root.lineH
+                    ImgBox { ctl: root; handle: true }
+                    UiText {
+                        visible: real.fetchHtml !== ""
+                        text: real.fetchHtml; textFormat: Text.RichText; wrapMode: Text.NoWrap; color: root.termFg
+                        font.family: Terminal.fontFamily; font.pixelSize: root.fpx; lineHeight: root.lineH; lineHeightMode: Text.FixedHeight
+                    }
+                }
+                UiText {
+                    visible: real.promptHtml !== ""
+                    text: real.promptHtml; textFormat: Text.RichText; wrapMode: Text.NoWrap; color: root.termFg
+                    font.family: Terminal.fontFamily; font.pixelSize: root.fpx; lineHeight: root.lineH; lineHeightMode: Text.FixedHeight
+                }
+                Row {
+                    UiText {
+                        text: real.promptLast !== "" ? real.promptLast : "$&nbsp;"; textFormat: Text.RichText; wrapMode: Text.NoWrap; color: root.termFg
+                        font.family: Terminal.fontFamily; font.pixelSize: root.fpx; height: root.lineH; verticalAlignment: Text.AlignVCenter
+                    }
+                    Item { width: root.charW; height: root.lineH; Cur { ctl: root; anchors.verticalCenter: parent.verticalCenter } }
+                }
+            }
+
             Column {
                 id: content
+                visible: root.org
                 x: mock.pad; y: mock.pad
                 width: mock.width - mock.pad * 2
                 spacing: 0
@@ -152,30 +283,7 @@ Item {
                     visible: root.showFetch
                     spacing: SetK.lg
                     bottomPadding: root.lineH
-                    Rectangle {
-                        id: imgBox
-                        visible: TermFetch.canImage
-                        width: 112; height: 112; radius: 8; clip: true
-                        color: "transparent"
-                        border.width: fImg.status === Image.Ready ? 0 : 1; border.color: Theme.border
-                        Image { id: fImg; anchors.fill: parent; asynchronous: true; fillMode: Image.PreserveAspectCrop; sourceSize.width: 256
-                                source: TermFetch.image !== "" ? "file://" + TermFetch.image : "" }
-                        Column {
-                            visible: fImg.status !== Image.Ready
-                            anchors.centerIn: parent; spacing: 4
-                            UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "image"; size: 22; color: Theme.muted }
-                            UiText { text: TermFetch.image === "" ? "Sem imagem" : "Carregando…"; color: Theme.muted; font.pixelSize: SetK.fDesc }
-                        }
-                        Rectangle { anchors.fill: parent; radius: 8; color: Theme.tint(0.16); visible: imgMa.containsMouse; border.width: 1; border.color: Theme.accent }
-                        MouseArea { id: imgMa; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.pickImage() }
-                        Rectangle {
-                            visible: TermFetch.image !== "" && imgMa.containsMouse
-                            x: parent.width - 22; y: 6; width: 16; height: 16; radius: 8; z: 2
-                            color: nm.containsMouse ? Theme.danger : Theme.cardHi; border.width: 1; border.color: Theme.border
-                            UiIcon { anchors.centerIn: parent; name: "close"; size: 10; color: nm.containsMouse ? Theme.card : Theme.muted }
-                            MouseArea { id: nm; anchors.fill: parent; anchors.margins: -3; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: TermFetch.set("image", "none") }
-                        }
-                    }
+                    ImgBox { ctl: root }
                     Column {
                         id: fCol
                         Repeater {
@@ -285,6 +393,7 @@ Item {
         // ---- bandeja ----
         Rectangle {
             id: tray
+            visible: root.org
             width: parent.width
             height: trayCol.implicitHeight + SetK.md * 2
             radius: SetK.innerRadius

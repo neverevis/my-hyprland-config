@@ -27,7 +27,7 @@ Singleton {
     ]
     function item(k: string): var { return catalog.find(c => c.k === k) ?? null }
     function raw(): var { return Settings.termFetch || ({}) }
-    function get(k: string): var { const o = raw(); if (o[k] !== undefined) return o[k]; return k === "on" ? false : k === "image" ? "" : (item(k) ? item(k).on : undefined) }
+    function get(k: string): var { const o = raw(); if (o[k] !== undefined) return o[k]; return k === "on" ? false : (k === "image" || k === "imgSize") ? "" : (item(k) ? item(k).on : undefined) }
     // mexer na imagem ou nos itens liga as boas-vindas do shell (senao a mudanca nao apareceria em lugar nenhum)
     function set(k: string, v): void { const o = Object.assign({}, raw()); if (v === undefined) delete o[k]; else o[k] = v; if (k !== "on") o.on = true; Settings.termFetch = o }
     readonly property bool on: get("on")
@@ -62,6 +62,8 @@ Singleton {
         return Terminal.hasProfile ? profile : ""
     }
     // so o kitty (icat) e os terminais com chafa mostram imagem
+    // largura da imagem em colunas do terminal (0 = automatico)
+    readonly property int imgSize: { const v = parseInt(get("imgSize")); return v > 0 ? Math.max(10, Math.min(60, v)) : 0 }
     readonly property bool canImage: Terminal.id === "kitty" || Terminal.chafa
 
     function hex(c): string { return "#" + [c.r, c.g, c.b].map(v => Math.round(v * 255).toString(16).padStart(2, "0")).join("") }
@@ -83,8 +85,8 @@ Singleton {
         t += "    command -v fastfetch &> /dev/null; or return\n"
         if (img !== "") {
             t += "    set -l img " + q(img) + "\n    if test -f \"$img\"\n"
-            t += "        if test \"$TERM\" = xterm-kitty\n            fastfetch --config " + cfg + " --logo \"$img\" --logo-type kitty-icat --logo-padding-right 3\n            return\n        end\n"
-            t += "        if command -v chafa &> /dev/null\n            fastfetch --config " + cfg + " --logo \"$img\" --logo-type chafa --logo-width 18 --logo-padding-right 3\n            return\n        end\n    end\n"
+            t += "        if test \"$TERM\" = xterm-kitty\n            fastfetch --config " + cfg + " --logo \"$img\" --logo-type kitty-icat" + (imgSize > 0 ? " --logo-width " + imgSize : "") + " --logo-padding-right 3\n            return\n        end\n"
+            t += "        if command -v chafa &> /dev/null\n            fastfetch --config " + cfg + " --logo \"$img\" --logo-type chafa --logo-width " + (imgSize > 0 ? imgSize : 18) + " --logo-padding-right 3\n            return\n        end\n    end\n"
         }
         t += "    fastfetch --config " + cfg + " --logo none\nend\n"
         return t

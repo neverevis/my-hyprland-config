@@ -243,6 +243,12 @@ SetPage {
             UiButton { icon: "folderOpen"; text: "Escolher imagem"; onClicked: Pick.image("Imagem das boas-vindas", p => TermFetch.set("image", p)) }
             UiButton { visible: TermFetch.image !== ""; icon: "trash"; text: "Sem imagem"; kind: "ghost"; onClicked: TermFetch.set("image", "none") }
         }
+        SetSlider {
+            visible: Terminal.fastfetch && TermFetch.canImage; enabled: TermFetch.image !== ""
+            icon: "image"; label: "Tamanho da imagem"; description: "Largura em colunas do terminal; também dá para puxar o canto da imagem na maquete"
+            from: 0; to: 60; unit: " col."; zeroLabel: "Automático"; def: 0; value: TermFetch.imgSize
+            onMoved: v => TermFetch.set("imgSize", v === 0 ? undefined : Math.max(10, v))
+        }
         UiText {
             visible: Terminal.fastfetch && TermFetch.on
             x: SetK.pad; width: parent.width - SetK.pad * 2; topPadding: SetK.sm; bottomPadding: SetK.sm; wrapMode: Text.WordWrap
