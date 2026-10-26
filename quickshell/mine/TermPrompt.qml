@@ -29,18 +29,54 @@ Singleton {
     readonly property string sampleHost: Quickshell.env("HOSTNAME") || "arch"
     readonly property var dirSample: ({ name: "shell", short: "~/projetos/shell", full: "~/projetos/shell" })
 
+    // ---- pecas e ordem (termPrompt.order guarda a ordem; o que faltar entra no fim, na ordem padrao) ----
+    readonly property var pieces: [
+        { k: "user", label: "Usuário", icon: "account" }, { k: "host", label: "Computador", icon: "desktop" }, { k: "dir", label: "Pasta", icon: "folder" },
+        { k: "git", label: "Git", icon: "branch" }, { k: "dur", label: "Tempo do comando", icon: "timer" }, { k: "time", label: "Hora", icon: "clock" },
+        { k: "env", label: "Ambiente", icon: "package" }
+    ]
+    function piece(k: string): var { return pieces.find(c => c.k === k) ?? null }
+    function order(): var {
+        const saved = Settings.list((Settings.termPrompt || ({})).order).filter(k => piece(k))
+        return saved.concat(pieces.map(c => c.k).filter(k => saved.indexOf(k) < 0))
+    }
+    function active(): var { return order().filter(k => get(k)) }
+    function hidden(): var { return order().filter(k => !get(k)) }
+    function place(k: string, idx: int): void {
+        const vis = active().filter(x => x !== k), rest = hidden().filter(x => x !== k)
+        vis.splice(Math.max(0, Math.min(idx, vis.length)), 0, k)
+        const o = Object.assign({}, Settings.termPrompt || ({})); o.order = vis.concat(rest); o[k] = true; Settings.termPrompt = o
+    }
+    function remove(k: string): void { set(k, false) }
+    function move(k: string, d: int): void {
+        const vis = active(), i = vis.indexOf(k)
+        if (i >= 0 && i + d >= 0 && i + d < vis.length) place(k, i + d)
+    }
+    // usuario seguido do computador viram usuario@computador
+    function joined(): bool { const v = active(), i = v.indexOf("user"); return i >= 0 && v[i + 1] === "host" }
+
+    // trechos {t, c, b} de uma peca
+    function pieceSegs(k: string): var {
+        const p = pal, j = joined()
+        switch (k) {
+        case "user": return [{ t: sampleUser + (j ? "" : " "), c: p.quiet, b: true }]
+        case "host": return [{ t: (j ? "@" : "") + sampleHost + " ", c: p.quiet, b: true }]
+        case "dir": return [{ t: dirSample[get("dirStyle")] + " ", c: p.main, b: true }]
+        case "git": return [{ t: "\ue0a0 main ", c: p.git, b: true }, { t: "✚1 ", c: p.git, b: false }]
+        case "dur": return [{ t: "3s ", c: p.quiet, b: false }]
+        case "time": return [{ t: "14:32 ", c: p.quiet, b: false }]
+        case "env": return [{ t: "node v22.1 ", c: p.env, b: false }]
+        }
+        return []
+    }
+    function symSeg(failed: bool): var { return { t: get("sym") + " ", c: failed && get("err") ? pal.bad : pal.main, b: true } }
+
     // uma linha de prompt como lista de trechos {t, c, b}; failed = o ultimo comando falhou
     function segments(failed: bool): var {
-        const L = [[]], p = pal, add = (t, c, b) => L[L.length - 1].push({ t: t, c: c, b: !!b })
-        if (get("user")) add(sampleUser + (get("host") ? "" : " "), p.quiet, true)
-        if (get("host")) add((get("user") ? "@" : "") + sampleHost + " ", p.quiet, true)
-        if (get("dir")) add(dirSample[get("dirStyle")] + " ", p.main, true)
-        if (get("git")) { add("\ue0a0 main ", p.git, true); add("✚1 ", p.git, false) }
-        if (get("dur")) add("3s ", p.quiet, false)
-        if (get("time")) add("14:32 ", p.quiet, false)
-        if (get("env")) add("node v22.1 ", p.env, false)
+        const L = [[]]
+        for (const k of active()) for (const s of pieceSegs(k)) L[L.length - 1].push(s)
         if (get("two")) L.push([])
-        add(get("sym") + " ", failed && get("err") ? p.bad : p.main, true)
+        L[L.length - 1].push(symSeg(failed))
         return L
     }
 
@@ -50,18 +86,13 @@ Singleton {
         const mods = []
         let t = "# Gerado pelo Quickshell (pagina Terminal). Nao edite a mao.\n"
         t += "add_newline = " + (get("gap") ? "true" : "false") + "\n"
-        if (get("user")) mods.push("$username")
-        if (get("host")) mods.push("$hostname")
-        if (get("dir")) mods.push("$directory")
-        if (get("git")) mods.push("$git_branch", "$git_status")
-        if (get("dur")) mods.push("$cmd_duration")
-        if (get("time")) mods.push("$time")
-        if (get("env")) mods.push("$python", "$nodejs", "$rust")
+        const mm = { user: ["$username"], host: ["$hostname"], dir: ["$directory"], git: ["$git_branch", "$git_status"], dur: ["$cmd_duration"], time: ["$time"], env: ["$python", "$nodejs", "$rust"] }
+        for (const k of active()) for (const m of mm[k]) mods.push(m)
         if (get("two")) mods.push("$line_break")
         mods.push("$character")
         t += "format = " + q(mods.join("")) + "\n\n"
-        if (get("user")) t += "[username]\nshow_always = true\nstyle_user = " + q(sty(p.quiet)) + "\nstyle_root = " + q(sty(p.bad)) + "\nformat = " + q("[$user]($style)" + (get("host") ? "" : " ")) + "\n\n"
-        if (get("host")) t += "[hostname]\nssh_only = false\nstyle = " + q(sty(p.quiet)) + "\nformat = " + q("[" + (get("user") ? "@" : "") + "$hostname]($style) ") + "\n\n"
+        if (get("user")) t += "[username]\nshow_always = true\nstyle_user = " + q(sty(p.quiet)) + "\nstyle_root = " + q(sty(p.bad)) + "\nformat = " + q("[$user]($style)" + (joined() ? "" : " ")) + "\n\n"
+        if (get("host")) t += "[hostname]\nssh_only = false\nstyle = " + q(sty(p.quiet)) + "\nformat = " + q("[" + (joined() ? "@" : "") + "$hostname]($style) ") + "\n\n"
         if (get("dir")) {
             const n = get("dirStyle") === "name" ? 1 : get("dirStyle") === "short" ? 3 : 0
             t += "[directory]\ntruncation_length = " + n + "\ntruncate_to_repo = false\nhome_symbol = \"~\"\nstyle = " + q(sty(p.main)) + "\nformat = " + q("[$path]($style)[$read_only]($read_only_style) ") + "\n\n"

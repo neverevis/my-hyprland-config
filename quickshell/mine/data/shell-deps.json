@@ -245,6 +245,21 @@
   "why": "ícones dos webapps (.ico)"
  },
  {
+  "pkg": "starship",
+  "level": "optional",
+  "why": "prompt montado na página Terminal"
+ },
+ {
+  "pkg": "fastfetch",
+  "level": "optional",
+  "why": "boas-vindas do terminal com imagem (chafa: imagem fora do kitty)"
+ },
+ {
+  "pkg": "chafa",
+  "level": "optional",
+  "why": "boas-vindas do terminal com imagem (chafa: imagem fora do kitty)"
+ },
+ {
   "pkg": "polkit",
   "level": "required",
   "why": "pedir a senha em ações de administrador"

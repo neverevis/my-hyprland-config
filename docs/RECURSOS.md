@@ -67,3 +67,6 @@ Tudo é controlável por `qs -c mine ipc call <alvo> <função>` (alvos como `se
 - `qs -c mine ipc call apps window` alterna a janela; `apps open <apps|pkgs|install|updates>` abre numa aba; também está no launcher ("Aplicativos") e em Configurações > Aplicativos.
 - Pacotes: todos os do pacman, com busca, filtros (explícitos, AUR, órfãos), ordem por nome/tamanho, "Necessário para" e remoção protegida (`pacman -Rs --print` antes; bloqueia o que o shell exige, avisa o que é recurso opcional).
 - Nada roda com a janela fechada; AUR e Flathub só são consultados quando você busca em Instalar.
+
+## Terminal (página de configurações)
+- Terminal padrão, visual do kitty/foot (transparência, imagem de fundo, margem, fonte, cursor), prompt montado (starship) e boas-vindas com imagem (fastfetch/chafa), tudo com uma maquete do terminal onde as peças se arrastam; gera arquivos em `~/.config/quickshell-mine` e `~/.config/fish/conf.d/mine-*.fish`, que somem ao desligar.

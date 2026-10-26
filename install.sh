@@ -267,6 +267,8 @@ OPTIONAL=(
     ydotool                                                    # teclado na tela digitar (systemctl --user enable --now ydotool)
     mangohud                                                   # limitador de FPS do overlay de jogo
     imagemagick                                                # icones dos webapps (.ico)
+    starship                                                   # prompt montado na pagina Terminal
+    fastfetch chafa                                            # boas-vindas do terminal com imagem (chafa: imagem fora do kitty)
 )
 FONT_NEW=0
 if [ "$DEPS" = 1 ]; then

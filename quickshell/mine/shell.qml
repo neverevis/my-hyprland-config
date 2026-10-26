@@ -22,7 +22,7 @@ ShellRoot {
     readonly property color baseColor: Settings.barColor
     readonly property color fillColor: Qt.rgba(baseColor.r, baseColor.g, baseColor.b, Settings.glass ? Settings.glassOpacityEff / 100 : 1)
 
-    Component.onCompleted: { HyprSync.ready; AppThemes.ready; Idle.ready; Terminal.id; TermPrompt.on }
+    Component.onCompleted: { HyprSync.ready; AppThemes.ready; Idle.ready; Terminal.id; TermPrompt.on; TermFetch.on }
 
     // Super+Q (qs-close-or-kill): fecha o que estiver aberto do shell; responde false se nao havia nada (ai fecha a janela do app)
     IpcHandler {

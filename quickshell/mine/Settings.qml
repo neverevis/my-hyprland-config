@@ -364,6 +364,7 @@ Singleton {
     property alias launcherTerminal: adapter.launcherTerminal   // terminal do modo comando (antigo; vale no automatico, ver Terminal.qml)
     property alias defaultTerminal: adapter.defaultTerminal     // terminal padrao ("" = automatico: o primeiro instalado)
     property alias termLook: adapter.termLook                   // visual do terminal: so o que foi trocado (Terminal.qml)
+    property alias termFetch: adapter.termFetch                 // boas-vindas do terminal: so o que foi trocado (TermFetch.qml)
     property alias termPrompt: adapter.termPrompt               // prompt montado aqui: so o que foi trocado (TermPrompt.qml)
     property alias launcherClipHide: adapter.launcherClipHide   // esconde o texto do historico da area de transferencia
     property alias launcherClipPins: adapter.launcherClipPins   // textos fixados na area de transferencia
@@ -1107,6 +1108,7 @@ Singleton {
             property string defaultTerminal: ""
             property var termLook: ({})
             property var termPrompt: ({})
+            property var termFetch: ({})
             property var launcherClipPins: []
             property bool launcherClipHide: false
             property string launcherPick: "copy"

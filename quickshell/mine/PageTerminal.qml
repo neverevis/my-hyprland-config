@@ -11,6 +11,31 @@ SetPage {
 
     readonly property var picks: [["", "Automático", "auto", "usa o " + Terminal.autoName]].concat(Terminal.installed.map(id => { const t = Terminal.info(id); return [id, t.name, t.icon, ""] }))
     readonly property string img: Terminal.look("image") || ""
+    readonly property var missing: [["starship", Terminal.starship, "o prompt"], ["fastfetch", Terminal.fastfetch, "as informações de boas-vindas"], ["chafa", Terminal.chafa, "imagem nos terminais que não são o kitty"]].filter(t => !t[1])
+
+    // maquete no topo; clicar no fundo dela leva ao Visual
+    preview: TermMock { onVisualRequested: page.goVisual() }
+    function goVisual() {
+        let f = page.parent
+        while (f && f.contentY === undefined) f = f.parent
+        if (!f) return
+        const y = Math.max(0, Math.min(Math.max(0, f.contentHeight - f.height), visualSec.mapToItem(f.contentItem, 0, 0).y - SetK.lg))
+        scrollAnim.target = f; scrollAnim.to = y; scrollAnim.restart()
+    }
+    NumberAnimation { id: scrollAnim; property: "contentY"; duration: SetK.base; easing.type: Easing.OutCubic }
+
+    // ---- ferramentas que faltam ----
+    SetSection {
+        visible: Terminal.loaded && page.missing.length > 0
+        title: "Ferramentas que faltam"; icon: "info"
+        SetBlock {
+            Repeater {
+                model: page.missing
+                delegate: UiText { required property var modelData; width: parent.width; wrapMode: Text.WordWrap; color: Theme.text; font.pixelSize: SetK.fRow; text: modelData[0] + ": " + modelData[2] }
+            }
+            DetailsLine { cmd: "sudo pacman -S " + page.missing.map(t => t[0]).join(" ") }
+        }
+    }
 
     // ---- terminal padrao ----
     SetSection {
@@ -43,6 +68,7 @@ SetPage {
 
     // ---- visual ----
     SetSection {
+        id: visualSec
         title: "Visual"; icon: "palette"
         subtitle: Terminal.lookOk ? "Do " + Terminal.termName + ". Só o que você muda é gravado; o resto continua como está no terminal" : ""
         SetRow {
@@ -124,7 +150,7 @@ SetPage {
         SetRow {
             visible: !Terminal.starship
             icon: "info"; label: Terminal.loaded ? "O starship não está instalado" : "Procurando o starship…"
-            description: Terminal.loaded ? "Instale o pacote starship para montar o prompt aqui" : ""
+            description: Terminal.loaded ? "Veja “Ferramentas que faltam” no alto da página" : ""
         }
         SetRow {
             visible: Terminal.starship
@@ -135,48 +161,10 @@ SetPage {
             visible: Terminal.starship && TermPrompt.err !== ""
             icon: "info"; label: "O starship não aceitou esta configuração"; description: TermPrompt.err
         }
-        SetBlock {
+        UiText {
             visible: Terminal.starship && TermPrompt.on
-            UiText { width: parent.width; text: "Prévia"; color: Theme.muted; font.pixelSize: SetK.fDesc }
-            SetPreview {
-                id: pv
-                height: pcol.implicitHeight + 28
-                readonly property var failed: TermPrompt.segments(true)
-                readonly property var okLine: TermPrompt.segments(false)
-                function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/ /g, "&nbsp;") }
-                function html(segs, tail) {
-                    let h = ""
-                    for (const s of segs) h += '<font color="' + s.c + '">' + (s.b ? "<b>" : "") + esc(s.t) + (s.b ? "</b>" : "") + "</font>"
-                    return h + (tail ?? "")
-                }
-                Column {
-                    id: pcol
-                    x: 16; y: 14; width: parent.width - 32
-                    spacing: 2
-                    Repeater {
-                        model: pv.failed.length
-                        delegate: UiText {
-                            required property int index
-                            width: pcol.width; elide: Text.ElideRight; textFormat: Text.StyledText
-                            font.family: Terminal.fontFamily; font.pixelSize: Math.max(12, Math.min(18, Math.round(Terminal.fontPt * 1.33)))
-                            color: Theme.text
-                            text: pv.html(pv.failed[index], index === pv.failed.length - 1 ? '<font color="' + Theme.text + '">&nbsp;git&nbsp;psuh</font>' : "")
-                        }
-                    }
-                    Item { visible: TermPrompt.get("gap"); width: 1; height: 14 }
-                    Repeater {
-                        model: pv.okLine.length
-                        delegate: UiText {
-                            required property int index
-                            width: pcol.width; elide: Text.ElideRight; textFormat: Text.StyledText
-                            font.family: Terminal.fontFamily; font.pixelSize: Math.max(12, Math.min(18, Math.round(Terminal.fontPt * 1.33)))
-                            color: Theme.text
-                            text: pv.html(pv.okLine[index], index === pv.okLine.length - 1 ? '<font color="' + Theme.text + '">▌</font>' : "")
-                        }
-                    }
-                }
-            }
-            UiText { width: parent.width; wrapMode: Text.WordWrap; text: "Vale para terminais novos (o fish lê isto ao abrir)"; color: Theme.muted; font.pixelSize: SetK.fDesc }
+            x: SetK.pad; width: parent.width - SetK.pad * 2; topPadding: SetK.sm; bottomPadding: SetK.sm; wrapMode: Text.WordWrap
+            text: "Vale para terminais novos (o fish lê isto ao abrir)"; color: Theme.muted; font.pixelSize: SetK.fDesc
         }
         SetChoice {
             visible: Terminal.starship && TermPrompt.on
@@ -210,7 +198,7 @@ SetPage {
 
     SetSection {
         visible: Terminal.starship && TermPrompt.on
-        title: "Peças do prompt"; icon: "layers"; subtitle: "Na ordem em que aparecem"
+        title: "Peças do prompt"; icon: "layers"; subtitle: "Na ordem em que aparecem; as setas mudam a ordem"
         Repeater {
             model: [["user", "Usuário", "account", "Seu nome de usuário"], ["host", "Computador", "desktop", "O nome desta máquina"], ["dir", "Pasta", "folder", "Onde você está"],
                     ["git", "Git", "branch", "Ramo e mudanças, dentro de repositórios"], ["dur", "Tempo do comando", "timer", "Só quando passa de 2 s"], ["time", "Hora", "clock", "A hora de cada prompt"],
@@ -219,6 +207,61 @@ SetPage {
                 required property var modelData
                 icon: modelData[2]; label: modelData[1]; description: modelData[3]
                 checked: TermPrompt.get(modelData[0]); onToggled: on => TermPrompt.set(modelData[0], on)
+                UiButton { visible: TermPrompt.piece(modelData[0]) !== null && TermPrompt.get(modelData[0]); icon: "chevUp"; kind: "ghost"; enabled: TermPrompt.active().indexOf(modelData[0]) > 0; onClicked: TermPrompt.move(modelData[0], -1) }
+                UiButton { visible: TermPrompt.piece(modelData[0]) !== null && TermPrompt.get(modelData[0]); icon: "chevDown"; kind: "ghost"; enabled: TermPrompt.active().indexOf(modelData[0]) < TermPrompt.active().length - 1; onClicked: TermPrompt.move(modelData[0], 1) }
+            }
+        }
+    }
+
+    // ---- boas-vindas ----
+    SetSection {
+        title: "Boas-vindas"; icon: "greeting"
+        subtitle: Terminal.fastfetch ? "O que aparece ao abrir o terminal (fastfetch)" : ""
+        SetRow {
+            visible: !Terminal.fastfetch
+            icon: "info"; label: Terminal.loaded ? "O fastfetch não está instalado" : "Procurando o fastfetch…"
+            description: Terminal.loaded ? "Veja “Ferramentas que faltam” no alto da página" : ""
+        }
+        SetRow {
+            visible: Terminal.fastfetch
+            icon: "greeting"; label: "Usar as boas-vindas montadas aqui"; description: "Desligado, vale a sua mensagem de boas-vindas atual"
+            checked: TermFetch.on; onToggled: on => TermFetch.set("on", on)
+        }
+        SetRow {
+            visible: Terminal.fastfetch && TermFetch.err !== ""
+            icon: "info"; label: "O fastfetch não aceitou esta configuração"; description: TermFetch.err
+        }
+        SetRow {
+            visible: Terminal.fastfetch && TermFetch.on && !TermFetch.canImage
+            icon: "info"; label: "Sem imagem neste terminal"; description: "Fora do kitty a imagem precisa do chafa (veja “Ferramentas que faltam”)"
+        }
+        SetRow {
+            visible: Terminal.fastfetch && TermFetch.on
+            icon: "image"; label: "Imagem"
+            description: TermFetch.image === "" ? "Sem imagem" : TermFetch.image.split("/").pop() + (TermFetch.get("image") === "" ? " (a sua atual)" : "")
+            canReset: TermFetch.get("image") !== ""; onReset: TermFetch.set("image", undefined)
+            UiButton { icon: "folderOpen"; text: "Escolher imagem"; onClicked: Pick.image("Imagem das boas-vindas", p => TermFetch.set("image", p)) }
+            UiButton { visible: TermFetch.image !== ""; icon: "trash"; text: "Sem imagem"; kind: "ghost"; onClicked: TermFetch.set("image", "none") }
+        }
+        UiText {
+            visible: Terminal.fastfetch && TermFetch.on
+            x: SetK.pad; width: parent.width - SetK.pad * 2; topPadding: SetK.sm; bottomPadding: SetK.sm; wrapMode: Text.WordWrap
+            text: "Vale para terminais novos (o fish lê isto ao abrir)"; color: Theme.muted; font.pixelSize: SetK.fDesc
+        }
+    }
+
+    SetSection {
+        visible: Terminal.fastfetch && TermFetch.on
+        title: "Itens das boas-vindas"; icon: "layers"; subtitle: "Na ordem em que aparecem; as setas mudam a ordem"
+        Repeater {
+            model: TermFetch.catalog.map(c => c.k)
+            delegate: SetRow {
+                required property string modelData
+                readonly property var c: TermFetch.item(modelData)
+                icon: c.icon; label: c.label
+                checked: TermFetch.get(modelData); onToggled: on => on ? TermFetch.place(modelData, 9999) : TermFetch.remove(modelData)
+                UiButton { visible: TermFetch.get(modelData); icon: "chevUp"; kind: "ghost"; enabled: TermFetch.active().indexOf(modelData) > 0; onClicked: TermFetch.move(modelData, -1) }
+                UiButton { visible: TermFetch.get(modelData); icon: "chevDown"; kind: "ghost"; enabled: TermFetch.active().indexOf(modelData) < TermFetch.active().length - 1; onClicked: TermFetch.move(modelData, 1) }
             }
         }
     }

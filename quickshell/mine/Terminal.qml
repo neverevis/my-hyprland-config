@@ -30,12 +30,18 @@ Singleton {
     property var installed: []
     property bool loaded: false
     property bool starship: false
+    property bool fastfetch: false
+    property bool chafa: false
+    property bool hasProfile: false   // ~/.config/fastfetch/profile.png (imagem atual do usuario, so leitura)
     Process {
         id: detect
-        command: ["sh", "-c", "for b in " + root.all.map(t => t.bin).join(" ") + " starship; do command -v \"$b\" >/dev/null 2>&1 && echo \"$b\"; done"]
+        command: ["sh", "-c", "for b in " + root.all.map(t => t.bin).join(" ") + " starship fastfetch chafa; do command -v \"$b\" >/dev/null 2>&1 && echo \"$b\"; done; [ -f \"$HOME/.config/fastfetch/profile.png\" ] && echo __profile"]
         stdout: StdioCollector { onStreamFinished: {
             const l = text.split("\n").map(s => s.trim()).filter(s => s !== "")
             root.starship = l.indexOf("starship") >= 0
+            root.fastfetch = l.indexOf("fastfetch") >= 0
+            root.chafa = l.indexOf("chafa") >= 0
+            root.hasProfile = l.indexOf("__profile") >= 0
             root.installed = root.all.filter(t => l.indexOf(t.bin) >= 0).map(t => t.id)
             root.loaded = true
         } }
