@@ -224,7 +224,7 @@ SetPage {
         }
         SetRow {
             visible: Terminal.fastfetch
-            icon: "greeting"; label: "Usar as boas-vindas montadas aqui"; description: "Desligado, vale a sua mensagem de boas-vindas atual"
+            icon: "greeting"; label: "Usar as boas-vindas montadas aqui"; description: TermFetch.on ? "Desligue para voltar às suas boas-vindas de antes" : "Desligado, vale a sua mensagem atual. Mudar a imagem ou os itens liga sozinho"
             checked: TermFetch.on; onToggled: on => TermFetch.set("on", on)
         }
         SetRow {
@@ -236,7 +236,7 @@ SetPage {
             icon: "info"; label: "Sem imagem neste terminal"; description: "Fora do kitty a imagem precisa do chafa (veja “Ferramentas que faltam”)"
         }
         SetRow {
-            visible: Terminal.fastfetch && TermFetch.on
+            visible: Terminal.fastfetch
             icon: "image"; label: "Imagem"
             description: TermFetch.image === "" ? "Sem imagem" : TermFetch.image.split("/").pop() + (TermFetch.get("image") === "" ? " (a sua atual)" : "")
             canReset: TermFetch.get("image") !== ""; onReset: TermFetch.set("image", undefined)
@@ -251,7 +251,7 @@ SetPage {
     }
 
     SetSection {
-        visible: Terminal.fastfetch && TermFetch.on
+        visible: Terminal.fastfetch
         title: "Itens das boas-vindas"; icon: "layers"; subtitle: "Na ordem em que aparecem; as setas mudam a ordem"
         Repeater {
             model: TermFetch.catalog.map(c => c.k)

@@ -13,7 +13,7 @@ Item {
     height: col.implicitHeight
 
     readonly property bool showPrompt: Terminal.starship && TermPrompt.on
-    readonly property bool showFetch: Terminal.fastfetch && TermFetch.on
+    readonly property bool showFetch: Terminal.fastfetch   // aparece sempre: editar aqui liga as boas-vindas do shell
     readonly property int fpx: Math.max(12, Math.min(18, Math.round(Terminal.fontPt * 1.33)))
     readonly property int lineH: Math.round(fpx * 1.5)
     readonly property real opq: (Terminal.look("opacity") ?? 100) / 100

@@ -81,7 +81,7 @@ Singleton {
     }
 
     function toml(): string {
-        const p = pal, q = s => '"' + s + '"'
+        const p = pal, q = s => '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"'
         const sty = c => "bold " + c
         const mods = []
         let t = "# Gerado pelo Quickshell (pagina Terminal). Nao edite a mao.\n"
@@ -109,7 +109,9 @@ Singleton {
             t += "[nodejs]\nstyle = " + q(p.env) + "\nformat = " + q("[node $version]($style) ") + "\n\n"
             t += "[rust]\nstyle = " + q(p.env) + "\nformat = " + q("[rs $version]($style) ") + "\n\n"
         }
-        const ok = "[" + get("sym") + "](" + sty(p.main) + ")", bad = "[" + get("sym") + "](" + sty(get("err") ? p.bad : p.main) + ")"
+        // no formato do starship $ [ ] ( ) \ sao especiais: escapa com \ (o q() depois dobra a barra para o TOML)
+        const s = get("sym").replace(/[\\$\[\]()]/g, c => "\\" + c)
+        const ok = "[" + s + "](" + sty(p.main) + ")", bad = "[" + s + "](" + sty(get("err") ? p.bad : p.main) + ")"
         t += "[character]\nsuccess_symbol = " + q(ok) + "\nerror_symbol = " + q(bad) + "\nformat = " + q("$symbol ") + "\n"
         return t
     }

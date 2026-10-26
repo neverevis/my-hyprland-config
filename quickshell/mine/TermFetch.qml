@@ -28,7 +28,8 @@ Singleton {
     function item(k: string): var { return catalog.find(c => c.k === k) ?? null }
     function raw(): var { return Settings.termFetch || ({}) }
     function get(k: string): var { const o = raw(); if (o[k] !== undefined) return o[k]; return k === "on" ? false : k === "image" ? "" : (item(k) ? item(k).on : undefined) }
-    function set(k: string, v): void { const o = Object.assign({}, raw()); if (v === undefined) delete o[k]; else o[k] = v; Settings.termFetch = o }
+    // mexer na imagem ou nos itens liga as boas-vindas do shell (senao a mudanca nao apareceria em lugar nenhum)
+    function set(k: string, v): void { const o = Object.assign({}, raw()); if (v === undefined) delete o[k]; else o[k] = v; if (k !== "on") o.on = true; Settings.termFetch = o }
     readonly property bool on: get("on")
     property string err: ""
     property bool busy: false
