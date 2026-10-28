@@ -159,7 +159,8 @@ Singleton {
         if (L.pad !== undefined) t += "window_padding_width " + L.pad + "\n"
         if (L.font !== undefined && L.font !== "") t += "font_family " + L.font + "\n"
         if (L.fontSize !== undefined) t += "font_size " + L.fontSize + ".0\n"
-        if (L.cursor !== undefined) t += "cursor_shape " + L.cursor + "\n"
+        // a integracao de shell do kitty troca o cursor no prompt (barra) por cima da config: no-cursor deixa o escolhido valer
+        if (L.cursor !== undefined) t += "cursor_shape " + L.cursor + "\nshell_integration no-cursor\n"
         if (L.blink !== undefined) t += "cursor_blink_interval " + (L.blink ? "0.5" : "0") + "\n"
         return t
     }
