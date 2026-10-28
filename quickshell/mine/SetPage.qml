@@ -30,6 +30,7 @@ Column {
     }
     Column {
         id: prevBox
+        z: 5   // popovers da previa passam por cima das secoes
         visible: children.length > 0
         width: parent.width
         bottomPadding: visible ? SetK.xl : 0

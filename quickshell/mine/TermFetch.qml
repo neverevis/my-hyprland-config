@@ -64,6 +64,10 @@ Singleton {
     // so o kitty (icat) e os terminais com chafa mostram imagem
     // largura da imagem em colunas do terminal (0 = automatico)
     readonly property int imgSize: { const v = parseInt(get("imgSize")); return v > 0 ? Math.max(10, Math.min(60, v)) : 0 }
+    // cache-bust da imagem recortada (term-logo.png tem sempre o mesmo caminho); imageSrc = original do recorte (nunca alterada)
+    property int imgStamp: 0
+    readonly property string logo: home + "/.config/quickshell-mine/term-logo.png"
+    readonly property string imageSrc: raw().imageSrc ?? ""
     readonly property bool canImage: Terminal.id === "kitty" || Terminal.chafa
 
     function hex(c): string { return "#" + [c.r, c.g, c.b].map(v => Math.round(v * 255).toString(16).padStart(2, "0")).join("") }
