@@ -120,11 +120,12 @@ Scope {
                                 Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
                                 UiIcon { anchors.centerIn: parent; name: Settings.oskPinned ? "pin" : "pinOff"; size: 13; color: Settings.oskPinned ? Theme.accent : Theme.muted }
                                 MouseArea { id: pnm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Settings.oskPinned = !Settings.oskPinned } }
-                            Rectangle { height: 24; width: 24; radius: 12; color: clm.containsMouse ? Theme.cardHi : Theme.track
+                            // fechar: um x claro e maior (o teclado na tela nao pega o foco, entao Esc nao serve)
+                            Rectangle { height: 30; width: 30; radius: 15; color: clm.containsMouse ? Qt.rgba(Theme.danger.r, Theme.danger.g, Theme.danger.b, 0.18) : Theme.track
                                 scale: clm.pressed ? 0.97 : 1
                                 Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                                 Behavior on color { enabled: !ThemeColors.fading; ColorAnimation { duration: 140 } }
-                                UiIcon { anchors.centerIn: parent; name: "keyboardClose"; size: 14; color: Theme.muted }
+                                UiIcon { anchors.centerIn: parent; name: "close"; size: 16; color: clm.containsMouse ? Theme.danger : Theme.text }
                                 MouseArea { id: clm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.open = false } }
                         }
                     }
