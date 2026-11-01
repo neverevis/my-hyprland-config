@@ -241,7 +241,7 @@ Singleton {
                 const sc = (f + g) > 0 ? Math.min(1, dr / (f + g)) : 1
                 const pri = i >= nUser ? -1000 + i : i   // menor = mais importante
                 items.push({ i: i, f: f, g: g, t: t, fe: f * sc, ge: g * sc, te: te, p: p, sep: !!sepSet[i], det: det, full: full,
-                             lo: lo, hi: lo + bw, bw: bw, zero: zero, att: 0, attU: 0, pri: pri, hidden: false, lift: 0 })
+                             lo: lo, hi: lo + bw, bw: bw, zero: zero, att: 0, attU: 0, both: false, pri: pri, hidden: false, lift: 0 })
             }
             // disputa de espaco (so as que ficam na faixa principal; as afastadas pelo painel ja tem caminho proprio)
             const main = items.filter(it => !it.sep)
@@ -276,7 +276,9 @@ Singleton {
                 if (!it.det && slide[it.i] === undefined && cover[it.i] <= 0) {
                     const b = bars[it.i]
                     const want = it.i >= nUser ? (b.corner === "start" ? -1 : (b.corner === "end" ? 1 : 0)) : 0
-                    if (want < 0 || it.lo < slo + it.f) { it.att = -1; it.lo = lineLo; it.hi = lineLo + it.bw }
+                    // larga o bastante para chegar perto das duas pontas (ex.: 100%): gruda nos dois cantos
+                    if (want === 0 && it.lo < slo + it.f && it.hi > shi - it.f) { it.att = -1; it.both = true; it.lo = lineLo; it.hi = lineHi; it.bw = lineHi - lineLo }
+                    else if (want < 0 || it.lo < slo + it.f) { it.att = -1; it.lo = lineLo; it.hi = lineLo + it.bw }
                     else if (want > 0 || it.hi > shi - it.f) { it.att = 1; it.hi = lineHi; it.lo = lineHi - it.bw }
                     it.attU = rev ? -it.att : it.att
                 }
@@ -292,7 +294,7 @@ Singleton {
                 if (!hides(it.i) || (b.reserve === "always" && !closed)) zone[s] = Math.max(zone[s], tOf(it.i) + under.reduce((m, o) => Math.max(m, o.t - edge), 0))
             }
             const hole = main.filter(it => !it.hidden && !it.det)
-            const aS = hole.find(it => it.attU < 0), aE = hole.find(it => it.attU > 0)
+            const aS = hole.find(it => it.attU < 0 || it.both), aE = hole.find(it => it.attU > 0 || it.both)
             SIDE[s] = { L: L, rev: rev, items: items, main: hole, dets: items.filter(it => !it.hidden && it.det), startDepth: aS ? aS.te : null, endDepth: aE ? aE.te : null }
         }
 
@@ -323,11 +325,11 @@ Singleton {
             d += (k === 0 ? "M" : "L") + P(startU, vStart) + " "
             for (const e of ul) {
                 const f = e.it.fe, g = e.it.ge, t = e.it.te
-                if (e.it.attU >= 0) {   // ponta de baixo (u menor): curva da moldura + arredondamento do topo
+                if (e.it.attU >= 0 && !e.it.both) {   // ponta de baixo (u menor): curva da moldura + arredondamento do topo
                     d += "L" + P(e.a - f, base) + " " + arc(f, e.a, base + f, 1)
                     d += "L" + P(e.a, t - g) + " " + arc(g, e.a + g, t, 0)
                 }
-                if (e.it.attU <= 0) {   // ponta de cima
+                if (e.it.attU <= 0 && !e.it.both) {   // ponta de cima
                     d += "L" + P(e.b - g, t) + " " + arc(g, e.b, t - g, 0)
                     d += "L" + P(e.b, base + f) + " " + arc(f, e.b + f, base, 1)
                 }
