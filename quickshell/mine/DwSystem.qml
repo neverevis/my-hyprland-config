@@ -171,7 +171,8 @@ Item {
                 Canvas {
                     anchors.fill: parent
                     readonly property var deps: [modelData.v, modelData.col, width, w.fg]
-                    onDepsChanged: requestPaint()
+                    onDepsChanged: if (visible) requestPaint()   // estilo escondido nao repinta (custava ~1 ms por Canvas a cada segundo)
+                    onVisibleChanged: if (visible) requestPaint()
                     onPaint: {
                         const c = getContext("2d"); c.reset()
                         const th = Math.max(5, width * 0.08), r = width / 2 - th / 2 - 1
@@ -239,7 +240,8 @@ Item {
                 Canvas {
                     anchors { fill: parent; topMargin: 16 }
                     readonly property var deps: [modelData.h, modelData.col, width, height]
-                    onDepsChanged: requestPaint()
+                    onDepsChanged: if (visible) requestPaint()   // estilo escondido nao repinta (custava ~1 ms por Canvas a cada segundo)
+                    onVisibleChanged: if (visible) requestPaint()
                     onPaint: {
                         const c = getContext("2d"); c.reset()
                         const h = modelData.h.length ? modelData.h : new Array(60).fill(modelData.v), n = h.length
