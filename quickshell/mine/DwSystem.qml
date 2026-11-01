@@ -130,10 +130,13 @@ Item {
                 }
                 MouseArea { anchors.fill: parent; enabled: w.o("clickOpen"); cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor; onClicked: AppCmds.run("taskManager") }
                 Column {
-                    anchors { left: parent.left; bottom: parent.bottom; margins: parent.m * 0.12 }
+                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom; margins: parent.m * 0.12 }
                     spacing: 0
-                    UiText { text: modelData.t; color: modelData.hot ? Theme.role("error") : modelData.ink; font.pixelSize: Math.max(14, parent.parent.m * 0.3); font.weight: Font.Bold; font.features: { "tnum": 1 } }
-                    UiText { text: modelData.label; color: modelData.ink; opacity: 0.6; font.pixelSize: Math.max(11, parent.parent.m * 0.13); font.weight: Font.DemiBold }
+                    // valor longo (ex.: rede "↓ 1,1 KB/s") encolhe para caber no quadrado em vez de vazar
+                    // "↓1,7 KB/s": numero grande, a unidade fica no lugar do nome (o icone ja diz que e a rede)
+                    readonly property int sp: modelData.t.indexOf(" ")
+                    UiText { width: parent.width; text: parent.sp > 0 ? modelData.t.slice(0, parent.sp) : modelData.t; color: modelData.hot ? Theme.role("error") : modelData.ink; font.pixelSize: Math.max(14, parent.parent.m * 0.3); fontSizeMode: Text.HorizontalFit; minimumPixelSize: 9; font.weight: Font.Bold; font.features: { "tnum": 1 } }
+                    UiText { width: parent.width; elide: Text.ElideRight; text: parent.sp > 0 ? modelData.t.slice(parent.sp + 1) : modelData.label; color: modelData.ink; opacity: 0.6; font.pixelSize: Math.max(11, parent.parent.m * 0.13); font.weight: Font.DemiBold }
                 }
             }
         }
