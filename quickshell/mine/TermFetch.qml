@@ -76,8 +76,11 @@ Singleton {
     readonly property int logoH: ratio > 0 ? Math.max(1, Math.round(logoW * ratio * 0.5)) : 0
     onImageChanged: probeImg()
     Component.onCompleted: probeImg()
-    function probeImg(): void { ratio = 0; if (image === "") return; probe.running = false; probe.command = ["python3", "-c", "import sys;from PIL import Image;w,h=Image.open(sys.argv[1]).size;print(h/w)", image]; probe.running = true }
-    Process { id: probe; stdout: StdioCollector { onStreamFinished: { const r = parseFloat(text); root.ratio = r > 0 ? r : 0 } } }
+    // no kitty a imagem vai pelo protocolo direto (o fastfetch reserva as linhas certas; o icat nao reservava),
+    // que so le PNG: o probe grava uma copia PNG no cache quando a imagem e de outro formato
+    property string kittyImg: ""
+    function probeImg(): void { ratio = 0; kittyImg = ""; if (image === "") return; probe.running = false; probe.command = ["python3", "-c", "import sys,os;from PIL import Image;i=Image.open(sys.argv[1]);w,h=i.size;print(h/w);p=sys.argv[1]\nif i.format!='PNG':\n p=os.path.expanduser('~/.cache/quickshell-mine/term-greeting.png');os.makedirs(os.path.dirname(p),exist_ok=True);i.thumbnail((512,512));i.save(p)\nprint(p)", image]; probe.running = true }
+    Process { id: probe; stdout: StdioCollector { onStreamFinished: { const l = text.trim().split("\n"), r = parseFloat(l[0]); root.ratio = r > 0 ? r : 0; root.kittyImg = l[1] ?? "" } } }
 
     function hex(c): string { return "#" + [c.r, c.g, c.b].map(v => Math.round(v * 255).toString(16).padStart(2, "0")).join("") }
     function sgr(c): string { return "38;2;" + [c.r, c.g, c.b].map(v => Math.round(v * 255)).join(";") }
@@ -98,6 +101,7 @@ Singleton {
         t += "    command -v fastfetch &> /dev/null; or return\n"
         if (img !== "") {
             t += "    set -l img " + q(img) + "\n    if test -f \"$img\"\n"
+            if (kittyImg !== "") t += "        if test \"$TERM\" = xterm-kitty; and test -f " + q(kittyImg) + "\n            fastfetch --config " + cfg + " --logo " + q(kittyImg) + " --logo-type kitty-direct --logo-width " + logoW + " --logo-height " + logoH + " --logo-padding-right 3\n            return\n        end\n"
             t += "        if test \"$TERM\" = xterm-kitty\n            fastfetch --config " + cfg + " --logo \"$img\" --logo-type kitty-icat --logo-width " + logoW + (logoH > 0 ? " --logo-height " + logoH : "") + " --logo-padding-right 3\n            return\n        end\n"
             t += "        if command -v chafa &> /dev/null\n            fastfetch --config " + cfg + " --logo \"$img\" --logo-type chafa --logo-width " + logoW + (logoH > 0 ? " --logo-height " + logoH : "") + " --logo-padding-right 3\n            return\n        end\n    end\n"
         }
