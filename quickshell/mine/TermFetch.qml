@@ -101,7 +101,8 @@ Singleton {
         t += "    command -v fastfetch &> /dev/null; or return\n"
         if (img !== "") {
             t += "    set -l img " + q(img) + "\n    if test -f \"$img\"\n"
-            if (kittyImg !== "") t += "        if test \"$TERM\" = xterm-kitty; and test -f " + q(kittyImg) + "\n            fastfetch --config " + cfg + " --logo " + q(kittyImg) + " --logo-type kitty-direct --logo-width " + logoW + " --logo-height " + logoH + " --logo-padding-right 3\n            return\n        end\n"
+            // altura medida no proprio kitty (pixels da janela / colunas e linhas): com a celula chutada a imagem saia esticada
+            if (kittyImg !== "") t += "        if test \"$TERM\" = xterm-kitty; and test -f " + q(kittyImg) + "\n            set -l h " + logoH + "\n            set -l px (kitten icat --print-window-size 2>/dev/null | string split x)\n            if test (count $px) -eq 2; and test \"$px[2]\" -gt 0\n                set h (math \"max(1, round(" + logoW + " * " + ratio.toFixed(4) + " * ($px[1] / $COLUMNS) / ($px[2] / $LINES)))\")\n            end\n            fastfetch --config " + cfg + " --logo " + q(kittyImg) + " --logo-type kitty-direct --logo-width " + logoW + " --logo-height $h --logo-padding-right 3\n            return\n        end\n"
             t += "        if test \"$TERM\" = xterm-kitty\n            fastfetch --config " + cfg + " --logo \"$img\" --logo-type kitty-icat --logo-width " + logoW + (logoH > 0 ? " --logo-height " + logoH : "") + " --logo-padding-right 3\n            return\n        end\n"
             t += "        if command -v chafa &> /dev/null\n            fastfetch --config " + cfg + " --logo \"$img\" --logo-type chafa --logo-width " + logoW + (logoH > 0 ? " --logo-height " + logoH : "") + " --logo-padding-right 3\n            return\n        end\n    end\n"
         }
