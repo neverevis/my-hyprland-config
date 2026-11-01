@@ -291,8 +291,8 @@ SetPage {
         overview: "view_grid", overlay: "gamepad", osk: "keyboard", desk_edit: "pencil", clipboard: "paste", notif_clear: "broom", close: "close",
         bar_down: "bars", bar_up: "bars", lock: "lock", power: "power", shot: "camera", shot_freeze: "camera", shot_lens: "search", ocr: "crop",
         translate: "translate", picker: "eyedropper", rec: "recordRec", rec_region: "record", rec_stop: "stopCircle", media_toggle: "play",
-        media_next: "arrowRight", media_prev: "arrowLeft", media_stop: "stopCircle" })
-    readonly property var grpIcons: ({ "Painéis": "dock", "Barras": "bars", "Sessão": "power", "Capturas": "camera", "Mídia": "play" })
+        media_next: "arrowRight", media_prev: "arrowLeft", media_stop: "stopCircle", terminal: "console" })
+    readonly property var grpIcons: ({ "Painéis": "dock", "Barras": "bars", "Sessão": "power", "Capturas": "camera", "Mídia": "play", "Apps": "apps" })
     function iconFor(e) { return icons[e.id] || grpIcons[e.grp] || "keyboard" }
 
     // teste por IPC (sem teclado): keys edit <id> | type SUPER+ALT+K | apply true|false | state | cancel

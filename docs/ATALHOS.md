@@ -35,6 +35,12 @@ A coluna **id** é o nome usado nesse arquivo. Os atalhos com Super usam a tecla
 | `Ctrl + Alt + C` | Limpar notificações | `notif_clear` |
 | `Super + Q` | Fechar o painel do shell aberto ou a janela ativa | `close` |
 
+## Apps
+
+| Atalho | Ação | id |
+| --- | --- | --- |
+| `Super + Return` | Abrir o terminal padrão | `terminal` |
+
 ## Barras
 
 | Atalho | Ação | id |

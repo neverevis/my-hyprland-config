@@ -50,6 +50,10 @@ O instalador:
 6. oferece ligar serviços que os extras usam (ydotool, NetworkManager, Bluetooth, perfis de energia);
 7. recarrega o Hyprland e inicia o shell agora. Só pede logout/login se algo realmente exigir (por exemplo, o grupo `input`).
 
+**Num Arch zerado** (sem `hyprland.lua` nem `hyprland.conf`), o instalador cria `~/.config/hypr/hyprland.lua` a partir do exemplo oficial do Hyprland (`/usr/share/hypr/hyprland.lua`, ou um inicial pequeno se ele não existir), já com o layout de teclado do sistema (`localectl`) e o terminal do shell (`Super + Return` e o terminal do exemplo abrem o terminal padrão escolhido nas configurações). Como não há nada seu para proteger, os atalhos do exemplo que repetem os do shell (por exemplo `Super + Q`, `Super + C`) são trocados pelos do shell sem perguntar; os demais atalhos do exemplo ficam. Com só um `hyprland.conf` antigo, ele avisa e pergunta (padrão: não) se cria o `hyprland.lua` novo; seus atalhos e regras antigos **não** são migrados (o `.conf` fica de backup).
+
+**O que o instalador muda na sua config existente:** só acrescenta `pcall(require, "quickshell")` ao fim do `hyprland.lua` (backup `*.mine-orig`), cria `quickshell.lua`, `quickshell-keys.lua` e `quickshell-blur.lua` na mesma pasta, e (opcional) comenta autostarts de programas que brigam com o shell. O `quickshell-blur.lua`, gerado pelo shell, só contém o que você mudar nas configurações: as regras das janelas do próprio shell, o blur se você ligar "gerenciar blur", e as opções do Hyprland que você alterar na página Hyprland. Nada mais da sua config é sobrescrito.
+
 Opções úteis: `--dry-run` (só mostra o que faria), `--replace-keys` / `--keep-keys` (resolve os conflitos de atalho sem perguntar), `--stop-programs` / `--keep-programs`, `--no-deps`, `--minimal`, `--no-autostart`, `--no-start`, `--reset`, `--keys` (refaz só a escolha dos atalhos), `--yes` (respostas padrão). Veja `./install.sh --help`.
 
 ### Desinstalar
@@ -89,6 +93,7 @@ A tabela abaixo (e [docs/ATALHOS.md](docs/ATALHOS.md)) é gerada de `hypr/quicks
 | `Super + .` | Emojis |
 | `Ctrl + Alt + C` | Limpar notificações |
 | `Super + Q` | Fechar o painel do shell aberto ou a janela ativa |
+| `Super + Return` | Abrir o terminal padrão |
 | `Segurar Super` | Segurar Super: mostra barras escondidas e números dos workspaces |
 | `Super (tocar e soltar)` | Soltar Super: esconde de novo |
 | `Super + L` | Bloquear a tela |

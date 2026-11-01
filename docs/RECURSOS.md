@@ -2,6 +2,12 @@
 
 Tudo que o shell faz, por área. Feito a partir dos comentários de cabeçalho de cada arquivo em `quickshell/mine/`. Atalhos: [ATALHOS.md](ATALHOS.md).
 
+## O que o instalador muda
+
+- Config existente: só acrescenta `pcall(require, "quickshell")` ao fim do `hyprland.lua` (backup `*.mine-orig`) e cria `quickshell.lua`, `quickshell-keys.lua`, `quickshell-blur.lua` ao lado. Conflitos de atalho são resolvidos por você (`--replace-keys` / `--keep-keys`).
+- `quickshell-blur.lua` (gerado por `HyprSync.qml` + `HyprConf.qml`) só aplica: regras de camada/janela do próprio shell (namespaces `mine-*`, janela de configurações, opacidade 1 das janelas `org.quickshell`); `decoration.blur` só se "gerenciar blur" estiver ligado; bordas só se o tema do wallpaper nas bordas estiver ligado; e as opções do Hyprland que você mudou na página Hyprland (`hl.config` só com as chaves alteradas), monitores, autostart e cursor só se configurados. O que você não mexer no shell continua como no seu `hyprland.lua`.
+- Sistema zerado: cria o `hyprland.lua` do exemplo oficial do Hyprland (teclado do `localectl`, terminal do shell) e o shell vence os conflitos de atalho; só `hyprland.conf`: pergunta antes e não migra os atalhos antigos.
+
 ## Moldura e barras
 
 - Moldura fina na tela com cantos arredondados, vidro (opacidade + blur) e grão; cor e arredondamento configuráveis (`Geometry.qml`).

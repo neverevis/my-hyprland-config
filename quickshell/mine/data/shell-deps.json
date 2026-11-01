@@ -105,6 +105,11 @@
   "why": "área de transferência, capturas, conta-gotas"
  },
  {
+  "pkg": "polkit",
+  "level": "required",
+  "why": "pkexec e agente de senha do shell (acoes de administrador)"
+ },
+ {
   "pkg": "pacman-contrib",
   "level": "required",
   "why": "aviso de atualizações (checkupdates), sons"
@@ -258,10 +263,5 @@
   "pkg": "chafa",
   "level": "optional",
   "why": "boas-vindas do terminal com imagem (chafa: imagem fora do kitty)"
- },
- {
-  "pkg": "polkit",
-  "level": "required",
-  "why": "pedir a senha em ações de administrador"
  }
 ]

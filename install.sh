@@ -19,6 +19,8 @@
 #   --reset         sobrescreve o seu settings.json com o padrao deste repositorio
 #   --yes           responde as perguntas com a resposta padrao (a opcao em maiuscula), sem esperar
 #   -h, --help      esta ajuda
+# Sistema zerado (sem hyprland.lua nem hyprland.conf): cria o hyprland.lua do exemplo oficial do Hyprland, com o teclado do
+# sistema e o terminal do shell, e o shell vence todos os conflitos de atalho. Com so um hyprland.conf: pergunta se migra.
 # Faz backup (uma vez, como *.mine-orig) de cada arquivo seu que editar; o --uninstall restaura.
 set -euo pipefail
 
@@ -34,7 +36,9 @@ STAMP="$(date +%Y%m%d-%H%M%S)"
 ORIG=".mine-orig"
 
 DEPS=1; OPTIONAL_DEPS=1; AUTOSTART=1; RESET=0; DRY=0; UNINSTALL=0; ONLY_KEYS=0; START=1; ASSUME_YES=0
-KEYMODE=""; PROGMODE=""; DRYF=()
+KEYMODE=""; PROGMODE=""; DRYF=(); FRESH=0   # FRESH: 1 = config criada por nos (sistema zerado), 2 = migrada do hyprland.conf
+TERM_CMD="sh -c 'qs -c mine ipc call apps terminal || kitty'"
+HYPR_EXAMPLE=/usr/share/hypr/hyprland.lua
 for a in "$@"; do
     case "$a" in
         --no-deps) DEPS=0 ;;
@@ -168,29 +172,34 @@ fi
 
 # ================================================================ so os atalhos (--keys) usa as mesmas funcoes abaixo
 step_keys() {
-    [ -f "$HYPR_DIR/hyprland.lua" ] || return 0
-    local tmp tsv ids n mode id combo desc ex wh shown
+    [ -f "$HYPR_DIR/hyprland.lua" ] || [ "$FRESH" != 0 ] || return 0
+    local tmp tsv ids n mode id combo desc ex wh shown scan="$HYPR_DIR"
     tmp="$(mktemp)"; tsv="$(mktemp)"
     local extra=()
-    if hypr_up && hyprctl binds -j >"$tmp" 2>/dev/null && [ -s "$tmp" ]; then
+    if [ "$FRESH" != 0 ]; then
+        # config nova: nao ha escolhas do usuario a proteger; analisa so o arquivo criado (nao os atalhos do Hyprland rodando, que sao de antes)
+        : >"$tmp"; extra+=(--static --ignore-decided); [ -n "$KEYMODE" ] || KEYMODE=replace
+        if [ ! -f "$HYPR_DIR/hyprland.lua" ]; then scan="$(mktemp -d)"; cp "${HYPR_EXAMPLE}" "$scan/hyprland.lua" 2>/dev/null || true; fi
+    elif hypr_up && hyprctl binds -j >"$tmp" 2>/dev/null && [ -s "$tmp" ]; then
         [ -n "$KEYMODE" ] && extra+=(--static --ignore-decided)
     else
         : >"$tmp"; note "Hyprland nao esta rodando: procuro os atalhos escritos nos arquivos de $HYPR_DIR."
     fi
-    python3 "$HELPER" keys-conflicts --lua "$HERE/hypr/quickshell.lua" --binds "$tmp" --keys "$KEYS_FILE" --hypr "$HYPR_DIR" --tsv "${extra[@]}" >"$tsv" || true
-    rm -f "$tmp"
+    python3 "$HELPER" keys-conflicts --lua "$HERE/hypr/quickshell.lua" --binds "$tmp" --keys "$KEYS_FILE" --hypr "$scan" --tsv "${extra[@]}" >"$tsv" || true
+    rm -f "$tmp"; [ "$scan" = "$HYPR_DIR" ] || rm -rf "$scan"
     n="$(cut -f1 "$tsv" | sort -u | wc -l)"
     if [ "$n" -eq 0 ]; then
         say "Atalhos: nenhum conflito com os seus"
         [ -f "$KEYS_FILE" ] || python3 "$HELPER" keys-write --keys "$KEYS_FILE" "${DRYF[@]}"
         rm -f "$tsv"; return 0
     fi
-    say "Atalhos do shell que ja existem no seu Hyprland ($n):"
+    if [ "$FRESH" != 0 ]; then say "Atalhos do exemplo do Hyprland que o shell substitui ($n; os outros do exemplo continuam):"
+    else say "Atalhos do shell que ja existem no seu Hyprland ($n):"; fi
     while IFS=$'\t' read -r id combo desc ex wh; do
         printf '      %-22s shell: %-38s seu: %s%s\n' "$combo" "$desc" "$ex" "${wh:+ ($wh)}"
     done <"$tsv"
     mode="$KEYMODE"
-    if [ -z "$mode" ]; then
+    if [ -z "$mode" ]; then   # (em config nova o modo ja e "replace", acima)
         case "$(choose "Substituir todos (o do shell vence), manter os seus, ou decidir um a um?" "tmu" "m")" in
             t) mode=replace ;; m) mode=keep ;; u) mode=each ;;
         esac
@@ -243,6 +252,7 @@ REQUIRED=(
     ttf-jetbrains-mono-nerd                                    # fonte dos icones da interface
     libnotify curl glib2 xdg-utils procps-ng                   # avisos, clima/letras, tema GTK, abrir arquivos
     wl-clipboard cliphist grim slurp hyprpicker                # area de transferencia, capturas, conta-gotas
+    polkit                                                     # pkexec e agente de senha do shell (acoes de administrador)
     pacman-contrib sound-theme-freedesktop                     # aviso de atualizacoes (checkupdates), sons
 )
 # extras: cada um liga um recurso (o shell funciona sem eles e avisa o que falta)
@@ -358,12 +368,43 @@ put_file "$HERE/bin/mine-shell" "$BIN_DIR/mine-shell" 755
 say "Scripts instalados em $BIN_DIR (qs-close-or-kill: Super+Q; session-action: bloquear, menu de energia, midia; mine-shell: iniciar/reiniciar o shell)"
 
 # ================================================================ Hyprland (config Lua)
-if [ -f "$HYPR_DIR/hyprland.lua" ]; then
+# ---- sistema zerado / so hyprland.conf: cria o hyprland.lua a partir do exemplo oficial ----
+fresh_lua() { # cria $HYPR_DIR/hyprland.lua: exemplo do Hyprland + teclado do sistema + terminal do shell
+    local lay="" var="" ex="" out
+    if command -v localectl >/dev/null 2>&1; then
+        lay="$(localectl status 2>/dev/null | sed -n 's/^ *X11 Layout: *//p' | head -1)"; var="$(localectl status 2>/dev/null | sed -n 's/^ *X11 Variant: *//p' | head -1)"
+        [ "$lay" = "n/a" ] && lay=""; [ "$var" = "n/a" ] && var=""
+    fi
+    [ -f "$HYPR_EXAMPLE" ] && ex="$HYPR_EXAMPLE" || warn "Nao achei $HYPR_EXAMPLE: uso um hyprland.lua inicial pequeno."
+    run mkdir -p "$HYPR_DIR"
+    out="$(python3 "$HELPER" fresh-lua --dst "$HYPR_DIR/hyprland.lua" --example "$ex" --layout "$lay" --variant "$var" --terminal "$TERM_CMD" "${DRYF[@]}")"
+    say "Criei $HYPR_DIR/hyprland.lua ${ex:+a partir de $ex }(o padrao do Hyprland, com os atalhos e regras basicos)"
+    printf '%s\n' "$out" | sed 's/^/      /'
+    [ -n "$lay" ] || note "teclado: nao consegui ler o layout do sistema (localectl); ficou o padrao do exemplo (edite kb_layout no hyprland.lua)"
+    NOTES+=("Config nova do Hyprland criada em $HYPR_DIR/hyprland.lua; os atalhos do shell que repetiam os do exemplo foram trocados pelos do shell (veja docs/ATALHOS.md)")
+}
+if [ ! -f "$HYPR_DIR/hyprland.lua" ]; then
+    if [ -f "$HYPR_DIR/hyprland.conf" ]; then
+        warn "Achei $HYPR_DIR/hyprland.conf (formato hyprlang), mas o Hyprland 0.56 e este shell usam a configuracao em Lua (hyprland.lua)."
+        note "Posso criar um hyprland.lua novo (padrao do Hyprland); o hyprland.conf fica guardado, mas os seus atalhos e regras antigos NAO sao copiados."
+        if ask "Criar o hyprland.lua novo e guardar o hyprland.conf como backup?" n; then
+            backup_once "$HYPR_DIR/hyprland.conf"; FRESH=2; fresh_lua
+            NOTES+=("Seus atalhos/regras do hyprland.conf nao foram migrados: copie-os a mao para o hyprland.lua (backup em hyprland.conf$ORIG)")
+        else
+            note "Sem migrar: copio so hypr/quickshell.lua para $HYPR_DIR/ (use  exec-once = qs -c mine  e a tabela de atalhos de la no seu hyprland.conf)."
+            put_file "$HERE/hypr/quickshell.lua" "$HYPR_DIR/quickshell.lua"
+        fi
+    else
+        say "Nao ha configuracao do Hyprland em $HYPR_DIR: sistema zerado, vou criar uma"
+        FRESH=1; fresh_lua
+    fi
+fi
+if [ -f "$HYPR_DIR/hyprland.lua" ] || [ "$FRESH" != 0 ]; then
     say "Integrando ao Hyprland em $HYPR_DIR"
     put_file "$HERE/hypr/quickshell.lua" "$HYPR_DIR/quickshell.lua"
     if [ "$AUTOSTART" = 0 ]; then run sed -i 's/^local AUTOSTART = true/local AUTOSTART = false/' "$HYPR_DIR/quickshell.lua"; fi
-    if ! grep -q 'require, "quickshell"' "$HYPR_DIR/hyprland.lua"; then
-        backup_once "$HYPR_DIR/hyprland.lua"
+    if ! grep -q 'require, "quickshell"' "$HYPR_DIR/hyprland.lua" 2>/dev/null; then
+        [ "$FRESH" != 0 ] || backup_once "$HYPR_DIR/hyprland.lua"   # config nova: nao ha original seu para guardar
         append_block "$HYPR_DIR/hyprland.lua" $'\n-- Quickshell (moldura, barras e seletor de wallpaper)\npcall(require, "quickshell")\n'
         say "Linha 'require quickshell' adicionada ao fim do hyprland.lua (depois dos seus atalhos, de proposito)"
     fi
@@ -394,12 +435,6 @@ PY
         fi
         rm -f "$pj"
     fi
-elif [ -f "$HYPR_DIR/hyprland.conf" ]; then
-    warn "Achei $HYPR_DIR/hyprland.conf (formato hyprlang), mas este shell integra pela configuracao em Lua do Hyprland 0.56."
-    note "Copie hypr/quickshell.lua para $HYPR_DIR/, ou use no hyprland.conf:  exec-once = qs -c mine  e os binds da tabela em hypr/quickshell.lua."
-    put_file "$HERE/hypr/quickshell.lua" "$HYPR_DIR/quickshell.lua"
-else
-    warn "Nao achei $HYPR_DIR/hyprland.lua: pulei a integracao com o Hyprland (inicie o Hyprland uma vez para ele criar a config e rode de novo)."
 fi
 
 # ---- kitty (tema do wallpaper): inclui o arquivo gerado pelo shell ----

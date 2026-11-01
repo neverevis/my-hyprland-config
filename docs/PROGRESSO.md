@@ -40,7 +40,7 @@ Páginas de Sistema para dispensar outros painéis:
 - Vidro dos widgets é um gradiente estático (não é blur real de fundo).
 - Brave: o tema ao vivo exige criar uma vez `/etc/brave/policies/managed/caelestia.json` gravável pelo usuário.
 - Colar "superpaste" depende de `wtype` e não foi incluído.
-- O instalador só integra com a configuração **Lua** do Hyprland (0.56); com `hyprland.conf` ele só copia os arquivos e explica o que fazer.
+- O instalador só integra com a configuração **Lua** do Hyprland (0.56). Sistema zerado: cria o `hyprland.lua` do exemplo oficial (teclado do `localectl`, terminal do shell) e o shell vence os conflitos de atalho. Só `hyprland.conf`: pergunta se cria o `.lua` novo (atalhos antigos não são migrados).
 
 ## Histórico resumido
 

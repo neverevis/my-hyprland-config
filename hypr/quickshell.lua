@@ -43,6 +43,8 @@ local keys = {
     { id = "emoji",      key = "SUPER + Period",      cmd = "qs -c mine ipc call launcher search ':'",    desc = "Emojis", grp = "Painéis" },
     { id = "notif_clear", key = "CTRL + ALT + C",     cmd = "qs -c mine ipc call notifications clear",    desc = "Limpar notificações", grp = "Painéis" },
     { id = "close",      key = "SUPER + Q",           cmd = "$HOME/.local/bin/qs-close-or-kill",          desc = "Fechar o painel do shell aberto ou a janela ativa", grp = "Painéis" },
+    -- apps
+    { id = "terminal",   key = "SUPER + Return",      cmd = "sh -c 'qs -c mine ipc call apps terminal || kitty'", desc = "Abrir o terminal padrão", grp = "Apps" },
     -- barras
     { id = "bar_down",   key = "SUPER_L",             cmd = "qs -c mine ipc call bar superdown",          desc = "Segurar Super: mostra barras escondidas e números dos workspaces", grp = "Barras" },
     { id = "bar_up",     key = "SUPER + SUPER_L",     cmd = "qs -c mine ipc call bar superup",            desc = "Soltar Super: esconde de novo", grp = "Barras", release = true },

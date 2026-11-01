@@ -54,11 +54,14 @@ def find_sources(hypr):
     for p in conf_files(hypr):
         try: lines = open(p, encoding="utf-8", errors="replace").read().splitlines()
         except OSError: continue
+        vs = {}   # variaveis de texto (local mainMod = "SUPER"), usadas como  mainMod .. " + Q"
         for i, ln in enumerate(lines, 1):
             s = ln.strip()
             if s.startswith(("--", "#")): continue
-            m = re.search(r'\bhl\.bind\(\s*"([^"]+)"', s)
-            if m: src.setdefault(norm(m.group(1)), []).append(f"{os.path.relpath(p, hypr)}:{i}")
+            mv = re.match(r'local\s+(\w+)\s*=\s*"([^"]*)"', s)
+            if mv: vs[mv.group(1)] = mv.group(2)
+            m = re.search(r'\bhl\.bind\(\s*(?:(\w+)\s*\.\.\s*)?"([^"]+)"', s)
+            if m and (not m.group(1) or m.group(1) in vs): src.setdefault(norm(vs.get(m.group(1), "") + m.group(2)), []).append(f"{os.path.relpath(p, hypr)}:{i}")
             m = re.match(r'bind[a-z]*\s*=\s*([^,]*),\s*([^,]+),', s)
             if m:
                 mask = 0
@@ -242,6 +245,45 @@ def cmd_remove_block(a):
         else:
             open(a.file, "w", encoding="utf-8").write("\n".join(out)); print(f"OK {a.file}")
 
+# ---------------------------------------------------------------- config nova (sistema zerado)
+STARTER = """-- hyprland.lua inicial criado pelo instalador do Quickshell "mine" (nao achei o exemplo do Hyprland em /usr/share/hypr).
+local terminal = "kitty"
+hl.monitor({ output = "", mode = "preferred", position = "auto", scale = "auto" })
+hl.config({ input = { kb_layout = "us", kb_variant = "", follow_mouse = 1 } })
+local mainMod = "SUPER"
+hl.bind(mainMod .. " + Q", hl.dsp.exec_cmd(terminal))
+hl.bind(mainMod .. " + M", hl.dsp.exec_cmd("hyprctl dispatch 'hl.dsp.exit()'"))
+hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))
+hl.bind(mainMod .. " + right", hl.dsp.focus({ direction = "right" }))
+hl.bind(mainMod .. " + up",    hl.dsp.focus({ direction = "up" }))
+hl.bind(mainMod .. " + down",  hl.dsp.focus({ direction = "down" }))
+for i = 1, 10 do
+    local key = i % 10
+    hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
+    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
+end
+hl.bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   { mouse = true })
+hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
+"""
+
+def lua_str(v): return '"' + v.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+def cmd_fresh_lua(a):
+    """Cria o hyprland.lua a partir do exemplo oficial do Hyprland (ou do inicial embutido): teclado do sistema e terminal do shell."""
+    txt = open(a.example, encoding="utf-8").read() if a.example and os.path.isfile(a.example) else STARTER
+    out = []
+    if a.layout:
+        txt, n1 = re.subn(r'(kb_layout\s*=\s*)"[^"]*"', lambda m: m.group(1) + lua_str(a.layout), txt, count=1)
+        txt, n2 = re.subn(r'(kb_variant\s*=\s*)"[^"]*"', lambda m: m.group(1) + lua_str(a.variant or ""), txt, count=1)
+        out.append(f"teclado: layout={a.layout}" + (f" variante={a.variant}" if a.variant else "") + ("" if n1 else " (nao achei kb_layout no exemplo)"))
+    if a.terminal:
+        txt, n = re.subn(r'^(\s*local\s+terminal\s*=\s*)"[^"]*"', lambda m: m.group(1) + lua_str(a.terminal), txt, count=1, flags=re.M)
+        out.append("terminal: " + a.terminal if n else "terminal: o exemplo nao declara `local terminal` (so o atalho Super+Return do shell abre o terminal padrao)")
+    if a.dry: print("\n".join(out)); return
+    os.makedirs(os.path.dirname(a.dst), exist_ok=True)
+    open(a.dst, "w", encoding="utf-8").write(txt)
+    print("\n".join(out))
+
 def main():
     ap = argparse.ArgumentParser(); sp = ap.add_subparsers(dest="c", required=True)
     def add(name, fn, *args):
@@ -255,6 +297,7 @@ def main():
     add("progs-disable", cmd_progs_disable, ("--hypr", {"required": True}), ("--names", {"required": True}))
     add("restore-marks", cmd_restore_marks, ("--hypr", {"required": True}))
     add("remove-block", cmd_remove_block, ("--file", {"required": True}), ("--payload", {"required": True}), ("--comment", {"required": True}))
+    add("fresh-lua", cmd_fresh_lua, ("--dst", {"required": True}), ("--example", {"default": ""}), ("--layout", {"default": ""}), ("--variant", {"default": ""}), ("--terminal", {"default": ""}))
     a = ap.parse_args(); a.fn(a)
 
 if __name__ == "__main__": main()
