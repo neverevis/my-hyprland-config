@@ -258,6 +258,7 @@ Scope {
                         // ---------- abas (lateral) ----------
                         Rectangle {
                             id: rail
+                            z: 2   // as dicas dos icones saem para a direita: o trilho fica acima do conteudo
                             x: 12; y: 12; width: 56; height: parent.height - 24
                             radius: 16
                             color: Theme.glc(Theme.card, 1.15)
