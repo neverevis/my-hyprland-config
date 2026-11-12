@@ -20,7 +20,7 @@ Scope {
     onOpenChanged: if (open) { Hyprland.refreshToplevels(); Hyprland.refreshWorkspaces() }
     function hypr(lua) { Quickshell.execDetached(["hyprctl", "eval", "hl.dispatch(" + lua + ")"]) }
     function goWs(id) { hypr('hl.dsp.focus({ workspace = ' + id + ' })'); open = false }
-    function goWin(addr) { hypr('hl.dsp.focus({ window = "address:' + addr + '" })'); open = false }
+    function goWin(addr) { hypr('hl.dsp.focus({ window = "address:' + addr + '" })'); hypr('hl.dsp.window.alter_zorder({ mode = "top", window = "address:' + addr + '" })'); open = false }
     function closeWin(addr) { hypr('hl.dsp.window.close({ window = "address:' + addr + '" })'); Qt.callLater(Hyprland.refreshToplevels) }
     function moveWin(addr, ws) { hypr('hl.dsp.window.move({ workspace = ' + ws + ', follow = false, window = "address:' + addr + '" })'); Qt.callLater(Hyprland.refreshToplevels) }
 

@@ -85,7 +85,9 @@ Item {
         if (!a.wins.length) { const e = DesktopEntries.byId(a.id) ?? entryOf(a.id); if (e) e.execute(); return }
         const i = ((cycle[a.id] ?? -1) + 1) % a.wins.length
         const c = Object.assign({}, cycle); c[a.id] = i; cycle = c
-        hypr('hl.dsp.focus({ window = "address:' + a.wins[i].lastIpcObject.address + '" })')
+        const w = '"address:' + a.wins[i].lastIpcObject.address + '"'
+        // focar so nao basta com janelas soltas: a janela ficava atras das outras; traz para a frente tambem
+        Quickshell.execDetached(["hyprctl", "eval", "hl.dispatch(hl.dsp.focus({ window = " + w + " }))\nhl.dispatch(hl.dsp.window.alter_zorder({ mode = 'top', window = " + w + " }))"])
     }
 
     // ampliacao: posicao do mouse ao longo do dock
@@ -146,7 +148,9 @@ Item {
                 // centro sem ampliacao (estavel: nao depende do tamanho dos vizinhos ja ampliados)
                 readonly property real nominal: (root.opts.appsButton ? root.isz + 8 + root.gap : 0) + index * (root.isz + 8 + root.gap) + (root.opts.separator && index >= root.pinnedCount && root.pinnedCount > 0 ? 12 : 0) + (root.isz + 8) / 2
                 readonly property real s: root.scaleAt(nominal)
-                readonly property real cellLen: (root.isz + 8) * (1 + (s - 1) * 0.6)
+                // a celula nao cresce com a ampliacao (so o icone): o dock mudava de largura, a barra o recentralizava,
+                // o mouse "andava" em relacao a ele e a ampliacao tremia
+                readonly property real cellLen: root.isz + 8
                 width: root.vertical ? root.isz + 8 : cellLen + gapBefore
                 height: root.vertical ? cellLen + gapBefore : root.isz + 8
                 Rectangle {

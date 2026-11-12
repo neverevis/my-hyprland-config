@@ -608,7 +608,7 @@ Scope {
                             live: true
                         }
                         MouseArea { id: tm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
-                            onClicked: { Quickshell.execDetached(["hyprctl", "eval", 'hl.dispatch(hl.dsp.focus({ window = "address:' + wc.o.address + '" }))']); BarState.pop = null } }
+                            onClicked: { Quickshell.execDetached(["hyprctl", "eval", 'hl.dispatch(hl.dsp.focus({ window = "address:' + wc.o.address + '" }))\nhl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = "address:' + wc.o.address + '" }))']); BarState.pop = null } }
                     }
                 }
             }
