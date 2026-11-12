@@ -36,7 +36,7 @@ Singleton {
         { key: "decoration:shadow:render_power", group: "shadow", label: "Suavidade da sombra", type: "slider", from: 1, to: 4, when: "decoration:shadow:enabled" },
         { key: "general:resize_on_border", group: "shadow", label: "Redimensionar puxando a borda", type: "switch" },
         // do shell: vira uma regra "float" para todas as janelas (como no GNOME/Fedora: soltas, sem se encaixar)
-        { key: "mine:float_all", group: "layout", label: "Janelas soltas (como no GNOME): abrem flutuando, sem se encaixar", type: "switch" },
+        { key: "mine:float_all", group: "layout", label: "Janelas soltas (como no GNOME): abrem flutuando, em tamanho de janela", type: "switch" },
         { key: "general:layout", group: "layout", label: "Como as janelas se organizam", type: "seg", options: [["dwindle", "Espiral"], ["master", "Mestre"], ["scrolling", "Rolagem"]] },
         { key: "dwindle:preserve_split", group: "layout", label: "Manter a divisão ao reorganizar (espiral)", type: "switch" },
         { key: "dwindle:smart_split", group: "layout", label: "Divisão inteligente (segue o cursor)", type: "switch" },
@@ -156,7 +156,19 @@ Singleton {
         return ["w[tv1]s[false]", "f[1]s[false]"].map(w => 'hl.workspace_rule({ workspace = "' + w + '", gaps_out = ' + v + ' })').join("\n")
     }
     // janelas soltas: toda janela nova abre flutuando (Super+V continua alternando cada uma)
-    function floatLua() { return value("mine:float_all") ? 'hl.window_rule({ name = "mine-float-all", match = { class = ".*" }, float = true })' : "" }
+    // e quem abre quase do tamanho da tela (navegador, editores: lembram o tamanho de quando estavam encaixados) vira uma
+    // janela normal, ~62% x 70% da tela e centralizada, como no Windows/Fedora; as pequenas (dialogos, calculadora) ficam como vieram
+    function floatLua() {
+        if (!value("mine:float_all")) return ""
+        return 'hl.window_rule({ name = "mine-float-all", match = { class = ".*" }, float = true })\n'
+            + 'hl.on("window.open", function(w)\n'
+            + '    if not w or not w.floating or w.fullscreen ~= 0 or not w.monitor then return end\n'
+            + '    local m = w.monitor\n'
+            + '    if w.size.x < m.width * 0.8 and w.size.y < m.height * 0.8 then return end\n'
+            + '    hl.dispatch(hl.dsp.window.resize({ x = math.floor(m.width * 0.62), y = math.floor(m.height * 0.7), window = w }))\n'
+            + '    hl.dispatch(hl.dsp.window.center({ window = w }))\n'
+            + 'end)'
+    }
     function lua() { return [configLua(), opacityLua(), gapsLua(), floatLua(), monitorLua(), autostartLua()].filter(x => x).join("\n") }
 
     // ---- leitura dos valores atuais ----
