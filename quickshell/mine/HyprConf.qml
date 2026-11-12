@@ -35,6 +35,8 @@ Singleton {
         { key: "decoration:shadow:range", group: "shadow", label: "Tamanho da sombra", type: "slider", from: 0, to: 60, suffix: " px", when: "decoration:shadow:enabled" },
         { key: "decoration:shadow:render_power", group: "shadow", label: "Suavidade da sombra", type: "slider", from: 1, to: 4, when: "decoration:shadow:enabled" },
         { key: "general:resize_on_border", group: "shadow", label: "Redimensionar puxando a borda", type: "switch" },
+        // do shell: vira uma regra "float" para todas as janelas (como no GNOME/Fedora: soltas, sem se encaixar)
+        { key: "mine:float_all", group: "layout", label: "Janelas soltas (como no GNOME): abrem flutuando, sem se encaixar", type: "switch" },
         { key: "general:layout", group: "layout", label: "Como as janelas se organizam", type: "seg", options: [["dwindle", "Espiral"], ["master", "Mestre"], ["scrolling", "Rolagem"]] },
         { key: "dwindle:preserve_split", group: "layout", label: "Manter a divisão ao reorganizar (espiral)", type: "switch" },
         { key: "dwindle:smart_split", group: "layout", label: "Divisão inteligente (segue o cursor)", type: "switch" },
@@ -153,7 +155,9 @@ Singleton {
         const v = luaVal(value(ks))
         return ["w[tv1]s[false]", "f[1]s[false]"].map(w => 'hl.workspace_rule({ workspace = "' + w + '", gaps_out = ' + v + ' })').join("\n")
     }
-    function lua() { return [configLua(), opacityLua(), gapsLua(), monitorLua(), autostartLua()].filter(x => x).join("\n") }
+    // janelas soltas: toda janela nova abre flutuando (Super+V continua alternando cada uma)
+    function floatLua() { return value("mine:float_all") ? 'hl.window_rule({ name = "mine-float-all", match = { class = ".*" }, float = true })' : "" }
+    function lua() { return [configLua(), opacityLua(), gapsLua(), floatLua(), monitorLua(), autostartLua()].filter(x => x).join("\n") }
 
     // ---- leitura dos valores atuais ----
     readonly property string script: Qt.resolvedUrl("scripts/hyprget.py").toString().replace("file://", "")

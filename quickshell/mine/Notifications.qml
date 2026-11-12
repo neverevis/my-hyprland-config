@@ -235,7 +235,7 @@ Scope {
 
                                 // ---- texto ----
                                 Column {
-                                    anchors { left: iconBox.right; leftMargin: 12; right: parent.right; rightMargin: 14; verticalCenter: parent.verticalCenter; verticalCenterOffset: root.anyActions ? -18 : 0 }
+                                    anchors { left: iconBox.right; leftMargin: 12; right: parent.right; rightMargin: 38; verticalCenter: parent.verticalCenter; verticalCenterOffset: root.anyActions ? -18 : 0 }
                                     spacing: 2
                                     UiText {
                                         width: parent.width
@@ -264,7 +264,7 @@ Scope {
 
                                 Rectangle {   // varios avisos do mesmo app
                                     visible: card.pl.grp.cnt > 1
-                                    anchors { right: parent.right; top: parent.top; rightMargin: 10; topMargin: 8 }
+                                    anchors { right: parent.right; top: parent.top; rightMargin: hover.hovered ? 42 : 10; topMargin: 8 }
                                     width: Math.max(20, gcnt.implicitWidth + 12); height: 20; radius: 10; color: Theme.accent
                                     UiText { id: gcnt; anchors.centerIn: parent; text: "+" + (card.pl.grp.cnt - 1); color: Theme.accentText; font.pixelSize: 11; font.weight: Font.Bold }
                                 }
@@ -280,6 +280,20 @@ Scope {
                                         }
                                         card.n.dismiss()
                                     }
+                                }
+
+                                // fechar (aparece ao passar o mouse; clicar no aviso tambem fecha, mas abre o app junto)
+                                Rectangle {
+                                    id: closeBtn
+                                    anchors { right: parent.right; top: parent.top; rightMargin: 8; topMargin: 8 }
+                                    width: 26; height: 26; radius: 13
+                                    opacity: hover.hovered ? 1 : 0
+                                    visible: opacity > 0
+                                    Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                                    color: cbm.containsMouse ? Theme.cardHi : Theme.track
+                                    border.width: 1; border.color: Theme.border
+                                    UiIcon { anchors.centerIn: parent; name: "close"; size: 14; color: cbm.containsMouse ? Theme.text : Theme.muted }
+                                    MouseArea { id: cbm; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: card.n.dismiss() }
                                 }
 
                                 // botoes de acao do aviso (Responder, Abrir...) + copiar o texto

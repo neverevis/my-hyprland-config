@@ -18,7 +18,7 @@ Column {
         "decoration:rounding": "rounded", "decoration:rounding_power": "curve", "decoration:active_opacity": "opacity", "decoration:inactive_opacity": "opacity",
         "decoration:dim_inactive": "night", "decoration:dim_strength": "night", "decoration:shadow:enabled": "layers", "decoration:shadow:range": "resize",
         "decoration:shadow:render_power": "blur", "general:resize_on_border": "resize", "general:extend_border_grab_area": "cursorMove",
-        "general:layout": "view_column", "input:kb_layout": "keyboard", "input:kb_variant": "keyboard", "input:kb_options": "swap_horizontal",
+        "general:layout": "view_column", "mine:float_all": "layers", "input:kb_layout": "keyboard", "input:kb_variant": "keyboard", "input:kb_options": "swap_horizontal",
         "input:numlock_by_default": "numeric", "input:repeat_delay": "timer", "input:repeat_rate": "speed", "input:sensitivity": "speed",
         "input:accel_profile": "gauge", "input:follow_mouse": "tap", "input:natural_scroll": "swap_vertical", "input:left_handed": "mouse",
         "cursor:inactive_timeout": "eyeOff", "cursor:hide_on_key_press": "eyeOff", "misc:vrr": "monitor", "animations:enabled": "animation"

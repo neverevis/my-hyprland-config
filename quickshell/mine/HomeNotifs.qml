@@ -66,6 +66,19 @@ Item {
                                 else NotifHistory.remove(card.modelData.id)
                             }
                         }
+                        // dispensar (no lugar do horario, ao passar o mouse)
+                        Rectangle {
+                            z: 2
+                            anchors { right: parent.right; top: parent.top; rightMargin: 8; topMargin: 6 }
+                            width: 24; height: 24; radius: 12
+                            opacity: nm.containsMouse || xm.containsMouse ? 1 : 0
+                            visible: opacity > 0
+                            Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                            color: xm.containsMouse ? Theme.cardHi : Theme.track
+                            border.width: 1; border.color: Theme.border
+                            UiIcon { anchors.centerIn: parent; name: "close"; size: 13; color: xm.containsMouse ? Theme.text : Theme.muted }
+                            MouseArea { id: xm; anchors.fill: parent; anchors.margins: -4; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: NotifHistory.remove(card.modelData.id) }
+                        }
                         Rectangle {
                             id: ib
                             x: 12; y: 12
@@ -87,7 +100,7 @@ Item {
                             Row {
                                 width: parent.width
                                 UiText { width: parent.width - when.width; text: card.modelData.app; maximumLineCount: 1; color: Theme.muted; font.pixelSize: 11; elide: Text.ElideRight }
-                                UiText { id: when; text: NotifHistory.ago(card.modelData.time); color: Theme.muted; font.pixelSize: 11; font.features: { "tnum": 1 } }
+                                UiText { id: when; text: NotifHistory.ago(card.modelData.time); color: Theme.muted; font.pixelSize: 11; font.features: { "tnum": 1 }; opacity: nm.containsMouse || xm.containsMouse ? 0 : 1 }
                             }
                             UiText { width: parent.width; text: card.modelData.summary; maximumLineCount: 1; color: Theme.text; font.pixelSize: 13; font.weight: Font.DemiBold; elide: Text.ElideRight }
                             UiText {

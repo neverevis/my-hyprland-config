@@ -154,7 +154,7 @@ SetPage {
     SetSection {
         title: "Layout"; icon: "view_column"
         subtitle: "Como as janelas se organizam sozinhas"
-        SetHypr { keys: ["general:layout"] }
+        SetHypr { keys: ["mine:float_all", "general:layout"] }
         SetExpander {
             icon: "view_grid"; label: "Espiral (dwindle)"
             SetHypr { sub: true; keys: ["dwindle:preserve_split", "dwindle:smart_split", "dwindle:force_split", "dwindle:default_split_ratio"] }

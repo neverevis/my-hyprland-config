@@ -105,7 +105,7 @@ Singleton {
     onCursorSigChanged: if (ready) timer.restart()
 
     // mudancas que exigem recarregar a config (regra de camada) x mudancas ao vivo
-    readonly property string ruleSig: Settings.shellBlur + "/" + Settings.shellIgnoreAlpha + "/" + Settings.blurManaged + "/" + floatRules() + "/" + Settings.desktopBlur   // desligar o controle tambem recarrega (volta aos valores do HyprMod)
+    readonly property string ruleSig: Settings.shellBlur + "/" + Settings.shellIgnoreAlpha + "/" + Settings.blurManaged + "/" + floatRules() + "/" + Settings.desktopBlur + "/" + HyprConf.floatLua()   // desligar o controle tambem recarrega (volta aos valores do HyprMod)
     readonly property string blurSig: Settings.blurManaged + "/" + blurTable()
     property string lastRule: ""
     property bool ready: false
