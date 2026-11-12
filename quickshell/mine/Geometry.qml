@@ -177,7 +177,8 @@ Singleton {
         const detOf = i => i < nUser && !!bars[i].detached && !bars[i].full
         const gapOf = i => bars[i].gap ?? 8
         const thOf = i => Math.max(32, bars[i].height - edge)   // espessura da barra solta (sem a moldura); minimo 32: com 18 os modulos ficavam cortados
-        const tOf = i => detOf(i) ? edge + gapOf(i) + thOf(i) : bars[i].full ? Math.max(bars[i].height, edge) : Math.max(bars[i].height, edge + (bars[i].fillet ?? Settings.fillet) + (bars[i].topRadius ?? Settings.topRadius))   // altura minima: cada barra com as proprias curvas
+        // sem fundo (ilhas): os modulos ficam acima da faixa da moldura, entao a barra ganha a espessura dela por cima
+        const tOf = i => detOf(i) ? edge + gapOf(i) + thOf(i) : bars[i].full ? Math.max(bars[i].height, edge) : Math.max(bars[i].height, edge + (bars[i].fillet ?? Settings.fillet) + (bars[i].topRadius ?? Settings.topRadius)) + (bars[i].noBg ? edge : 0)   // altura minima: cada barra com as proprias curvas
         const inset = {}, zone = {}
         for (const s of order) {
             let idx = grp[s]

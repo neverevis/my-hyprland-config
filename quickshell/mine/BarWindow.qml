@@ -103,7 +103,12 @@ PanelWindow {
             // solta = so o retangulo dela, que entra deslizando pela borda
             readonly property bool det: !!(win.info && win.info.detached)
             readonly property real d1: det ? win.full - (1 - win.eff) * (win.full + 6) : vis
-            readonly property real d0: det && win.info ? Math.max(0, d1 - win.info.th) : 0
+            // sem fundo (ilhas) e presa: os modulos ficam acima da faixa da moldura, nao em cima dela
+            readonly property bool bare: !det && !!(win.bar && win.bar.noBg)
+            readonly property real d0: det && win.info ? Math.max(0, d1 - win.info.th) : (bare ? Math.min(Settings.edge, d1) : 0)
+            // espessura util (fixa, sem a animacao de entrada): as pilulas das ilhas usam toda a mesma altura
+            readonly property real need: { let m = 0; for (let k = 0; k < secRep.count; k++) { const it = secRep.itemAt(k); if (it) m = Math.max(m, it.need) } return m }
+            readonly property real band: det ? (win.info ? win.info.th : 0) : win.full - (bare ? Settings.edge : 0)
             readonly property real dl: Math.max(0, d1 - d0)
             clip: true
             x: win.side === "right" ? win.width - d1 : (win.side === "left" ? d0 : 0)
@@ -145,6 +150,8 @@ PanelWindow {
                     readonly property string gs: cfg.groupStyle ?? "section"
                     readonly property real gsp: gs === "segmented" ? 0 : (cfg.spacing ?? 14)
                     function roleColor(role, a) { const c = role ? ThemeColors.of(role) : Settings.textColor; return Qt.rgba(c.r, c.g, c.b, a) }
+                    // pilula mais grossa desta secao (as pilulas da barra inteira usam a maior)
+                    readonly property real need: { let m = 0; for (let k = 0; k < modRep.count; k++) { const it = modRep.itemAt(k); if (it) m = Math.max(m, it.need) } return m }
                     readonly property real contentLen: Math.max(0, gridLen - (sec.cfg.modules && sec.cfg.modules.length > 0 ? gsp : 0))
                     readonly property real len: (cfg.width ?? 0) > 0 ? Math.min(cfg.width, total - 2 * pad) : contentLen
                     readonly property real off: cfg.offset ?? 0
@@ -214,6 +221,7 @@ PanelWindow {
                         y: sec.vert ? shift : 0
 
                         Repeater {
+                            id: modRep
                             model: sec.cfg.modules ? sec.cfg.modules.length : 0
                             delegate: Item {
                                 id: cw
@@ -224,8 +232,11 @@ PanelWindow {
                                 readonly property real padA: own ? (m.bgPad ?? 9) : (sec.gs === "segmented" ? 9 : 0)
                                 readonly property real padB: own ? 4 : 0
                                 readonly property bool present: mv.itemVisible && mv.implicitWidth > 0
-                                width: present ? mv.implicitWidth + (sec.vert ? padB * 2 : padA * 2) : 0
-                                height: present ? mv.implicitHeight + (sec.vert ? padA * 2 : padB * 2) : 0
+                                // pilula propria: a espessura e a mesma para todas (a da barra menos uma folga), nao a do conteudo
+                                readonly property real need: own && present ? (sec.vert ? mv.implicitWidth : mv.implicitHeight) + padB * 2 : 0
+                                readonly property real cross: own ? Math.max(clipper.need, clipper.band - 8) : 0
+                                width: present ? (sec.vert ? Math.max(mv.implicitWidth + padB * 2, cross) : mv.implicitWidth + padA * 2) : 0
+                                height: present ? (sec.vert ? mv.implicitHeight + padA * 2 : Math.max(mv.implicitHeight + padB * 2, cross)) : 0
                                 Rectangle {   // pilula do modulo
                                     visible: cw.own && cw.present
                                     anchors.fill: parent
