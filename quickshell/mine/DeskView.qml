@@ -244,7 +244,7 @@ Item {
                     visible: card.frosted
                     property var source: card.frosted ? view.frostTex : null
                     property vector4d region: Qt.vector4d(card.x / Math.max(1, view.width), card.y / Math.max(1, view.height), card.width / Math.max(1, view.width), card.height / Math.max(1, view.height))
-                    property color tint: Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.28, card.cardA * 0.6))
+                    property color tint: Qt.rgba(card.cardBase.r, card.cardBase.g, card.cardBase.b, Math.max(0.28, card.cardA * 0.8))
                     property vector2d size: Qt.vector2d(width, height)
                     property real radius: bg.radius
                     fragmentShader: Qt.resolvedUrl("shaders/frost.frag.qsb")

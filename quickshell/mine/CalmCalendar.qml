@@ -116,11 +116,11 @@ Item {
                     readonly property bool inMonth: d.getMonth() === host.month.getMonth()
                     readonly property bool isToday: d.toDateString() === c.today.toDateString()
                     width: grid.cw; height: grid.ch
-                    Rectangle {
+                    Flower {   // hoje: a flor do shell
                         visible: cell.isToday && !cell.isWn
                         anchors.centerIn: parent
-                        width: Math.min(parent.width, parent.height) - 4; height: width; radius: width / 2
-                        color: host.acc
+                        width: Math.min(parent.width, parent.height) + 2; height: width
+                        shape: "flower"; sides: 8; color: host.acc; animated: false
                     }
                     UiText {
                         anchors.centerIn: parent

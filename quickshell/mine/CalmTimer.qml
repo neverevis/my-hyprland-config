@@ -53,10 +53,11 @@ Item {
                 readonly property bool main: index === 0
                 width: Math.round((main ? 36 : 32) * c.u); height: width; radius: width / 2
                 anchors.verticalCenter: parent ? parent.verticalCenter : undefined
-                color: main ? host.phaseCol : Qt.rgba(host.fg.r, host.fg.g, host.fg.b, bm.containsMouse ? 0.18 : 0.09)
+                color: main ? "transparent" : Qt.rgba(host.fg.r, host.fg.g, host.fg.b, bm.containsMouse ? 0.18 : 0.09)
                 scale: bm.pressed ? 0.94 : 1
                 Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
-                UiIcon { anchors.centerIn: parent; name: b.main ? (host.s.running ? "pause" : "play") : b.modelData; size: Math.round(16 * c.u); color: b.main ? Theme.accentText : host.fg }
+                ShapeIcon { visible: b.main; anchors.centerIn: parent; shape: "flower"; size: Math.round(40 * c.u); padding: size * 0.3; icon: host.s.running ? "pause" : "play"; color: host.phaseCol; iconColor: Theme.accentText }
+                UiIcon { visible: !b.main; anchors.centerIn: parent; name: b.modelData; size: Math.round(16 * c.u); color: host.fg }
                 MouseArea {
                     id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                     onClicked: b.main ? c.toggle() : b.modelData === "refresh" ? Timers.reset(host.wid) : b.modelData === "next" ? Timers.skip(host.wid) : Timers.lap(host.wid)

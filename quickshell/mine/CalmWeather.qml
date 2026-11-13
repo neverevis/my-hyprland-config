@@ -19,9 +19,11 @@ Item {
     readonly property string range: d0 ? "↑ " + host.t(d0.max) + "  ↓ " + host.t(d0.min) : ""
     function line(a) { return a.filter(s => s !== "").join("  ·  ") }
 
-    UiIcon {
-        anchors { right: tall || !strip ? parent.right : left.right; top: parent.top; topMargin: 2 * c.u }
-        name: host.nowIcon; size: Math.round((c.tall ? 40 : c.tiny ? 24 : 30) * c.u); color: host.acc
+    // o selo do shell (forma + icone): o unico ponto de cor do cartao
+    DwParts.Badge {
+        anchors { right: tall || !strip ? parent.right : left.right; top: parent.top }
+        shape: host.badgeShape; icon: host.nowIcon; bg: host.acc
+        size: Math.round((c.tall ? 46 : c.tiny ? 28 : 36) * c.u)
     }
     Column {
         id: left

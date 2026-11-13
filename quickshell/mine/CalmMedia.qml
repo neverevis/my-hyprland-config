@@ -80,11 +80,12 @@ Item {
                     readonly property bool main: index === 1
                     width: Math.round(32 * c.u); height: width; radius: width / 2
                     anchors.verticalCenter: parent ? parent.verticalCenter : undefined
-                    color: main ? host.acc : bm.containsMouse ? Qt.rgba(host.fg.r, host.fg.g, host.fg.b, 0.12) : "transparent"
+                    color: main ? "transparent" : bm.containsMouse ? Qt.rgba(host.fg.r, host.fg.g, host.fg.b, 0.12) : "transparent"
                     scale: bm.pressed ? 0.94 : 1
                     Behavior on scale { NumberAnimation { duration: 120; easing.type: Easing.OutCubic } }
                     Behavior on color { ColorAnimation { duration: 120 } }
-                    UiIcon { anchors.centerIn: parent; name: b.modelData; size: Math.round(17 * c.u); color: b.main ? Theme.accentText : host.fg }
+                    ShapeIcon { visible: b.main; anchors.centerIn: parent; shape: "cookie12"; size: Math.round(36 * c.u); padding: size * 0.28; icon: b.modelData; color: host.acc; iconColor: Theme.accentText }
+                    UiIcon { visible: !b.main; anchors.centerIn: parent; name: b.modelData; size: Math.round(17 * c.u); color: host.fg }
                     MouseArea {
                         id: bm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                         onClicked: { if (!c.p) return; if (b.index === 0) c.p.previous(); else if (b.index === 1) c.p.togglePlaying(); else c.p.next() }

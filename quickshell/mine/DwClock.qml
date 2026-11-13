@@ -86,8 +86,8 @@ Item {
             width: parent.width
             spacing: 0
             Row {
-                anchors.horizontalCenter: dig.al === Text.AlignHCenter ? parent.horizontalCenter : undefined
-                anchors.right: dig.al === Text.AlignRight ? parent.right : undefined
+                // x direto (sem trocar ancoras): ao sair do centro a ancora solta deixava a linha parada no lugar antigo
+                x: dig.al === Text.AlignHCenter ? (parent.width - width) / 2 : dig.al === Text.AlignRight ? parent.width - width : 0
                 spacing: 0
                 Repeater {
                     model: dig.line1.length   // modelo estavel: com o texto como modelo o Repeater recriava todos os digitos a cada segundo
@@ -97,8 +97,8 @@ Item {
             }
             Row {
                 visible: dig.vert
-                anchors.horizontalCenter: dig.al === Text.AlignHCenter ? parent.horizontalCenter : undefined
-                anchors.right: dig.al === Text.AlignRight ? parent.right : undefined
+                // x direto (sem trocar ancoras): ao sair do centro a ancora solta deixava a linha parada no lugar antigo
+                x: dig.al === Text.AlignHCenter ? (parent.width - width) / 2 : dig.al === Text.AlignRight ? parent.width - width : 0
                 Repeater { model: 2; delegate: Roll { required property int index; ch: w.mm.charAt(index); size: dig.fs; tint: w.ac } }
             }
             UiText {
