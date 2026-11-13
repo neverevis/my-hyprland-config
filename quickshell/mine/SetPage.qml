@@ -17,14 +17,18 @@ Column {
     property string subtitle
     property alias preview: prevBox.data
     default property alias sections: body.data
+    // atalhos "Nesta pagina" (a janela desenha; aqui so se guarda o lugar deles, sob o titulo)
+    property bool hasNav: false
+    readonly property real navY: head.height - SetK.lg - 32
 
     width: parent ? parent.width : SetK.maxWidth
     spacing: 0
 
     Column {
+        id: head
         width: parent.width
         spacing: SetK.xs
-        bottomPadding: SetK.lg
+        bottomPadding: SetK.lg + (page.hasNav ? 32 + SetK.md : 0)
         UiText { text: page.title; color: Theme.text; font.family: Theme.fontTitle; font.pixelSize: SetK.fPage; font.weight: Font.Bold }
         UiText { visible: page.subtitle !== ""; width: parent.width; elide: Text.ElideRight; text: page.subtitle; color: Theme.muted; font.pixelSize: 13 }
     }

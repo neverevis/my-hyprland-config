@@ -438,11 +438,15 @@ SetPage {
     SetSection {
         title: "Seletor (Super + W)"
         icon: "carousel"
+        // como o seletor aparece vem primeiro (igual ao Launcher, Inicio e Notificacoes); o ajuste fino fica no expansor
+        SetRow { icon: "dock"; label: "Acoplado à moldura"; description: "Sai da borda como uma barra. Desligado, flutua perto dela"; checked: Settings.wpPickerDocked; onToggled: on => Settings.wpPickerDocked = on }
+        SetRow { icon: "dock"; label: "Lado da tela"; below: SidePick { value: Settings.wpPickerSide; onPicked: v => Settings.wpPickerSide = v } }
+        SetChoice { icon: "carousel"; label: "Disposição"; options: [["carousel", "Carrossel", "carousel"], ["grid", "Grade", "view_grid"]]; value: Settings.wpLayout; onPicked: v => Settings.wpLayout = v }
+        SetChoice { icon: "view_grid"; label: "Wallpapers visíveis"; options: [[1, "1"], [3, "3"], [5, "5"]]; value: Settings.wpPickerCount; onPicked: v => Settings.wpPickerCount = v }
         SetRow {
             icon: "folder"; label: "Pasta"
             UiField { width: 240; text: Settings.wpDir; placeholderText: "$PICTURES/Wallpapers"; onEditingFinished: Settings.wpDir = text }
         }
-        SetChoice { icon: "carousel"; label: "Disposição"; options: [["carousel", "Carrossel", "carousel"], ["grid", "Grade", "view_grid"]]; value: Settings.wpLayout; onPicked: v => Settings.wpLayout = v }
         SetChoice {
             icon: "sortName"; label: "Ordem"
             description: Settings.wpSort === "manual" ? "Mova com Alt + setas no seletor" : ""
@@ -454,10 +458,7 @@ SetPage {
         SetRow { icon: "eye"; label: "Prévia ao navegar"; description: "Volta ao anterior se fechar sem escolher"; checked: Settings.wpPreview; onToggled: on => Settings.wpPreview = on }
         SetRow { icon: "check"; label: "Fechar ao escolher"; checked: Settings.wpCloseAfter; onToggled: on => Settings.wpCloseAfter = on }
         SetExpander {
-            icon: "tune"; label: "Posição e forma"; description: "Lado, tamanho e cantos do painel"
-            SetRow { sub: true; label: "Acoplado à moldura"; description: "Desligado, flutua perto da borda"; checked: Settings.wpPickerDocked; onToggled: on => Settings.wpPickerDocked = on }
-            SetRow { sub: true; label: "Lado"; SidePick { value: Settings.wpPickerSide; onPicked: v => Settings.wpPickerSide = v } }
-            SetChoice { sub: true; label: "Wallpapers visíveis"; options: [[1, "1"], [3, "3"], [5, "5"]]; value: Settings.wpPickerCount; onPicked: v => Settings.wpPickerCount = v }
+            icon: "tune"; label: "Ajuste fino"; description: "Deslocamento, distância, cantos e animação do painel"
             SetSlider { sub: true; label: "Deslocamento"; from: -1000; to: 1000; step: 10; unit: " px"; def: 0; value: Settings.wpPickerOffset; onMoved: v => Settings.wpPickerOffset = Math.round(v) }
             SetSlider { visible: !Settings.wpPickerDocked; sub: true; label: "Distância da borda"; from: 0; to: 80; unit: " px"; def: 14; value: Settings.wpPickerGap; onMoved: v => Settings.wpPickerGap = Math.round(v) }
             SetSlider { sub: true; label: "Cantos do painel"; from: 0; to: 40; unit: " px"; def: 11; value: Settings.wpPickerRadius; onMoved: v => Settings.wpPickerRadius = Math.round(v) }

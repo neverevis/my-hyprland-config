@@ -231,7 +231,7 @@ Scope {
                 for (let p = target.parent; p && p !== page; p = p.parent) if (p.expander === true) p.open = true
                 Qt.callLater(() => {
                     const y = target.mapToItem(page, 0, 0).y
-                    pageFlick.contentY = Math.max(0, Math.min(Math.max(0, pageFlick.contentHeight - pageFlick.height), y - 24))
+                    pageFlick.contentY = Math.max(0, Math.min(Math.max(0, pageFlick.contentHeight - pageFlick.height), y - (content.kit && jumps.visible ? 76 : 24)))
                     if (target.pulse) target.pulse()
                 })
             }
@@ -547,51 +547,19 @@ Scope {
                         color: Theme.muted; font.pixelSize: 13; elide: Text.ElideRight; width: parent.width
                     }
                 }
-                // "Nesta pagina": um atalho para cada cartao (rola ate ele e acende a borda)
-                Flickable {
-                    id: jumps
-                    property var cards: []
-                    visible: root.query === "" && cards.length >= 3
-                    anchors { left: parent.left; right: parent.right; bottom: parent.bottom }
-                    height: 32
-                    contentWidth: jumpRow.implicitWidth
-                    clip: true
-                    interactive: false
-                    WheelHandler { onWheel: e => { const f = jumps; f.contentX = Math.max(0, Math.min(Math.max(0, f.contentWidth - f.width), f.contentX - e.angleDelta.y - e.angleDelta.x)) } }
-                    Row {
-                        id: jumpRow
-                        spacing: 6
-                        Repeater {
-                            model: jumps.cards
-                            delegate: Rectangle {
-                                required property var modelData
-                                height: 30; width: jr.implicitWidth + 22; radius: 15
-                                scale: jm.pressed ? 0.97 : 1
-                                Behavior on scale { enabled: root.open; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
-                                color: jm.containsMouse ? Theme.tint(0.16) : Theme.track
-                                border.width: 1; border.color: jm.containsMouse ? Theme.tint(0.5) : Theme.border
-                                Row {
-                                    id: jr
-                                    anchors.centerIn: parent
-                                    spacing: 6
-                                    UiIcon { visible: !!modelData.icon; name: modelData.icon; size: 13; color: Theme.accent; anchors.verticalCenter: parent.verticalCenter }
-                                    UiText { text: modelData.title; color: Theme.text; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
-                                }
-                                MouseArea { id: jm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { revealT.card = modelData.title; revealT.label = ""; revealT.interval = 10; revealT.restart() } }
-                            }
-                        }
-                    }
-                }
                 Timer {
                     id: jumpT
                     interval: 250
                     onTriggered: {
                         const out = [], page = pageLoader.item
-                        if (!page || page.kitPage) { jumps.cards = []; return }
-                        const find = o => { if (!o) return; if (typeof o.title === "string" && o.title !== "" && o.subtitle !== undefined && o.visible) { out.push({ title: o.title, icon: o.icon ?? "" }); return } for (const ch of (o.item ? [o.item] : []).concat(Array.from(o.children ?? []))) find(ch) }
-                        find(page)
+                        if (!page) { jumps.cards = []; return }
+                        const find = o => { if (!o) return; if (typeof o.title === "string" && o.title !== "" && o.subtitle !== undefined && o.visible) { if (!out.some(e => e.item === o)) out.push({ title: o.title, icon: o.icon ?? "", item: o }); return } for (const ch of (o.item ? [o.item] : []).concat(Array.from(o.children ?? []))) find(ch) }
+                        if (page.kitPage) for (const ch of Array.from(page.children)) find(ch)   // a propria pagina tambem tem title/subtitle
+                        else find(page)
                         jumps.cards = out
                         jumps.contentX = 0
+                        if (page.kitPage) page.hasNav = out.length >= 3
+                        jumps.spy()
                     }
                 }
             }
@@ -616,7 +584,7 @@ Scope {
                     width: content.colW
                     sourceComponent: root.comps[root.curId] ?? startC
                     visible: root.query === ""
-                    onSourceComponentChanged: { pageFlick.contentY = 0; pageIn.restart(); jumpT.restart() }
+                    onSourceComponentChanged: { jumps.cards = []; pageFlick.contentY = 0; pageIn.restart(); jumpT.restart() }
                     onLoaded: jumpT.restart()
                     // troca de pagina: entra subindo um pouco e aparecendo (curto: e navegacao frequente)
                     property real shift: 0
@@ -636,6 +604,77 @@ Scope {
                 width: 4; radius: 2
                 height: Math.max(30, pageFlick.height * pageFlick.height / pageFlick.contentHeight)
                 color: Theme.border
+            }
+            // "Nesta pagina": um atalho para cada secao (rola ate ela e acende a borda); marca a secao que esta na tela.
+            // Paginas do kit: nasce sob o titulo e gruda no topo quando a pagina rola. Paginas antigas: fica no cabecalho fixo.
+            Rectangle {
+                visible: jumps.stuck
+                anchors { left: parent.left; right: parent.right; top: parent.top }
+                height: jumps.y + jumps.height + 12
+                z: 6
+                color: Theme.bg
+                Rectangle { anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Theme.border; opacity: 0.55 }
+            }
+            Flickable {
+                id: jumps
+                property var cards: []
+                property int active: 0
+                readonly property real homeY: content.kit ? pageLoader.y + ((pageLoader.item && pageLoader.item.navY) || 0) - pageFlick.contentY : header.y + header.height - height
+                readonly property bool stuck: visible && content.kit && homeY < 14
+                visible: root.query === "" && cards.length >= 3
+                x: content.colX
+                y: content.kit ? Math.max(14, homeY) : homeY
+                z: 7
+                width: content.colW - (stuck ? 30 : 0)
+                height: 32
+                contentWidth: jumpRow.implicitWidth
+                clip: true
+                interactive: false
+                Behavior on contentX { enabled: root.open; NumberAnimation { duration: SetK.base; easing.type: Easing.OutCubic } }
+                // secao atual: a ultima cujo topo ja passou da faixa (no fim da pagina, a ultima)
+                function spy() {
+                    const page = pageLoader.item
+                    if (!page || !cards.length) { active = 0; return }
+                    let a = 0
+                    if (pageFlick.contentY >= pageFlick.contentHeight - pageFlick.height - 2 && pageFlick.contentY > 0) a = cards.length - 1
+                    else for (let i = 0; i < cards.length; i++) { const it = cards[i].item; if (it && it.mapToItem && it.mapToItem(page, 0, 0).y - 110 <= pageFlick.contentY) a = i }
+                    active = a
+                }
+                onActiveChanged: {   // mantem o atalho da secao atual a vista
+                    const ch = jumpRow.children[active]
+                    if (!ch || contentWidth <= width) return
+                    if (ch.x < contentX) contentX = Math.max(0, ch.x - 24)
+                    else if (ch.x + ch.width > contentX + width) contentX = Math.min(contentWidth - width, ch.x + ch.width - width + 24)
+                }
+                Connections { target: pageFlick; function onContentYChanged() { jumps.spy() } }
+                Connections { target: Settings; function onSettingsSubChanged() { jumps.cards = []; jumpT.restart() } }
+                WheelHandler { onWheel: e => { const f = jumps; f.contentX = Math.max(0, Math.min(Math.max(0, f.contentWidth - f.width), f.contentX - e.angleDelta.y - e.angleDelta.x)) } }
+                Row {
+                    id: jumpRow
+                    spacing: 6
+                    Repeater {
+                        model: jumps.cards
+                        delegate: Rectangle {
+                            required property var modelData
+                            required property int index
+                            readonly property bool on: index === jumps.active
+                            height: 30; width: jr.implicitWidth + 22; radius: 15
+                            scale: jm.pressed ? 0.97 : 1
+                            Behavior on scale { enabled: root.open; NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
+                            color: on ? Theme.cardHi : jm.containsMouse ? Theme.tint(0.16) : Theme.track
+                            border.width: 1; border.color: jm.containsMouse && !on ? Theme.tint(0.5) : Theme.border
+                            Behavior on color { enabled: root.open && !ThemeColors.fading; ColorAnimation { duration: SetK.fast } }
+                            Row {
+                                id: jr
+                                anchors.centerIn: parent
+                                spacing: 6
+                                UiIcon { visible: !!modelData.icon; name: modelData.icon; size: 13; color: on ? Theme.accent : Theme.muted; anchors.verticalCenter: parent.verticalCenter }
+                                UiText { text: modelData.title; color: on ? Theme.text : Theme.muted; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter }
+                            }
+                            MouseArea { id: jm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { revealT.card = modelData.title; revealT.label = ""; revealT.interval = 10; revealT.restart() } }
+                        }
+                    }
+                }
             }
             // ---- resultados da busca ----
             Flickable {
