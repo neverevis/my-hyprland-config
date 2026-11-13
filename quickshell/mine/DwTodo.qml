@@ -60,8 +60,7 @@ Item {
             visible: !w.cards
             width: parent.width
             spacing: 8
-            UiIcon { name: "listCheck"; size: 16; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
-            UiText { text: "Tarefas"; color: w.fg; font.pixelSize: 15; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+            UiText { text: "Tarefas"; color: w.fg; font.pixelSize: 15; font.weight: Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
             UiText { text: w.items.length ? w.doneCount + "/" + w.items.length : ""; color: w.dim; font.pixelSize: 12; anchors.verticalCenter: parent.verticalCenter; font.features: { "tnum": 1 } }
         }
         // cabecalho do end4: titulo grande, contagem e botao +
@@ -131,7 +130,13 @@ Item {
                     color: w.cards ? w.rowFill(row.index) : rm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07) : "transparent"
                 }
                 Rectangle { visible: w.lk === "lines" && row.index < lv.count - 1; anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12) }
-                UiIcon { id: box; visible: !w.cards; x: 4; anchors.verticalCenter: parent.verticalCenter; name: row.modelData.done ? "checkbox" : "checkboxEmpty"; size: 18; color: row.modelData.done ? w.ac : w.dim }
+                Rectangle {   // marca redonda: contorno fino; feita = cheia na cor de destaque
+                    id: box; visible: !w.cards; x: 4; anchors.verticalCenter: parent.verticalCenter
+                    width: 18; height: 18; radius: 9
+                    color: row.modelData.done ? w.ac : "transparent"
+                    border.width: row.modelData.done ? 0 : 1.5; border.color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.45)
+                    UiIcon { anchors.centerIn: parent; visible: row.modelData.done; name: "check"; size: 12; color: Theme.accentText }
+                }
                 // check do end4: redondo (ou quadrado) com contorno, marca quando feita
                 Rectangle {
                     id: ck
@@ -175,11 +180,13 @@ Item {
         anchors.topMargin: w.entryTop ? 8 : 0
         anchors.bottom: w.entryTop ? undefined : parent.bottom
         height: w.cards ? 40 : 32; radius: w.cards ? w.rowR : 10
-        color: w.cards ? Theme.role("surfaceLow") : Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.08)
-        border.width: 1; border.color: input.activeFocus ? w.ac : "transparent"
+        color: w.cards ? Theme.role("surfaceLow") : "transparent"
+        border.width: w.cards ? 1 : 0; border.color: input.activeFocus ? w.ac : "transparent"
+        // sereno: so um fio em cima (acende ao escrever), sem caixa
+        Rectangle { visible: !w.cards; width: parent.width; height: 1; color: input.activeFocus ? w.ac : Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12) }
         HoverHandler { onHoveredChanged: DeskState.wantKeys("todo-h-" + w.wid, hovered) }
         Component.onDestruction: { DeskState.wantKeys("todo-h-" + w.wid, false); DeskState.wantKeys("todo-f-" + w.wid, false) }
-        UiIcon { id: plus; x: 12; anchors.verticalCenter: parent.verticalCenter; name: "plus"; size: 15; color: w.ac }
+        UiIcon { id: plus; x: w.cards ? 12 : 5; anchors.verticalCenter: parent.verticalCenter; name: "plus"; size: 15; color: w.ac }
         TextInput {
             font.family: Theme.font
             id: input

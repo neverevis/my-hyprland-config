@@ -1,6 +1,6 @@
 // Sistema, composicao "Sereno" (a padrao): numeros grandes com um fio de uso embaixo, sem cartoes coloridos.
 // Em pe (2 linhas ou mais): a primeira medida em destaque com o historico em barrinhas, as outras em linhas.
-// host = o DwSystem (medidas, cores e opcoes vem dele). Uma cor so; vermelho apenas acima de 85 %.
+// host = o DwSystem (medidas, cores e opcoes vem dele). Cada medida numa cor da paleta; vermelho apenas acima de 85 %.
 import QtQuick
 
 Item {
@@ -10,7 +10,7 @@ Item {
     readonly property int count: host.shown.length
     readonly property real u: Math.max(0.72, Math.min(1.25, height / (tall ? 278 : 114)))
     function item(i) { return host.shown[i] ?? ({}) }
-    function tone(d) { return host.o("warn") && d.v > 0.85 ? Theme.danger : host.ac }
+    function tone(d) { return host.o("warn") && d.v > 0.85 ? Theme.danger : (d.col ?? host.ac) }   // cada medida numa cor da paleta
     readonly property color track: Qt.rgba(host.fg.r, host.fg.g, host.fg.b, 0.12)
 
     component Meter: Rectangle {

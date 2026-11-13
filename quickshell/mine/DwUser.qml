@@ -67,11 +67,12 @@ Item {
     // ---- composicao ----
     readonly property string lk: {
         const l = o("look")
-        if (l === "auto") return "column"
+        if (l === "auto") return "calm"
+        if (l === "classic") return "column"
         if (l !== "end4") return l
         return cols === 1 && rows === 1 ? "photo" : rows === 1 ? "strip" : cols === 1 ? "photo" : (cols >= 3 || rows >= 3) ? "hero" : "box"
     }
-    readonly property real pad: lk === "column" ? -1 : 0       // o DeskView usa como margem do conteudo (-1 = a padrao)
+    readonly property real pad: lk === "column" || lk === "calm" ? -1 : 0       // o DeskView usa como margem do conteudo (-1 = a padrao)
     readonly property real cardR: comp.radius !== undefined ? comp.radius : 20
     readonly property color cardCol: comp.cardBase !== undefined ? comp.cardBase : Theme.bg
     function innerRole(def) { return comp.innerRole && comp.innerRole !== "auto" ? comp.innerRole : def }
@@ -145,7 +146,7 @@ Item {
 
     Loader {
         anchors.fill: parent
-        sourceComponent: ({ column: colC, box: boxC, hero: heroC, photo: photoC, strip: stripC })[w.lk] ?? colC
+        sourceComponent: ({ column: colC, calm: calmC, box: boxC, hero: heroC, photo: photoC, strip: stripC })[w.lk] ?? colC
     }
 
     // ---- caixa (end4 2x2) ----
@@ -273,6 +274,7 @@ Item {
     }
 
     // ---- coluna (a de sempre) ----
+    Component { id: calmC; CalmUser { host: w } }
     Component {
         id: colC
         Item {

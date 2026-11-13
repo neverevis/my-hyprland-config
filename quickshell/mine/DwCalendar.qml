@@ -36,13 +36,14 @@ Item {
     // ---- composicao ----
     readonly property string lk: {
         let l = o("look")
-        if (l === "auto") return "plain"
+        if (l === "auto") return "calm"
+        if (l === "classic") return "plain"
         if (l === "end4") l = cols === 1 ? "tearoff" : rows === 1 ? "pill" : (cols >= 3 && rows >= 2) ? "side" : "panel"
         if ((l === "panel" || l === "side") && (rows === 1 || cols === 1)) l = cols === 1 ? "tearoff" : "pill"
         if (l === "side" && cols < 3) l = "panel"
         return l
     }
-    readonly property real pad: lk === "plain" ? -1 : lk === "tearoff" ? 0 : lk === "pill" ? 14 : 16
+    readonly property real pad: lk === "plain" || lk === "calm" ? -1 : lk === "tearoff" ? 0 : lk === "pill" ? 14 : 16
     readonly property real cardR: comp.radius !== undefined ? comp.radius : 20
     readonly property color acc: comp.accent !== undefined ? comp.accent : ac
     readonly property color accInk: (0.299 * acc.r + 0.587 * acc.g + 0.114 * acc.b) > 0.56 ? "#15131a" : "#f6f3fa"
@@ -135,7 +136,7 @@ Item {
 
     Loader {
         anchors.fill: parent
-        sourceComponent: ({ plain: plainC, tearoff: tearC, pill: pillC, panel: panelC, side: sideC })[w.lk] ?? plainC
+        sourceComponent: ({ plain: plainC, calm: calmC, tearoff: tearC, pill: pillC, panel: panelC, side: sideC })[w.lk] ?? plainC
     }
 
     // folha: faixa colorida em cima (cantos do cartao), mes e dia da semana, e o dia grande
@@ -226,7 +227,8 @@ Item {
         }
     }
 
-    // ---- atual ----
+    Component { id: calmC; CalmCalendar { host: w } }
+    // ---- classico ----
     Component {
         id: plainC
         Item {

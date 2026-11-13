@@ -43,7 +43,8 @@ Item {
     readonly property real pad: cardsLook || compactLook ? 14 : -1       // o DeskView usa como margem do conteudo (-1 = a padrao)
     // quantos cartoes: os tres no modo "all"; senao so o do modo escolhido (nos looks de cartao); estavel (so muda com as opcoes)
     readonly property int tileCount: all ? 3 : cardsLook ? 1 : 0
-    readonly property bool showRing: tileCount === 0 && !compactLook
+    readonly property bool calmLook: tileCount === 0 && o("look") === "auto"
+    readonly property bool showRing: tileCount === 0 && !compactLook && !calmLook
     function kindAt(i) { return all ? kinds[i] : kinds.find(k => k[0] === o("mode")) ?? kinds[0] }
     function innerRole(def) { return comp.innerRole && comp.innerRole !== "auto" ? comp.innerRole : def }
     function innerAlpha(def) { return comp.innerAlpha > 0 ? comp.innerAlpha : def }
@@ -247,6 +248,7 @@ Item {
         }
     }
 
+    Loader { active: w.calmLook; anchors.fill: parent; sourceComponent: CalmTimer { host: w } }
     // ---- compacto: uma caixa com selo, tempo, etapa e botoes ----
     Loader { active: w.compactLook; anchors.fill: parent; sourceComponent: compactC }
     Component {

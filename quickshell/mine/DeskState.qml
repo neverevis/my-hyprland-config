@@ -91,7 +91,7 @@ Singleton {
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false }
           ] },
         { type: "calendar", group: "time", name: "Calendário", icon: "calendar", desc: "O mês, a semana ou o dia de hoje.", sizes: [[2, 2], [1, 1], [2, 1], [3, 2]], options: [
-            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["tearoff", "Folha", "calendar"], ["pill", "Pílula e semana", "calendarWeek"], ["panel", "Mês em caixa", "view_grid"], ["side", "Data ao lado", "view_column"]] },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Sereno", "auto"], ["classic", "Clássico", "view_column"], ["end4", "Como o end4", "view_grid"], ["tearoff", "Folha", "calendar"], ["pill", "Pílula e semana", "calendarWeek"], ["panel", "Mês em caixa", "view_grid"], ["side", "Data ao lado", "view_column"]] },
             { sec: "Estilo", key: "navStyle", label: "Botões de mês", type: "seg", def: "outlined", options: [["outlined", "Contorno"], ["tonal", "Suave"], ["hidden", "Sem"]], when: { look: ["end4", "panel", "side"] } },
             { sec: "Estilo", key: "todayShape", label: "Marca do dia de hoje", type: "seg", preview: true, def: "rounded", options: [["rounded", "Quadrado"], ["circle", "Círculo"], ["flower", "Flor"], ["cookie9", "Biscoito"], ["clover4", "Trevo"]], when: { look: ["end4", "panel", "side"] } },
             { sec: "Mês", key: "weekStart", label: "Semana começa no", type: "seg", def: 0, options: [[0, "Domingo"], [1, "Segunda"]] },
@@ -138,7 +138,7 @@ Singleton {
             { sec: "Visual", key: "clickOpen", label: "Clicar abre o monitor de tarefas", icon: "chart", type: "switch", def: false }
           ] },
         { type: "user", group: "system", name: "Usuário", icon: "account", desc: "Sua foto, saudação e o computador.", sizes: [[2, 1], [3, 1], [1, 1], [2, 2], [1, 2], [2, 3]], options: [
-            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Coluna (atual)", "auto"], ["end4", "Como o end4", "view_grid"], ["box", "Caixa", "view_grid"], ["hero", "Capa", "image"], ["photo", "Só a foto", "account"], ["strip", "Faixa", "view_column"]] },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Sereno", "auto"], ["classic", "Coluna", "view_column"], ["end4", "Como o end4", "view_grid"], ["box", "Caixa", "view_grid"], ["hero", "Capa", "image"], ["photo", "Só a foto", "account"], ["strip", "Faixa", "view_column"]] },
             { sec: "Banner", key: "banner", label: "Imagem da capa", type: "seg", def: "wallpaper", options: [["wallpaper", "Wallpaper atrás", "image"], ["profile", "Minha foto", "account"], ["path", "Outra imagem", "folderOpen"]], when: { look: ["end4", "hero"] } },
             { sec: "Banner", key: "bannerPath", label: "Imagem", type: "image", def: "", when: { look: ["end4", "hero"], banner: "path" } },
             { sec: "Perfil", key: "quipSource", label: "Frase", type: "seg", def: "weather", options: [["weather", "Do tempo", "cloudSun"], ["smart", "Esperta (avisos e tempo)", "bell"], ["custom", "Minha frase", "pencil"], ["none", "Nenhuma", "close"]], when: { look: ["end4", "box"] } },
@@ -150,7 +150,7 @@ Singleton {
             { sec: "Perfil", key: "avatarShape", label: "Forma da foto", type: "seg", preview: true, def: "circle", options: Shapes.list }
           ] },
         { type: "todo", group: "work", name: "Tarefas", icon: "check", desc: "Lista de afazeres que fica salva.", sizes: [[2, 2], [2, 1], [3, 2], [2, 3]], options: [
-            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["lines", "Linhas", "view_column"]] },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Sereno", "auto"], ["end4", "Como o end4", "view_grid"], ["lines", "Linhas", "view_column"]] },
             { sec: "Estilo", key: "rowPalette", label: "Cores das linhas", type: "seg", def: "cycle", options: [["cycle", "Alternadas", "palette"], ["primary", "Primária", "circleOutline"], ["tertiary", "Terciária", "circleOutline"], ["none", "Sem cor", "close"]], when: { look: "end4" } },
             { sec: "Estilo", key: "header", label: "Cabeçalho", type: "seg", def: "title", options: [["title", "Título e +", "plus"], ["field", "Campo no topo", "pencil"], ["none", "Sem", "close"]], when: { look: "end4" } },
             { sec: "Estilo", key: "checkShape", label: "Marca de concluída", type: "seg", def: "circle", options: [["circle", "Círculo", "circleOutline"], ["square", "Quadrado", "checkbox"]], when: { look: "end4" } },
@@ -159,14 +159,14 @@ Singleton {
             { sec: "Lista", key: "progress", label: "Barra de progresso", icon: "progressCheck", type: "switch", def: true }
           ] },
         { type: "notes", group: "work", name: "Notas", icon: "pencil", desc: "Um bloco de notas que fica salvo.", sizes: [[2, 2], [2, 1], [3, 2], [1, 1]], options: [
-            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["lines", "Linhas", "view_column"]] },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Sereno", "auto"], ["end4", "Como o end4", "view_grid"], ["lines", "Linhas", "view_column"]] },
             { sec: "Estilo", key: "rowPalette", label: "Cores das linhas", type: "seg", def: "cycle", options: [["cycle", "Alternadas", "palette"], ["primary", "Primária", "circleOutline"], ["tertiary", "Terciária", "circleOutline"], ["none", "Sem cor", "close"]], when: { look: "end4" } },
             { sec: "Bloco", key: "title", label: "Título", icon: "tag", type: "text", def: "Notas" },
             { sec: "Bloco", key: "mono", label: "Fonte de código", icon: "keyboard", type: "switch", def: false },
             { sec: "Bloco", key: "size", label: "Tamanho da letra", icon: "textSize", type: "slider", from: 10, to: 28, step: 1, suffix: " px", def: 14 }
           ] },
         { type: "timer", group: "work", name: "Timers", icon: "timer", desc: "Cronômetro, contagem regressiva e pomodoro.", sizes: [[2, 1], [2, 2], [1, 1], [3, 1], [4, 1], [1, 3]], options: [
-            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["cards", "Cartões no tom", "dashboard"], ["compact", "Compacto", "timer"]] },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Sereno", "auto"], ["classic", "Anel", "circleOutline"], ["end4", "Como o end4", "view_grid"], ["cards", "Cartões no tom", "dashboard"], ["compact", "Compacto", "timer"]] },
             { sec: "Estilo", key: "chips", label: "Botões +1m e +5m", icon: "plus", type: "switch", def: true, when: { look: ["end4", "cards"], mode: ["countdown", "all"] } },
             { sec: "Tempos", key: "mode", label: "Modo", type: "seg", def: "pomodoro", options: [["all", "Os três", "dashboard"], ["pomodoro", "Pomodoro", "target"], ["countdown", "Regressivo", "timer"], ["stopwatch", "Cronômetro", "stopwatch"]] },
             { sec: "Tempos", key: "flip", label: "Tiles na vertical", icon: "dashboard", type: "switch", def: false, when: { mode: "all" } },

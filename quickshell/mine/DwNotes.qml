@@ -88,8 +88,7 @@ Item {
             Row {
                 spacing: 8
                 anchors.verticalCenter: parent.verticalCenter
-                UiIcon { visible: !w.cards; name: "pencil"; size: 16; color: w.ac; anchors.verticalCenter: parent.verticalCenter }
-                UiText { text: w.o("title"); color: w.fg; font.pixelSize: w.cards ? 22 : 15; font.weight: Font.Bold; anchors.verticalCenter: parent.verticalCenter }
+                UiText { text: w.o("title"); color: w.fg; font.pixelSize: w.cards ? 22 : 15; font.weight: w.cards ? Font.Bold : Font.DemiBold; anchors.verticalCenter: parent.verticalCenter }
             }
             Row {
                 anchors { right: parent.right; verticalCenter: parent.verticalCenter }
@@ -118,7 +117,7 @@ Item {
             id: lv
             visible: !w.inEditor
             anchors { top: head.bottom; topMargin: 10; left: parent.left; right: parent.right; bottom: parent.bottom }
-            clip: true; spacing: w.cards ? 8 : w.lk === "lines" ? 0 : (w.rows >= 3 ? 9 : 6)
+            clip: true; spacing: w.cards ? 8 : 0
             boundsBehavior: Flickable.StopAtBounds
             model: w.inEditor ? [] : w.notes
             // linha discreta no fim: mesma acao do botao +, para o espaco livre parecer proposital
@@ -129,7 +128,7 @@ Item {
                     anchors { left: parent.left; right: parent.right; top: parent.top; topMargin: 9 }
                     height: 40; radius: w.cards ? w.rowR : 14
                     color: fm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.08) : "transparent"
-                    border.width: 1; border.color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, fm.containsMouse ? 0.3 : 0.16)
+                    border.width: w.lk === "auto" ? 0 : 1; border.color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, fm.containsMouse ? 0.3 : 0.16)
                     Row {
                         anchors.centerIn: parent; spacing: 6
                         UiIcon { name: "plus"; size: 14; color: w.dim; anchors.verticalCenter: parent.verticalCenter }
@@ -142,7 +141,7 @@ Item {
                 id: row
                 required property var modelData
                 required property int index
-                width: lv.width; height: w.cards ? 55 : w.lk === "lines" ? 40 : (w.rows >= 3 ? 50 : 44)
+                width: lv.width; height: w.cards ? 55 : w.lk === "lines" ? 40 : 48
                 readonly property color tone: index % 3 === 0 ? w.ac : index % 3 === 1 ? w.ac2 : w.contInk
                 readonly property color ink: w.cards ? w.rowInk(index) : w.fg
                 readonly property var lines: row.modelData.text.split("\n").filter(l => l.trim() !== "")
@@ -154,22 +153,22 @@ Item {
                 }
                 Rectangle {
                     id: rb
-                    width: parent.width; height: parent.height; radius: w.cards ? w.rowR : w.lk === "lines" ? 0 : 14
-                    color: w.cards ? w.rowFill(row.index) : w.lk === "lines" ? (rm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07) : "transparent") : Qt.rgba(row.tone.r, row.tone.g, row.tone.b, rm.containsMouse ? 0.28 : 0.18)
+                    width: parent.width; height: parent.height; radius: w.cards ? w.rowR : w.lk === "lines" ? 0 : 10
+                    color: w.cards ? w.rowFill(row.index) : rm.containsMouse ? Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.07) : "transparent"
                     opacity: 1 - Math.min(0.6, -rb.x / width)
                     Behavior on x { enabled: !drag.active; NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
-                    Rectangle { visible: w.lk === "lines" && row.index < lv.count - 1; anchors { left: parent.left; right: parent.right; bottom: parent.bottom } height: 1; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12) }
+                    Rectangle { visible: !w.cards && row.index < lv.count - 1; anchors { left: parent.left; right: parent.right; bottom: parent.bottom; leftMargin: w.lk === "lines" ? 0 : 8; rightMargin: w.lk === "lines" ? 0 : 8 } height: 1; color: Qt.rgba(w.fg.r, w.fg.g, w.fg.b, 0.12) }
                     UiText {
-                        visible: !w.cards
+                        visible: w.lk === "lines"
                         anchors { left: parent.left; right: parent.right; leftMargin: 14; rightMargin: 14; verticalCenter: parent.verticalCenter }
                         text: row.modelData.text.split("\n")[0] || "Nota vazia"
                         elide: Text.ElideRight; color: row.modelData.text ? w.fg : w.dim; font.pixelSize: 13
                     }
                     // end4: primeira linha como titulo e a segunda como previa
                     Column {
-                        visible: w.cards
-                        anchors { left: parent.left; right: parent.right; leftMargin: 16; rightMargin: 16; verticalCenter: parent.verticalCenter }
-                        UiText { width: parent.width; text: row.lines[0] ?? "Nota vazia"; elide: Text.ElideRight; color: row.ink; font.pixelSize: 15; font.weight: Font.DemiBold }
+                        visible: w.lk !== "lines"
+                        anchors { left: parent.left; right: parent.right; leftMargin: w.cards ? 16 : 8; rightMargin: w.cards ? 16 : 8; verticalCenter: parent.verticalCenter }
+                        UiText { width: parent.width; text: row.lines[0] ?? "Nota vazia"; elide: Text.ElideRight; color: row.ink; font.pixelSize: w.cards ? 15 : 13; font.weight: w.cards ? Font.DemiBold : Font.Medium }
                         UiText { visible: row.lines.length > 1; width: parent.width; text: row.lines[1] ?? ""; elide: Text.ElideRight; color: Qt.rgba(row.ink.r, row.ink.g, row.ink.b, 0.65); font.pixelSize: 12 }
                     }
                     MouseArea { id: rm; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
@@ -181,7 +180,7 @@ Item {
                     }
                 }
             }
-            UiText { visible: w.notes.length === 0; anchors.centerIn: parent; text: "Nenhuma nota. Toque no +"; color: w.dim; font.pixelSize: 13 }
+            UiText { visible: w.notes.length === 0; anchors.centerIn: parent; text: w.cards ? "Nenhuma nota. Toque no +" : "Nenhuma nota ainda"; color: w.dim; font.pixelSize: 13 }
         }
 
         // editor (end4: dentro de uma caixa)
