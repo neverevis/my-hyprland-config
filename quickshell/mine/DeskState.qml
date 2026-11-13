@@ -74,7 +74,7 @@ Singleton {
             { sec: "Tela de bloqueio", key: "lockStyle", label: "Estilo na tela de bloqueio", type: "seg", preview: true, previewAs: "style", def: "same", options: [["same", "O mesmo", "check"], ["digital", "Digital", "clockDigital"], ["analog", "Flor", "flowerOutline"], ["daily", "Diário", "calendar"], ["pixel", "Pixel", "grid"]], when: { lock: true } }
           ] },
         { type: "weather", group: "time", name: "Clima", icon: "sun", desc: "Agora e a previsão (Open-Meteo, sem chave).", sizes: [[2, 1], [1, 1], [3, 1], [2, 2], [3, 2], [1, 2], [1, 3]], options: [
-            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["hero", "Destaque", "cloudSun"]] },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Sereno", "auto"], ["classic", "Clássico", "view_column"], ["end4", "Como o end4", "view_grid"], ["hero", "Destaque", "cloudSun"]] },
             { sec: "Mostrar", key: "show", label: "Conteúdo", type: "seg", preview: true, def: "auto", options: [["auto", "Conforme o tamanho", "auto"], ["now", "Só agora", "cloudSun"], ["tiles", "Blocos de detalhes", "view_grid"], ["hours", "Próximas horas", "clockOutline"], ["days", "Próximos dias", "calendarWeek"]] },
             { sec: "Mostrar", key: "details", label: "Detalhes (sensação, vento, umidade)", icon: "info", type: "switch", def: true }
           ] },
@@ -99,7 +99,7 @@ Singleton {
             { sec: "Mês", key: "weekNumbers", label: "Número da semana", icon: "numeric", type: "switch", def: false }
           ] },
         { type: "media", group: "media", name: "Mídia", icon: "music", desc: "Capa, música, controles e letra sincronizada.", sizes: [[2, 1], [3, 1], [2, 2], [1, 1], [3, 2], [2, 3]], options: [
-            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Atual", "auto"], ["end4", "Como o end4", "view_grid"], ["flush", "Capa colada na borda", "image"], ["full", "Capa no cartão todo", "fullscreen"], ["label", "Cabeçalho e letra", "view_column"]] },
+            { sec: "Estilo", key: "look", label: "Composição", type: "seg", preview: true, def: "auto", options: [["auto", "Sereno", "auto"], ["classic", "Clássico", "view_column"], ["end4", "Como o end4", "view_grid"], ["flush", "Capa colada na borda", "image"], ["full", "Capa no cartão todo", "fullscreen"], ["label", "Cabeçalho e letra", "view_column"]] },
             { sec: "Estilo", key: "controlsStyle", label: "Botões", type: "seg", def: "badge", options: [["badge", "Selo no play", "play"], ["pill", "Pílula", "dotsGrid"], ["bare", "Soltos", "dotsGrid"]], when: { look: ["end4", "flush", "full", "label"] } },
             { sec: "Estilo", key: "progressStyle", label: "Progresso", type: "seg", def: "line", options: [["line", "Linha", "alignVCenter"], ["none", "Sem", "close"]], when: { look: ["end4", "flush", "full", "label"] } },
             { sec: "Estilo", key: "coverTint", label: "Cores da capa", icon: "palette", desc: "Destaque e botões tirados da cor dominante da capa.", type: "switch", def: false, when: { look: ["end4", "flush", "full", "label"] } },
@@ -130,7 +130,7 @@ Singleton {
           ] },
         { type: "system", group: "system", name: "Sistema", icon: "chip", desc: "CPU, memória, disco, temperatura, GPU e rede.", sizes: [[2, 1], [1, 1], [2, 2], [3, 1], [1, 2], [1, 3]], options: [
             { sec: "Medidas", key: "metrics", label: "O que mostrar", type: "seg", def: "basic", options: [["basic", "CPU, RAM, disco", "chip"], ["hot", "CPU, temperatura, GPU", "thermo"], ["all", "Tudo", "dashboard"]] },
-            { sec: "Visual", key: "look", label: "Visual", type: "seg", preview: true, def: "tiles", options: [["tiles", "Cartões", "dashboard"], ["rings", "Anéis", "chartDonut"], ["bars", "Barras", "bars"], ["graph", "Gráfico", "chart"]] },
+            { sec: "Visual", key: "look", label: "Visual", type: "seg", preview: true, def: "calm", options: [["calm", "Sereno", "auto"], ["tiles", "Cartões", "dashboard"], ["rings", "Anéis", "chartDonut"], ["bars", "Barras", "bars"], ["graph", "Gráfico", "chart"]] },
             { sec: "Visual", key: "vertical", label: "Empilhar na vertical", icon: "alignVCenter", type: "switch", def: false, when: { look: "tiles" } },
             { sec: "Visual", key: "tileRoles", label: "Cores dos cartões", type: "seg", def: "trio", options: [["trio", "Três cores", "palette"], ["same", "Todos iguais", "circleOutline"]], when: { look: "tiles" } },
             { sec: "Visual", key: "badge", label: "Selo do cartão", type: "seg", def: "shape", options: [["shape", "Forma", "shape"], ["ring", "Forma com anel de uso", "circleOutline"], ["none", "Sem", "close"]], when: { look: "tiles" } },
@@ -262,7 +262,7 @@ Singleton {
         if (o[key] !== undefined) return o[key]
         // tom: widgets antigos guardavam "fg" (auto | theme | custom)
         if (key === "tone" && o.fg !== undefined) return ({ theme: "primary", custom: "custom" })[o.fg] ?? "global"
-        if (key === "card") return (w && w.type === "system" && (o.look ?? "tiles") === "tiles") || (w && w.type === "world" && o.look === "tiles") ? "none" : (cardDefaults[w ? w.type : ""] ?? "auto")
+        if (key === "card") return (w && w.type === "system" && o.look === "tiles") || (w && w.type === "world" && o.look === "tiles") ? "none" : (cardDefaults[w ? w.type : ""] ?? "auto")
         const d = defs[w ? w.type : ""] ?? defs[catalog[0].type]
         return d[key]
     }

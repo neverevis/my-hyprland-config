@@ -72,6 +72,7 @@ Item {
     readonly property var shown: (cols === 1 && rows === 1 ? keys.slice(0, 1) : keys).map(k => w.all[k])
     readonly property string look: o("look")
 
+    Loader { anchors.fill: parent; active: w.look === "calm"; sourceComponent: CalmSystem { host: w } }
     // ---- tiles (um cartao por medida, com a forma M3 e o numero grande) ----
     Item {
         id: tl

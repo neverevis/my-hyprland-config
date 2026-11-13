@@ -64,7 +64,14 @@ PanelWindow {
     anchors { top: true; left: true }
     // a janela e ~30% mais funda que a barra, para os modulos acompanharem curvas com overshoot (elastica)
     readonly property real full: info ? info.t : 0
-    readonly property real extra: Math.ceil(full * 0.3) + 2
+    // dock com ampliacao: o icone cresce para fora da barra, entao a janela ganha essa folga e o recorte solta quando ela esta aberta
+    readonly property real dockOver: {
+        let m = 0
+        for (const sc of Settings.list(bar ? bar.sections : [])) for (const md of Settings.list(sc.modules))
+            if (md.type === "taskbar") m = Math.max(m, (md.iconSize ?? 26) * Math.max(0, Math.min(100, md.magnify ?? 35)) / 100)
+        return Math.ceil(m)
+    }
+    readonly property real extra: Math.max(Math.ceil(full * 0.3) + 2, dockOver + 6)
     readonly property string side: info ? info.side : "bottom"
     margins {
         left: info ? Math.round(info.rect.x - (side === "right" ? extra : 0)) : 0
@@ -110,7 +117,7 @@ PanelWindow {
             readonly property real need: { let m = 0; for (let k = 0; k < secRep.count; k++) { const it = secRep.itemAt(k); if (it) m = Math.max(m, it.need) } return m }
             readonly property real band: det ? (win.info ? win.info.th : 0) : win.full - (bare ? Settings.edge : 0)
             readonly property real dl: Math.max(0, d1 - d0)
-            clip: true
+            clip: !(win.dockOver > 0 && win.eff > 0.995)
             x: win.side === "right" ? win.width - d1 : (win.side === "left" ? d0 : 0)
             y: win.side === "bottom" ? win.height - d1 : (win.side === "top" ? d0 : 0)
             width: vert ? dl : win.width

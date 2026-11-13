@@ -46,9 +46,9 @@ Item {
 
     // ---- composicao ----
     readonly property bool narrow: cols === 1 && rows > 1
-    readonly property string lk: { const l = o("look"); return l === "auto" || narrow ? "plain" : l }
+    readonly property string lk: { const l = o("look"); return narrow || l === "classic" ? "plain" : l === "auto" ? "calm" : l }
     readonly property string mode: cols === 1 && rows === 1 ? "1x1" : rows === 1 ? (cols >= 3 ? "1x3" : "1x2") : (cols >= 3 || rows >= 3) ? "2x3" : "2x2"
-    readonly property real pad: lk === "plain" ? -1 : (lk === "end4" && mode === "1x2") ? 10 : 14
+    readonly property real pad: lk === "plain" || lk === "calm" ? -1 : (lk === "end4" && mode === "1x2") ? 10 : 14
     function innerRole(def) { return comp.innerRole && comp.innerRole !== "auto" ? comp.innerRole : def }
     function innerAlpha(def) { return comp.innerAlpha > 0 ? comp.innerAlpha : def }
     function innerRad(def) { return comp.innerRadius > 0 ? comp.innerRadius : def }
@@ -134,8 +134,9 @@ Item {
     Loader {
         anchors.fill: parent
         active: Weather.ready
-        sourceComponent: ({ plain: plainC, end4: e4C, hero: heroC })[w.lk] ?? plainC
+        sourceComponent: ({ plain: plainC, calm: calmC, end4: e4C, hero: heroC })[w.lk] ?? plainC
     }
+    Component { id: calmC; CalmWeather { host: w } }
     // falha ao atualizar com dados antigos na tela: avisa dentro do widget e quando funcionou pela ultima vez
     UiText {
         visible: Weather.ready && Weather.error !== "" && w.cols > 1

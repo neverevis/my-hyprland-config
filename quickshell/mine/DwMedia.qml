@@ -37,7 +37,8 @@ Item {
     readonly property bool tiny: cols === 1 && rows === 1
     // modo da composicao pelo tamanho do cartao
     readonly property string mode: {
-        if (look === "auto") return "plain"
+        if (look === "auto") return "calm"
+        if (look === "classic") return "plain"
         if (look === "full") return "full"
         if (look === "label") return rows >= 2 && cols >= 2 ? "label" : "side"
         if (tiny) return look === "end4" ? "full" : "top"
@@ -45,7 +46,7 @@ Item {
         if (cols >= 3 || rows >= 3) return "label"
         return "top"
     }
-    readonly property real pad: mode === "plain" ? -1 : 0       // o DeskView usa como margem do conteudo (-1 = a padrao)
+    readonly property real pad: mode === "plain" || mode === "calm" ? -1 : 0       // o DeskView usa como margem do conteudo (-1 = a padrao)
     readonly property real cardR: comp.radius !== undefined ? comp.radius : 20
     readonly property real u: Math.max(0.75, Math.min(1.25, Math.min(width / DeskState.pxW(cols), height / DeskState.pxH(rows))))
     readonly property bool tintOn: mode !== "plain" && o("coverTint") && art !== ""
@@ -65,7 +66,7 @@ Item {
         Behavior on opacity { NumberAnimation { duration: 300 } }
     }
     Column {
-        visible: !w.p
+        visible: !w.p && w.mode !== "calm"
         anchors.centerIn: parent
         spacing: 6
         UiIcon { anchors.horizontalCenter: parent.horizontalCenter; name: "music"; size: 30; color: w.dim }
@@ -191,6 +192,7 @@ Item {
         }
     }
     Loader { anchors.fill: parent; active: w.mode === "plain"; visible: !!w.p; sourceComponent: plainC }
+    Loader { anchors.fill: parent; active: w.mode === "calm"; sourceComponent: CalmMedia { host: w } }
     // ---------- pecas das composicoes ----------
     // capa colada na borda do cartao: o corte reto fica por conta do clip, so o canto de fora fica redondo (corners: all | left | top)
     component FlushArt: Item {
@@ -296,7 +298,7 @@ Item {
     // ---------- composicoes ----------
     Loader {
         anchors.fill: parent
-        active: w.mode !== "plain"
+        active: w.mode !== "plain" && w.mode !== "calm"
         visible: !!w.p
         sourceComponent: ({ full: fullC, side: sideC, top: topC, wide: wideC, label: labelC })[w.mode] ?? sideC
     }
