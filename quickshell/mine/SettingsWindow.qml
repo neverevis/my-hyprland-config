@@ -222,6 +222,7 @@ Scope {
                 const findSec = o => { if (sec || !o) return; if (o.title === card && o.subtitle !== undefined) { sec = o; return } for (const ch of kids(o)) findSec(ch) }
                 findSec(page)
                 if (!sec) return
+                if (typeof sec.tabKey === "string" && page.tab !== undefined) page.tab = sec.tabKey   // pagina com abas: vai para a aba da secao
                 if (label !== "") {
                     const findRow = o => { if (row || !o) return; if (o.label === label && o.pulse) { row = o; return } for (const ch of kids(o)) findRow(ch) }
                     findRow(sec)
@@ -648,6 +649,7 @@ Scope {
                 }
                 Connections { target: pageFlick; function onContentYChanged() { jumps.spy() } }
                 Connections { target: Settings; function onSettingsSubChanged() { jumps.cards = []; jumpT.restart() } }
+                Connections { target: pageLoader.item; ignoreUnknownSignals: true; function onTabChanged() { jumps.cards = []; pageFlick.contentY = 0; jumpT.restart() } }
                 WheelHandler { onWheel: e => { const f = jumps; f.contentX = Math.max(0, Math.min(Math.max(0, f.contentWidth - f.width), f.contentX - e.angleDelta.y - e.angleDelta.x)) } }
                 Row {
                     id: jumpRow

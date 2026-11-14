@@ -74,7 +74,19 @@ SetPage {
     }
 
     // ================= BARRAS =================
+    // abas: so as secoes da aba escolhida aparecem (menos rolagem); a busca troca de aba sozinha (tabKey)
+    property string tab: "bar"
     SetSection {
+        SetChoice {
+            style: "tiles"; columns: 4; thumbHeight: 52
+            options: [["bar", "Barra", "bars"], ["mods", "Módulos", "view_column"], ["frame", "Moldura", "frame"], ["extra", "Indicadores", "info"]]
+            value: page.tab
+            onPicked: v => page.tab = v
+        }
+    }
+    SetSection {
+        property string tabKey: page.tab === "mods" ? "mods" : "bar"
+        visible: page.tab === "bar" || page.tab === "mods"
         title: "Suas barras"; icon: "bars"
         SetBlock {
             Flow {
@@ -139,7 +151,8 @@ SetPage {
     }
 
     SetSection {
-        visible: !!page.bar
+        property string tabKey: "bar"
+        visible: !!page.bar && page.tab === "bar"
         title: "Barra escolhida"; icon: "frame"
         SetRow {
             icon: "pencil"; label: "Nome"
@@ -262,7 +275,8 @@ SetPage {
 
     // ================= SECOES E MODULOS =================
     SetSection {
-        visible: !!page.bar
+        property string tabKey: "mods"
+        visible: !!page.bar && page.tab === "mods"
         title: "Seções e módulos"; icon: "view_column"; subtitle: "Cada seção é um grupo de módulos com posição própria"
         SetBlock {
             Flow {
@@ -462,6 +476,8 @@ SetPage {
 
     // ================= MOLDURA =================
     SetSection {
+        property string tabKey: "frame"
+        visible: page.tab === "frame"
         title: "Moldura"; icon: "frame"
         SetChoice {
             icon: "window"; label: "Janela de configurações"; description: "Normal: o Hyprland cuida dela. Camada: desliza do topo do shell"
@@ -534,6 +550,8 @@ SetPage {
 
     // ================= INDICADOR DE VOLUME =================
     SetSection {
+        property string tabKey: "extra"
+        visible: page.tab === "extra"
         title: "Indicador de volume"; icon: "volume"; subtitle: "Aparece quando o volume ou o microfone mudam"
         SetRow { icon: "eye"; label: "Mostrar o indicador"; description: "Também com as teclas de mídia, mostrando o que toca"; checked: Settings.osdOn; onToggled: on => Settings.osdOn = on }
         SetChoice { icon: "dock"; label: "Lado"; options: [["left", "Esquerda", "alignLeft"], ["top", "Topo", "arrowUp"], ["bottom", "Base", "arrowDown"], ["right", "Direita", "alignRight"]]; value: Settings.osdSide; onPicked: v => Settings.osdSide = v }
@@ -544,6 +562,8 @@ SetPage {
 
     // ================= DETALHES E ILHA =================
     SetSection {
+        property string tabKey: "extra"
+        visible: page.tab === "extra"
         title: "Detalhes e ilha dinâmica"; icon: "info"; subtitle: "Cartões ao parar o mouse e o uso da IA"
         SetRow { icon: "info"; label: "Detalhes ao passar o mouse"; description: "Relógio, clima, sistema, música, volume e atualizações"; checked: Settings.barPopups; onToggled: on => Settings.barPopups = on }
         SetRow { icon: "tag"; label: "Dicas de texto"; description: "Balãozinho com o nome do botão, do ícone ou do app"; checked: Settings.barTips; onToggled: on => Settings.barTips = on }
