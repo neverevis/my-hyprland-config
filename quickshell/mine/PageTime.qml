@@ -99,6 +99,7 @@ SetPage {
         SetRow { icon: "timer"; label: "Mostrar segundos"; description: "Na barra e na ilha (o bloqueio tem a sua opção)"; checked: Settings.clockSeconds; onToggled: on => Settings.clockSeconds = on }
         SetExpander {
             icon: "calendar"; label: "Formatos de data"; description: "Letras do Qt: d dd ddd dddd, M MM MMM MMMM, yy yyyy"
+            summary: Settings.dateFormat !== "" ? Settings.dateFormat : "Padrão"
             SetRow { sub: true; label: "Data curta"; UiField { width: 220; placeholderText: "ddd, dd/MM"; text: Settings.dateFormat; onEditingFinished: Settings.dateFormat = text } }
             SetRow { sub: true; label: "Data longa"; description: "Vazio = padrão"; UiField { width: 220; placeholderText: "dddd, d 'de' MMMM"; text: Settings.dateLongFormat; onEditingFinished: Settings.dateLongFormat = text } }
             SetRow { sub: true; label: "Data com ano"; UiField { width: 220; placeholderText: "dd/MM/yyyy"; text: Settings.dateYearFormat; onEditingFinished: Settings.dateYearFormat = text } }

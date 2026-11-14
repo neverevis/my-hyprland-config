@@ -3,6 +3,7 @@
 // Os filhos existem sempre (leves; a busca encontra e abre o expansor); para conteudo pesado (editores, previas,
 // listas grandes) use lazy: Component { ... } — so e criado com o expansor aberto.
 // checked (bool) poe um interruptor no cabecalho (toggled(on)); o clique na linha so abre e fecha.
+// summary: os valores de agora, mostrados no cabecalho enquanto o expansor esta fechado (para saber o que ha dentro sem abrir).
 // Exemplo:  SetExpander { icon: "tune"; label: "Avançado"; description: "Separar fundo e conteúdo"; SetRow { sub: true; ... } }
 import QtQuick
 
@@ -13,6 +14,7 @@ Column {
     property string icon
     property string label
     property string description
+    property string summary: ""
     property bool open: false
     property var checked: undefined
     property Component lazy: null
@@ -34,6 +36,13 @@ Column {
         rowClick: true
         onClicked: ex.open = !ex.open
         onToggled: on => ex.toggled(on)
+        UiText {
+            visible: ex.summary !== "" && !ex.open
+            anchors.verticalCenter: parent.verticalCenter
+            width: Math.min(implicitWidth, Math.max(80, ex.width * 0.36))
+            horizontalAlignment: Text.AlignRight; elide: Text.ElideRight
+            text: ex.summary; color: Theme.muted; font.pixelSize: SetK.fDesc; font.features: { "tnum": 1 }
+        }
         UiIcon {
             name: "chevDown"; size: 20; color: Theme.muted
             rotation: ex.open ? 180 : 0

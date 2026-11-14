@@ -58,6 +58,7 @@ Column {
         SetRow { icon: "volume"; label: "Roda do mouse nos cantos de baixo"; description: "Esquerda muda o brilho (só com backlight), direita o volume"; checked: Settings.hotCornerWheel; onToggled: on => Settings.hotCornerWheel = on }
         SetExpander {
             icon: "tune"; label: "Zonas"; description: "Tamanho e visualização"
+            summary: Settings.hotCornerW + " × " + Settings.hotCornerH + " px" + (Settings.hotCornerVisualize ? " · visíveis" : "")
             SetSlider { sub: true; label: "Largura da zona"; from: 1; to: 250; unit: " px"; def: 4; value: Settings.hotCornerW; onMoved: v => Settings.hotCornerW = Math.round(v) }
             SetSlider { sub: true; label: "Altura da zona"; from: 1; to: 60; unit: " px"; def: 4; value: Settings.hotCornerH; onMoved: v => Settings.hotCornerH = Math.round(v) }
             SetRow { sub: true; label: "Mostrar as zonas"; description: "Pinta a área de cada canto"; checked: Settings.hotCornerVisualize; onToggled: on => Settings.hotCornerVisualize = on }

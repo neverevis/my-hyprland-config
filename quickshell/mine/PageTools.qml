@@ -28,6 +28,7 @@ SetPage {
         SetRow { visible: Capture.lastMsg !== ""; icon: "info"; label: "Última"; description: Capture.lastMsg }
         SetExpander {
             icon: "tune"; label: "Seletor de área"; description: "Contornos das janelas e linhas-guia"
+            summary: [Settings.regionOutlines ? "Contornos" : "", Settings.regionAimLines ? "Linhas-guia" : ""].filter(s => s).join(" · ") || "Tudo desligado"
             SetRow { sub: true; label: "Contornar todas as janelas"; checked: Settings.regionOutlines; onToggled: on => Settings.regionOutlines = on }
             SetRow { sub: true; label: "Linhas-guia seguindo o cursor"; checked: Settings.regionAimLines; onToggled: on => Settings.regionAimLines = on }
         }

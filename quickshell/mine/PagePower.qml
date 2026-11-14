@@ -26,12 +26,14 @@ SetPage {
         }
         SetExpander {
             icon: "clockDigital"; label: "Relógio e música"; description: "Posição, segundos e controles de música"
+            summary: [Settings.lockClockPos === "top" ? "No topo" : "No centro", Settings.lockSeconds ? "segundos" : "", Settings.lockMedia ? "música" : ""].filter(s => s).join(" · ")
             SetChoice { sub: true; label: "Posição"; options: [["top", "No topo", "arrowUp"], ["center", "No centro", "alignCenter"]]; value: Settings.lockClockPos; onPicked: v => Settings.lockClockPos = v }
             SetRow { sub: true; label: "Relógio com segundos"; checked: Settings.lockSeconds; onToggled: on => Settings.lockSeconds = on }
             SetRow { sub: true; label: "Mostrar a música tocando"; description: "Com anterior, pausar e próxima"; checked: Settings.lockMedia; onToggled: on => Settings.lockMedia = on }
         }
         SetExpander {
             icon: "shield"; label: "Senha e segurança"; description: "Caracteres, chaveiro e botões de energia"
+            summary: [Settings.lockChars === "shapes" ? "Formas" : "Bolinhas", Settings.lockKeyring ? "chaveiro" : "", Settings.lockRequirePw ? "senha para desligar" : ""].filter(s => s).join(" · ")
             SetChoice { sub: true; label: "Ao digitar a senha"; options: [["dots", "Bolinhas"], ["shapes", "Formas"]]; value: Settings.lockChars; onPicked: v => Settings.lockChars = v }
             SetRow { sub: true; label: "Destravar o chaveiro junto"; description: "Usa a mesma senha para abrir o gnome-keyring, se estiver trancado"; checked: Settings.lockKeyring; onToggled: on => Settings.lockKeyring = on }
             SetRow { sub: true; label: "Botões de energia no bloqueio"; description: "Desligado: é preciso desbloquear antes de desligar"; checked: Settings.lockPower; onToggled: on => Settings.lockPower = on }
@@ -101,6 +103,7 @@ SetPage {
         SetRow { icon: "package"; label: "Contar também o AUR"; description: "Usa o yay (ou o paru) junto com o pacman"; checked: Settings.updAur; onToggled: on => { Settings.updAur = on; SystemGuard.checkUpdates() } }
         SetExpander {
             icon: "tune"; label: "Quando verificar e avisar"; description: "Intervalo e limites dos avisos"
+            summary: "A cada " + Settings.updHours + " h" + (Settings.updWarn > 0 ? " · avisa com " + Settings.updWarn : "")
             SetSlider { sub: true; label: "Verificar a cada"; from: 1; to: 24; unit: " h"; value: Settings.updHours; onMoved: v => Settings.updHours = Math.round(v) }
             SetSlider { sub: true; label: "Avisar a partir de"; from: 0; to: 200; step: 5; unit: " pacotes"; zeroLabel: "Nunca"; value: Settings.updWarn; onMoved: v => Settings.updWarn = Math.round(v / 5) * 5 }
             SetSlider { sub: true; label: "Ficar vermelho a partir de"; from: 0; to: 300; step: 5; unit: " pacotes"; zeroLabel: "Nunca"; value: Settings.updStrong; onMoved: v => Settings.updStrong = Math.round(v / 5) * 5 }

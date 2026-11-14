@@ -32,6 +32,7 @@ Column {
         SetRow { icon: "cards"; label: "Agrupar por aplicativo"; description: "Vários avisos do mesmo app viram um cartão com o número"; checked: Settings.notifGroup; onToggled: on => Settings.notifGroup = on }
         SetExpander {
             icon: "curve"; label: "Cantos e curvas"; description: "Arredondamento e curva ao encontrar a moldura"
+            summary: Settings.notifRadius + " px · curva " + Settings.notifFillet + " px"
             SetSlider { sub: true; label: "Arredondamento"; from: 0; to: 30; unit: " px"; def: 14; value: Settings.notifRadius; onMoved: v => Settings.notifRadius = Math.round(v) }
             SetSlider { sub: true; label: "Curva ao encontrar a moldura"; from: 0; to: 30; unit: " px"; def: 12; value: Settings.notifFillet; onMoved: v => Settings.notifFillet = Math.round(v) }
         }

@@ -22,6 +22,7 @@ Column {
         SetSlider { icon: "view_column"; label: "Resultados visíveis"; from: 3; to: 12; def: 7; value: Settings.launcherRows; onMoved: v => Settings.launcherRows = Math.round(v) }
         SetExpander {
             icon: "tune"; label: "Tamanho e curvas"; description: "Ícones, cantos, deslocamento e curva da moldura"
+            summary: "Ícones " + Settings.launcherIcon + " px · cantos " + Settings.launcherRadius + " px"
             SetSlider { sub: true; label: "Tamanho dos ícones"; from: 20; to: 56; unit: " px"; def: 32; value: Settings.launcherIcon; onMoved: v => Settings.launcherIcon = Math.round(v) }
             SetSlider { sub: true; label: "Arredondamento"; from: 0; to: 40; unit: " px"; def: 22; value: Settings.launcherRadius; onMoved: v => Settings.launcherRadius = Math.round(v) }
             SetSlider { visible: Settings.launcherDocked; sub: true; label: "Deslocamento"; from: -1000; to: 1000; step: 10; unit: " px"; def: 0; value: Settings.launcherOffset; onMoved: v => Settings.launcherOffset = Math.round(v) }

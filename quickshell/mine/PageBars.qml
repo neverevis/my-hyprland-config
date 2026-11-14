@@ -296,6 +296,7 @@ SetPage {
         }
         SetExpander {
             icon: "tune"; label: "Ajustes da seção"; description: "Posição, alinhamento, tamanho e fundo"
+            summary: page.secObj ? ({ start: "Início", center: "Centro", end: "Fim" })[page.secObj.anchor ?? "center"] + ((page.secObj.width ?? 0) > 0 ? " · " + page.secObj.width + " px" : " · largura automática") : ""
             SetRow { sub: true; label: "Nome"; UiField { width: 180; text: page.secObj ? page.secObj.name : ""; placeholderText: "Seção " + (page.sec + 1); onEditingFinished: Settings.setSection(page.idx, page.sec, "name", text) } }
             SetChoice { sub: true; label: "Posição na barra"; iconsOnly: true; options: [["start", "Início", "alignLeft"], ["center", "Centro", "alignCenter"], ["end", "Fim", "alignRight"]]; value: page.secObj ? (page.secObj.anchor ?? "center") : "center"; onPicked: v => page.setSec("anchor", v) }
             SetChoice { sub: true; label: "Alinhar os módulos"; iconsOnly: true; options: [["start", "Início", "alignLeft"], ["center", "Centro", "alignCenter"], ["end", "Fim", "alignRight"]]; value: page.secObj ? (page.secObj.align ?? "center") : "center"; onPicked: v => page.setSec("align", v) }

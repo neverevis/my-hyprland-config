@@ -368,6 +368,7 @@ SetPage {
         }
         SetExpander {
             icon: "tune"; label: "Avançado"; description: "Ângulo, movimento e curva"
+            summary: "Movimento " + Settings.wpParallax + " %"
             SetSlider { visible: Settings.wpTransition === "wipe" || Settings.wpTransition === "random"; sub: true; label: "Ângulo exato"; from: 0; to: 359; unit: "°"; def: 0; value: Settings.wpWipeAngle; onMoved: v => Settings.wpWipeAngle = Math.round(v) }
             SetSlider { sub: true; label: "Movimento"; description: "Cortina: posição · círculo: escala"; from: 0; to: 50; unit: " %"; def: 20; value: Settings.wpParallax; onMoved: v => Settings.wpParallax = Math.round(v) }
             lazy: Component { SetBlock { sub: true; UiLabel { text: "Curva" } AnimPicker { width: parent.width; target: "wallpaper" } } }
@@ -459,6 +460,7 @@ SetPage {
         SetRow { icon: "check"; label: "Fechar ao escolher"; checked: Settings.wpCloseAfter; onToggled: on => Settings.wpCloseAfter = on }
         SetExpander {
             icon: "tune"; label: "Ajuste fino"; description: "Deslocamento, distância, cantos e animação do painel"
+            summary: (Settings.wpPickerDocked ? "Curva " + Settings.wpPickerFillet : "Distância " + Settings.wpPickerGap) + " px · cantos " + Settings.wpPickerRadius + " px"
             SetSlider { sub: true; label: "Deslocamento"; from: -1000; to: 1000; step: 10; unit: " px"; def: 0; value: Settings.wpPickerOffset; onMoved: v => Settings.wpPickerOffset = Math.round(v) }
             SetSlider { visible: !Settings.wpPickerDocked; sub: true; label: "Distância da borda"; from: 0; to: 80; unit: " px"; def: 14; value: Settings.wpPickerGap; onMoved: v => Settings.wpPickerGap = Math.round(v) }
             SetSlider { sub: true; label: "Cantos do painel"; from: 0; to: 40; unit: " px"; def: 11; value: Settings.wpPickerRadius; onMoved: v => Settings.wpPickerRadius = Math.round(v) }

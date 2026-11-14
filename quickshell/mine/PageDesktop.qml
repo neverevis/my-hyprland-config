@@ -167,6 +167,7 @@ SetPage {
         SetRow { icon: "menu"; label: "Menu de clique direito"; description: "No fundo da área de trabalho"; checked: Settings.desktopMenu; onToggled: on => Settings.desktopMenu = on }
         SetExpander {
             icon: "grid"; label: "Grade e encaixe"; description: "Alinhamento ao arrastar"
+            summary: [Settings.desktopSnap ? "Encaixe" : "", Settings.desktopGrid ? "Grade" : "", Settings.desktopSnapLines ? "Linhas" : ""].filter(s => s).join(" · ") || "Tudo desligado"
             SetRow { sub: true; label: "Encaixar na grade ao arrastar"; description: "Grade de 24 px e guias no centro da tela"; checked: Settings.desktopSnap; onToggled: on => Settings.desktopSnap = on }
             SetRow { sub: true; label: "Mostrar a grade ao arrastar"; description: "Pontos só enquanto um widget é movido"; checked: Settings.desktopGrid; onToggled: on => Settings.desktopGrid = on }
             SetRow { sub: true; label: "Linhas de alinhamento ao soltar"; description: "As bordas piscam por 2 s"; checked: Settings.desktopSnapLines; onToggled: on => Settings.desktopSnapLines = on }
@@ -254,6 +255,7 @@ SetPage {
         }
         SetExpander {
             icon: "sun"; label: "Clima"; description: "Para o widget de clima (Open-Meteo, grátis e sem conta)"
+            summary: Settings.weatherCity !== "" ? Settings.weatherCity : "Cidade automática"
             SetRow {
                 sub: true; label: "Cidade"; description: "Vazio descobre pela internet"
                 UiField { width: 200; text: Settings.weatherCity; placeholderText: "Cidade"; onEditingFinished: Settings.weatherCity = text.trim() }
