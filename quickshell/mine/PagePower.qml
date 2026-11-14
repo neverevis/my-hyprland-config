@@ -8,8 +8,21 @@ SetPage {
     title: "Energia e sessão"
     subtitle: "Bloqueio, inatividade, menu de energia, atualizações e bateria"
 
+    // abas: so as secoes da aba escolhida aparecem (menos rolagem); a busca troca de aba sozinha (tabKey)
+    property string tab: "lock"
+    SetSection {
+        SetChoice {
+            style: "tiles"; columns: 3; thumbHeight: 52
+            options: [["lock", "Bloqueio", "lock"], ["power", "Energia", "power"], ["system", "Sistema", "cog"]]
+            value: page.tab
+            onPicked: v => page.tab = v
+        }
+    }
+
     // ---- tela de bloqueio ----
     SetSection {
+        property string tabKey: "lock"
+        visible: page.tab === "lock"
         title: "Tela de bloqueio"; icon: "lock"
         subtitle: "Super + L; a senha é verificada pelo sistema, como no login"
         SetRow {
@@ -47,6 +60,8 @@ SetPage {
 
     // ---- inatividade ----
     SetSection {
+        property string tabKey: "lock"
+        visible: page.tab === "lock"
         title: "Inatividade"; icon: "sleep"
         subtitle: Settings.idleLock === 0 && Settings.idleScreenOff === 0 && Settings.idleSuspend === 0 ? "Tudo desligado" : "Vídeos e jogos que pedem tela acesa são respeitados"
         SetSlider { icon: "lock"; label: "Bloquear depois de"; from: 0; to: 60; unit: " min"; zeroLabel: "Nunca"; def: 0; value: Settings.idleLock; onMoved: v => Settings.idleLock = Math.round(v) }
@@ -57,6 +72,8 @@ SetPage {
 
     // ---- polkit ----
     SetSection {
+        property string tabKey: "lock"
+        visible: page.tab === "lock"
         title: "Senha de administrador (polkit)"; icon: "shieldLock"
         subtitle: "Pedidos de permissão (montar disco, instalar) aparecem num cartão do shell"
         SetRow { icon: "lock"; label: "Usar sempre o shell para os pedidos de senha"; description: SysAct.shellAgent && !Settings.polkitOn ? "Já está em uso: nenhum outro agente está rodando" : "Desligado, o shell só assume quando nenhum outro agente está rodando"; checked: Settings.polkitOn; onToggled: on => Settings.polkitOn = on }
@@ -69,6 +86,8 @@ SetPage {
 
     // ---- menu de energia ----
     SetSection {
+        property string tabKey: "power"
+        visible: page.tab === "power"
         title: "Menu de energia"; icon: "power"
         subtitle: "Ctrl + Alt + Del, o botão no Início ou o módulo Energia nas barras"
         SetRow { icon: "play"; label: "Abrir o menu"; UiButton { text: "Abrir"; kind: "accent"; onClicked: { Settings.settingsOpen = false; Power.menuOpen = true } } }
@@ -85,6 +104,8 @@ SetPage {
 
     // ---- hora e data (mudou para a pagina Data, hora e idioma; mesmas chaves) ----
     SetSection {
+        property string tabKey: "system"
+        visible: page.tab === "system"
         title: "Hora e data"; icon: "clock"
         subtitle: "Formato do relógio e da data, fuso horário e sincronização"
         SetRow { icon: "clockOutline"; label: "Formato da hora e da data"; description: "Mudou para Data, hora e idioma"; link: true; onClicked: Settings.settingsPage = "time" }
@@ -92,6 +113,8 @@ SetPage {
 
     // ---- atualizacoes e cuidados do sistema ----
     SetSection {
+        property string tabKey: "system"
+        visible: page.tab === "system"
         title: "Atualizações"; icon: "download"
         subtitle: SystemGuard.updates < 0 ? (SystemGuard.checking ? "Verificando…" : "Indisponível: falta o checkupdates (pacman-contrib)") : SystemGuard.updates === 0 ? "Sistema em dia" : SystemGuard.updates === 1 ? "1 atualização disponível" : SystemGuard.updates.toLocaleString(Qt.locale("pt_BR"), "f", 0) + " atualizações disponíveis"
         SetRow {
@@ -110,6 +133,8 @@ SetPage {
         }
     }
     SetSection {
+        property string tabKey: "system"
+        visible: page.tab === "system"
         title: "Sistema"; icon: "cog"
         subtitle: "Cuidados com atualizações e com outros daemons de notificação"
         SetRow { icon: "power"; label: "Avisar antes de desligar numa atualização"; description: "Com o pacman, yay ou paru rodando, pede confirmação"; checked: Settings.sessionGuard; onToggled: on => Settings.sessionGuard = on }
@@ -124,6 +149,8 @@ SetPage {
 
     // ---- volume e sons (mudou para a pagina Som; mesmas chaves) ----
     SetSection {
+        property string tabKey: "system"
+        visible: page.tab === "system"
         title: "Volume e sons"; icon: "volume"
         subtitle: "Limite de volume e sons do shell"
         SetRow { icon: "speaker"; label: "Limite de volume e sons do shell"; description: "Mudou para a página Som"; link: true; onClicked: Settings.settingsPage = "sound" }
@@ -131,7 +158,8 @@ SetPage {
 
     // ---- bateria (so em computadores com bateria) ----
     SetSection {
-        visible: Battery.present
+        property string tabKey: "power"
+        visible: (Battery.present) && page.tab === "power"
         title: "Bateria"; icon: "battery"
         subtitle: "Avisos e ações quando a carga fica baixa"
         SetRow { icon: "bell"; label: "Avisar com notificação"; checked: Settings.batNotify; onToggled: on => Settings.batNotify = on }

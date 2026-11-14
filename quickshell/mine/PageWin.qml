@@ -78,8 +78,21 @@ SetPage {
         }
     }
 
+    // abas: so as secoes da aba escolhida aparecem (menos rolagem); a busca troca de aba sozinha (tabKey)
+    property string tab: "look"
+    SetSection {
+        SetChoice {
+            style: "tiles"; columns: 3; thumbHeight: 52
+            options: [["look", "Aparência", "window"], ["blur", "Desfoque", "blur"], ["behave", "Comportamento", "target"]]
+            value: page.tab
+            onPicked: v => page.tab = v
+        }
+    }
+
     // ---- espacos, bordas, cantos ----
     SetSection {
+        property string tabKey: "look"
+        visible: page.tab === "look"
         title: "Espaços e bordas"; icon: "window"
         subtitle: page.nChanged > 0 ? (page.nChanged === 1 ? "1 ajuste seu por cima" : page.nChanged + " ajustes seus por cima") + " dos arquivos do Hyprland" : "Valem na hora; \"Restaurar\" volta ao que está nos arquivos do Hyprland"
         SetHypr { keys: ["general:gaps_in", "general:gaps_out", "mine:single_gaps_out", "general:border_size", "decoration:rounding", "decoration:active_opacity"] }
@@ -96,6 +109,8 @@ SetPage {
 
     // ---- sombras das janelas ----
     SetSection {
+        property string tabKey: "look"
+        visible: page.tab === "look"
         title: "Sombras"; icon: "layers"
         subtitle: "A sombra (ou o brilho colorido) em volta das janelas"
         SetHypr { keys: ["decoration:shadow:enabled", "decoration:shadow:range", "decoration:shadow:render_power"] }
@@ -120,6 +135,8 @@ SetPage {
 
     // ---- blur global do Hyprland e da moldura ----
     SetSection {
+        property string tabKey: "blur"
+        visible: page.tab === "blur"
         title: "Blur do Hyprland"; icon: "blur"
         subtitle: "Vale para todas as janelas, inclusive a moldura (o Hyprland só aceita um valor global)"
         SetRow { icon: "cog"; label: "Controlar o blur por aqui"; description: "Desligado, vale o que estiver na sua configuração do Hyprland"; checked: Settings.blurManaged; onToggled: on => Settings.blurManaged = on }
@@ -136,6 +153,8 @@ SetPage {
         }
     }
     SetSection {
+        property string tabKey: "blur"
+        visible: page.tab === "blur"
         title: "Blur da moldura"; icon: "grain"
         subtitle: "Só da moldura e das barras; a força segue o blur acima"
         SetRow { icon: "blur"; label: "Desfocar o fundo da moldura"; checked: Settings.shellBlur; onToggled: on => Settings.shellBlur = on }
@@ -148,10 +167,14 @@ SetPage {
 
     // ---- foco e layout ----
     SetSection {
+        property string tabKey: "behave"
+        visible: page.tab === "behave"
         title: "Foco e arrasto"; icon: "target"
         SetHypr { keys: ["decoration:dim_inactive", "decoration:dim_strength", "general:resize_on_border", "general:extend_border_grab_area"] }
     }
     SetSection {
+        property string tabKey: "behave"
+        visible: page.tab === "behave"
         title: "Layout"; icon: "view_column"
         subtitle: "Como as janelas se organizam sozinhas"
         SetHypr { keys: ["mine:float_all", "general:layout"] }
@@ -171,6 +194,8 @@ SetPage {
 
     // ---- widgets da area de trabalho (sombra) ----
     SetSection {
+        property string tabKey: "look"
+        visible: page.tab === "look"
         title: "Sombra dos widgets"; icon: "dashboard"
         subtitle: "Nos widgets sem fundo ela deixa o texto legível sobre qualquer wallpaper"
         SetRow { icon: "dashboard"; label: "Sombra nos widgets"; checked: Settings.desktopShadow; onToggled: on => Settings.desktopShadow = on }
@@ -194,6 +219,8 @@ SetPage {
 
     // ---- monitor (mudou para a pagina Monitores; mesmas chaves em Settings) ----
     SetSection {
+        property string tabKey: "behave"
+        visible: page.tab === "behave"
         title: "Monitor"; icon: "monitor"
         subtitle: "Resolução, taxa de atualização, escala e posição das telas"
         SetRow { icon: "monitor"; label: "Resolução, escala e posição"; description: "Mudou para a página Monitores"; link: true; onClicked: Settings.settingsPage = "display" }
@@ -201,6 +228,8 @@ SetPage {
 
     // ---- atalhos (a lista e o editor moraram aqui; agora ficam na pagina Atalhos de teclado) ----
     SetSection {
+        property string tabKey: "behave"
+        visible: page.tab === "behave"
         title: "Atalhos"; icon: "keyboard"
         subtitle: "Ver, mudar e conferir os atalhos do shell e os seus"
         SetRow { icon: "keyboard"; label: "Atalhos de teclado"; description: "Mudou para a página Atalhos de teclado"; link: true; onClicked: Settings.settingsPage = "keys" }
@@ -208,6 +237,8 @@ SetPage {
 
     // ---- ajustes do Hyprland (o que sobra) ----
     SetSection {
+        property string tabKey: "behave"
+        visible: page.tab === "behave"
         title: "Sistema"; icon: "cog"
         subtitle: "Cursor, telas, jogos e pequenos comportamentos do Hyprland"
         SetExpander {
